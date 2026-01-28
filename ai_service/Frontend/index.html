@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>HTML Course</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <h1>HTML Course</h1>
+    <div id="sidebar">
+        <label>Select Celebrity:</label>
+        <select id="celebrity">
+            <option value="salman">Salman Khan</option>
+        </select>
+    </div>
+
+    <button id="generateBtn">Generate Lesson</button>
+
+    <div id="loadingIndicator" style="display: none; margin: 20px 0;">
+        <p>🎬 Generating video... This may take a minute.</p>
+        <progress style="width: 300px;"></progress>
+    </div>
+
+    <div id="videoContainer">
+        <video id="lessonVideo" width="600" controls></video>
+        <p id="captions"></p>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>

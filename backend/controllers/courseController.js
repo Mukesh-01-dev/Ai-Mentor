@@ -99,10 +99,38 @@ const getMyCourses = async (req, res) => {
 };
 
 /* =========================
-   STUBS
+   Learning Data
 ========================= */
 const getCourseLearningData = async (req, res) => {
-  res.status(501).json({ message: "Not implemented yet" });
+  // res.status(501).json({ message: "Not implemented yet" });
+  try {
+    const learningPath = path.join(
+      __dirname,
+      "../../frontend/public/data/learning.json"
+    );
+
+    if (!fs.existsSync(learningPath)) {
+      return res.status(404).json({ message: "Learning data not found" });
+    }
+
+    const raw = fs.readFileSync(learningPath, "utf-8");
+    const jsonData = JSON.parse(raw);
+
+    const id = String(Number(req.params.id));
+    const learning = jsonData[id];
+
+    if (!learning) {
+      return res.status(404).json({ message: "Learning data not found" });
+    }
+
+    // Ensure the course object includes an id
+    const courseObj = { ...(learning.course || {}), id: Number(id) };
+
+    res.json({ ...learning, course: courseObj });
+  } catch (error) {
+    console.error("GET COURSE LEARNING DATA ERROR:", error);
+    res.status(500).json({ message: "Failed to load learning data" });
+  }
 };
 
 const getStatsCards = async (req, res) => {

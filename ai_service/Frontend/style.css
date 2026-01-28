@@ -1,0 +1,98 @@
+
+/* Reset some defaults */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background-color: #f9f9f9;
+    color: #333;
+    padding: 20px;
+}
+
+/* Page header */
+h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #1a73e8;
+}
+
+/* Celebrity dropdown and button container */
+#celebrity,
+button {
+    padding: 10px 15px;
+    margin: 10px 5px 20px 0;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+/* Button hover */
+button:hover {
+    background-color: #1a73e8;
+    color: white;
+    border: 1px solid #1a73e8;
+}
+
+/* Output container */
+#output {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+/* Status message */
+#status {
+    font-weight: bold;
+    color: #555;
+}
+
+/* Video player */
+#videoPlayer {
+    width: 100%;
+    max-width: 600px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+/* Captions */
+#captions {
+    font-size: 16px;
+    line-height: 1.5;
+    color: #444;
+    text-align: center;
+    padding: 10px;
+    background-color: #f1f1f1;
+    border-radius: 5px;
+    width: 100%;
+    max-width: 600px;
+}
+
+/* Responsive adjustments */
+@media screen and (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+
+    #celebrity,
+    button {
+        width: 100%;
+        margin: 10px 0;
+    }
+
+    #videoPlayer,
+    #captions {
+        max-width: 100%;
+    }
+}

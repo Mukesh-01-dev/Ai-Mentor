@@ -7,6 +7,13 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
+__pycache__
+
+venv/
+
+# Videos
+videos/
+
 # =====================
 # Environment files
 # =====================
@@ -20,14 +27,13 @@ pnpm-debug.log*
 # Backend specific
 # =====================
 backend/.env
-backend/.env.*
+backend/.env
 backend/config/*.local.js
 
 # =====================
 # Frontend (Vite / React)
 # =====================
 frontend/.env
-frontend/.env.*
 frontend/dist
 frontend/build
 frontend/.vite

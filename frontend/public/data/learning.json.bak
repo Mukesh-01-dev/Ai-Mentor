@@ -1,0 +1,221 @@
+{
+  "backupAt": "2026-01-27T00:00:00.000Z",
+  "original": {
+    "1": {
+      "modules": [
+        {
+          "id": "module-1",
+          "title": "Module 1: Introduction to React",
+          "lessons": [
+            {
+              "id": "what-is-react",
+              "title": "What is React?",
+              "duration": "12 min",
+              "completed": false,
+              "playing": true,
+              "type": "video",
+              "youtubeUrl": "https://www.youtube.com/watch?v=YE7VzlLtp-4"
+            },
+            {
+              "id": "history-of-react",
+              "title": "History of React",
+              "duration": "15 min",
+              "completed": true,
+              "playing": false,
+              "type": "video",
+              "youtubeUrl": "https://www.youtube.com/watch?v=YE7VzlLtp-4"
+            },
+            {
+              "id": "setup-react",
+              "title": "Setup React",
+              "duration": "8 min",
+              "completed": false,
+              "playing": false,
+              "type": "document"
+            }
+          ]
+        },
+        {
+          "id": "module-2",
+          "title": "Module 2: Components and Props",
+          "lessons": [
+            {
+              "id": "creating-components",
+              "title": "Creating Components",
+              "duration": "18 min",
+              "completed": false,
+              "playing": false,
+              "type": "video"
+            },
+            {
+              "id": "props-basics",
+              "title": "Props Basics",
+              "duration": "14 min",
+              "completed": false,
+              "playing": false,
+              "type": "video"
+            }
+          ]
+        },
+        {
+          "id": "module-3",
+          "title": "Module 3: State and Lifecycle",
+          "lessons": [
+            {
+              "id": "state-management",
+              "title": "State Management",
+              "duration": "20 min",
+              "completed": false,
+              "playing": false,
+              "type": "video"
+            },
+            {
+              "id": "lifecycle-methods",
+              "title": "Lifecycle Methods",
+              "duration": "16 min",
+              "completed": false,
+              "playing": false,
+              "type": "video"
+            }
+          ]
+        }
+      ],
+      "course": {
+        "title": "React Fundamentals",
+        "subtitle": "Complete Course",
+        "logo": "/AI_Tutor_New_UI/Dashboard/logo.png",
+        "progress": 25
+      },
+      "currentLesson": {
+        "id": "what-is-react",
+        "title": "What is React?",
+        "module": "Module 1: Introduction to React",
+        "youtubeUrl": "https://www.youtube.com/watch?v=YE7VzlLtp-4",
+        "content": {
+          "introduction": "React is a popular JavaScript library for building user interfaces, particularly for web applications. This course covers the fundamentals of React, including components, state management, and more.",
+          "keyConcepts": [
+            {
+              "title": "Components",
+              "description": "Reusable building blocks for UI elements in React.",
+              "borderColor": "border-[#60A5FA]",
+              "bgColor": "bg-white",
+              "textColor": "text-black"
+            },
+            {
+              "title": "JSX",
+              "description": "A syntax extension for JavaScript used in React to describe UI.",
+              "borderColor": "border-[#C084FC]",
+              "bgColor": "bg-white",
+              "textColor": "text-black"
+            },
+            {
+              "title": "Virtual DOM",
+              "description": "A lightweight representation of the DOM for efficient updates.",
+              "borderColor": "border-[#22D3EE]",
+              "bgColor": "bg-[#1F2937]",
+              "textColor": "text-white",
+              "descriptionColor": "text-[#D1D5DB]"
+            }
+          ]
+        }
+      }
+    },
+    "2": {
+      "modules": [
+        {
+          "id": "module-1",
+          "title": "Module 1: Python Basics for AI",
+          "lessons": [
+            {
+              "id": "python-intro",
+              "title": "Introduction to Python",
+              "duration": "15 min",
+              "completed": false,
+              "playing": true,
+              "type": "video"
+            },
+            {
+              "id": "data-types",
+              "title": "Data Types and Variables",
+              "duration": "12 min",
+              "completed": true,
+              "playing": false,
+              "type": "video"
+            },
+            {
+              "id": "control-structures",
+              "title": "Control Structures",
+              "duration": "18 min",
+              "completed": false,
+              "playing": false,
+              "type": "document"
+            }
+          ]
+        }
+      ],
+      "course": {
+        "title": "Python For AI",
+        "subtitle": "Master Python for Artificial Intelligence",
+        "logo": "/AI_Tutor_New_UI/Dashboard/python_for_ai_logo.png",
+        "progress": 50
+      },
+      "currentLesson": {
+        "id": "python-intro",
+        "title": "Introduction to Python",
+        "module": "Module 1: Python Basics for AI",
+        "youtubeUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "content": {
+          "introduction": "Python is the go-to language for AI and machine learning. This course teaches Python fundamentals tailored for AI applications, from basic syntax to advanced libraries.",
+          "keyConcepts": [
+            {
+              "title": "Python Syntax",
+              "description": "Basic rules and structure of Python programming.",
+              "borderColor": "border-[#60A5FA]",
+              "bgColor": "bg-white",
+              "textColor": "text-black"
+            }
+          ]
+        }
+      }
+    },
+    "3": {
+      "modules": [
+        {
+          "id": "module-1",
+          "title": "Module 1: Ethics in AI",
+          "lessons": [
+            {
+              "id": "ai-ethics-intro",
+              "title": "Introduction to AI Ethics",
+              "duration": "14 min",
+              "completed": false,
+              "playing": true,
+              "type": "video"
+            }
+          ]
+        }
+      ],
+      "course": {
+        "title": "AI Ethics & Bias",
+        "subtitle": "Understanding Ethical AI Practices",
+        "logo": "/AI_Tutor_New_UI/Dashboard/data_analytics.png",
+        "progress": 100
+      },
+      "currentLesson": {
+        "id": "ai-ethics-intro",
+        "title": "Introduction to AI Ethics",
+        "module": "Module 1: Ethics in AI",
+        "youtubeUrl": "https://www.youtube.com/watch?v=oHg5SJYRHA0",
+        "content": {
+          "introduction": "AI Ethics and Bias explores the moral implications of artificial intelligence, focusing on fairness, accountability, and responsible development of AI systems.",
+          "keyConcepts": [
+            {
+              "title": "Ethical AI",
+              "description": "Developing AI systems that align with human values and principles."
+            }
+          ]
+        }
+      }
+    }
+  }
+}

@@ -17,6 +17,7 @@ import {
   Check,
   Circle,
   FileText,
+  CloudCog,
 } from "lucide-react";
 
 const getYouTubeVideoId = (url) => {
@@ -44,7 +45,7 @@ export default function Learning() {
 
   // When user requested single-word subtitles for the Reactjs paragraph,
   // we'll split into words and compute word-by-word cues when video duration is known.
-  const Reactjs_PARAGRAPH = `Reactjs is a high-level, object-oriented programming language that was originally developed by Sun Microsystems in 1995 and is now owned by Oracle Corporation. It is designed to be platform-independent, meaning that Reactjs code can run on any device that has a Reactjs Virtual Machine (JVM), making it highly versatile for developing cross-platform applications. Reactjs emphasizes object-oriented principles, such as encapsulation, inheritance and polymorphism, which allow developers to create modular, reusable and maintainable code. It has a strong memory management system, including automatic garbage collection, which reduces the likelihood of memory leaks.`;
+  // const Reactjs_PARAGRAPH = `Reactjs is a high-level, object-oriented programming language that was originally developed by Sun Microsystems in 1995 and is now owned by Oracle Corporation. It is designed to be platform-independent, meaning that Reactjs code can run on any device that has a Reactjs Virtual Machine (JVM), making it highly versatile for developing cross-platform applications. Reactjs emphasizes object-oriented principles, such as encapsulation, inheritance and polymorphism, which allow developers to create modular, reusable and maintainable code. It has a strong memory management system, including automatic garbage collection, which reduces the likelihood of memory leaks.`;
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(1);
@@ -58,6 +59,8 @@ export default function Learning() {
 
   const videoRef = useRef(null);
   const playerContainerRef = useRef(null);
+
+
 
   useEffect(() => {
     // Check if user has purchased this course
@@ -78,14 +81,15 @@ export default function Learning() {
 
         if (response.ok) {
           const courseData = await response.json();
+          console.log(courseData);
           setLearningData(courseData);
           // Load user's progress for this course
           const userProgress = user?.purchasedCourses?.find(
-            (course) => course.courseId === parseInt(courseId),
+            (course) => course.courseId === parseInt(courseId)
           )?.progress;
           if (userProgress) {
             setExpandedModule(
-              userProgress.currentLesson?.moduleTitle || "module-1",
+              userProgress.currentLesson?.moduleTitle || "module-1"
             );
             // Set current lesson based on progress
             const currentLesson = userProgress.currentLesson;
@@ -104,7 +108,7 @@ export default function Learning() {
           }
         } else {
           console.error(
-            "Failed to fetch course learning data, using local fallback",
+            "Failed to fetch course learning data, using local fallback"
           );
           // Fallback local data so the learning page works without backend
           const fallback = {
@@ -150,7 +154,7 @@ export default function Learning() {
 
           // If we have user progress, try to set the exact lesson from fallback
           const userProgress = user?.purchasedCourses?.find(
-            (course) => course.courseId === parseInt(courseId),
+            (course) => course.courseId === parseInt(courseId)
           )?.progress;
           if (userProgress && userProgress.currentLesson) {
             const lesson = fallback.modules
@@ -168,7 +172,7 @@ export default function Learning() {
       } catch (error) {
         console.error(
           "Error fetching learning data, using local fallback:",
-          error,
+          error
         );
         const fallback = {
           course: {
@@ -214,7 +218,7 @@ export default function Learning() {
 
         // If we have user progress, try to set the exact lesson from fallback
         const userProgress = user?.purchasedCourses?.find(
-          (course) => course.courseId === parseInt(courseId),
+          (course) => course.courseId === parseInt(courseId)
         )?.progress;
         if (userProgress && userProgress.currentLesson) {
           const lesson = fallback.modules
@@ -256,7 +260,7 @@ export default function Learning() {
             const timeLine = lines[0];
             const textLines = lines.slice(1).join(" ");
             const match = timeLine.match(
-              /(\d{2}:\d{2}:\d{2}\.\d{3})\s*-->\s*(\d{2}:\d{2}:\d{2}\.\d{3})/,
+              /(\d{2}:\d{2}:\d{2}\.\d{3})\s*-->\s*(\d{2}:\d{2}:\d{2}\.\d{3})/
             );
             if (!match) return null;
             const toSeconds = (s) => {
@@ -290,51 +294,96 @@ export default function Learning() {
   useEffect(() => {
     const v = videoRef.current;
     if (!v || !learningData?.currentLesson) return;
-    const src =
-      // (selectedCelebrity && celebrityVideoMap[selectedCelebrity]?.video) ||
-      learningData.currentLesson.videoUrl;
-    if (src) {
-      v.pause();
-      v.src = src;
-      v.load();
-      // don't auto-play forcibly; keep isPlaying state consistent
-      setIsPlaying(false);
-    }
+
+    const loadVideo = async () => {
+      if (selectedCelebrity) {
+        setIsAIVideoLoading(true);
+        try {
+          const payload = {
+            celebrity: selectedCelebrity.split(" ")[0].toLowerCase(),
+            course: learningData?.course?.title || learningData?.modules?.[0]?.title || "React JS",
+            topic: learningData.currentLesson.title || learningData?.modules?.[0]?.lessons?.[0]?.title || "Welcome to the lesson"
+          };
+          const data = await getAIVideo(payload);
+          if (data && data.videoUrl) {
+            setAiVideoUrl(data.videoUrl);
+            v.pause();
+            v.src = data.videoUrl;
+            v.load();
+            const p = v.play();
+            if (p && typeof p.then === "function") {
+              p.then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+            } else {
+              setIsPlaying(true);
+            }
+          }
+        } catch (error) {
+          console.error("Error generating AI video on lesson change:", error);
+          const src =
+            celebrityVideoMap[selectedCelebrity]?.video ||
+            learningData.currentLesson.videoUrl;
+          if (src) {
+            v.pause();
+            v.src = src;
+            v.load();
+            const p = v.play();
+            if (p && typeof p.then === "function") {
+              p.then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+            } else {
+              setIsPlaying(true);
+            }
+          }
+        } finally {
+          setIsAIVideoLoading(false);
+        }
+      } else {
+        setIsAIVideoLoading(false);
+        const src = learningData.currentLesson.videoUrl;
+        if (src) {
+          v.pause();
+          v.src = src;
+          v.load();
+          setIsPlaying(false); // Lessons don't autoplay by default unless celebrity is selected
+        }
+      }
+    };
+
+    loadVideo();
   }, [learningData?.currentLesson, selectedCelebrity]);
 
   // If selectedCelebrity is Salman Khan and the user wants the Reactjs paragraph
   // shown word-by-word, create per-word cues when video metadata (duration) is available.
-  useEffect(() => {
-    const v = videoRef.current;
-    if (!v) return;
+  // useEffect(() => {
+  //   const v = videoRef.current;
+  //   if (!v) return;
 
-    const createWordCues = () => {
-      if (selectedCelebrity !== "Salman Khan") return;
-      const words = Reactjs_PARAGRAPH.split(/\s+/).filter(Boolean);
-      if (
-        !words.length ||
-        !v.duration ||
-        !isFinite(v.duration) ||
-        v.duration <= 0
-      )
-        return;
-      const per = v.duration / words.length;
-      const cues = words.map((w, i) => ({
-        start: i * per,
-        end: (i + 1) * per,
-        text: w,
-      }));
-      setCaptions(cues);
-    };
+  //   const createWordCues = () => {
+  //     if (selectedCelebrity !== "Salman Khan") return;
+  //     const words = Reactjs_PARAGRAPH.split(/\s+/).filter(Boolean);
+  //     if (
+  //       !words.length ||
+  //       !v.duration ||
+  //       !isFinite(v.duration) ||
+  //       v.duration <= 0
+  //     )
+  //       return;
+  //     const per = v.duration / words.length;
+  //     const cues = words.map((w, i) => ({
+  //       start: i * per,
+  //       end: (i + 1) * per,
+  //       text: w,
+  //     }));
+  //     setCaptions(cues);
+  //   };
 
-    // If metadata already loaded, create cues immediately
-    if (v.duration && isFinite(v.duration) && v.duration > 0) {
-      createWordCues();
-    }
+  //   // If metadata already loaded, create cues immediately
+  //   if (v.duration && isFinite(v.duration) && v.duration > 0) {
+  //     createWordCues();
+  //   }
 
-    v.addEventListener("loadedmetadata", createWordCues);
-    return () => v.removeEventListener("loadedmetadata", createWordCues);
-  }, [selectedCelebrity, videoRef.current]);
+  //   v.addEventListener("loadedmetadata", createWordCues);
+  //   return () => v.removeEventListener("loadedmetadata", createWordCues);
+  // }, [selectedCelebrity, videoRef.current]);
 
   const { modules, currentLesson } = learningData || {};
 
@@ -345,16 +394,16 @@ export default function Learning() {
   // Flatten modules into a single lessons list and compute current index
   const allLessons = (modules || []).flatMap((module) => module.lessons || []);
   const currentLessonIndex = allLessons.findIndex(
-    (lesson) => lesson.id === currentLesson?.id,
+    (lesson) => lesson.id === currentLesson?.id
   );
 
   const completeLesson = async (lessonId) => {
     // Check if lesson is already completed
     const courseProgress = user?.purchasedCourses?.find(
-      (course) => course.courseId === parseInt(courseId),
+      (course) => course.courseId === parseInt(courseId)
     )?.progress;
     const isAlreadyCompleted = courseProgress?.completedLessons?.some(
-      (cl) => cl.lessonId === lessonId,
+      (cl) => cl.lessonId === lessonId
     );
 
     if (isAlreadyCompleted) {
@@ -405,7 +454,11 @@ export default function Learning() {
     setExpandedModule((prev) => (prev === id ? null : id));
   };
 
-  
+  const handleLessonClick = (lesson) => {
+    // update current lesson locally and let useEffect handle video loading
+    setLearningData((prev) => ({ ...prev, currentLesson: lesson }));
+  };
+
   const handlePrevious = () => {
     if (currentLessonIndex > 0) {
       const prevLesson = allLessons[currentLessonIndex - 1];
@@ -473,7 +526,7 @@ export default function Learning() {
       // update visible caption overlay
       if (captions.length > 0) {
         const cue = captions.find(
-          (c) => currentTime >= c.start && currentTime <= c.end,
+          (c) => currentTime >= c.start && currentTime <= c.end
         );
         setActiveCaption(cue ? cue.text : "");
       }
@@ -543,18 +596,26 @@ export default function Learning() {
             <div className="flex flex-col gap-2">
               {celebrities
                 .filter((c) =>
-                  c
-                    .toLowerCase()
-                    .includes(celebritySearch.trim().toLowerCase()),
+                  c.toLowerCase().includes(celebritySearch.trim().toLowerCase())
                 )
                 .map((c) => (
                   <button
                     key={c}
-                    onClick={() => handleCelebrityClick(c)}
-                    className={`w-full text-left px-4 py-3 rounded-lg border ${selectedCelebrity === c
-                      ? "bg-blue-600 text-white"
-                      : "bg-white text-gray-900"
-                      }`}                  >
+                    onClick={() => {
+                      if (selectedCelebrity === c) {
+                        // Toggle off if same celebrity clicked again
+                        setSelectedCelebrity(null);
+                        setAiVideoUrl(null);
+                      } else {
+                        setSelectedCelebrity(c);
+                      }
+                    }}
+                    className={`w-full text-left px-4 py-3 rounded-lg border ${
+                      selectedCelebrity === c
+                        ? "bg-blue-600 text-white"
+                        : "bg-white text-gray-900"
+                    }`}
+                  >
                     {c}
                   </button>
                 ))}
@@ -565,12 +626,12 @@ export default function Learning() {
             {(() => {
               const completedCount =
                 user?.purchasedCourses?.find(
-                  (course) => course.courseId === parseInt(courseId),
+                  (course) => course.courseId === parseInt(courseId)
                 )?.progress?.completedLessons?.length || 0;
               const totalCount = allLessons.length;
               const progressPercent = Math.min(
                 (completedCount / totalCount) * 100,
-                100,
+                100
               );
               console.log("Progress calculation:", {
                 completedCount,
@@ -599,7 +660,7 @@ export default function Learning() {
                 .map((module) => ({
                   ...module,
                   lessons: module.lessons.filter((lesson) =>
-                    lesson.title.toLowerCase().includes(q),
+                    lesson.title.toLowerCase().includes(q)
                   ),
                 }))
                 .filter((m) => m.lessons.length > 0);
@@ -658,11 +719,10 @@ export default function Learning() {
                           </div>
                           {user?.purchasedCourses
                             ?.find(
-                              (course) =>
-                                course.courseId === parseInt(courseId),
+                              (course) => course.courseId === parseInt(courseId)
                             )
                             ?.progress?.completedLessons?.some(
-                              (cl) => cl.lessonId === lesson.id,
+                              (cl) => cl.lessonId === lesson.id
                             ) ? (
                             <Check className="w-4 h-4 text-green-500" />
                           ) : (
@@ -685,14 +745,22 @@ export default function Learning() {
           {/* Video Player */}
           <div
             ref={playerContainerRef}
-            className="relative bg-black rounded-lg overflow-hidden"
+            className="relative bg-black rounded-lg overflow-hidden group"
             style={{ aspectRatio: "16/9" }}
           >
+            {isAIVideoLoading && (
+              <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm">
+                <div className="w-12 h-12 border-4 border-gray-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+                <p className="text-gray-400 text-sm mt-2">
+                  This may take a few moments
+                </p>
+              </div>
+            )}
             {currentLesson?.youtubeUrl ? (
               <iframe
                 key={currentLesson.id}
                 src={`https://www.youtube.com/embed/${getYouTubeVideoId(
-                  currentLesson.youtubeUrl,
+                  currentLesson.youtubeUrl
                 )}`}
                 className="w-full h-full"
                 frameBorder="0"
@@ -703,7 +771,14 @@ export default function Learning() {
             ) : (
               <video
                 ref={videoRef}
-                className={`w-full h-full object-contain bg-black ${isAIVideoLoading ? "hidden" : "block"}`}
+                src={
+                  aiVideoUrl ||
+                  (selectedCelebrity &&
+                    celebrityVideoMap[selectedCelebrity] &&
+                    celebrityVideoMap[selectedCelebrity].video) ||
+                  currentLesson?.videoUrl
+                }
+                className="w-full h-full object-contain bg-black"
                 onTimeUpdate={handleProgress}
                 onLoadedMetadata={handleProgress}
                 onEnded={() => {

@@ -1,0 +1,131 @@
+{
+  "statsCards": [
+    {
+      "icon": "/AI_Tutor_New_UI/Icons/play_button.svg",
+      "value": "4",
+      "label": "Courses in Progress",
+      "bgColor": "bg-purple-50",
+      "iconBg": "bg-purple-100"
+    },
+    {
+      "icon": "/AI_Tutor_New_UI/Icons/check_mark.svg",
+      "value": "12",
+      "label": "Completed",
+      "bgColor": "bg-green-50",
+      "iconBg": "bg-green-100"
+    },
+    {
+      "icon": "/AI_Tutor_New_UI/Icons/time_spent.svg",
+      "value": "87h",
+      "label": "Learning Hours",
+      "bgColor": "bg-blue-50",
+      "iconBg": "bg-blue-100"
+    }
+  ],
+  "courseCards": [
+    {
+      "id": 1,
+      "title": "React Fundamentals",
+      "status": "In Progress",
+      "progress": 75,
+      "lessons": "18 of 24 lessons",
+      "level": "Intermediate",
+      "levelColor": "bg-purple-100 text-purple-600",
+      "backgroundGradient": "from-slate-700 to-slate-900",
+      "backgroundImage": "/ui/course-bg-1.png",
+      "buttonStyle": "bg-gradient-to-r from-teal-500 to-teal-600 text-white",
+      "buttonText": "Continue Learning"
+    },
+    {
+      "id": 2,
+      "title": "Python For AI",
+      "status": "In Progress",
+      "progress": 50,
+      "lessons": "9 of 20 lessons",
+      "level": "Advanced",
+      "levelColor": "bg-red-100 text-red-600",
+      "backgroundGradient": "from-blue-400 to-cyan-500",
+      "backgroundImage": null,
+      "buttonStyle": "bg-gradient-to-r from-blue-500 to-cyan-500 text-white",
+      "buttonText": "Continue Learning"
+    },
+    {
+      "id": 3,
+      "title": "AI Ethics & Bias",
+      "status": "Completed",
+      "progress": 100,
+      "lessons": "6 of 6 lessons",
+      "level": "Beginner",
+      "levelColor": "bg-green-100 text-green-600",
+      "backgroundGradient": "from-green-400 to-emerald-500",
+      "backgroundImage": null,
+      "buttonStyle": "bg-gray-100 text-gray-600",
+      "buttonText": "Review Course"
+    }
+  ],
+  "popularCourses": [
+    {
+      "id": 1,
+      "title": "React Fundamentals",
+      "category": "Web Development",
+      "categoryColor": "bg-purple-100 text-purple-600",
+      "lessons": "24 lessons",
+      "lessonsCount": 24,
+      "level": "Intermediate",
+      "price": "₹1999",
+      "priceValue": 1999,
+      "currency": "INR",
+      "rating": 4.8,
+      "students": "2.5k students",
+      "studentsCount": 2500,
+      "image": "AI_Tutor_New_UI/Dashboard/python_for_ai_logo.png",
+      "isBookmarked": true,
+      "modules": [],
+      "subtopics": [],
+      "createdAt": "2026-01-27T00:00:00.000Z",
+      "updatedAt": "2026-01-27T00:00:00.000Z"
+    },
+    {
+      "id": 2,
+      "title": "Python For AI",
+      "category": "AI & ML",
+      "categoryColor": "bg-cyan-100 text-cyan-600",
+      "lessons": "20 lessons",
+      "lessonsCount": 20,
+      "level": "Advanced",
+      "price": "₹1499",
+      "priceValue": 1499,
+      "currency": "INR",
+      "rating": 4.9,
+      "students": "2.0k students",
+      "studentsCount": 2000,
+      "image": "AI_Tutor_New_UI/Dashboard/python_for_ai_logo.png",
+      "isBookmarked": false,
+      "modules": [],
+      "subtopics": [],
+      "createdAt": "2026-01-27T00:00:00.000Z",
+      "updatedAt": "2026-01-27T00:00:00.000Z"
+    },
+    {
+      "id": 3,
+      "title": "AI Ethics & Bias",
+      "category": "AI Ethics",
+      "categoryColor": "bg-green-100 text-green-600",
+      "lessons": "6 lessons",
+      "lessonsCount": 6,
+      "level": "Beginner",
+      "price": "₹0",
+      "priceValue": 0,
+      "currency": "INR",
+      "rating": 4.7,
+      "students": "1.5k students",
+      "studentsCount": 1500,
+      "image": "AI_Tutor_New_UI/Dashboard/data_analytics.png",
+      "isBookmarked": false,
+      "modules": [],
+      "subtopics": [],
+      "createdAt": "2026-01-27T00:00:00.000Z",
+      "updatedAt": "2026-01-27T00:00:00.000Z"
+    }
+  ]
+}

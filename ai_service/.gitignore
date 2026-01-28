@@ -1,0 +1,65 @@
+# Python
+*/__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+
+# Virtual Environment
+venv/
+ENV/
+.venv/
+
+# Environment Variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# AI Service Specific
+outputs/
+temp/
+backend/temp/
+backend/outputs/
+
+
+# Wav2Lip specific (if not already covered by sub-gitignore)
+Wav2Lip/checkpoints/
+
+# Media and Models
+
+# *.pyc
+*.pth
+*.pkl
+*.h5
+*.pb
+*.ckpt
+*.mp4
+*.wav
+*.mp3
+*.jpg
+*.png
+*.gif
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
