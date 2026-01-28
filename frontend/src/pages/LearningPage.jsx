@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import Header from "../components/Header";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { getAIVideo } from "../service/aiService";
+
 
 import {
   ChevronLeft,
@@ -40,13 +40,6 @@ export default function Learning() {
   const [activeCaption, setActiveCaption] = useState("");
   const celebrities = ["Salman Khan", "Modi ji", "SRK"];
 
-  // map celebrities to local videos and vtt files
-  const celebrityVideoMap = {
-    "Salman Khan": { video: "/vdo1.mp4", vtt: "/vdo1.vtt" },
-    "Modi ji": { video: "/vdo2.mp4", vtt: "/vdo2.vtt" },
-    SRK: { video: "/vdo1.mp4", vtt: "/vdo1.vtt" },
-  };
-
   const [selectedCelebrity, setSelectedCelebrity] = useState(null);
 
   // When user requested single-word subtitles for the Reactjs paragraph,
@@ -61,7 +54,6 @@ export default function Learning() {
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [isNavigating, setIsNavigating] = useState(false);
-  const [aiVideoUrl, setAiVideoUrl] = useState(null);
   const [isAIVideoLoading, setIsAIVideoLoading] = useState(false);
 
   const videoRef = useRef(null);
@@ -129,7 +121,7 @@ export default function Learning() {
                     title: "Introduction to Reactjs",
                     type: "video",
                     duration: "0:10",
-                    videoUrl: "/vdo1.mp4",
+                    videoUrl: "/videos/salman.mp4",
                     content: {
                       introduction:
                         "Reactjs is a high-level, object-oriented programming language that was originally developed by Sun Microsystems in 1995 and is now owned by Oracle Corporation. It is designed to be platform-independent, meaning that Reactjs code can run on any device that has a Reactjs Virtual Machine (JVM), making it highly versatile for developing cross-platform applications. Reactjs emphasizes object-oriented principles, such as encapsulation, inheritance and polymorphism, which allow developers to create modular, reusable and maintainable code. It has a strong memory management system, including automatic garbage collection, which reduces the likelihood of memory leaks.",
@@ -141,7 +133,7 @@ export default function Learning() {
                     title: "Reactjs: Advanced Concepts",
                     type: "video",
                     duration: "0:12",
-                    videoUrl: "/vdo2.mp4",
+                    videoUrl: "/videos/salman.mp4",
                     content: {
                       introduction:
                         "Continuation video for Reactjs advanced concepts.",
@@ -246,9 +238,6 @@ export default function Learning() {
     const loadCaptions = async () => {
       try {
         const vttPath =
-          (selectedCelebrity &&
-            celebrityVideoMap[selectedCelebrity] &&
-            celebrityVideoMap[selectedCelebrity].vtt) ||
           "/vdo_subtitles.vtt";
         const res = await fetch(vttPath);
         if (!res.ok) {
@@ -302,7 +291,7 @@ export default function Learning() {
     const v = videoRef.current;
     if (!v || !learningData?.currentLesson) return;
     const src =
-      (selectedCelebrity && celebrityVideoMap[selectedCelebrity]?.video) ||
+      // (selectedCelebrity && celebrityVideoMap[selectedCelebrity]?.video) ||
       learningData.currentLesson.videoUrl;
     if (src) {
       v.pause();
@@ -416,21 +405,7 @@ export default function Learning() {
     setExpandedModule((prev) => (prev === id ? null : id));
   };
 
-  const handleLessonClick = (lesson) => {
-    // update current lesson locally and load associated video
-    setLearningData((prev) => ({ ...prev, currentLesson: lesson }));
-    if (videoRef.current && lesson && lesson.videoUrl) {
-      videoRef.current.pause();
-      videoRef.current.src =
-        (celebrityVideoMap[selectedCelebrity] &&
-          celebrityVideoMap[selectedCelebrity].video) ||
-        lesson.videoUrl;
-      videoRef.current.load();
-      const p = videoRef.current.play();
-      if (p && typeof p.then === "function") p.catch(() => {});
-    }
-  };
-
+  
   const handlePrevious = () => {
     if (currentLessonIndex > 0) {
       const prevLesson = allLessons[currentLessonIndex - 1];
@@ -575,24 +550,11 @@ export default function Learning() {
                 .map((c) => (
                   <button
                     key={c}
-                    onClick={() => {
-                      setSelectedCelebrity(c);
-                      const map = celebrityVideoMap[c];
-                      if (map && videoRef.current) {
-                        videoRef.current.pause();
-                        videoRef.current.src = map.video;
-                        videoRef.current.load();
-                        const p = videoRef.current.play();
-                        if (p && typeof p.then === "function")
-                          p.catch(() => {});
-                      }
-                    }}
-                    className={`w-full text-left px-4 py-3 rounded-lg border ${
-                      selectedCelebrity === c
-                        ? "bg-blue-600 text-white"
-                        : "bg-white text-gray-900"
-                    }`}
-                  >
+                    onClick={() => handleCelebrityClick(c)}
+                    className={`w-full text-left px-4 py-3 rounded-lg border ${selectedCelebrity === c
+                      ? "bg-blue-600 text-white"
+                      : "bg-white text-gray-900"
+                      }`}                  >
                     {c}
                   </button>
                 ))}
@@ -665,9 +627,8 @@ export default function Learning() {
                       {module.title}
                     </span>
                     <ChevronDown
-                      className={`w-4 h-4 transition-transform ${
-                        expandedModule === module.id ? "rotate-180" : ""
-                      }`}
+                      className={`w-4 h-4 transition-transform ${expandedModule === module.id ? "rotate-180" : ""
+                        }`}
                     />
                   </button>
 
@@ -677,11 +638,10 @@ export default function Learning() {
                         <button
                           key={lesson.id}
                           onClick={() => handleLessonClick(lesson)}
-                          className={`w-full flex items-center gap-3 p-3 rounded-lg text-left hover:bg-gray-50 ${
-                            currentLesson?.id === lesson.id
-                              ? "bg-blue-50 border border-blue-200"
-                              : ""
-                          }`}
+                          className={`w-full flex items-center gap-3 p-3 rounded-lg text-left hover:bg-grey-50 ${currentLesson?.id === lesson.id
+                            ? "bg-blue-600 text-white-20"
+                            : "bg-white text-gray-900"
+                            }`}
                         >
                           {lesson.type === "video" ? (
                             <Play className="w-4 h-4 text-gray-400" />
@@ -692,7 +652,7 @@ export default function Learning() {
                             <p className="text-sm font-medium text-gray-900">
                               {lesson.title}
                             </p>
-                            <p className="text-xs text-gray-500">
+                            <p className="text-xs text-white-500">
                               {lesson.duration}
                             </p>
                           </div>
@@ -743,12 +703,7 @@ export default function Learning() {
             ) : (
               <video
                 ref={videoRef}
-                src={
-                  (celebrityVideoMap[selectedCelebrity] &&
-                    celebrityVideoMap[selectedCelebrity].video) ||
-                  currentLesson?.videoUrl
-                }
-                className="w-full h-full object-contain bg-black"
+                className={`w-full h-full object-contain bg-black ${isAIVideoLoading ? "hidden" : "block"}`}
                 onTimeUpdate={handleProgress}
                 onLoadedMetadata={handleProgress}
                 onEnded={() => {
@@ -760,6 +715,13 @@ export default function Learning() {
               />
             )}
 
+            {isAIVideoLoading && (
+              <div className="absolute inset-0 bg-black/70 flex items-center justify-center z-20">
+                <p className="text-white text-lg animate-pulse">
+                  Loading {selectedCelebrity} video...
+                </p>
+              </div>
+            )}
             {/* Caption overlay (custom) */}
             {activeCaption && (
               <div className="absolute left-1/2 transform -translate-x-1/2 bottom-16 px-4 py-2 bg-black/70 text-white rounded-md max-w-3xl text-center">
@@ -864,6 +826,6 @@ export default function Learning() {
           </div>
         </main>
       </div>
-    </div>
+    </div >
   );
 }

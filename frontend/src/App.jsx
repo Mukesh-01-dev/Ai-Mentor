@@ -14,15 +14,14 @@ import WatchedVideos from "./pages/WatchedVideos";
 import CoursePreview from "./pages/CoursePreview";
 import LearningPage from "./pages/LearningPage";
 import AdminPage from "./pages/AdminPage";
+import { ThemeProvider } from "./context/ThemeContext";
 import "./App.css";
 
-// Redirects from the root path based on authentication status.
 const RootRedirect = () => {
   const { isAuthenticated } = useAuth();
   return <Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />;
 };
 
-// Prevents authenticated users from accessing public-only pages like login/signup.
 const PublicRoutes = () => {
   const { isAuthenticated } = useAuth();
   return isAuthenticated ? <Navigate to="/dashboard" replace /> : <Outlet />;
@@ -30,35 +29,35 @@ const PublicRoutes = () => {
 
 const App = () => {
   return (
-    <Routes>
-      {/* Redirect from root */}
-      <Route path="/" element={<RootRedirect />} />
+    <ThemeProvider>
+      {/* Wrap whole app in ThemeProvider */}
+      <div className="min-h-screen bg-white dark:bg-slate-900 text-black dark:text-white">
+        <Routes>
+          <Route path="/" element={<RootRedirect />} />
 
-      {/* Public routes that logged-in users should not see */}
-      <Route element={<PublicRoutes />}>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignUpPage />} />
-      </Route>
+          <Route element={<PublicRoutes />}>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/signup" element={<SignUpPage />} />
+          </Route>
 
-      {/* Protected Routes */}
-      <Route element={<ProtectedRoute />}>
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/analytics" element={<Analytics />} />
-        <Route path="/courses" element={<CoursesPage />} />
-        <Route path="/discussions" element={<DiscussionsPage />} />
-        <Route path="/settings" element={<Settings />} />
-        <Route path="/watchedvideos" element={<WatchedVideos />} />
-        <Route path="/learning/:id" element={<LearningPage />} />
-      </Route>
+          <Route element={<ProtectedRoute />}>
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/analytics" element={<Analytics />} />
+            <Route path="/courses" element={<CoursesPage />} />
+            <Route path="/discussions" element={<DiscussionsPage />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/watchedvideos" element={<WatchedVideos />} />
+            <Route path="/learning/:id" element={<LearningPage />} />
+          </Route>
 
-      {/* Admin Routes */}
-      <Route element={<AdminRoute />}>
-        <Route path="/admin" element={<AdminPage />} />
-      </Route>
+          <Route element={<AdminRoute />}>
+            <Route path="/admin" element={<AdminPage />} />
+          </Route>
 
-      {/* Other public routes */}
-      <Route path="/course-preview/:courseId" element={<CoursePreview />} />
-    </Routes>
+          <Route path="/course-preview/:courseId" element={<CoursePreview />} />
+        </Routes>
+      </div>
+    </ThemeProvider>
   );
 };
 

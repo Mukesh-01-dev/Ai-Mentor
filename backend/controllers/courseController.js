@@ -3,6 +3,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import Course from "../models/Course.js"; // kept for future use
 
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 

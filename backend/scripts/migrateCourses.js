@@ -16,16 +16,12 @@ const connectDB = async () => {
 };
 
 const migrateCourses = async () => {
-  const coursesPath = path.join(
-    __dirname,
-    "../../frontend/public/data/courses.json"
-  );
+ 
   const previewsPath = path.join(
     __dirname,
     "../../frontend/public/data/coursePreviews.json"
   );
 
-  const coursesData = JSON.parse(fs.readFileSync(coursesPath, "utf8"));
   const previewsData = JSON.parse(fs.readFileSync(previewsPath, "utf8"));
 
   await Course.deleteMany({});
