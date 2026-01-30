@@ -7,7 +7,7 @@ def generate_text(prompt: str) -> str:
     """
     Call Gemini API to generate text.
     """
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent"
+    url = f"https://generativelanguage.googleapis.com/v1/models/{GEMINI_MODEL}:generateContent"
 
     headers = {
         "Content-Type": "application/json",

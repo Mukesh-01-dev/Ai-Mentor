@@ -25,7 +25,8 @@ def generate_video(face_path: str, audio_path: str, output_path: str):
         "--face", face_path,
         "--audio", audio_path,
         "--outfile", output_path,
-        "--static", "True"   # ✅ FIXED (arg value added)
+        "--static", "1",
+         "--fps", "25",   # ✅ FIXED (arg value added)
     ]
 
     print("\n🔥 WAV2LIP COMMAND:")
