@@ -5,5 +5,5 @@ tqdm
 numba
 scipy
 soundfile
-torch>=1.12.1+cpu
-torchvision>=0.13.1+cpu
+torch>=1.12.1
+torchvision>=0.13.1
