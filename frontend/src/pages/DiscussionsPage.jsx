@@ -314,13 +314,13 @@ const DiscussionsPage = () => {
                     <div className="flex items-start space-x-3 sm:space-x-4 mb-4">
                       <img
                         src="/ui/avatar-4.png"
-                        alt={discussion.user.name}
+                        alt={discussion.user?.name}
                         className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex-shrink-0"
                       />
                       <div className="flex-1 min-w-0">
                         <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-2 mb-1">
                           <span className="font-medium text-gray-900">
-                            {discussion.user.name}
+                            {discussion.user?.name}
                           </span>
                           <div className="flex items-center space-x-2">
                             <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
@@ -387,13 +387,13 @@ const DiscussionsPage = () => {
                           <div className="flex items-start space-x-3">
                             <img
                               src="/ui/avatar-4.png"
-                              alt={reply.user.name}
+                              alt={reply.user?.name}
                               className="w-6 h-6 sm:w-8 sm:h-8 rounded-full flex-shrink-0"
                             />
                             <div className="flex-1 min-w-0">
                               <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-2 mb-1">
                                 <span className="font-medium text-gray-900">
-                                  {reply.user.name}
+                                  {reply.user?.name}
                                 </span>
                                 <div className="flex items-center space-x-2">
                                   <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
