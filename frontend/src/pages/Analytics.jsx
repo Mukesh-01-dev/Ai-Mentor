@@ -230,7 +230,7 @@ const Analytics = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-[#4B5563] text-sm mb-1">Courses</div>
-                  <div className="text-[#EA580C] text-2xl font-bold">{analyticsData?.totalCourses || 0}</div>
+                  <div className="text-[#EA580C] text-2xl font-bold">{user?.purchasedCourses.length || 0}</div>
                 </div>
                 <div className="w-12 h-12 bg-[#FFEDD5] rounded-lg flex items-center justify-center">
                   <svg className="w-[14px] h-4" viewBox="0 0 14 16" fill="none">
