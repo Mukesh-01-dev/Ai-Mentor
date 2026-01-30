@@ -11,6 +11,7 @@ import {
   addSubtopics,
   addLessons,
   addModules,
+  updateCourse,
 } from "../controllers/courseController.js";
 import { protect } from "../middleware/authMiddleware.js";
 
@@ -36,6 +37,7 @@ router.route("/:id").get(getCourseById);
 // ADMIN (UNCHANGED)
 router.route("/").post(protect, addCourse);
 router.route("/:id").delete(protect, deleteCourse);
+router.route("/:id").put(protect,updateCourse);
 router.route("/:courseId/modules").post(protect, addModules);
 router.route("/:courseId/modules/:moduleId/lessons").post(protect, addLessons);
 router

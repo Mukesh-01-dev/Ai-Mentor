@@ -2,36 +2,17 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import Course from "../models/Course.js"; // kept for future use
-
+import User from "../models/User.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 /* =========================
-   GET ALL COURSES (JSON)
+   GET ALL COURSES 
 ========================= */
 const getCourses = async (req, res) => {
   try {
-    const coursesPath = path.join(
-      __dirname,
-      "../../frontend/public/data/courses.json"
-    );
-
-    const rawData = fs.readFileSync(coursesPath, "utf-8");
-    const jsonData = JSON.parse(rawData);
-
-    const courses = (jsonData.popularCourses || []).map((course) => ({
-      id: course.id,
-      title: course.title,
-      category: course.category,
-      level: course.level,
-      lessons: course.lessons,
-      price: course.price,
-      rating: course.rating,
-      students: course.students,
-      image: course.image,
-    }));
-
+    const courses = await Course.find({})
     res.json(courses);
   } catch (error) {
     console.error("GET COURSES JSON ERROR:", error);
@@ -40,22 +21,12 @@ const getCourses = async (req, res) => {
 };
 
 /* =========================
-   GET COURSE BY ID (JSON)
+   GET COURSE BY ID 
 ========================= */
 const getCourseById = async (req, res) => {
   try {
-    const coursesPath = path.join(
-      __dirname,
-      "../../frontend/public/data/courses.json"
-    );
 
-    const rawData = fs.readFileSync(coursesPath, "utf-8");
-    const jsonData = JSON.parse(rawData);
-
-    const course = jsonData.popularCourses.find(
-      (c) => c.id === Number(req.params.id)
-    );
-
+    const course = await Course.findOne({ id: Number(req.params.id) });
     if (!course) {
       return res.status(404).json({ message: "Course not found" });
     }
@@ -72,31 +43,60 @@ const getCourseById = async (req, res) => {
 ========================= */
 const getMyCourses = async (req, res) => {
   try {
-    if (!req.user) {
-      return res.json([]);
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(401).json({ message: "Unauthorized" });
     }
 
-    const coursesPath = path.join(
-      __dirname,
-      "../../frontend/public/data/courses.json"
-    );
+    const courseIds = user.purchasedCourses.map(c => Number(c.courseId));
 
-    const rawData = fs.readFileSync(coursesPath, "utf-8");
-    const jsonData = JSON.parse(rawData);
+    // one DB query only
+    const courses = await Course.find({ id: { $in: courseIds } });
 
-    const purchasedIds =
-      req.user.purchasedCourses?.map((c) => Number(c.courseId)) || [];
+    const result = user.purchasedCourses.map(c => {
+      const course = courses.find(co => co.id === Number(c.courseId));
+      if (!course) return null;
+      let totalLessons = 0;
+      if (course?.modules?.length) {
+        course.modules.forEach(m => {
+          if (m.lessons?.length) {
+            totalLessons += m.lessons.length;
+          }
+        });
+      }
 
-    const myCourses = (jsonData.popularCourses || []).filter((course) =>
-      purchasedIds.includes(course.id)
-    );
+      const completedLessons =
+        c.progress?.completedLessons?.length || 0;
 
-    res.json(myCourses);
-  } catch (error) {
-    console.error("MY COURSES ERROR:", error);
-    res.json([]);
+      const progress =
+        totalLessons > 0
+          ? Math.round((completedLessons / totalLessons) * 100)
+          : 0;
+
+      return {
+        courseId: c.courseId,
+        title: c.courseTitle,
+        image:  course?.image,
+        progress,
+        lessons: course?.lessons,
+        level: course?.level,
+        price: course?.price ,
+        students: course?.students,
+        rating: course?.rating,
+      };
+    }).filter(Boolean);
+
+    res.json(result);
+  } catch (err) {
+    console.error("GET MY COURSES ERROR:", err);
+    res.status(500).json({ message: "Server error" });
   }
 };
+
+//@desc Purchase a Course 
+//@Route POST/api/courses/purchase
+//@access Private 
+
 
 /* =========================
    Learning Data
@@ -143,17 +143,54 @@ const getStatsCards = async (req, res) => {
 };
 
 const addCourse = async (req, res) => {
-  res.status(501).json({ message: "addCourse not implemented" });
+  try {
+    const { id, title, category, level, rating, students, lessons, price, image } = req.body;
+
+    if (!id || !title || !category || !level || !price || !image || !rating || !students || !lessons) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+    const course = await Course.create({ id, title, category, level, rating, students, lessons, price, image });
+    res.status(201).json(course);
+  } catch (error) {
+    console.log("Courses not aded", error);
+    res.status(501).json({ message: "addCourse not added" });
+  }
+};
+
+const updateCourse = async (req, res) => {
+  try {
+    const updated = await Course.findByIdOneUpdate(
+      req.params.id,
+      req.body,
+      { new: true }
+    )
+    if (!updated)
+      return res.status(404).json({ msg: "Course not found" })
+    res.json(updated);
+  } catch (error) {
+    console.error("UPDATE COURSE ERROR:", err);
+    res.status(500).json({ message: "Failed to update course" });
+  }
 };
 
 const deleteCourse = async (req, res) => {
-  res.status(501).json({ message: "deleteCourse not implemented" });
+  try {
+    const deletedCourse = await Course.findByIdAndDelete(req.params.id);
+
+    if (!deletedCourse) {
+      return res.status(404).json({ message: "Course not found" });
+    }
+
+    res.json({ message: "Course deleted" });
+  } catch (err) {
+    res.status(500).json({ message: "Delete failed" });
+  }
 };
 
 const updateLessonVideo = async (req, res) => {
-  res.status(501).json({ message: "updateLessonVideo not implemented" });
-};
+  res.status(500).json({ message: "Failed to update course" });
 
+};
 const addSubtopics = async (req, res) => {
   res.status(501).json({ message: "addSubtopics not implemented" });
 };
@@ -181,4 +218,5 @@ export {
   addSubtopics,
   addLessons,
   addModules,
+  updateCourse,
 };
