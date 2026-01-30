@@ -16,7 +16,7 @@ const AdminPage = () => {
     rating: 4.5,
     students: '0 students',
     lessons: '0 lessons',
-    price: '₹0',
+    price: '',
     image: '',
     categoryColor: 'bg-blue-100 text-blue-600',
   });
@@ -56,17 +56,17 @@ const AdminPage = () => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ ...newCourse, id: parseInt(newCourse.id), rating: parseFloat(newCourse.rating) }),
+        // body: JSON.stringify({ ...newCourse, id: parseInt(newCourse.id), rating: parseFloat(newCourse.rating) }),
+        body: JSON.stringify(newCourse),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Failed to add course');
       }
-
-      await fetchCourses(); // Refresh list
       setNewCourse({ id: '', title: '', category: '', level: '', rating: 4.5, students: '0 students', lessons: '0 lessons', price: '₹0', image: '', categoryColor: 'bg-blue-100 text-blue-600' });
       alert('Course added successfully!');
+      await fetchCourses(); 
     } catch (error) {
       console.error('Error adding course:', error);
       alert(`Error: ${error.message}`);
@@ -92,14 +92,14 @@ const AdminPage = () => {
     if (!window.confirm('Are you sure you want to delete this course?')) return;
     const token = localStorage.getItem('token');
     try {
-      const response = await fetch(`/api/courses/${courseId}`, {
+      const res = await fetch(`/api/courses/${courseId}`, {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
-      if (!response.ok) {
+      if (!res.ok) {
         throw new Error('Failed to delete course');
       }
       await fetchCourses(); // Refresh list
@@ -109,6 +109,27 @@ const AdminPage = () => {
       alert(`Error: ${error.message}`);
     }
   };
+
+  const handleUpdateCourse = async (courseId) => {
+    const token = localStorage.getItem("token");
+    try {
+      const res = await fetch(`/api/courses/${courseId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(courseId)
+      })
+      if (!res.ok) {
+        return new error("Update failed")
+      }
+      fetchCourses();
+    } catch (error) {
+      console.error(err);
+      alert("Error updating course");
+    }
+  }
 
   const handleUpdateVideo = async () => {
     if (!selectedLesson || !videoUrl) {
@@ -200,10 +221,10 @@ const AdminPage = () => {
       if (!response.ok) {
         throw new Error('Failed to add lessons');
       }
-                            alert('Lessons added successfully!');
-                            setNewLessons([{ id: '', title: '', duration: '', completed: false, playing: false, type: 'video' }]);
-                            setSelectedModule('');
-                            await handleManageCourse(selectedCourse.id); // Refresh course data to include new lessons
+      alert('Lessons added successfully!');
+      setNewLessons([{ id: '', title: '', duration: '', completed: false, playing: false, type: 'video' }]);
+      setSelectedModule('');
+      await handleManageCourse(selectedCourse.id); // Refresh course data to include new lessons
     } catch (error) {
       console.error('Error adding lessons:', error);
       alert(`Error: ${error.message}`);
@@ -250,13 +271,14 @@ const AdminPage = () => {
                   <div key={course.id} className="flex items-center justify-between p-4 border rounded-lg">
                     <div>
                       <h3 className="font-bold">{course.title} (ID: {course.id})</h3>
-                      <p className="text-sm text-gray-600">{course.category}</p>
+                      <p className="text-sm text-gray-600">{course.category} | {course.level} | {course.lessons} | ₹
+                      {course.price}</p>
                     </div>
                     <div className="flex gap-2">
                       <button onClick={() => handleManageCourse(course.id)} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
                         Manage
                       </button>
-                      <button onClick={() => handleDeleteCourse(course.id)} className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
+                      <button onClick={() => handleDeleteCourse(course._id)} className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
                         Delete
                       </button>
                     </div>

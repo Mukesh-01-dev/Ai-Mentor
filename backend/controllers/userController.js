@@ -113,34 +113,41 @@ const getUserProfile = async (req, res) => {
 // @desc Purchase course
 const purchaseCourse = async (req, res) => {
   try {
-    if (!req.user) return res.status(401).json({ message: "Not authorized" });
+    const { courseId, courseTitle, courseImage } = req.body;
 
-    const { courseId, courseTitle } = req.body;
     const user = await User.findById(req.user._id);
-
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    const alreadyPurchased = user.purchasedCourses.some(
-      (c) => c.courseId == courseId
-    );
+    // Prevent duplicate purchase
+    const alreadyPurchased = user.purchasedCourses.some((c) => Number(c.courseId) === courseId);
 
     if (alreadyPurchased) {
       return res.status(400).json({ message: "Course already purchased" });
     }
 
+    // Add course
     user.purchasedCourses.push({
-      courseId: Number(courseId),
+      courseId,
       courseTitle,
-      purchaseDate: new Date(),
-      progress: { completedLessons: [], currentLesson: null },
+      courseImage,
+      progress: {
+        completedLessons: [],
+        currentLesson: [],
+      },
     });
+
+    // Update analytics
+    user.analytics.totalCourses = user.purchasedCourses.length;
 
     await user.save();
 
-    res.json({ message: "Course purchased successfully" });
+    res.status(201).json({
+      message: "Course purchased successfully",
+      purchasedCourses: user.purchasedCourses,
+    });
   } catch (error) {
-    console.error("PURCHASE ERROR:", error);
-    res.status(500).json({ message: "Server error" });
+    console.error("PURCHASE COURSE ERROR:", error);
+    res.status(500).json({ message: "Server Error" });
   }
 };
 
