@@ -1,11 +1,68 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
 @import "tailwindcss";
-body {
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
-    "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
-    sans-serif;
+
+/* =========================
+   FORCE DARK MODE (SAFE)
+========================= */
+
+body.dark {
+  background-color: #0f172a !important;
+  color: #dbe1eb !important;
 }
 
+/* Force dark ONLY for layout elements */
+body.dark main,
+body.dark section,
+body.dark div,
+body.dark header,
+body.dark footer,
+body.dark aside,
+body.dark nav,
+body.dark article {
+  background-color: #020617 !important;
+  color: #ecf0f7 !important;
+}
+
+/* =========================
+   BUTTONS – DO NOT TOUCH
+========================= */
+
+/* body.dark button,
+body.dark .btn,
+body.dark [role="button"] {
+  color: inherit !important;
+} */
+
+/* Keep colored buttons visible */
+body.dark .btn-primary,
+body.dark .btn-success,
+body.dark .btn-danger,
+body.dark .btn-warning,
+body.dark .btn-info,
+body.dark .btn-gradient {
+  filter: brightness(1.05);
+}
+
+/* =========================
+   INPUTS
+========================= */
+
+body.dark input,
+body.dark textarea,
+body.dark select {
+  background-color: #020617 !important;
+  color: #ecf0f7 !important;
+  border-color: #334155 !important;
+}
+
+/* Muted text */
+body.dark .text-muted {
+  color: #ecf0f7 !important;
+}
+
+
+/* =========================
+   UTILITIES / EXTRA
+========================= */
 .line-clamp-2 {
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -13,44 +70,12 @@ body {
   overflow: hidden;
 }
 
-/* Custom scrollbar for better appearance */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
-}
-
-/* Responsive adjustments */
-@media (max-width: 1024px) {
-  .w-70 {
-    width: 16rem;
-  }
-}
-
-@media (max-width: 768px) {
-  .sidebar-hidden {
-    transform: translateX(-100%);
-  }
-}
-
 .text-gradient {
   background: linear-gradient(90deg, #4facfe, #7846aa);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
+
 .btn-gradient {
   background: linear-gradient(135deg, #2186df, #02ffbb);
   border: none;
@@ -64,117 +89,48 @@ body {
   transform: translateY(-1px);
   box-shadow: 0 6px 18px rgba(79, 172, 254, 0.4);
 }
+
 .password-input {
-  font-size: 2rem; /* bigger bullets */
-  letter-spacing: 0.35rem; /* space between bullets */
-  font-weight: 900; /* bolder bullets */
+  font-size: 2rem;
+  letter-spacing: 0.35rem;
+  font-weight: 900;
 }
 
 /* =========================
-   GLOBAL DARK THEME
+   SCROLLBAR
 ========================= */
-
-.dark body {
-  background-color: #0f172a;
-  color: #e5e7eb;
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
 }
 
-/* Card (Auth Card) */
-.dark .card {
-  background-color: #020617;
-  color: #e5e7eb;
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
 }
 
-/* Text */
-.dark .text-muted {
-  color: #94a3b8 !important;
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
 }
 
-/* Inputs */
-.dark .form-control {
-  background-color: #020617;
-  color: #e5e7eb;
-  border-color: #334155;
+body.dark ::-webkit-scrollbar-track {
+  background: #020617;
 }
 
-.dark .form-control::placeholder {
-  color: #94a3b8;
-}
-
-/* Focus */
-.dark .form-control:focus {
-  background-color: #020617;
-  color: #e5e7eb;
-  border-color: #6366f1;
-  box-shadow: none;
-}
-
-/* Buttons (optional polish) */
-.dark .btn {
-  color: #e5e7eb;
-}
-
-/* Auth layout background */
-.dark .container-fluid {
-  background-color: #020617;
+body.dark ::-webkit-scrollbar-thumb {
+  background: #475569;
 }
 
 /* =========================
-   DASHBOARD DARK MODE
+   RESPONSIVE
 ========================= */
-
-.dark .navbar {
-  background-color: #020617 !important;
-  color: #e5e7eb;
+@media (max-width: 1024px) {
+  .w-70 {
+    width: 16rem;
+  }
 }
 
-.dark .navbar .nav-link,
-.dark .navbar-brand {
-  color: #e5e7eb !important;
-}
-
-.dark .card {
-  background-color: #020617;
-  color: #e5e7eb;
-}
-
-.dark .table {
-  color: #e5e7eb;
-}
-
-.dark .table thead {
-  background-color: #020617;
-}
-
-.dark .table tbody tr {
-  border-color: #334155;
-}
-
-.dark .list-group-item {
-  background-color: #020617;
-  color: #e5e7eb;
-  border-color: #334155;
-}
-
-.dark .dropdown-menu {
-  background-color: #020617;
-  color: #e5e7eb;
-}
-
-.dark .dropdown-item {
-  color: #e5e7eb;
-}
-
-.dark .dropdown-item:hover {
-  background-color: #1e293b;
-}
-
-.dark .modal-content {
-  background-color: #020617;
-  color: #e5e7eb;
-}
-
-.dark .btn-outline-secondary {
-  color: #e5e7eb;
-  border-color: #475569;
+@media (max-width: 768px) {
+  .sidebar-hidden {
+    transform: translateX(-100%);
+  }
 }
