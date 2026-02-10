@@ -299,7 +299,7 @@ const Analytics = () => {
                     >
                       {dayInfo.day && (
                         <span className={`text-sm ${
-                          dayInfo.isStudyDay ? 'text-blue-800 font-bold' : 'text-[#111827]'
+                          dayInfo.isStudyDay ? 'text-[#111827]' : ''
                         }`}>
                           {dayInfo.day}
                         </span>
@@ -312,15 +312,15 @@ const Analytics = () => {
                 <div className="flex items-center space-x-4 mt-6 text-sm">
                   <div className="flex items-center space-x-2">
                     <div className="w-3 h-3 bg-[#3B82F6] rounded-full"></div>
-                    <span className="text-[#4B5563]">Upcoming</span>
+                    <span className="text-[#EFF6FF]">Upcoming</span>
                   </div>
                   <div className="flex items-center space-x-2">
                     <div className="w-3 h-3 bg-[#22C55E] rounded-full"></div>
-                    <span className="text-[#4B5563]">Completed</span>
+                    <span className="text-[#EFF6FF]">Completed</span>
                   </div>
                   <div className="flex items-center space-x-2">
                     <div className="w-3 h-3 bg-[#EF4444] rounded-full"></div>
-                    <span className="text-[#4B5563]">Missed</span>
+                    <span className="text-[#EFF6FF]">Missed</span>
                   </div>
                 </div>
               </div>

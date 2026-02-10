@@ -10,7 +10,7 @@ const ThemeToggle = () => {
       className="btn btn-sm d-flex align-items-center gap-2"
       aria-label="Toggle Theme"
     >
-      {isDark ? <Moon size={18} /> : <Sun size={18} />}
+      {isDark ==="dark" ? <Sun size={18} className="text-white" /> :  <Moon size={18} />}
     </button>
   );
 };

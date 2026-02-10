@@ -3,29 +3,28 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 const ThemeContext = createContext();
 
 export const ThemeProvider = ({ children }) => {
-  const [isDark, setIsDark] = useState(() => {
-    // Check localStorage or system preference
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("theme");
-      if (stored) return stored === "dark";
-      return window.matchMedia("(prefers-color-scheme: dark)").matches;
-    }
-    return false;
-  });
 
+  // Get initial theme from localStorage or system preference
+  const getInitialTheme = () => {
+    if (typeof window === "undefined") return "light"; // SSR safety
+
+    const savedTheme = localStorage.getItem("theme");
+    if (savedTheme) return savedTheme;
+
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  };
+
+  const [isDark, setIsDark] = useState(getInitialTheme);
+
+  // Apply body class whenever isDark changes
   useEffect(() => {
-    const root = window.document.documentElement;
-    if (isDark) {
-      root.classList.add("dark");
-      localStorage.setItem("theme", "dark");
-    } else {
-      root.classList.remove("dark");
-      localStorage.setItem("theme", "light");
-    }
+    document.body.classList.remove("light", "dark");
+    document.body.classList.add(isDark);
+    localStorage.setItem("theme", isDark);
   }, [isDark]);
 
   const toggleTheme = () => {
-    setIsDark((prev) => !prev);
+    setIsDark(prev => (prev === "light" ? "dark" : "light"));
   };
 
   return (

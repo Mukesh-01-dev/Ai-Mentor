@@ -13,24 +13,16 @@ body.dark {
 body.dark main,
 body.dark section,
 body.dark div,
+body.dark p,
+body.dark span,
 body.dark header,
 body.dark footer,
 body.dark aside,
 body.dark nav,
 body.dark article {
-  background-color: #020617 !important;
+  background-color: #020617  !important;
   color: #ecf0f7 !important;
 }
-
-/* =========================
-   BUTTONS – DO NOT TOUCH
-========================= */
-
-/* body.dark button,
-body.dark .btn,
-body.dark [role="button"] {
-  color: inherit !important;
-} */
 
 /* Keep colored buttons visible */
 body.dark .btn-primary,
@@ -66,6 +58,7 @@ body.dark .text-muted {
 .line-clamp-2 {
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -73,6 +66,7 @@ body.dark .text-muted {
 .text-gradient {
   background: linear-gradient(90deg, #4facfe, #7846aa);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
