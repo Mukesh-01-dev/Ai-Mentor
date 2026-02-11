@@ -20,7 +20,7 @@ router.post("/register", async (req, res) => {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    const userExists = await User.findOne({ email });
+    const userExists = await User.findOne({ where: { email } });
     if (userExists) {
       return res.status(400).json({ message: "User already exists" });
     }
@@ -32,7 +32,7 @@ router.post("/register", async (req, res) => {
     });
 
     res.status(201).json({
-      _id: user._id,
+      id: user.id,
       firstName: user.firstName,
       lastName: user.lastName,
       name: user.name,
@@ -40,7 +40,7 @@ router.post("/register", async (req, res) => {
       role: user.role,
       bio: user.bio,
       purchasedCourses: user.purchasedCourses,
-      token: generateToken(user._id),
+      token: generateToken(user.id),
     });
   } catch (error) {
     console.error("Register Error:", error);
@@ -59,15 +59,11 @@ router.post("/login", async (req, res) => {
         .json({ message: "Email and password are required" });
     }
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ where: { email } });
 
-    if (
-      user &&
-      user.password &&
-      (await bcrypt.compare(password, user.password))
-    ) {
+    if (user && user.password && (await user.matchPassword(password))) {
       res.json({
-        _id: user._id,
+        id: user.id,
         firstName: user.firstName,
         lastName: user.lastName,
         name: user.name,
@@ -75,7 +71,7 @@ router.post("/login", async (req, res) => {
         role: user.role,
         bio: user.bio,
         purchasedCourses: user.purchasedCourses,
-        token: generateToken(user._id),
+        token: generateToken(user.id),
       });
     } else {
       res.status(401).json({ message: "Invalid email or password" });
@@ -104,7 +100,7 @@ router.post("/google-login", async (req, res) => {
     const email = payload.email;
     const name = payload.name || email.split("@")[0];
 
-    let user = await User.findOne({ email });
+    let user = await User.findOne({ where: { email } });
 
     if (!user) {
       user = await User.create({
@@ -115,10 +111,10 @@ router.post("/google-login", async (req, res) => {
       });
     }
 
-    const token = generateToken(user._id);
+    const token = generateToken(user.id);
 
     res.json({
-      _id: user._id,
+      id: user.id,
       firstName: user.firstName,
       lastName: user.lastName,
       name: user.name,

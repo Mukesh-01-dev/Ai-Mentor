@@ -5,28 +5,26 @@ import User from "../models/User.js";
 // @access  Private
 const getUserAnalytics = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id);
+    const user = await User.findByPk(req.user.id);
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
     // ✅ Ensure analytics exists
-    if (!user.analytics) {
-      user.analytics = {};
-    }
+    const analytics = user.analytics || {};
 
     res.json({
-      attendance: user.analytics.attendance || 0,
-      avgMarks: user.analytics.avgMarks || 0,
-      dailyHours: user.analytics.dailyHours || [],
-      totalCourses: user.analytics.totalCourses || 0,
-      completedCourses: user.analytics.completedCourses || 0,
-      totalHours: user.analytics.totalHours || 0,
-      daysStudied: user.analytics.daysStudied || 0,
-      studySessions: user.analytics.studySessions || [],
-      learningHoursChart: user.analytics.learningHoursChart || [],
-      certificates: user.analytics.certificates || [],
+      attendance: analytics.attendance || 0,
+      avgMarks: analytics.avgMarks || 0,
+      dailyHours: analytics.dailyHours || [],
+      totalCourses: analytics.totalCourses || 0,
+      completedCourses: analytics.completedCourses || 0,
+      totalHours: analytics.totalHours || 0,
+      daysStudied: analytics.daysStudied || 0,
+      studySessions: analytics.studySessions || [],
+      learningHoursChart: analytics.learningHoursChart || [],
+      certificates: analytics.certificates || [],
     });
   } catch (error) {
     console.error("ANALYTICS ERROR:", error);
@@ -41,41 +39,42 @@ const recordStudySession = async (req, res) => {
   try {
     const { hours, date } = req.body;
 
-    const user = await User.findById(req.user._id);
+    const user = await User.findByPk(req.user.id);
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
     // ✅ Ensure analytics object exists
-    if (!user.analytics) {
-      user.analytics = {
-        totalHours: 0,
-        daysStudied: 0,
-        studySessions: [],
-        lastStudyDate: null,
-      };
-    }
+    const analytics = user.analytics || {
+      totalHours: 0,
+      daysStudied: 0,
+      studySessions: [],
+      lastStudyDate: null,
+    };
 
     const sessionDate = date ? new Date(date) : new Date();
 
     const isNewDay =
-      !user.analytics.lastStudyDate ||
-      new Date(user.analytics.lastStudyDate).toDateString() !==
+      !analytics.lastStudyDate ||
+      new Date(analytics.lastStudyDate).toDateString() !==
         sessionDate.toDateString();
 
     if (isNewDay) {
-      user.analytics.daysStudied += 1;
-      user.analytics.lastStudyDate = sessionDate;
+      analytics.daysStudied += 1;
+      analytics.lastStudyDate = sessionDate;
     }
 
-    user.analytics.totalHours += hours;
+    analytics.totalHours += hours;
 
-    user.analytics.studySessions.push({
+    analytics.studySessions.push({
       date: sessionDate,
       hours: hours,
     });
 
+    user.analytics = analytics;
+    // For JSONB, we need to tell Sequelize that the object has changed
+    user.changed("analytics", true);
     await user.save();
 
     res.json({

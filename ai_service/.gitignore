@@ -2,6 +2,7 @@
 */__pycache__/
 *.py[cod]
 *$py.class
+*.avi
 *.so
 .Python
 env/
@@ -35,13 +36,7 @@ ENV/
 
 # AI Service Specific
 outputs/
-temp/
-backend/temp/
 backend/outputs/
-
-
-# Wav2Lip specific (if not already covered by sub-gitignore)
-Wav2Lip/checkpoints/
 
 # Media and Models
 

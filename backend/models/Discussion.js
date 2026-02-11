@@ -1,73 +1,62 @@
-import mongoose from "mongoose";
+import { DataTypes, Model } from "sequelize";
+import { sequelize } from "../config/db.js";
+import User from "./User.js";
 
-const replySchema = new mongoose.Schema(
+class Discussion extends Model {}
+
+Discussion.init(
   {
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
+    id: {
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
+      primaryKey: true,
     },
-    text: {
-      type: String,
-      required: true,
-    },
-    likes: [
-      {
-        user: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "User",
-        },
+    userId: {
+      type: DataTypes.UUID,
+      allowNull: false,
+      references: {
+        model: User,
+        key: "id",
       },
-    ],
-    createdAt: {
-      type: Date,
-      default: Date.now,
-    },
-  },
-  {
-    _id: true, // ✅ ensure reply.id() works correctly
-  }
-);
-
-const discussionSchema = new mongoose.Schema(
-  {
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
     },
     title: {
-      type: String,
-      required: true,
+      type: DataTypes.STRING,
+      allowNull: false,
     },
     description: {
-      type: String,
-      required: true,
+      type: DataTypes.TEXT,
+      allowNull: false,
     },
-    replies: [replySchema],
-    likes: [
-      {
-        user: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "User",
-        },
-      },
-    ],
+    replies: {
+      type: DataTypes.JSONB,
+      defaultValue: [],
+    },
+    likes: {
+      type: DataTypes.JSONB,
+      defaultValue: [],
+    },
     hasAISuggestion: {
-      type: Boolean,
-      default: false,
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
     },
     aiSuggestion: {
-      text: String,
+      type: DataTypes.JSONB,
+      defaultValue: {},
     },
   },
   {
+    sequelize,
+    modelName: "Discussion",
     timestamps: true,
+    indexes: [
+      {
+        fields: ["createdAt"],
+      },
+    ],
   }
 );
 
-// 🔥 Performance index for sorting
-discussionSchema.index({ createdAt: -1 });
+Discussion.belongsTo(User, { foreignKey: "userId", as: "author" });
+User.hasMany(Discussion, { foreignKey: "userId" });
 
-const Discussion = mongoose.model("Discussion", discussionSchema);
 export default Discussion;

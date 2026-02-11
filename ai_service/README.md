@@ -4,6 +4,11 @@ This service handles the generation of AI-powered lesson videos using Gemini for
 
 ## 🚀 Prerequisites
 
+
+Before you begin, make sure that you have copied and pasted the `checkpoints` folder from the `.zip` file provided.
+
+Here is the link to the `.zip` file: https://drive.google.com/file/d/1bK-NgU7y5IahY7cecUacBaAF-IhMd76j/view?usp=drive_link.
+
 Before you begin, ensure you have the following installed on your system:
 
 1.  **Python 3.10+**: Recommended for compatibility with all dependencies.
@@ -47,6 +52,8 @@ python --version
     ```
 
 ### 3. Install Backend Dependencies
+
+
 Navigate to the `backend` folder and install the required Python packages:
 
 ```bash

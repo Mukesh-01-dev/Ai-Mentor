@@ -20,8 +20,10 @@ const protect = async (req, res, next) => {
       // 3️⃣ Verify token
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-      // 4️⃣ Fetch user
-      const user = await User.findById(decoded.id).select("-password");
+      // 4️⃣ Fetch user using Sequelize findByPk (not MongoDB findById)
+      const user = await User.findByPk(decoded.id, {
+        attributes: { exclude: ["password"] },
+      });
 
       if (!user) {
         return res.status(401).json({ message: "User not found" });

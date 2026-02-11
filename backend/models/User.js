@@ -1,135 +1,109 @@
-import mongoose from "mongoose";
+import { DataTypes, Model } from "sequelize";
 import bcrypt from "bcryptjs";
+import { sequelize } from "../config/db.js";
 
-const userSchema = new mongoose.Schema(
+class User extends Model {}
+
+User.init(
   {
+    id: {
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
+      primaryKey: true,
+    },
     firstName: {
-      type: String,
+      type: DataTypes.STRING,
     },
     lastName: {
-      type: String,
+      type: DataTypes.STRING,
     },
     name: {
-      type: String,
-      required: true,
-      trim: true,
+      type: DataTypes.STRING,
+      allowNull: false,
     },
     email: {
-      type: String,
-      required: true,
+      type: DataTypes.STRING,
+      allowNull: false,
       unique: true,
-      lowercase: true,
-      trim: true,
+      validate: {
+        isEmail: true,
+      },
     },
-
-    // 🔥 FIX: password is OPTIONAL (for Google users)
     password: {
-      type: String,
-      required: false,
-      minlength: 6,
+      type: DataTypes.STRING,
+      allowNull: true,
     },
-
-    // ✅ optional but useful
     googleId: {
-      type: String,
+      type: DataTypes.STRING,
     },
-
     role: {
-      type: String,
-      default: "user",
+      type: DataTypes.STRING,
+      defaultValue: "user",
     },
     bio: {
-      type: String,
-      default: "",
+      type: DataTypes.STRING,
+      defaultValue: "",
     },
-
-    purchasedCourses: [
-      {
-        courseId: Number,
-        courseTitle: String,
-        purchaseDate: {
-          type: Date,
-          default: Date.now,
-        },
-        progress: {
-          completedLessons: [
-            {
-              lessonId: String,
-              completedAt: {
-                type: Date,
-                default: Date.now,
-              },
-            },
-          ],
-          currentLesson: {
-            lessonId: String,
-            moduleTitle: String,
-          },
-        },
-      },
-    ],
-
+    purchasedCourses: {
+      type: DataTypes.JSONB,
+      defaultValue: [],
+    },
     analytics: {
-      totalHours: { type: Number, default: 0 },
-      daysStudied: { type: Number, default: 0 },
-      studySessions: [
-        {
-          date: Date,
-          hours: Number,
-        },
-      ],
-      lastStudyDate: { type: Date, default: null },
-      attendance: { type: Number, default: 0 },
-      avgMarks: { type: Number, default: 0 },
-      dailyHours: { type: Number, default: 0 },
-      totalCourses: { type: Number, default: 0 },
-      completedCourses: { type: Number, default: 0 },
-      certificates: { type: Number, default: 0 },
+      type: DataTypes.JSONB,
+      defaultValue: {
+        totalHours: 0,
+        daysStudied: 0,
+        studySessions: [],
+        lastStudyDate: null,
+        attendance: 0,
+        avgMarks: 0,
+        dailyHours: 0,
+        totalCourses: 0,
+        completedCourses: 0,
+        certificates: 0,
+      },
     },
-
-    learningHoursChart: [
-      {
-        date: String,
-        hours: Number,
-      },
-    ],
-
+    learningHoursChart: {
+      type: DataTypes.JSONB,
+      defaultValue: [],
+    },
     settings: {
-      notifications: {
-        emailNotifications: { type: Boolean, default: true },
-        pushNotifications: { type: Boolean, default: true },
-        courseUpdates: { type: Boolean, default: true },
-        discussionReplies: { type: Boolean, default: true },
-      },
-      security: {
-        twoFactorAuth: { type: Boolean, default: false },
-        loginAlerts: { type: Boolean, default: true },
-      },
-      appearance: {
-        theme: {
-          type: String,
-          enum: ["light", "dark", "auto"],
-          default: "light",
+      type: DataTypes.JSONB,
+      defaultValue: {
+        notifications: {
+          emailNotifications: true,
+          pushNotifications: true,
+          courseUpdates: true,
+          discussionReplies: true,
         },
-        language: { type: String, default: "en" },
+        security: {
+          twoFactorAuth: false,
+          loginAlerts: true,
+        },
+        appearance: {
+          theme: "light",
+          language: "en",
+        },
       },
     },
   },
   {
+    sequelize,
+    modelName: "User",
     timestamps: true,
+    hooks: {
+      beforeSave: async (user) => {
+        if (user.password && user.changed("password")) {
+          const salt = await bcrypt.genSalt(10);
+          user.password = await bcrypt.hash(user.password, salt);
+        }
+      },
+    },
   }
 );
 
-// ✅ SAFE password hashing (NO CHANGE, already correct)
-userSchema.pre("save", async function (next) {
-  if (!this.password || !this.isModified("password")) {
-    return next();
-  }
+User.prototype.matchPassword = async function (enteredPassword) {
+  return await bcrypt.compare(enteredPassword, this.password);
+};
 
-  const salt = await bcrypt.genSalt(10);
-  this.password = await bcrypt.hash(this.password, salt);
-  next();
-});
-
-const User = mongoose.model("User", userSchema);
 export default User;
