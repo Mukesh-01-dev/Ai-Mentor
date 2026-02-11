@@ -278,7 +278,7 @@ def main():
 	retcode = subprocess.call(command)
 	
 	if retcode != 0:
-		print(f"❌ FFmpeg failed with code {retcode}. Command was: {' '.join(command)}")
+		print(f" FFmpeg failed with code {retcode}. Command was: {' '.join(command)}")
 		raise RuntimeError("FFmpeg merger failed")
 
 if __name__ == '__main__':
