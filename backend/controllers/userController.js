@@ -113,7 +113,7 @@ const getUserProfile = async (req, res) => {
 // @desc Purchase course
 const purchaseCourse = async (req, res) => {
   try {
-    const { courseId, courseTitle, courseImage } = req.body;
+    const { courseId, courseTitle } = req.body;
 
     const user = await User.findById(req.user._id);
     if (!user) return res.status(404).json({ message: "User not found" });
@@ -129,7 +129,6 @@ const purchaseCourse = async (req, res) => {
     user.purchasedCourses.push({
       courseId,
       courseTitle,
-      courseImage,
       progress: {
         completedLessons: [],
         currentLesson: [],
@@ -140,7 +139,6 @@ const purchaseCourse = async (req, res) => {
     user.analytics.totalCourses = user.purchasedCourses.length;
 
     await user.save();
-
     res.status(201).json({
       message: "Course purchased successfully",
       purchasedCourses: user.purchasedCourses,

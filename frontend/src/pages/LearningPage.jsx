@@ -40,6 +40,11 @@ export default function Learning() {
   const [captions, setCaptions] = useState([]);
   const [activeCaption, setActiveCaption] = useState("");
   const celebrities = ["Salman Khan", "Modi ji", "SRK"];
+  const celebrityVideoMap = {
+    salman: "/videos/salman.mp4",
+    // modiji: "/videos/modiji.mp4",
+    // SRK: "/videos/srk.mp4",
+  };
 
   const [selectedCelebrity, setSelectedCelebrity] = useState(null);
 
@@ -56,7 +61,7 @@ export default function Learning() {
   const [currentTime, setCurrentTime] = useState(0);
   const [isNavigating, setIsNavigating] = useState(false);
   const [isAIVideoLoading, setIsAIVideoLoading] = useState(false);
-
+  const [aiVideoUrl, setAiVideoUrl] = useState(null);
   const videoRef = useRef(null);
   const playerContainerRef = useRef(null);
 
@@ -289,6 +294,18 @@ export default function Learning() {
 
     loadCaptions();
   }, [selectedCelebrity]);
+  // getAiVideo 
+  const getAIVideo = async (payload) => {
+    const res = await fetch("/api/ai/generate-video", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      throw new Error("Video Genration Failed!")
+    }
+    await res.json()
+  };
 
   // Ensure when currentLesson changes we load its video into the player
   useEffect(() => {
@@ -351,39 +368,6 @@ export default function Learning() {
     loadVideo();
   }, [learningData?.currentLesson, selectedCelebrity]);
 
-  // If selectedCelebrity is Salman Khan and the user wants the Reactjs paragraph
-  // shown word-by-word, create per-word cues when video metadata (duration) is available.
-  // useEffect(() => {
-  //   const v = videoRef.current;
-  //   if (!v) return;
-
-  //   const createWordCues = () => {
-  //     if (selectedCelebrity !== "Salman Khan") return;
-  //     const words = Reactjs_PARAGRAPH.split(/\s+/).filter(Boolean);
-  //     if (
-  //       !words.length ||
-  //       !v.duration ||
-  //       !isFinite(v.duration) ||
-  //       v.duration <= 0
-  //     )
-  //       return;
-  //     const per = v.duration / words.length;
-  //     const cues = words.map((w, i) => ({
-  //       start: i * per,
-  //       end: (i + 1) * per,
-  //       text: w,
-  //     }));
-  //     setCaptions(cues);
-  //   };
-
-  //   // If metadata already loaded, create cues immediately
-  //   if (v.duration && isFinite(v.duration) && v.duration > 0) {
-  //     createWordCues();
-  //   }
-
-  //   v.addEventListener("loadedmetadata", createWordCues);
-  //   return () => v.removeEventListener("loadedmetadata", createWordCues);
-  // }, [selectedCelebrity, videoRef.current]);
 
   const { modules, currentLesson } = learningData || {};
 
@@ -610,11 +594,10 @@ export default function Learning() {
                         setSelectedCelebrity(c);
                       }
                     }}
-                    className={`w-full text-left px-4 py-3 rounded-lg border ${
-                      selectedCelebrity === c
-                        ? "bg-blue-600 text-white"
-                        : "bg-white text-gray-900"
-                    }`}
+                    className={`w-full text-left px-6 py-3 rounded-lg border ${selectedCelebrity === c
+                      ? "bg-blue-600 text-white"
+                      : "bg-white text-gray-900"
+                      }`}
                   >
                     {c}
                   </button>
@@ -653,251 +636,377 @@ export default function Learning() {
               );
             })()}
           </div>
-          <div className="space-y-2">
-            {(() => {
-              const q = searchQuery.trim().toLowerCase();
-              const filteredModules = (modules || [])
-                .map((module) => ({
-                  ...module,
-                  lessons: module.lessons.filter((lesson) =>
-                    lesson.title.toLowerCase().includes(q)
-                  ),
-                }))
-                .filter((m) => m.lessons.length > 0);
 
-              if (q && filteredModules.length === 0) {
-                return (
-                  <p className="text-sm text-gray-500">
-                    No results for "{searchQuery}"
-                  </p>
-                );
-              }
-
-              return (
-                filteredModules.length > 0 ? filteredModules : modules || []
-              ).map((module) => (
-                <div
-                  key={module.id}
-                  className="border border-gray-200 rounded-lg"
-                >
-                  <button
-                    onClick={() => toggleModule(module.id)}
-                    className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50"
-                  >
-                    <span className="font-medium text-gray-900">
-                      {module.title}
-                    </span>
-                    <ChevronDown
-                      className={`w-4 h-4 transition-transform ${expandedModule === module.id ? "rotate-180" : ""
-                        }`}
-                    />
-                  </button>
-
-                  {expandedModule === module.id && (
-                    <div className="px-4 pb-4 space-y-2">
-                      {module.lessons.map((lesson) => (
-                        <button
-                          key={lesson.id}
-                          onClick={() => handleLessonClick(lesson)}
-                          className={`w-full flex items-center gap-3 p-3 rounded-lg text-left hover:bg-grey-50 ${currentLesson?.id === lesson.id
-                            ? "bg-blue-600 text-white-20"
-                            : "bg-white text-gray-900"
-                            }`}
-                        >
-                          {lesson.type === "video" ? (
-                            <Play className="w-4 h-4 text-gray-400" />
-                          ) : (
-                            <FileText className="w-4 h-4 text-gray-400" />
-                          )}
-                          <div className="flex-1">
-                            <p className="text-sm font-medium text-gray-900">
-                              {lesson.title}
-                            </p>
-                            <p className="text-xs text-white-500">
-                              {lesson.duration}
-                            </p>
-                          </div>
-                          {user?.purchasedCourses
-                            ?.find(
-                              (course) => course.courseId === parseInt(courseId)
-                            )
-                            ?.progress?.completedLessons?.some(
-                              (cl) => cl.lessonId === lesson.id
-                            ) ? (
-                            <Check className="w-4 h-4 text-green-500" />
-                          ) : (
-                            <Circle className="w-4 h-4 text-gray-300" />
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ));
-            })()}
-          </div>
         </div>
       </div>
 
       {/* Main Content */}
       <div className="ml-80 flex-1 mt-16">
-        <main className="p-8 space-y-8">
-          {/* Video Player */}
-          <div
-            ref={playerContainerRef}
-            className="relative bg-black rounded-lg overflow-hidden group"
-            style={{ aspectRatio: "16/9" }}
-          >
-            {isAIVideoLoading && (
-              <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm">
-                <div className="w-12 h-12 border-4 border-gray-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-                <p className="text-gray-400 text-sm mt-2">
-                  This may take a few moments
-                </p>
-              </div>
-            )}
-            {currentLesson?.youtubeUrl ? (
-              <iframe
-                key={currentLesson.id}
-                src={`https://www.youtube.com/embed/${getYouTubeVideoId(
-                  currentLesson.youtubeUrl
-                )}`}
-                className="w-full h-full"
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                title={currentLesson.title}
-              ></iframe>
-            ) : (
-              <video
-                ref={videoRef}
-                src={
-                  aiVideoUrl ||
-                  (selectedCelebrity &&
-                    celebrityVideoMap[selectedCelebrity] &&
-                    celebrityVideoMap[selectedCelebrity].video) ||
-                  currentLesson?.videoUrl
-                }
-                className="w-full h-full object-contain bg-black"
-                onTimeUpdate={handleProgress}
-                onLoadedMetadata={handleProgress}
-                onEnded={() => {
-                  setIsPlaying(false);
-                }}
-                controls={false}
-                playsInline
-                preload="metadata"
-              />
-            )}
+        <main className="py-8">
+          <div className="grid grid-cols-12 gap-7">
+            <div className="col-span-8 space-y-6">
+              {/* Video Player */}
+              <div
+                ref={playerContainerRef}
+                className="relative bg-black rounded-lg overflow-hidden group"
+                style={{ aspectRatio: "16/9" }}
+              >
+                {isAIVideoLoading && (
+                  <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm">
+                    <div className="w-12 h-12 border-4 border-gray-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+                    <p className="text-gray-400 text-sm mt-2">
+                      This may take a few moments
+                    </p>
+                  </div>
+                )}
+                {currentLesson?.youtubeUrl ? (
+                  <iframe
+                    key={currentLesson.id}
+                    src={`https://www.youtube.com/embed/${getYouTubeVideoId(
+                      currentLesson.youtubeUrl
+                    )}`}
+                    className="w-full h-full"
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    title={currentLesson.title}
+                  ></iframe>
+                ) : (
+                  <video
+                    ref={videoRef}
+                    src={
+                      aiVideoUrl ||
+                      (selectedCelebrity &&
+                        celebrityVideoMap[selectedCelebrity] &&
+                        celebrityVideoMap[selectedCelebrity].video) ||
+                      currentLesson?.videoUrl
+                    }
+                    className="w-full h-full object-contain bg-black"
+                    onTimeUpdate={handleProgress}
+                    onLoadedMetadata={handleProgress}
+                    onEnded={() => {
+                      setIsPlaying(false);
+                    }}
+                    controls={false}
+                    playsInline
+                    preload="metadata"
+                  />
+                )}
 
-            {isAIVideoLoading && (
-              <div className="absolute inset-0 bg-black/70 flex items-center justify-center z-20">
-                <p className="text-white text-lg animate-pulse">
-                  Loading {selectedCelebrity} video...
-                </p>
-              </div>
-            )}
-            {/* Caption overlay (custom) */}
-            {activeCaption && (
-              <div className="absolute left-1/2 transform -translate-x-1/2 bottom-16 px-4 py-2 bg-black/70 text-white rounded-md max-w-3xl text-center">
-                <p className="text-sm leading-relaxed">{activeCaption}</p>
-              </div>
-            )}
+                {isAIVideoLoading && (
+                  <div className="absolute inset-0 bg-black/70 flex items-center justify-center z-20">
+                    <p className="text-white text-lg animate-pulse">
+                      Loading {selectedCelebrity} video...
+                    </p>
+                  </div>
+                )}
+                {/* Caption overlay (custom) */}
+                {activeCaption && (
+                  <div className="absolute left-1/2 transform -translate-x-1/2 bottom-16 px-4 py-2 bg-black/70 text-white rounded-md max-w-3xl text-center">
+                    <p className="text-sm leading-relaxed">{activeCaption}</p>
+                  </div>
+                )}
 
-            {/* Video Controls - Only show for local videos, not YouTube */}
-            {!currentLesson?.youtubeUrl && (
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
-                <div className="flex items-center gap-4">
-                  <button
-                    onClick={togglePlay}
-                    className="text-white hover:scale-110 transition-transform"
-                  >
-                    {isPlaying ? (
-                      <Pause className="w-6 h-6" />
-                    ) : (
-                      <Play className="w-6 h-6" />
-                    )}
-                  </button>
+                {/* Video Controls - Only show for local videos, not YouTube */}
+                {!currentLesson?.youtubeUrl && (
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+                    <div className="flex items-center gap-4">
+                      <button
+                        onClick={togglePlay}
+                        className="text-white hover:scale-110 transition-transform"
+                      >
+                        {isPlaying ? (
+                          <Pause className="w-6 h-6" />
+                        ) : (
+                          <Play className="w-6 h-6" />
+                        )}
+                      </button>
 
-                  <div className="flex-1 flex items-center gap-2">
-                    <span className="text-white text-sm">
-                      {formatTime(currentTime)}
-                    </span>
-                    <div
-                      className="flex-1 h-1 bg-gray-600 rounded-lg cursor-pointer"
-                      onClick={handleSeek}
-                    >
-                      <div
-                        className="h-full bg-white rounded-lg"
-                        style={{ width: `${progress}%` }}
-                      ></div>
+                      <div className="flex-1 flex items-center gap-2">
+                        <span className="text-white text-sm">
+                          {formatTime(currentTime)}
+                        </span>
+                        <div
+                          className="flex-1 h-1 bg-gray-600 rounded-lg cursor-pointer"
+                          onClick={handleSeek}
+                        >
+                          <div
+                            className="h-full bg-white rounded-lg"
+                            style={{ width: `${progress}%` }}
+                          ></div>
+                        </div>
+                        <span className="text-white text-sm">
+                          {formatTime(duration)}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={toggleMute}
+                          className="text-white hover:scale-110 transition-transform"
+                        >
+                          {isMuted ? (
+                            <VolumeX className="w-5 h-5" />
+                          ) : (
+                            <Volume2 className="w-5 h-5" />
+                          )}
+                        </button>
+                        <input
+                          type="range"
+                          min="0"
+                          max="1"
+                          step="0.1"
+                          value={volume}
+                          onChange={handleVolumeChange}
+                          className="w-20 h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer range-sm accent-white"
+                        />
+                      </div>
+
+                      <button
+                        onClick={toggleFullscreen}
+                        className="text-white hover:scale-110 transition-transform"
+                      >
+                        {isFullscreen ? (
+                          <Minimize className="w-5 h-5" />
+                        ) : (
+                          <Maximize className="w-5 h-5" />
+                        )}
+                      </button>
                     </div>
-                    <span className="text-white text-sm">
-                      {formatTime(duration)}
-                    </span>
                   </div>
+                )}
+              </div>
 
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={toggleMute}
-                      className="text-white hover:scale-110 transition-transform"
+              {/* MODULE BELOW VIDEO */}
+              <div className="space-y-2">
+                {(() => {
+                  const q = searchQuery.trim().toLowerCase();
+                  const filteredModules = (modules || [])
+                    .map((module) => ({
+                      ...module,
+                      lessons: module.lessons.filter((lesson) =>
+                        lesson.title.toLowerCase().includes(q)
+                      ),
+                    }))
+                    .filter((m) => m.lessons.length > 0);
+
+                  if (q && filteredModules.length === 0) {
+                    return (
+                      <p className="text-sm text-gray-500">
+                        No results for "{searchQuery}"
+                      </p>
+                    );
+                  }
+
+                  return (
+                    filteredModules.length > 0 ? filteredModules : modules || []
+                  ).map((module) => (
+                    <div
+                      key={module.id}
+                      className="border border-gray-200 rounded-lg"
                     >
-                      {isMuted ? (
-                        <VolumeX className="w-5 h-5" />
-                      ) : (
-                        <Volume2 className="w-5 h-5" />
-                      )}
-                    </button>
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.1"
-                      value={volume}
-                      onChange={handleVolumeChange}
-                      className="w-20 h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer range-sm accent-white"
-                    />
-                  </div>
+                      <button
+                        onClick={() => toggleModule(module.id)}
+                        className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50"
+                      >
+                        <span className="font-medium text-gray-900">
+                          {module.title}
+                        </span>
+                        <ChevronDown
+                          className={`w-4 h-4 transition-transform ${expandedModule === module.id ? "rotate-180" : ""
+                            }`}
+                        />
+                      </button>
 
-                  <button
-                    onClick={toggleFullscreen}
-                    className="text-white hover:scale-110 transition-transform"
-                  >
-                    {isFullscreen ? (
-                      <Minimize className="w-5 h-5" />
-                    ) : (
-                      <Maximize className="w-5 h-5" />
-                    )}
-                  </button>
+                      {expandedModule === module.id && (
+                        <div className="px-4 pb-4 space-y-2">
+                          {module.lessons.map((lesson) => (
+                            <button
+                              key={lesson.id}
+                              onClick={() => handleLessonClick(lesson)}
+                              className={`w-full flex items-center gap-3 p-3 rounded-lg text-left hover:bg-grey-50 ${currentLesson?.id === lesson.id
+                                ? "bg-blue-600 text-white-20"
+                                : "bg-white text-gray-900"
+                                }`}
+                            >
+                              {lesson.type === "video" ? (
+                                <Play className="w-4 h-4 text-gray-400" />
+                              ) : (
+                                <FileText className="w-4 h-4 text-gray-400" />
+                              )}
+                              <div className="flex-1">
+                                <p className="text-sm font-medium text-gray-900">
+                                  {lesson.title}
+                                </p>
+                                <p className="text-xs text-white-500">
+                                  {lesson.duration}
+                                </p>
+                              </div>
+                              {user?.purchasedCourses
+                                ?.find(
+                                  (course) => course.courseId === parseInt(courseId)
+                                )
+                                ?.progress?.completedLessons?.some(
+                                  (cl) => cl.lessonId === lesson.id
+                                ) ? (
+                                <Check className="w-4 h-4 text-green-500" />
+                              ) : (
+                                <Circle className="w-4 h-4 text-gray-300" />
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ));
+                })()}
+              </div>
+            </div>
+
+            {/* ================= RIGHT SIDE ================= */}
+
+            <div className="col-span-4 space-y-6 px-1">
+              {/* ===== LESSON INFO CARD ===== */}
+              <div className="bg-white rounded border border-blue-400 shadow-md">
+                <h2 className="text-m font-semibold text-gray-800">
+                  {currentLesson?.title}
+                </h2>
+
+                <div className="mt-4 max-h-40 overflow-y-auto pr-2 custom-scroll">
+                  <p className="text-sm text-gray-600 leading-relaxed">
+                    {currentLesson?.content?.introduction}
+                  </p>
+                </div>
+
+              </div>
+
+              <div className="flex items-center justify-between border-lg">
+                <button
+                  onClick={togglePlay}
+                  className="bg-blue-600 text-white px-7 py-2 rounded-md flex items-center gap-2"
+                >
+                  ▶ Play
+                </button>
+
+                <button className="bg-black text-white px-7 py-2 rounded-md flex items-center  gap-2" onClick={toggleFullscreen}>
+                  ⛶
+                </button>
+              </div>
+
+              <div className="bg-white rounded border border-blue-200 shadow-md">
+                {/* Progress Bar */}
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  className="w-full accent-white-500"
+                />
+
+                {/* Time */}
+                <div className="flex justify-between text-xs text-gray-500">
+                  <span>0:00</span>
+                  <span>0:00</span>
+                </div>
+
+                {/* Volume */}
+                <div className="flex items-center gap-2 py-2">
+                  <span className="text-sm">🔊</span>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={volume}
+                    onChange={handleVolumeChange}
+                    className="w-full h-1 bg-red-600 rounded-lg appearance-none cursor-pointer range-sm accent-red-500"
+                  />
                 </div>
               </div>
-            )}
-          </div>
 
-          {/* Lesson Content */}
-          <div className="max-w-4xl space-y-6">
-            {/* Only show navigation buttons below the player; content cards removed to avoid duplicate text */}
-            <div className="flex items-center justify-between pt-8">
-              <button
-                onClick={handlePrevious}
-                disabled={currentLessonIndex <= 0}
-                className="px-6 py-3 rounded-lg bg-gray-600 text-white font-medium hover:bg-gray-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <ChevronLeft className="w-4 h-4" />
-                Previous
-              </button>
 
-              <button
-                onClick={handleNext}
-                disabled={
-                  currentLessonIndex >= allLessons.length - 1 || isNavigating
-                }
-                className="px-6 py-3 rounded-lg bg-blue-600 text-white font-medium shadow-lg hover:bg-blue-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isNavigating ? "Loading..." : "Next"}
-                <ChevronRight className="w-4 h-4" />
-              </button>
+              {/* ===== PREVIOUS / NEXT ===== */}
+              <div className="flex gap-10 border">
+                <button
+                  onClick={handlePrevious}
+                  disabled={currentLessonIndex <= 0}
+                  className="flex-1 bg-gray-400 text-white py-2 rounded-md disabled:opacity-50"
+                >
+                  ← Previous
+                </button>
+
+                <button
+                  onClick={handleNext}
+                  disabled={currentLessonIndex >= allLessons.length - 1 || isNavigating}
+                  className="flex-1 bg-blue-600 text-white py-2 rounded-md disabled:opacity-50"
+                >
+                  Next →
+                </button>
+              </div>
+
             </div>
+
+
+            {/* <div className="col-span-4">
+             
+              <div className="bg-white rounded-lg border p-6">
+                <h2 className="text-xl font-semibold text-gray-900">
+                  {currentLesson?.title}
+                </h2>
+
+                <p className="text-sm text-gray-600 mt-4 leading-relaxed">
+                  {currentLesson?.content?.introduction}
+                </p>
+              </div>
+
+              <div className="h-px bg-slate-700" />
+              
+            
+              <div className="space-y-3">
+              <p className="text-sm text-slate-300">Audio Narration</p>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => {}}
+                    className="bg-blue-600 text-white px-5 py-2 rounded-md flex items-center gap-2"
+                  >
+                    ▶ Play
+                  </button>
+
+                  <button className="ml-auto border px-3 py-2 rounded-md">
+                    ⛶
+                  </button>
+                </div>
+
+                
+                <input
+                  type="range"
+                  className="w-full mt-4 accent-red-500"
+                />
+
+                <div className="flex justify-between text-xs text-gray-500 mt-1">
+                  <span>0:00</span>
+                  <span>0:00</span>
+                </div>
+              </div>
+
+
+              <div className="flex gap-4">
+                <button
+                  onClick={handlePrevious}
+                  disabled={currentLessonIndex <= 0}
+                  className="flex-1 bg-gray-400 text-white py-2 rounded-md disabled:opacity-50"
+                >
+                  ← Previous
+                </button>
+
+                <button
+                  onClick={handleNext}
+                  disabled={currentLessonIndex >= allLessons.length - 1 || isNavigating}
+                  className="flex-1 bg-blue-600 text-white py-2 rounded-md disabled:opacity-50"
+                >
+                  Next →
+                </button>
+              </div>
+            </div> */}
+
           </div>
         </main>
       </div>

@@ -22,32 +22,31 @@ const CoursesPage = () => {
   const [selectedCourse, setSelectedCourse] = useState(null);
 
   /* ================= FETCH COURSES ================= */
+
+  const fetchCourses = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+
+      const [exploreRes, myRes] = await Promise.all([
+        fetch(`${API_BASE_URL}/api/courses`),
+        fetch(`${API_BASE_URL}/api/courses/my-courses`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+      ]);
+
+      const exploreData = await exploreRes.json();
+      const myData = myRes.ok ? await myRes.json() : [];
+
+      setExploreCourses(exploreData);
+      setMyCourses(myData);
+    } catch (error) {
+      console.error("Error fetching courses:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
   useEffect(() => {
-    const fetchCourses = async () => {
-      try {
-        const token = localStorage.getItem("token");
-
-        const [exploreRes, myRes] = await Promise.all([
-          fetch(`${API_BASE_URL}/api/courses`),
-          fetch(`${API_BASE_URL}/api/courses/my-courses`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }),
-        ]);
-
-        const exploreData = await exploreRes.json();
-        const myData = myRes.ok ? await myRes.json() : [];
-
-        setExploreCourses(exploreData);
-        setMyCourses(myData);
-      } catch (error) {
-        console.error("Error fetching courses:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchCourses();
   }, []);
 
@@ -58,7 +57,7 @@ const CoursesPage = () => {
     try {
       const token = localStorage.getItem("token");
 
-      await fetch(`${API_BASE_URL}/api/users/purchase-course`, {
+      await fetch('/api/users/purchase-course', {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -69,17 +68,7 @@ const CoursesPage = () => {
           courseTitle: selectedCourse.title,
         }),
       });
-
-      const [exploreRes, myRes] = await Promise.all([
-        fetch(`${API_BASE_URL}/api/courses`),
-        fetch(`${API_BASE_URL}/api/courses/my-courses`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-      ]);
-
-      setExploreCourses(await exploreRes.json());
-      setMyCourses(await myRes.json());
-
+      await fetchCourses();
       setShowEnrollPopup(false);
       setSelectedCourse(null);
       setActiveTab("my-courses");
@@ -109,9 +98,8 @@ const CoursesPage = () => {
       />
 
       <div
-        className={`flex-1 transition-all duration-300 ${
-          sidebarCollapsed ? "lg:ml-20" : "lg:ml-80"
-        }`}
+        className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? "lg:ml-20" : "lg:ml-80"
+          }`}
       >
         <main className="mt-16 p-8">
           <div className="max-w-7xl mx-auto space-y-10">
@@ -129,21 +117,19 @@ const CoursesPage = () => {
             <div className="bg-white rounded-xl p-2 inline-flex border">
               <button
                 onClick={() => setActiveTab("my-courses")}
-                className={`px-6 py-2 rounded-lg font-semibold ${
-                  activeTab === "my-courses"
-                    ? "bg-[#2DD4BF] text-white"
-                    : "text-slate-500"
-                }`}
+                className={`px-6 py-2 rounded-lg font-semibold ${activeTab === "my-courses"
+                  ? "bg-[#2DD4BF] text-white"
+                  : "text-slate-500"
+                  }`}
               >
                 My Courses
               </button>
               <button
                 onClick={() => setActiveTab("explore")}
-                className={`px-6 py-2 rounded-lg font-semibold ${
-                  activeTab === "explore"
-                    ? "bg-[#2DD4BF] text-white"
-                    : "text-slate-500"
-                }`}
+                className={`px-6 py-2 rounded-lg font-semibold ${activeTab === "explore"
+                  ? "bg-[#2DD4BF] text-white"
+                  : "text-slate-500"
+                  }`}
               >
                 Explore Courses
               </button>
@@ -151,97 +137,124 @@ const CoursesPage = () => {
 
             {/* ================= MY COURSES ================= */}
             {activeTab === "my-courses" && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                {myCourses.length === 0 && (
-                  <p className="text-slate-500">
-                    You have not enrolled in any courses yet.
+              loading ? (
+                <div className="flex justify-center py-20">
+                  <p className="text-slate-500 animate-pulse">
+                    Loading Your courses...
                   </p>
-                )}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                  {myCourses.length === 0 && (
+                    <p className="text-slate-500">
+                      You have not enrolled in any courses yet.
+                    </p>
+                  )}
 
-                {myCourses.map((course) => (
-                  <div
-                    key={course.id}
-                    className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden"
-                  >
-                    <img
-                      src={course.image}
-                      alt={course.title}
-                      className="h-40 w-full object-cover"
-                    />
+                  {myCourses.map((course) => (
+                    <div
+                      key={course.courseId} // 
+                      className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden"
+                    >
+                      <img
+                        src={course.image}
+                        alt={course.title}
+                        className="h-40 w-full object-cover"
+                      />
 
-                    <div className="p-6 space-y-4">
-                      <h3 className="font-semibold text-slate-900">
-                        {course.title}
-                      </h3>
+                      <div className="p-6 space-y-4">
+                        <h3 className="font-semibold text-slate-900">
+                          {course.title}
+                        </h3>
 
-                      <p className="text-sm text-slate-400">{course.lessons}</p>
-
-                      <button
-                        onClick={() => navigate(`/learning/${course.id}`)}
-                        className="w-full py-3 rounded-xl bg-[#2DD4BF] text-white font-semibold"
-                      >
-                        Continue Learning
-                      </button>
+                        <p className="text-sm text-slate-400">
+                          {course.totalLessons} {course.level} ⭐{course.rating}
+                        </p>
+                        <p>Progress: {course.progress}%</p>
+                        <button
+                          onClick={() =>
+                            navigate(`/learning/${course.courseId}`)
+                          }
+                          className="w-full py-3 rounded-xl bg-[#2DD4BF] text-white font-semibold"
+                        >
+                          Continue Learning
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
+                  ))}
+                </div>
+              ))}
 
             {/* ================= EXPLORE COURSES ================= */}
             {activeTab === "explore" && (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                {exploreCourses
-                  .filter(
-                    (course) => !myCourses.some((c) => c.id === course.id)
-                  )
-                  .map((course) => (
-                    <div
-                      key={course.id}
-                      className="bg-white rounded-2xl border shadow-sm overflow-hidden"
-                    >
-                      <div className="relative h-40">
-                        <img
-                          src={course.image}
-                          className="w-full h-full object-cover"
-                          alt={course.title}
-                        />
-                        <div className="absolute bottom-3 right-3 bg-white px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-1 shadow">
-                          <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
-                          {course.rating}
-                        </div>
-                      </div>
-
-                      <div className="p-4 space-y-3">
-                        <h3 className="text-sm font-semibold">
-                          {course.title}
-                        </h3>
-
-                        <p className="text-xs text-slate-400">
-                          {course.lessons} • {course.level}
-                        </p>
-
-                        <div className="flex justify-between items-center">
-                          <div>
-                            <span className="line-through text-sm text-slate-400 mr-2">
-                              ₹{course.price}
-                            </span>
-                            <span className="font-bold text-green-600">₹0</span>
+                {loading ? (
+                  <p className="col-span-full text-center text-slate-500 py-20 animate-pulse">
+                    Loading courses...
+                  </p>
+                ) : exploreCourses.filter(
+                  (course) =>
+                    !myCourses.some((c) => c.courseId === course.id)
+                ).length === 0 ? (
+                  <p className="col-span-full text-center text-slate-500 py-20">
+                    🎉 You Already Purchased All Available Courses
+                  </p>
+                ) : (
+                  exploreCourses
+                    .filter(
+                      (course) =>
+                        !myCourses.some((c) => c.courseId === course.id)
+                    )
+                    .map((course) => (
+                      <div
+                        key={course.id}
+                        className="bg-white rounded-2xl border shadow-sm overflow-hidden"
+                      >
+                        <div className="relative h-40">
+                          <img
+                            src={course.image}
+                            className="w-full h-full object-cover"
+                            alt={course.title}
+                          />
+                          <div className="absolute bottom-3 right-3 bg-white px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-1 shadow">
+                            <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
+                            {course.rating}
                           </div>
+                        </div>
 
-                          <button
-                            onClick={() => {
-                              setSelectedCourse(course);
-                              setShowEnrollPopup(true);
-                            }}
-                            className="px-4 py-2 rounded-lg bg-[#2DD4BF] text-white text-xs font-semibold"
-                          >
-                            Enroll
-                          </button>
+                        <div className="p-4 space-y-3">
+                          <h3 className="text-sm font-semibold">
+                            {course.title}
+                          </h3>
+
+                          <p className="text-xs text-slate-400">
+                            {course.lessons} • {course.level}
+                          </p>
+
+                          <div className="flex justify-between items-center">
+                            <div>
+                              <span className="line-through text-sm text-slate-400 mr-2">
+                                ₹{course.price}
+                              </span>
+                              <span className="font-bold text-green-600">
+                                ₹0
+                              </span>
+                            </div>
+
+                            <button
+                              onClick={() => {
+                                setSelectedCourse(course);
+                                setShowEnrollPopup(true);
+                              }}
+                              className="px-4 py-2 rounded-lg bg-[#2DD4BF] text-white text-xs font-semibold"
+                            >
+                              Enroll
+                            </button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))
+                )}
               </div>
             )}
           </div>
@@ -249,45 +262,47 @@ const CoursesPage = () => {
       </div>
 
       {/* ================= ENROLL POPUP ================= */}
-      {showEnrollPopup && selectedCourse && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white w-full max-w-md rounded-2xl p-6 relative">
-            <button
-              onClick={() => setShowEnrollPopup(false)}
-              className="absolute top-4 right-4"
-            >
-              <X />
-            </button>
+      {
+        showEnrollPopup && selectedCourse && (
+          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+            <div className="bg-white w-full max-w-md rounded-2xl p-6 relative">
+              <button
+                onClick={() => setShowEnrollPopup(false)}
+                className="absolute top-4 right-4"
+              >
+                <X />
+              </button>
 
-            <img
-              src={selectedCourse.image}
-              alt={selectedCourse.title}
-              className="w-full h-40 object-cover rounded-xl mb-4"
-            />
+              <img
+                src={selectedCourse.image}
+                alt={selectedCourse.title}
+                className="w-full h-40 object-cover rounded-xl mb-4"
+              />
 
-            <h2 className="text-xl font-bold">{selectedCourse.title}</h2>
+              <h2 className="text-xl font-bold">{selectedCourse.title}</h2>
 
-            <p className="text-sm text-slate-500 mt-1">
-              {selectedCourse.category} • {selectedCourse.level}
-            </p>
+              <p className="text-sm text-slate-500 mt-1">
+                {selectedCourse.category} • {selectedCourse.level}
+              </p>
 
-            <div className="flex justify-between items-center mt-4">
-              <span className="line-through text-slate-400">
-                ₹{selectedCourse.price}
-              </span>
-              <span className="text-lg font-bold text-green-600">₹0</span>
+              <div className="flex justify-between items-center mt-4">
+                <span className="line-through text-slate-400">
+                  ₹{selectedCourse.price}
+                </span>
+                <span className="text-lg font-bold text-green-600">₹0</span>
+              </div>
+
+              <button
+                onClick={handleEnroll}
+                className="w-full mt-6 py-3 rounded-xl bg-[#2DD4BF] text-white font-semibold"
+              >
+                Confirm Enrollment
+              </button>
             </div>
-
-            <button
-              onClick={handleEnroll}
-              className="w-full mt-6 py-3 rounded-xl bg-[#2DD4BF] text-white font-semibold"
-            >
-              Confirm Enrollment
-            </button>
           </div>
-        </div>
-      )}
-    </div>
+        )
+      }
+    </div >
   );
 };
 
