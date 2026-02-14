@@ -1,96 +1,110 @@
-# backend/api.py
-
-from fastapi import FastAPI, BackgroundTasks
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from gemini_api import generate_text
-from tts import text_to_speech
-from wave2lip import generate_video
 import os
+import datetime
+from fastapi import FastAPI
+from pydantic import BaseModel
+from dotenv import load_dotenv
+from google.genai import Client
+import pyttsx3
 
-# --------------------------
+# ----------------------------
+# Load Environment Variables
+# ----------------------------
+load_dotenv()
+
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
+if not GEMINI_API_KEY:
+    raise ValueError("GEMINI_API_KEY not found in .env file")
+
+client = Client(api_key=GEMINI_API_KEY)
+
+# ----------------------------
 # FastAPI App
-# --------------------------
-app = FastAPI(title="AI Lesson Generator")
+# ----------------------------
+app = FastAPI()
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# --------------------------
-# Request Model
-# --------------------------
-class LessonRequest(BaseModel):
+class VideoRequest(BaseModel):
     course: str
     topic: str
     celebrity: str
 
-# --------------------------
-# Root Route
-# --------------------------
-@app.get("/")
-def home():
-    return {"message": "AI Lesson Generator Backend Running"}
 
-# --------------------------
-# Generate Lesson Endpoint
-# --------------------------
 @app.post("/generate")
-def generate_lesson(data: LessonRequest, background_tasks: BackgroundTasks):
-    background_tasks.add_task(process_lesson, data)
-    return {"status": "Processing started"}
+def generate_video(data: VideoRequest):
 
-# --------------------------
-# Background Task
-# --------------------------
-def process_lesson(data: LessonRequest):
-    try:
-        BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    # ----------------------------
+    # 1️⃣ Generate SHORT AI Text (~30 sec)
+    # ----------------------------
+    prompt = f"""
+    Generate a clear and engaging explanation 
+    of around 50 words about the topic '{data.topic}' 
+    in the subject '{data.course}'.
 
-        # 1️⃣ Generate text
-        prompt = f"Explain {data.topic} in 50 words."
-        script = generate_text(prompt)
+    Keep it between 45 to 60 words only.
+    Explain in simple language.
+    Make it natural for spoken narration.
+    """
 
-        # Ensure output folders
-        audio_dir = os.path.join(BASE_DIR, "outputs", "audio")
-        video_dir = os.path.join(BASE_DIR, "outputs", "video")
-        os.makedirs(audio_dir, exist_ok=True)
-        os.makedirs(video_dir, exist_ok=True)
+    response = client.models.generate_content(
+        model="gemini-2.5-flash",
+        contents=prompt
+    )
 
-        # Save script
-        safe_topic = data.topic.replace(' ', '_')
-        script_path = os.path.join(audio_dir, f"{safe_topic}.txt")
-        with open(script_path, "w", encoding="utf-8") as f:
-            f.write(script)
+    text = response.text.strip()
 
-        # 2️⃣ Text-to-Speech
-        audio_path = os.path.join(audio_dir, f"{safe_topic}.wav")
-        text_to_speech(script, audio_path)
+    # ----------------------------
+    # 2️⃣ Create Output Folder
+    # ----------------------------
+    os.makedirs("output", exist_ok=True)
 
-        # 3️⃣ Celebrity image
-        celeb_image = os.path.join(
-            BASE_DIR,
-            "assets",
-            "celebrities",
-            f"{data.celebrity.lower()}.jpg"
-        )
+    topic_clean = data.topic.replace(" ", "_")
+    course_clean = data.course.replace(" ", "_")
+    celebrity_clean = data.celebrity.replace(" ", "_")
 
-        print("Looking for celebrity image at:", celeb_image)
-        print("Image exists?", os.path.exists(celeb_image))
+    filename = f"{topic_clean}_{celebrity_clean}_{course_clean}"
 
-        # 4️⃣ Generate video using Wav2Lip
+    text_path = f"output/{filename}.txt"
+    audio_path = f"output/{filename}.mp3"
+    final_video = f"output/{filename}.mp4"
 
-        video_filename = f"{safe_topic}_{data.celebrity}_{data.course.replace(' ', '_')}.mp4"
-        video_path = os.path.join(video_dir, video_filename)
-        generate_video(celeb_image, audio_path, video_path)
+    # ----------------------------
+    # 3️⃣ Save Text to File
+    # ----------------------------
+    with open(text_path, "w", encoding="utf-8") as f:
+        f.write(text)
 
+    # ----------------------------
+    # 4️⃣ Convert Text to Speech
+    # ----------------------------
+    engine = pyttsx3.init()
+    engine.setProperty("rate", 165)  # Faster speech for ~30 sec
+    engine.save_to_file(text, audio_path)
+    engine.runAndWait()
 
-        print(f"✅ Lesson ready: {video_path}")
+    # ----------------------------
+    # 5️⃣ Loop Video Until Audio Ends
+    # ----------------------------
+    input_video = "input/modi.mp4"
 
+    if not os.path.exists(input_video):
+        return {"error": "input/modi.mp4 file not found"}
 
-    except Exception as e:
-        print(f"❌ Error generating lesson: {e}")
+    ffmpeg_command = (
+        f'ffmpeg -y -stream_loop -1 -i "{input_video}" '
+        f'-i "{audio_path}" '
+        f'-map 0:v:0 -map 1:a:0 '
+        f'-c:v copy -c:a aac -shortest "{final_video}"'
+    )
+
+    os.system(ffmpeg_command)
+
+    # ----------------------------
+    # 6️⃣ Return Response
+    # ----------------------------
+    return {
+        "message": "Video generated successfully",
+        "generated_text": text,
+        "text_file": text_path,
+        "audio_file": audio_path,
+        "video_file": final_video
+    }

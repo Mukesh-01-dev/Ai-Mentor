@@ -13,7 +13,5 @@ export const getAIVideo = async (payload) => {
       throw new Error("Failed to fetch AI video");
     }
     return data;
-    
-
 };
 

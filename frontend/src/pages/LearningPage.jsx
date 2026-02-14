@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import Header from "../components/Header";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-
+import { getAIVideo } from "../service/aiService";
 
 import {
   ChevronLeft,
@@ -41,9 +41,9 @@ export default function Learning() {
   const [activeCaption, setActiveCaption] = useState("");
   const celebrities = ["Salman Khan", "Modi ji", "SRK"];
   const celebrityVideoMap = {
-    salman: "/videos/salman.mp4",
-    // modiji: "/videos/modiji.mp4",
-    // SRK: "/videos/srk.mp4",
+    "Salman Khan": "/videos/salman.mp4",
+    "Modi ji": "/videos/modi.mp4",
+    "SRK": "/videos/srk.mp4",
   };
 
   const [selectedCelebrity, setSelectedCelebrity] = useState(null);
@@ -294,18 +294,6 @@ export default function Learning() {
 
     loadCaptions();
   }, [selectedCelebrity]);
-  // getAiVideo 
-  const getAIVideo = async (payload) => {
-    const res = await fetch("/api/ai/generate-video", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    if (!res.ok) {
-      throw new Error("Video Genration Failed!")
-    }
-    await res.json()
-  };
 
   // Ensure when currentLesson changes we load its video into the player
   useEffect(() => {
@@ -545,6 +533,7 @@ export default function Learning() {
     return `${minutes}:${seconds.toString().padStart(2, "0")}`;
   };
 
+
   return (
     <div className="min-h-screen bg-gray-50 flex">
       <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
@@ -651,14 +640,7 @@ export default function Learning() {
                 className="relative bg-black rounded-lg overflow-hidden group"
                 style={{ aspectRatio: "16/9" }}
               >
-                {isAIVideoLoading && (
-                  <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm">
-                    <div className="w-12 h-12 border-4 border-gray-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-                    <p className="text-gray-400 text-sm mt-2">
-                      This may take a few moments
-                    </p>
-                  </div>
-                )}
+
                 {currentLesson?.youtubeUrl ? (
                   <iframe
                     key={currentLesson.id}
@@ -673,6 +655,7 @@ export default function Learning() {
                   ></iframe>
                 ) : (
                   <video
+                    key={aiVideoUrl || currentLesson?.videoUrl}
                     ref={videoRef}
                     src={
                       aiVideoUrl ||
@@ -864,130 +847,74 @@ export default function Learning() {
             </div>
 
             {/* ================= RIGHT SIDE ================= */}
+            <div className="col-span-4 space-y-6">
 
-            <div className="col-span-4 space-y-6 px-1">
-              {/* ===== LESSON INFO CARD ===== */}
-              <div className="bg-white rounded border border-blue-400 shadow-md">
-                <h2 className="text-m font-semibold text-gray-800">
+              {/* ===== BOX 1 — LESSON INFO ===== */}
+              <div className="bg-white p-2 rounded-xl border border-blue-300 shadow-lg">
+                <h2 className="text-lg font-semibold text-gray-800">
                   {currentLesson?.title}
                 </h2>
 
-                <div className="mt-4 max-h-40 overflow-y-auto pr-2 custom-scroll">
+                {/* scrollable introduction */}
+                <div className="mt-4 max-h-40 overflow-y-auto pr-2">
                   <p className="text-sm text-gray-600 leading-relaxed">
                     {currentLesson?.content?.introduction}
                   </p>
                 </div>
-
               </div>
 
-              <div className="flex items-center justify-between border-lg">
-                <button
-                  onClick={togglePlay}
-                  className="bg-blue-600 text-white px-7 py-2 rounded-md flex items-center gap-2"
-                >
-                  ▶ Play
-                </button>
-
-                <button className="bg-black text-white px-7 py-2 rounded-md flex items-center  gap-2" onClick={toggleFullscreen}>
-                  ⛶
-                </button>
-              </div>
-
-              <div className="bg-white rounded border border-blue-200 shadow-md">
-                {/* Progress Bar */}
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  className="w-full accent-white-500"
-                />
-
-                {/* Time */}
-                <div className="flex justify-between text-xs text-gray-500">
-                  <span>0:00</span>
-                  <span>0:00</span>
-                </div>
-
-                {/* Volume */}
-                <div className="flex items-center gap-2 py-2">
-                  <span className="text-sm">🔊</span>
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={volume}
-                    onChange={handleVolumeChange}
-                    className="w-full h-1 bg-red-600 rounded-lg appearance-none cursor-pointer range-sm accent-red-500"
-                  />
-                </div>
-              </div>
-
-
-              {/* ===== PREVIOUS / NEXT ===== */}
-              <div className="flex gap-10 border">
-                <button
-                  onClick={handlePrevious}
-                  disabled={currentLessonIndex <= 0}
-                  className="flex-1 bg-gray-400 text-white py-2 rounded-md disabled:opacity-50"
-                >
-                  ← Previous
-                </button>
-
-                <button
-                  onClick={handleNext}
-                  disabled={currentLessonIndex >= allLessons.length - 1 || isNavigating}
-                  className="flex-1 bg-blue-600 text-white py-2 rounded-md disabled:opacity-50"
-                >
-                  Next →
-                </button>
-              </div>
-
-            </div>
-
-
-            {/* <div className="col-span-4">
-             
-              <div className="bg-white rounded-lg border p-6">
-                <h2 className="text-xl font-semibold text-gray-900">
-                  {currentLesson?.title}
-                </h2>
-
-                <p className="text-sm text-gray-600 mt-4 leading-relaxed">
-                  {currentLesson?.content?.introduction}
-                </p>
-              </div>
-
-              <div className="h-px bg-slate-700" />
-              
-            
-              <div className="space-y-3">
-              <p className="text-sm text-slate-300">Audio Narration</p>
-                <div className="flex items-center gap-3">
+              {/* ===== BOX 2 — AUDIO / VIDEO CONTROL ===== */}
+              <div className="bg-white p-3 rounded-xl border border-blue-300 shadow-lg space-y-3">
+                {/* play fullscreen */}
+                <div className="flex justify-between ">
                   <button
-                    onClick={() => {}}
-                    className="bg-blue-600 text-white px-5 py-2 rounded-md flex items-center gap-2"
-                  >
-                    ▶ Play
+                    onClick={togglePlay}
+                    className="px-4 bg-blue-600 text-white py-1 rounded-md font-medium">
+                    {isPlaying ? "Pause" : "Play"}
                   </button>
 
-                  <button className="ml-auto border px-3 py-2 rounded-md">
+                  <button
+                    onClick={toggleFullscreen}
+                    className="px-4 py-2 bg-gray-800 text-white rounded-md">
                     ⛶
                   </button>
                 </div>
 
-                
-                <input
-                  type="range"
-                  className="w-full mt-4 accent-red-500"
-                />
+                {/* progress bar */}
+                <div>
+                  <div
+                    onClick={handleSeek}
+                    className="w-full h-2 bg-grey-200 dark:bg-grey-600 rounded cursor-pointer">
+                    <div
+                      className="h-2 bg-blue-600 dark:bg-sky-400 rounded transition-all"
+                      style={{ width: `${progress}%` }} />
+                  </div>
 
-                <div className="flex justify-between text-xs text-gray-500 mt-1">
-                  <span>0:00</span>
-                  <span>0:00</span>
+                  {/* time */}
+                  <div className="flex justify-between text-xs text-gray-500 mt-1">
+                    <span>{formatTime(currentTime)}</span>
+                    <span>{formatTime(duration)}</span>
+                  </div>
+                </div>
+
+                {/* volume */}
+                <div className="flex items-center gap-3">
+                  <button onClick={toggleMute}>
+                    {isMuted ? "🔇" : "🔊"}
+                  </button>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    value={volume}
+                    onChange={handleVolumeChange}
+                    className="w-full accent-blue-600"
+                  />
                 </div>
               </div>
 
-
+              {/* ===== BOX 3 — PREVIOUS / NEXT ===== */}
               <div className="flex gap-4">
                 <button
                   onClick={handlePrevious}
@@ -999,13 +926,15 @@ export default function Learning() {
 
                 <button
                   onClick={handleNext}
-                  disabled={currentLessonIndex >= allLessons.length - 1 || isNavigating}
+                  disabled={
+                    currentLessonIndex >= allLessons.length - 1 || isNavigating
+                  }
                   className="flex-1 bg-blue-600 text-white py-2 rounded-md disabled:opacity-50"
                 >
                   Next →
                 </button>
               </div>
-            </div> */}
+            </div>
 
           </div>
         </main>

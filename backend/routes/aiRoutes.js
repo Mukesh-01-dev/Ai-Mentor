@@ -45,7 +45,7 @@ router.post("/generate-video", async (req, res) => {
 
     const aiServiceVideoPath = path.join(
       __dirname,
-      "../../ai_service/outputs/video",
+      "../../ai_service/backend/output",
       videoFileName
     );
     const backendVideosFolder = path.join(__dirname, "../videos");

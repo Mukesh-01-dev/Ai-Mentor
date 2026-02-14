@@ -2,17 +2,35 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import Course from "../models/Course.js"; // kept for future use
-import User from "../models/User.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 /* =========================
-   GET ALL COURSES 
+   GET ALL COURSES (JSON)
 ========================= */
 const getCourses = async (req, res) => {
   try {
-    const courses = await Course.find({})
+    const coursesPath = path.join(
+      __dirname,
+      "../../frontend/public/data/courses.json"
+    );
+
+    const rawData = fs.readFileSync(coursesPath, "utf-8");
+    const jsonData = JSON.parse(rawData);
+
+    const courses = (jsonData.popularCourses || []).map((course) => ({
+      id: course.id,
+      title: course.title,
+      category: course.category,
+      level: course.level,
+      lessons: course.lessons,
+      price: course.price,
+      rating: course.rating,
+      students: course.students,
+      image: course.image,
+    }));
+
     res.json(courses);
   } catch (error) {
     console.error("GET COURSES JSON ERROR:", error);
@@ -21,12 +39,22 @@ const getCourses = async (req, res) => {
 };
 
 /* =========================
-   GET COURSE BY ID 
+   GET COURSE BY ID (JSON)
 ========================= */
 const getCourseById = async (req, res) => {
   try {
+    const coursesPath = path.join(
+      __dirname,
+      "../../frontend/public/data/courses.json"
+    );
 
-    const course = await Course.findOne({ id: Number(req.params.id) });
+    const rawData = fs.readFileSync(coursesPath, "utf-8");
+    const jsonData = JSON.parse(rawData);
+
+    const course = jsonData.popularCourses.find(
+      (c) => c.id === Number(req.params.id)
+    );
+
     if (!course) {
       return res.status(404).json({ message: "Course not found" });
     }
@@ -43,53 +71,29 @@ const getCourseById = async (req, res) => {
 ========================= */
 const getMyCourses = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id);
-    if (!user) {
-      return res.status(401).json({ message: "Unauthorized" });
+    if (!req.user) {
+      return res.json([]);
     }
 
-    const courseIds = user.purchasedCourses.map(c => Number(c.courseId));
+    const coursesPath = path.join(
+      __dirname,
+      "../../frontend/public/data/courses.json"
+    );
 
-    // one DB query only
-    const courses = await Course.find({ id: { $in: courseIds } });
+    const rawData = fs.readFileSync(coursesPath, "utf-8");
+    const jsonData = JSON.parse(rawData);
 
-    const result = user.purchasedCourses.map(c => {
-      const course = courses.find(co => co.id === Number(c.courseId));
-      if (!course) return null;
-      let totalLessons = 0;
-      if (course?.modules?.length) {
-        course.modules.forEach(m => {
-          if (m.lessons?.length) {
-            totalLessons += m.lessons.length;
-          }
-        });
-      }
+    const purchasedIds =
+      req.user.purchasedCourses?.map((c) => Number(c.courseId)) || [];
 
-      const completedLessons =
-        c.progress?.completedLessons?.length || 0;
+    const myCourses = (jsonData.popularCourses || []).filter((course) =>
+      purchasedIds.includes(course.id)
+    );
 
-      const progress =
-        totalLessons > 0
-          ? Math.round((completedLessons / totalLessons) * 100)
-          : 0;
-
-      return {
-        courseId: c.courseId,
-        title: c.courseTitle,
-        image:  course?.image,
-        progress,
-        lessons: course?.lessons,
-        level: course?.level,
-        price: course?.price ,
-        students: course?.students,
-        rating: course?.rating,
-      };
-    }).filter(Boolean);
-
-    res.json(result);
-  } catch (err) {
-    console.error("GET MY COURSES ERROR:", err);
-    res.status(500).json({ message: "Server error" });
+    res.json(myCourses);
+  } catch (error) {
+    console.error("MY COURSES ERROR:", error);
+    res.json([]);
   }
 };
 

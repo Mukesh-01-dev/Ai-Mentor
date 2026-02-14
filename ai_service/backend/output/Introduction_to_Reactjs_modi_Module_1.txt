@@ -1,0 +1,1 @@
+Welcome to Module 1! Here, we'll dive into ReactJS, a powerful JavaScript library for building dynamic, interactive user interfaces. You'll explore its core concept: component-based architecture. We'll understand why React is so popular for modern web development and how to start creating reusable UI elements efficiently. Let's begin your frontend journey!
