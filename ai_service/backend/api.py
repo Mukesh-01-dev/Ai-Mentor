@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from dotenv import load_dotenv
 from google.genai import Client
 import pyttsx3
+import re
 
 # ----------------------------
 # Load Environment Variables
@@ -19,6 +20,16 @@ if not GEMINI_API_KEY:
 client = Client(api_key=GEMINI_API_KEY)
 
 # ----------------------------
+# Initialize TTS Engine
+# ----------------------------
+
+engine = pyttsx3.init()
+engine.setProperty("rate", 160)
+
+voices = engine.getProperty("voices")
+engine.setProperty("voice", voices[0].id)
+
+# ----------------------------
 # FastAPI App
 # ----------------------------
 app = FastAPI()
@@ -28,6 +39,25 @@ class VideoRequest(BaseModel):
     topic: str
     celebrity: str
 
+# ----------------------------
+# Celebrity Video Selector
+# ----------------------------
+def get_celebrity_video(name: str):
+    name = name.lower()
+
+    if name == "modi":
+        return "input/modi.mp4"
+    elif name == "salman":
+        return "input/salman.mp4"
+    else:
+        return "input/modi.mp4"
+
+def clean_filename(name: str):
+    name = name.lower()
+    name = re.sub(r'[<>:"/\\|?*]', '', name)  # remove invalid chars
+    name = re.sub(r'\s+', '_', name)          # spaces → underscore
+    return name
+
 
 @app.post("/generate")
 def generate_video(data: VideoRequest):
@@ -36,30 +66,35 @@ def generate_video(data: VideoRequest):
     # 1️⃣ Generate SHORT AI Text (~30 sec)
     # ----------------------------
     prompt = f"""
-    Generate a clear and engaging explanation 
-    of around 50 words about the topic '{data.topic}' 
-    in the subject '{data.course}'.
+Create a 50 word educational explanation about '{data.topic}' in the subject '{data.course}'.
 
-    Keep it between 45 to 60 words only.
-    Explain in simple language.
-    Make it natural for spoken narration.
-    """
+Rules:
+- 100% English only
+- No Hindi
+- No Hinglish
+- Simple classroom teaching tone
+- Between 45 and 60 words
+
+Narration style inspired by {data.celebrity}.
+"""
 
     response = client.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=prompt
-    )
+    model="gemini-2.5-flash",
+    contents=prompt
+)
 
-    text = response.text.strip()
+
+    text = response.text.strip().replace("\n", " ")
 
     # ----------------------------
     # 2️⃣ Create Output Folder
     # ----------------------------
     os.makedirs("output", exist_ok=True)
 
-    topic_clean = data.topic.replace(" ", "_")
-    course_clean = data.course.replace(" ", "_")
-    celebrity_clean = data.celebrity.replace(" ", "_")
+    topic_clean = clean_filename(data.topic)
+    course_clean = clean_filename(data.course)
+    celebrity_clean = clean_filename(data.celebrity)
+
 
     filename = f"{topic_clean}_{celebrity_clean}_{course_clean}"
 
@@ -73,21 +108,26 @@ def generate_video(data: VideoRequest):
     with open(text_path, "w", encoding="utf-8") as f:
         f.write(text)
 
+    
     # ----------------------------
-    # 4️⃣ Convert Text to Speech
+    # 4️⃣ Generate Normal Audio
     # ----------------------------
-    engine = pyttsx3.init()
-    engine.setProperty("rate", 165)  # Faster speech for ~30 sec
+    engine.stop()
+
+    if os.path.exists(audio_path):
+        os.remove(audio_path)
+
     engine.save_to_file(text, audio_path)
     engine.runAndWait()
+    engine.stop()    
 
     # ----------------------------
-    # 5️⃣ Loop Video Until Audio Ends
+    # 4️⃣ Loop Video Until Audio Ends
     # ----------------------------
-    input_video = "input/modi.mp4"
+    input_video = get_celebrity_video(data.celebrity)
 
     if not os.path.exists(input_video):
-        return {"error": "input/modi.mp4 file not found"}
+        return {"error": f"{input_video} not found"}
 
     ffmpeg_command = (
         f'ffmpeg -y -stream_loop -1 -i "{input_video}" '
@@ -99,7 +139,7 @@ def generate_video(data: VideoRequest):
     os.system(ffmpeg_command)
 
     # ----------------------------
-    # 6️⃣ Return Response
+    # 5️⃣ Return Response
     # ----------------------------
     return {
         "message": "Video generated successfully",

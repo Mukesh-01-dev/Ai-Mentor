@@ -39,7 +39,9 @@ router.post("/generate-video", async (req, res) => {
 
     // Match the original logic in api.py: topic.replace(' ', '_')
     // and the format: {topic_with_underscores}_{celebrity}_{course}.mp4
-    const videoFileName = `${topic.replace(/\s+/g, '_')}_${celebrity}_${course.replace(/\s+/g, '_')}.mp4`;
+    const clean = (str) =>
+    str.replace(/[<>:"/\\|?*]/g, "").replace(/\s+/g, "_");
+    const videoFileName = `${clean(topic)}_${clean(celebrity)}_${clean(course)}.mp4`;
 
     console.log(`Requested Video: ${videoFileName}`);
 

@@ -1,1 +1,0 @@
-Components are the building blocks of React UIs. Creating them means writing reusable JavaScript functions (or classes) that return JSX, describing what appears on screen. This modularity makes your code organized, easier to manage, and simplifies building complex user interfaces efficiently.

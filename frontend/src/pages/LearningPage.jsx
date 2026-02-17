@@ -130,7 +130,7 @@ export default function Learning() {
                     title: "Introduction to Reactjs",
                     type: "video",
                     duration: "0:10",
-                    videoUrl: "/videos/salman.mp4",
+                    videoUrl: "/videos.mp4",
                     content: {
                       introduction:
                         "Reactjs is a high-level, object-oriented programming language that was originally developed by Sun Microsystems in 1995 and is now owned by Oracle Corporation. It is designed to be platform-independent, meaning that Reactjs code can run on any device that has a Reactjs Virtual Machine (JVM), making it highly versatile for developing cross-platform applications. Reactjs emphasizes object-oriented principles, such as encapsulation, inheritance and polymorphism, which allow developers to create modular, reusable and maintainable code. It has a strong memory management system, including automatic garbage collection, which reduces the likelihood of memory leaks.",
@@ -142,7 +142,7 @@ export default function Learning() {
                     title: "Reactjs: Advanced Concepts",
                     type: "video",
                     duration: "0:12",
-                    videoUrl: "/videos/salman.mp4",
+                    videoUrl: "/videos.mp4",
                     content: {
                       introduction:
                         "Continuation video for Reactjs advanced concepts.",
@@ -632,7 +632,7 @@ export default function Learning() {
       {/* Main Content */}
       <div className="ml-80 flex-1 mt-16">
         <main className="py-8">
-          <div className="grid grid-cols-12 gap-7">
+          <div className="grid grid-cols-12 gap-6">
             <div className="col-span-8 space-y-6">
               {/* Video Player */}
               <div

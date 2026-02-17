@@ -1,0 +1,1 @@
+Alright, Module 1 brings us to Advanced React.js! We'll dive deeper than `useState` and `useEffect`. Learn to manage complex state with the Context API and `useReducer`. Discover how to build reusable logic efficiently using custom hooks. We'll also explore optimizing your application's performance with `memo`, `useCallback`, and `useMemo`, ensuring smoother user experiences.
