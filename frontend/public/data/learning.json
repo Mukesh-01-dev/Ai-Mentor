@@ -12,7 +12,7 @@
             "completed": false,
             "playing": true,
             "type": "video",
-            "youtubeUrl": "https://www.youtube.com/watch?v=YE7VzlLtp-4"
+            "youtubeUrl": "https://www.youtube.com/watch?v=LX4JUscM9Sk&pp=ygUNd2hhdCBpcyByZWFjdA%3D%3D"
           },
           {
             "id": "history-of-react",
@@ -21,7 +21,7 @@
             "completed": true,
             "playing": false,
             "type": "video",
-            "youtubeUrl": "https://www.youtube.com/watch?v=YE7VzlLtp-4"
+            "youtubeUrl": "https://www.youtube.com/watch?v=MiK2bFqhg1U&pp=ygUQaGlzdG9yeSBvZiByZWFjdA%3D%3D"
           },
           {
             "id": "setup-react",
@@ -43,7 +43,8 @@
             "duration": "18 min",
             "completed": false,
             "playing": false,
-            "type": "video"
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=d5ooYpXioqE&pp=ygUbY3JlYXRpbmcgY29tcG9uZW50IGluIHJlYWN0"
           },
           {
             "id": "props-basics",
@@ -51,7 +52,17 @@
             "duration": "14 min",
             "completed": false,
             "playing": false,
-            "type": "video"
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=uvEAvxWvwOs&t=56s&pp=ygUMcHJvcHMgYmFzaWNz"
+          },
+          {
+            "id": "prop-types-default-props",
+            "title": "PropTypes and Default Props",
+            "duration": "12 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=_cuFjX96mk0&pp=ygUKcHJvcHN0eXBlcw%3D%3D"
           }
         ]
       },
@@ -65,7 +76,8 @@
             "duration": "20 min",
             "completed": false,
             "playing": false,
-            "type": "video"
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=UbLYdbOPLe8&pp=ygUcc3RhdGUgYW5kIGxpZmVjeWNsZSByZWFjdCBqcw%3D%3D"
           },
           {
             "id": "lifecycle-methods",
@@ -73,7 +85,179 @@
             "duration": "16 min",
             "completed": false,
             "playing": false,
-            "type": "video"
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=qnN_FuFNq2g&pp=ygUdbGlmZWN5Y2xlIG1ldGhvZHMgaW4gcmVhY3QganM%3D"
+          },
+          {
+            "id": "lifting-state-up",
+            "title": "Lifting State Up",
+            "duration": "15 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=Z4hN0WZbASk&pp=ygUZbGlmdGluZyBzdGF0ZSB1cCByZWFjdCBqcw%3D%3D"
+          }
+        ]
+      },
+      {
+        "id": "module-4",
+        "title": "Module 4: React Hooks Fundamentals",
+        "lessons": [
+          {
+            "id": "intro-to-hooks",
+            "title": "Introduction to Hooks",
+            "duration": "12 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=TNhaISOUy6Q"
+          },
+          {
+            "id": "usestate-hook",
+            "title": "Using useState Hook",
+            "duration": "18 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=O6P86uwfdR0"
+          },
+          {
+            "id": "useeffect-hook",
+            "title": "Using useEffect Hook",
+            "duration": "20 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=0ZJgIjIuY7U"
+          }
+        ]
+      },
+      {
+        "id": "module-5",
+        "title": "Module 5: Forms and Events",
+        "lessons": [
+          {
+            "id": "handling-events",
+            "title": "Handling Events in React",
+            "duration": "14 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=cXkwFjBrWfk&pp=ygUYaGFuZGxpbmcgZXZlbnRzIHJlYWN0IGpz"
+          },
+          {
+            "id": "controlled-components",
+            "title": "Controlled Components",
+            "duration": "16 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=yzqUCV3qPX0&pp=ygUeY29udHJvbGxlZCBjb21wb25lbnRzIHJlYWN0IGpz"
+          },
+          {
+            "id": "form-validation",
+            "title": "Basic Form Validation",
+            "duration": "12 min",
+            "completed": false,
+            "playing": false,
+            "type": "document"
+          }
+        ]
+      },
+      {
+        "id": "module-6",
+        "title": "Module 6: React Router",
+        "lessons": [
+          {
+            "id": "intro-to-react-router",
+            "title": "Introduction to React Router",
+            "duration": "15 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=ZP8QyCIUeIA&pp=ygUVcmVhY3Qgcm91dGVyIHJlYWN0IGpz"
+          },
+          {
+            "id": "dynamic-routing",
+            "title": "Dynamic Routing and URL Params",
+            "duration": "17 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=Ul3y1LXxzdU"
+          },
+          {
+            "id": "nested-routes",
+            "title": "Nested Routes",
+            "duration": "14 min",
+            "completed": false,
+            "playing": false,
+            "type": "document"
+          }
+        ]
+      },
+      {
+        "id": "module-7",
+        "title": "Module 7: Context API and Global State",
+        "lessons": [
+          {
+            "id": "intro-to-context-api",
+            "title": "Introduction to Context API",
+            "duration": "13 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=dVIKDjxZd_w&pp=ygUUY29udGV4dCBhcGkgcmVhY3QganM%3D"
+          },
+          {
+            "id": "creating-context-provider",
+            "title": "Creating a Context Provider",
+            "duration": "18 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=5LrDIWkK_Bc"
+          },
+          {
+            "id": "usecontext-hook",
+            "title": "Using useContext Hook",
+            "duration": "15 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=lhMKvyLRWo0"
+          }
+        ]
+      },
+      {
+        "id": "module-8",
+        "title": "Module 8: API Calls and Deployment",
+        "lessons": [
+          {
+            "id": "fetch-api-react",
+            "title": "Fetching Data with Fetch API",
+            "duration": "19 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=bYFYF2GnMy8"
+          },
+          {
+            "id": "axios-api-calls",
+            "title": "Making API Calls with Axios",
+            "duration": "16 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=6LyagkoRWYA"
+          },
+          {
+            "id": "deployment-guide",
+            "title": "Deploying a React App",
+            "duration": "14 min",
+            "completed": false,
+            "playing": false,
+            "type": "document"
           }
         ]
       },
@@ -262,7 +446,7 @@
       "id": "what-is-react",
       "title": "What is React?",
       "module": "Module 1: Introduction to React",
-      "youtubeUrl": "https://www.youtube.com/watch?v=YE7VzlLtp-4",
+      "youtubeUrl": "https://www.youtube.com/watch?v=LX4JUscM9Sk",
       "content": {
         "introduction": "React is a popular JavaScript library for building user interfaces, particularly for web applications. This course covers the fundamentals of React, including components, state management, and more.",
         "keyConcepts": [
@@ -379,7 +563,7 @@
       "id": "python-intro",
       "title": "Introduction to Python",
       "module": "Module 1: Python Basics for AI",
-      "youtubeUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "youtubeUrl": "https://www.youtube.com/watch?v=_uQrJ0TkZlc",
       "content": {
         "introduction": "Python is the go-to language for AI and machine learning. This course teaches Python fundamentals tailored for AI applications, from basic syntax to advanced libraries.",
         "keyConcepts": [
@@ -496,7 +680,7 @@
       "id": "ai-ethics-intro",
       "title": "Introduction to AI Ethics",
       "module": "Module 1: Ethics in AI",
-      "youtubeUrl": "https://www.youtube.com/watch?v=oHg5SJYRHA0",
+      "youtubeUrl": "https://www.youtube.com/watch?v=5rE_LPSvTFY",
       "content": {
         "introduction": "AI Ethics and Bias explores the moral implications of artificial intelligence, focusing on fairness, accountability, and responsible development of AI systems.",
         "keyConcepts": [

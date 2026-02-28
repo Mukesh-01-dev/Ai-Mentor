@@ -65,7 +65,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const updateUser = (updatedUserData) => {
-    setUser(updatedUserData);
+    setUser(prev => ({ ...prev, ...updatedUserData }));
     localStorage.setItem('user', JSON.stringify(updatedUserData));
   };
 

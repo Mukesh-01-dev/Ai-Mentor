@@ -25,6 +25,10 @@ const getCourses = async (req, res) => {
       category: course.category,
       level: course.level,
       lessons: course.lessons,
+      lessonsCount: course.lessonsCount ||
+        (course.lessons.includes(" of ")
+          ? parseInt(course.lessons.split(" of ")[1])
+          : parseInt(course.lessons.split(" ")[0])),
       price: course.price,
       rating: course.rating,
       students: course.students,
@@ -59,7 +63,15 @@ const getCourseById = async (req, res) => {
       return res.status(404).json({ message: "Course not found" });
     }
 
-    res.json(course);
+    const mappedCourse = {
+      ...course,
+      lessonsCount: course.lessonsCount ||
+        (course.lessons.includes(" of ")
+          ? parseInt(course.lessons.split(" of ")[1])
+          : parseInt(course.lessons.split(" ")[0])),
+    };
+
+    res.json(mappedCourse);
   } catch (error) {
     console.error("GET COURSE BY ID ERROR:", error);
     res.status(500).json({ message: "Server error" });
@@ -86,9 +98,21 @@ const getMyCourses = async (req, res) => {
     const purchasedIds =
       req.user.purchasedCourses?.map((c) => Number(c.courseId)) || [];
 
-    const myCourses = (jsonData.popularCourses || []).filter((course) =>
-      purchasedIds.includes(course.id)
-    );
+    const myCourses = (jsonData.popularCourses || [])
+      .filter((course) => purchasedIds.includes(course.id))
+      .map((course) => ({
+        id: course.id,
+        title: course.title,
+        category: course.category,
+        level: course.level,
+        lessons: course.lessons,
+        lessonsCount:
+          course.lessonsCount ||
+          (course.lessons.includes(" of ")
+            ? parseInt(course.lessons.split(" of ")[1])
+            : parseInt(course.lessons.split(" ")[0])),
+        image: course.image,
+      }));
 
     res.json(myCourses);
   } catch (error) {
@@ -136,6 +160,48 @@ const getCourseLearningData = async (req, res) => {
     res.status(500).json({ message: "Failed to load learning data" });
   }
 };
+
+/* =================================
+  Get Course and Lesson Titles
+===================================== */
+const getCourseAndLessonTitles = (courseId, lessonId) => {
+  try {
+    const learningPath = path.join(
+      __dirname,
+      "../../frontend/public/data/learning.json"
+    );
+
+    const raw = fs.readFileSync(learningPath, "utf-8");
+    const learningData = JSON.parse(raw);
+
+    // 🔹 courseId is key in JSON
+    const courseData = learningData[String(courseId)];
+
+    if (!courseData) return null;
+
+    const courseTitle = courseData.course?.title;
+
+    if (!courseTitle) return null;
+
+    // 🔹 Flatten all modules into lessons
+    const lesson = (courseData.modules || [])
+      .flatMap((module) => module.lessons || [])
+      .find((l) => l.id === lessonId); // IMPORTANT: string compare
+
+    if (!lesson) return null;
+
+    return {
+      courseTitle,
+      lessonTitle: lesson.title,
+    };
+
+  } catch (error) {
+    console.error("Error reading learning.json:", error);
+    return null;
+  }
+};
+
+
 
 const getStatsCards = async (req, res) => {
   res.json({
@@ -214,6 +280,7 @@ export {
   getCourses,
   getCourseById,
   getCourseLearningData,
+  getCourseAndLessonTitles,
   getStatsCards,
   getMyCourses,
   addCourse,

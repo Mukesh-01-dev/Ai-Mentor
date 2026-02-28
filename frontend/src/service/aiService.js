@@ -1,17 +1,24 @@
-export const getAIVideo = async (payload) => {  
-    console.log(JSON.stringify(payload));
-    const response = await fetch("http://localhost:5000/api/ai/generate-video", {
+export const getAIVideo = async (payload) => {
+  const token = localStorage.getItem("token");
+  console.log(payload);
+
+  const response = await fetch(
+    "/api/ai/generate-video",
+    {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify(payload),
-    });
-    const data = await response.json();
-    console.log(data);
-    if (!response.ok) {
-      throw new Error("Failed to fetch AI video");
     }
-    return data;
-};
+  );
 
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message || "Failed to fetch AI video");
+  }
+
+  return data;
+};

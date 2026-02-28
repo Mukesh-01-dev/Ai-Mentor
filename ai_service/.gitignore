@@ -47,11 +47,16 @@ backend/outputs/
 *.pb
 *.ckpt
 *.mp4
+*.jpg
+!backend/input/
+!backend/input/*.mp4
+!backend/input/*.jpg
 *.wav
 *.mp3
-*.jpg
 *.png
 *.gif
+
+!backend/input/*
 
 # OS / Editor
 .DS_Store

@@ -1,12 +1,70 @@
 @import "tailwindcss";
 
-/* =========================
-   FORCE DARK MODE (SAFE)
-========================= */
+@custom-variant dark (&:where(.dark, .dark *));
 
-body.dark {
-  background-color: #0f172a !important;
-  color: #dbe1eb !important;
+:root {
+  /* Light Mode */
+  --color-canvas: #ffffff;
+  /* Page background */
+  --color-canvas-alt: #f9fafb;
+  /* Alternative background (gray-50) */
+  --color-card: #ffffff;
+  /* Component background */
+  --color-text-main: #111827;
+  /* Primary text (gray-900) */
+  --color-text-muted: #6b7280;
+  /* Secondary text (gray-500) */
+  --color-border: #e5e7eb;
+  /* Borders (gray-200) */
+  --color-input-bg: #f9fafb;
+  /* Input background (gray-50) */
+  --color-primary: #00BEA5;
+  /* Primary accent color */
+  --color-transcript-bg: var(--color-blue-50);
+}
+
+.dark {
+  /* Dark Mode - Carbon/Graphite Palette */
+  --color-canvas: #18181b;
+  /* Zinc-900 - Deep Matte Grey for Background */
+  --color-canvas-alt: rgb(26,26,26);
+  /* Same as canvas for unified background */
+  --color-card: #27272a;
+  /* Zinc-800 - Lighter Grey for Cards/Sidebar to pop */
+  --color-text-main: #ffffff;
+  /* White text for crisp contrast */
+  --color-text-muted: #a1a1aa;
+  /* Zinc-400 - Soft gray for secondary text */
+  --color-border: #3f3f46;
+  /* Zinc-700 - Subtle borders */
+  --color-input-bg: #3f3f46;
+  /* Zinc-700 - Distinct input background */
+  --color-transcript-bg: #162456;
+
+}
+
+@theme {
+  --color-canvas: var(--color-canvas);
+  --color-canvas-alt: var(--color-canvas-alt);
+  --color-card: var(--color-card);
+  --color-main: var(--color-text-main);
+  --color-muted: var(--color-text-muted);
+  --color-border: var(--color-border);
+  --color-input: var(--color-input-bg);
+  --color-primary: var(--color-primary);
+  --color-transcript-bg: var(--color-transcript-bg);
+}
+
+body {
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
+    "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
+    sans-serif;
+  background-color: var(--color-canvas);
+  color: var(--color-text-main);
+}
+
+button{
+  cursor: pointer;
 }
 
 /* Force dark ONLY for layout elements */
@@ -63,6 +121,48 @@ body.dark .text-muted {
   overflow: hidden;
 }
 
+/* Custom scrollbar for better appearance */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+  .w-70 {
+    width: 16rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .sidebar-hidden {
+    transform: translateX(-100%);
+  }
+}
+
 .text-gradient {
   background: linear-gradient(90deg, #4facfe, #7846aa);
   -webkit-background-clip: text;
@@ -86,45 +186,9 @@ body.dark .text-muted {
 
 .password-input {
   font-size: 2rem;
+  /* bigger bullets */
   letter-spacing: 0.35rem;
+  /* space between bullets */
   font-weight: 900;
-}
-
-/* =========================
-   SCROLLBAR
-========================= */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: #f1f1f1;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
-}
-
-body.dark ::-webkit-scrollbar-track {
-  background: #020617;
-}
-
-body.dark ::-webkit-scrollbar-thumb {
-  background: #475569;
-}
-
-/* =========================
-   RESPONSIVE
-========================= */
-@media (max-width: 1024px) {
-  .w-70 {
-    width: 16rem;
-  }
-}
-
-@media (max-width: 768px) {
-  .sidebar-hidden {
-    transform: translateX(-100%);
-  }
+  /* bolder bullets */
 }

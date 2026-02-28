@@ -17,7 +17,7 @@ const getUserAnalytics = async (req, res) => {
     res.json({
       attendance: analytics.attendance || 0,
       avgMarks: analytics.avgMarks || 0,
-      dailyHours: analytics.dailyHours || [],
+      dailyHours: analytics.dailyHours || 0,
       totalCourses: analytics.totalCourses || 0,
       completedCourses: analytics.completedCourses || 0,
       totalHours: analytics.totalHours || 0,
@@ -51,6 +51,7 @@ const recordStudySession = async (req, res) => {
       daysStudied: 0,
       studySessions: [],
       lastStudyDate: null,
+      dailyHours: 0,
     };
 
     const sessionDate = date ? new Date(date) : new Date();
@@ -58,14 +59,16 @@ const recordStudySession = async (req, res) => {
     const isNewDay =
       !analytics.lastStudyDate ||
       new Date(analytics.lastStudyDate).toDateString() !==
-        sessionDate.toDateString();
+      sessionDate.toDateString();
 
     if (isNewDay) {
       analytics.daysStudied += 1;
       analytics.lastStudyDate = sessionDate;
+      analytics.dailyHours = 0; // Reset on new day
     }
 
-    analytics.totalHours += hours;
+    analytics.totalHours = parseFloat((analytics.totalHours + hours).toFixed(4));
+    analytics.dailyHours = parseFloat(((analytics.dailyHours || 0) + hours).toFixed(4));
 
     analytics.studySessions.push({
       date: sessionDate,

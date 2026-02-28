@@ -123,13 +123,12 @@ export default function CoursePreview() {
                 {courseData.tags?.map((tag, index) => (
                   <span
                     key={index}
-                    className={`text-sm font-medium ${
-                      tag === "Bestseller"
+                    className={`text-sm font-medium ${tag === "Bestseller"
                         ? "text-[#FACC15]"
                         : tag === "Beginner-Friendly"
-                        ? "bg-[#22C55E] text-white px-3 py-1 rounded-full"
-                        : "bg-[#3B82F6] text-white px-3 py-1 rounded-full"
-                    }`}
+                          ? "bg-[#22C55E] text-white px-3 py-1 rounded-full"
+                          : "bg-[#3B82F6] text-white px-3 py-1 rounded-full"
+                      }`}
                   >
                     {tag}
                   </span>
@@ -271,7 +270,7 @@ export default function CoursePreview() {
                 {courseData.whatYouLearn.map((item, index) => (
                   <div key={index} className="flex items-start gap-3">
                     <svg
-                      className="w-3.5 h-4 mt-1 flex-shrink-0"
+                      className="w-3.5 h-4 mt-1 shrink-0"
                       viewBox="0 0 14 16"
                       fill="none"
                     >
@@ -361,7 +360,7 @@ export default function CoursePreview() {
           </div>
 
           {/* Right Sidebar */}
-          <div className="w-full lg:w-[395px] flex-shrink-0 space-y-6">
+          <div className="w-full lg:w-[395px] shrink-0 space-y-6">
             {/* Video Preview */}
             <div className="relative bg-[#1F2937] rounded-xl overflow-hidden shadow-[0_0_30px_0_rgba(102,126,234,0.3)]">
               <img
@@ -378,21 +377,19 @@ export default function CoursePreview() {
                 <div className="flex">
                   <button
                     onClick={() => setActiveTab("personal")}
-                    className={`flex-1 py-2 px-4 rounded-lg text-base font-bold transition-colors ${
-                      activeTab === "personal"
+                    className={`flex-1 py-2 px-4 rounded-lg text-base font-bold transition-colors ${activeTab === "personal"
                         ? "bg-[#00BEA5] bg-opacity-67 text-white"
                         : "bg-transparent text-[#6B7280]"
-                    }`}
+                      }`}
                   >
                     Personal
                   </button>
                   <button
                     onClick={() => setActiveTab("team")}
-                    className={`flex-1 py-2 px-4 rounded-lg text-base font-bold transition-colors ${
-                      activeTab === "team"
+                    className={`flex-1 py-2 px-4 rounded-lg text-base font-bold transition-colors ${activeTab === "team"
                         ? "bg-[#00BEA5] bg-opacity-67 text-white"
                         : "bg-transparent text-[#6B7280]"
-                    }`}
+                      }`}
                   >
                     Team
                   </button>
@@ -437,7 +434,7 @@ export default function CoursePreview() {
               <button
                 onClick={handlePurchase}
                 disabled={isPurchasing}
-                className="w-full bg-gradient-to-r from-[#00BEA5] to-[#54D3C3] text-white text-base font-bold py-3 rounded-lg mb-4 hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-linear-to-r from-[#00BEA5] to-[#54D3C3] text-white text-base font-bold py-3 rounded-lg mb-4 hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isPurchasing ? "Purchasing..." : "Buy Now"}
               </button>
@@ -456,7 +453,7 @@ export default function CoursePreview() {
                       <img
                         src={feature.icon}
                         alt=""
-                        className="w-4 h-3.5 flex-shrink-0"
+                        className="w-4 h-3.5 shrink-0"
                       />
                       {feature.text}
                     </div>

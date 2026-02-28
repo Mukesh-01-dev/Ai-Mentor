@@ -30,39 +30,37 @@ const SocialLogin = () => {
 
       // Use existing AuthContext login
       login(data, true);
-    } catch (err) {  // ✅ FIXED: Removed TypeScript ": any"
+    } catch (err) {
       alert(err.message || "Google sign-in error");
     }
   };
 
   return (
-    <div className="d-grid gap-2 mt-4">
+    <div className="flex flex-col gap-2.5 mt-4">
       <button
-        className="btn btn-outline-secondary d-flex align-items-center justify-content-center"
+        className="flex items-center justify-center w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#00BEA5] transition-all dark:bg-[#0f172a] dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800 cursor-pointer"
         type="button"
         onClick={handleGoogleLogin}
       >
         <img
           src={logoGoogle}
           alt="Google"
-          style={{ width: "20px", height: "20px" }}
-          className="me-2"
+          className="w-4 h-4 mr-2.5 object-contain"
         />
-        <span>Sign in with Google</span>
+        <span className="text-sm">Sign in with Google</span>
       </button>
 
       <button
-        className="btn btn-outline-secondary d-flex align-items-center justify-content-center"
+        className="flex items-center justify-center w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 font-medium hover:bg-gray-50 opacity-60 cursor-not-allowed dark:bg-[#0f172a] dark:border-gray-700 dark:text-gray-300"
         type="button"
         disabled
       >
         <img
           src={logoApple}
           alt="Apple"
-          style={{ width: "20px", height: "20px" }}
-          className="me-2"
+          className="w-4 h-4 mr-2.5 object-contain"
         />
-        <span>Sign in with Apple</span>
+        <span className="text-sm">Sign in with Apple</span>
       </button>
     </div>
   );

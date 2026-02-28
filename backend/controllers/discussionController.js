@@ -1,5 +1,6 @@
 import Discussion from "../models/Discussion.js";
 import User from "../models/User.js";
+import crypto from "crypto";
 
 // @desc    Create a new discussion
 // @route   POST /api/discussions
@@ -70,6 +71,10 @@ const addReplyToDiscussion = async (req, res) => {
     const { text } = req.body;
     const discussionId = req.params.id;
 
+    if (!discussionId) {
+      return res.status(400).json({ message: "Discussion ID is required" });
+    }
+
     if (!text) {
       return res.status(400).json({ message: "Reply text is required" });
     }
@@ -113,6 +118,10 @@ const likeDiscussion = async (req, res) => {
     }
 
     const discussionId = req.params.id;
+
+    if (!discussionId) {
+      return res.status(400).json({ message: "Discussion ID is required" });
+    }
     const userId = req.user.id;
 
     const discussion = await Discussion.findByPk(discussionId);
@@ -154,6 +163,10 @@ const likeReply = async (req, res) => {
     }
 
     const { discussionId, replyId } = req.params;
+
+    if (!discussionId || !replyId) {
+      return res.status(400).json({ message: "Discussion ID and Reply ID are required" });
+    }
     const userId = req.user.id;
 
     const discussion = await Discussion.findByPk(discussionId);
