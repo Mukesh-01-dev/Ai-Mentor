@@ -42,7 +42,7 @@ router.post("/generate-video", async (req, res) => {
     const clean = (str) =>
     str.replace(/[<>:"/\\|?*]/g, "").replace(/\s+/g, "_");
     const videoFileName = `${clean(topic)}_${clean(celebrity)}_${clean(course)}.mp4`;
-
+    const vttFileName = `${clean(topic)}_${clean(celebrity)}_${clean(course)}.vtt`;
     console.log(`Requested Video: ${videoFileName}`);
 
     const aiServiceVideoPath = path.join(
@@ -50,8 +50,14 @@ router.post("/generate-video", async (req, res) => {
       "../../ai_service/backend/output",
       videoFileName
     );
+    const aiServiceVttPath = path.join(
+      __dirname,
+    "../../ai_service/backend/output",
+    vttFileName
+    )
     const backendVideosFolder = path.join(__dirname, "../videos");
     const backendVideoPath = path.join(backendVideosFolder, videoFileName);
+    const backendVttPath = path.join(backendVideosFolder, vttFileName);
 
     // Ensure backend/videos exists
     if (!fs.existsSync(backendVideosFolder)) {
@@ -75,6 +81,11 @@ router.post("/generate-video", async (req, res) => {
       console.log("✅ Video found in AI service outputs, verifying stability...");
       if (await waitForFileStability(aiServiceVideoPath)) {
         await fs.promises.copyFile(aiServiceVideoPath, backendVideoPath);
+        // copy vtt if exist
+        if (fs.existsSync(aiServiceVttPath)) {
+          await fs.promises.copyFile(aiServiceVttPath, backendVttPath);
+          console.log("✅ VTT file copied");
+        }
         return res.json({
           status: "success",
           message: "Video generated successfully",
@@ -121,6 +132,10 @@ router.post("/generate-video", async (req, res) => {
         if (await waitForFileStability(aiServiceVideoPath)) {
           console.log("✅ Video generation complete and file verified!");
           await fs.promises.copyFile(aiServiceVideoPath, backendVideoPath);
+          if(fs.existsSync(aiServiceVttPath)) {
+            await fs.promises.copyFile(aiServiceVttPath, backendVttPath);
+            console.log("✅ VTT file copied");
+          }
           return res.json({
             status: "success",
             message: "Video generated successfully",

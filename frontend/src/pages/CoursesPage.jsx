@@ -168,7 +168,7 @@ const CoursesPage = () => {
                         </h3>
 
                         <p className="text-sm text-slate-400">
-                          {course.totalLessons} {course.level} ⭐{course.rating}
+                          {course.lessons} {course?.level} ⭐{course?.rating}
                         </p>
                         <p>Progress: {course.progress}%</p>
                         <button

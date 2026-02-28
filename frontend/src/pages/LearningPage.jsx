@@ -38,12 +38,12 @@ export default function Learning() {
 
   // Captions state
   const [captions, setCaptions] = useState([]);
-  const [activeCaption, setActiveCaption] = useState("");
+  const [activeCaptionIndex, setActiveCaptionIndex] = useState(null);
   const celebrities = ["Salman Khan", "Modi ji", "SRK"];
   const celebrityVideoMap = {
-    "Salman Khan": "/videos/salman.mp4",
-    "Modi ji": "/videos/modi.mp4",
-    "SRK": "/videos/srk.mp4",
+    "Salman Khan": { video: "http://localhost:5000/videos/salman.mp4", vtt: "http://localhost:5000/videos/salman.vtt" },
+    "Modi ji": { video: "http://localhost:5000/videos/modi.mp4", vtt: "http://localhost:5000/videos/modi.vtt" },
+    "SRK": { video: "http://localhost:5000/videos/srk.mp4", vtt: "http://localhost:5000/videos/srk.vtt" },
   };
 
   const [selectedCelebrity, setSelectedCelebrity] = useState(null);
@@ -64,8 +64,8 @@ export default function Learning() {
   const [aiVideoUrl, setAiVideoUrl] = useState(null);
   const videoRef = useRef(null);
   const playerContainerRef = useRef(null);
-
-
+  const transcriptRef = useRef(null);
+  const captionRefs = useRef([]);
 
   useEffect(() => {
     // Check if user has purchased this course
@@ -247,7 +247,8 @@ export default function Learning() {
     const loadCaptions = async () => {
       try {
         const vttPath =
-          "/vdo_subtitles.vtt";
+          aiVideoUrl?.replace(".mp4", ".vtt") || celebrityVideoMap[selectedCelebrity]?.vtt;
+        if (!vttPath) return;
         const res = await fetch(vttPath);
         if (!res.ok) {
           setCaptions([]);
@@ -293,7 +294,21 @@ export default function Learning() {
     };
 
     loadCaptions();
-  }, [selectedCelebrity]);
+  }, [selectedCelebrity, aiVideoUrl]);
+
+  // Auto scroll active transcript line
+  useEffect(() => {
+    if (
+      activeCaptionIndex !== null && activeCaptionIndex >= 0 && captionRefs.current[activeCaptionIndex]
+    ) {
+
+      captionRefs.current[activeCaptionIndex].scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }
+  }, [activeCaptionIndex]);
+
 
   // Ensure when currentLesson changes we load its video into the player
   useEffect(() => {
@@ -497,10 +512,10 @@ export default function Learning() {
       setProgress((currentTime / duration) * 100);
       // update visible caption overlay
       if (captions.length > 0) {
-        const cue = captions.find(
+        const index = captions.findIndex(
           (c) => currentTime >= c.start && currentTime <= c.end
         );
-        setActiveCaption(cue ? cue.text : "");
+        setActiveCaptionIndex(index !== -1 ? index : null);
       }
     }
   };
@@ -675,18 +690,30 @@ export default function Learning() {
                     preload="metadata"
                   />
                 )}
-
                 {isAIVideoLoading && (
-                  <div className="absolute inset-0 bg-black/70 flex items-center justify-center z-20">
-                    <p className="text-white text-lg animate-pulse">
-                      Loading {selectedCelebrity} video...
-                    </p>
-                  </div>
-                )}
-                {/* Caption overlay (custom) */}
-                {activeCaption && (
-                  <div className="absolute left-1/2 transform -translate-x-1/2 bottom-16 px-4 py-2 bg-black/70 text-white rounded-md max-w-3xl text-center">
-                    <p className="text-sm leading-relaxed">{activeCaption}</p>
+                  <div className="absolute inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-20">
+                    <div className="flex flex-col items-center gap-6">
+
+                      {/* glowing AI brain spinner */}
+                      <div className="relative w-20 h-20">
+                        <div className="absolute inset-0 rounded-full border-4 border-blue-500 animate-spin"></div>
+                        <div className="absolute inset-2 rounded-full border-4 border-purple-500 animate-spin [animation-direction:reverse]"></div>
+                        <div className="absolute inset-4 rounded-full border-4 border-cyan-400 animate-pulse"></div>
+                      </div>
+
+                      {/* typing text animation */}
+                      <p className="text-white text-lg font-medium tracking-wide">
+                        Generating {selectedCelebrity} AI video...
+                      </p>
+
+                      {/* progress dots */}
+                      <div className="flex gap-2">
+                        <span className="w-2 h-2 bg-white rounded-full animate-bounce"></span>
+                        <span className="w-2 h-2 bg-white rounded-full animate-bounce delay-150"></span>
+                        <span className="w-2 h-2 bg-white rounded-full animate-bounce delay-300"></span>
+                      </div>
+
+                    </div>
                   </div>
                 )}
 
@@ -852,14 +879,37 @@ export default function Learning() {
               {/* ===== BOX 1 — LESSON INFO ===== */}
               <div className="bg-white p-2 rounded-xl border border-blue-300 shadow-lg">
                 <h2 className="text-lg font-semibold text-gray-800">
-                  {currentLesson?.title}
+                  {currentLesson.title}
                 </h2>
 
                 {/* scrollable introduction */}
-                <div className="mt-4 max-h-40 overflow-y-auto pr-2">
-                  <p className="text-sm text-gray-600 leading-relaxed">
-                    {currentLesson?.content?.introduction}
-                  </p>
+                <p className="text-lg font-semibold text-gray-800">Transcrpit</p>
+                <div ref={transcriptRef} className="mt-4 max-h-40 overflow-y-auto space-y-2">
+                  {captions.length > 0 ? (
+                    captions.map((c, index) => (
+                      <p
+                        key={index}
+                        ref={(el) => (captionRefs.current[index] = el)}
+                        onClick={() => {
+                          if (videoRef.current) {
+                            videoRef.current.currentTime = c.start;
+                            videoRef.current.play();
+                          }
+                        }}
+                        className={`text-sm leading-relaxed cursor-pointer px-2 py-1 rounded transition
+                            ${index === activeCaptionIndex
+                            ? "bg-blue-600 text-white font-medium"
+                            : "text-gray-600 hover:bg-gray-100"
+                          }`}
+                      >
+                        {c.text}
+                      </p>
+                    ))
+                  ) : (
+                    <p className="text-sm text-gray-400">
+                      No transcript available
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -886,7 +936,7 @@ export default function Learning() {
                     onClick={handleSeek}
                     className="w-full h-2 bg-grey-200 dark:bg-grey-600 rounded cursor-pointer">
                     <div
-                      className="h-2 bg-blue-600 dark:bg-sky-400 rounded transition-all"
+                      className="h-2 bg-blue-600 rounded transition-all"
                       style={{ width: `${progress}%` }} />
                   </div>
 

@@ -19,6 +19,34 @@ if not GEMINI_API_KEY:
 
 client = Client(api_key=GEMINI_API_KEY)
 
+#---------------------------
+# text to vtt converter
+#----------------------------
+def text_to_vtt(text, vtt_path):
+    sentences = text.split(". ")
+
+    vtt_content = "WEBVTT\n\n"
+    start = 0
+
+    for line in sentences:
+        if not line.strip():
+            continue
+
+        end = start + 5  
+
+        start_time = f"00:00:{start:02d}.000"
+        end_time = f"00:00:{end:02d}.000"
+
+        vtt_content += (
+            f"{start_time} --> {end_time}\n"
+            f"{line.strip()}.\n\n"
+        )
+
+        start = end
+
+    with open(vtt_path, "w", encoding="utf-8") as f:
+        f.write(vtt_content)
+
 # ----------------------------
 # Initialize TTS Engine
 # ----------------------------
@@ -45,12 +73,12 @@ class VideoRequest(BaseModel):
 def get_celebrity_video(name: str):
     name = name.lower()
 
-    if name == "modi":
-        return "input/modi.mp4"
-    elif name == "salman":
+    if name == "salman":
         return "input/salman.mp4"
-    else:
+    elif name == "modi":
         return "input/modi.mp4"
+    else:
+        return "input/salman.mp4"
 
 def clean_filename(name: str):
     name = name.lower()
@@ -101,6 +129,7 @@ Narration style inspired by {data.celebrity}.
     text_path = f"output/{filename}.txt"
     audio_path = f"output/{filename}.mp3"
     final_video = f"output/{filename}.mp4"
+    vtt_path = f"output/{filename}.vtt"
 
     # ----------------------------
     # 3️⃣ Save Text to File
@@ -108,6 +137,8 @@ Narration style inspired by {data.celebrity}.
     with open(text_path, "w", encoding="utf-8") as f:
         f.write(text)
 
+    # Create vtt subtitles
+    text_to_vtt(text, vtt_path) 
     
     # ----------------------------
     # 4️⃣ Generate Normal Audio
