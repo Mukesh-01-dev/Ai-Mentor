@@ -60,6 +60,7 @@ export default function Settings() {
     },
   });
   const [loading, setLoading] = useState(false);
+  const [profilePopup, setprofilePopup] = useState(false);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [passwordData, setPasswordData] = useState({
@@ -91,7 +92,10 @@ export default function Settings() {
         }
       );
       updateUser(response.data);
-      alert("Profile updated successfully!");
+      setprofilePopup(true);
+      setTimeout(() => {
+        setprofilePopup(false);
+      }, 3000);
     } catch (error) {
       console.error("Error updating profile:", error);
       alert("Failed to update profile. Please try again.");
@@ -842,6 +846,78 @@ export default function Settings() {
                       {loading ? "Saving..." : "Save Changes"}
                     </button>
                   </div>
+                </div>
+              </div>
+            )}
+            {/* ================= ENROLL POPUP ================= */}
+            {/* {profilePopup && (
+              <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-55">
+                <div className="bg-white dark:bg-slate-800 rounded-2xl p-8 w-[400px] text-center shadow-xl relative">
+
+                  <button
+                    onClick={() => setprofilePopup(false)}
+                    className="absolute top-4 right-4 text-gray-500 hover:text-black"
+                  >
+                    X
+                  </button>
+
+                  <div className="text-5xl mb-4">✅</div>
+
+                  <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-2">
+                    Profile Updated Successfully!
+                  </h2>
+
+                  <button
+                    onClick={() => setprofilePopup(false)}
+                    className="mt-6 px-6 py-2 bg-[#00BEA5] text-white rounded-xl hover:opacity-90"
+                  >
+                    OK
+                  </button>
+                </div>
+              </div>
+            )} */}
+            {profilePopup && (
+              <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-55 animate-fadeIn">
+
+                <div className="relative bg-gradient-to-br from-white to-slate-100 dark:from-slate-800 dark:to-slate-900 
+                    rounded-3xl p-10 w-[420px] text-center shadow-2xl border border-slate-200 
+                    dark:border-slate-700 transform transition-all duration-300 scale-100 animate-popup">
+
+                  {/* Close Button */}
+                  <button
+                    onClick={() => setprofilePopup(false)}
+                    className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center 
+                   rounded-full bg-slate-200 dark:bg-slate-700 
+                   hover:bg-red-500 hover:text-white 
+                   transition-all duration-300 text-slate-600 dark:text-slate-300"
+                  >
+                    ✕
+                  </button>
+
+                  {/* Animated Success Circle */}
+                  <div className="mx-auto mb-6 w-20 h-20 flex items-center justify-center 
+                      rounded-full bg-gradient-to-r from-emerald-400 to-green-500 
+                      shadow-lg animate-bounce">
+                    <span className="text-4xl text-white">✓</span>
+                  </div>
+
+                  {/* Heading */}
+                  <h2 className="text-2xl font-bold bg-gradient-to-r from-emerald-500 to-teal-500 
+                     bg-clip-text text-transparent mb-3">
+                    Profile Updated Successfully!
+                  </h2>
+
+                  {/* Action Button */}
+                  <button
+                    onClick={() => setprofilePopup(false)}
+                    className="px-8 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 
+                   text-white rounded-2xl font-semibold 
+                   shadow-lg hover:scale-105 hover:shadow-emerald-400/40 
+                   transition-all duration-300"
+                  >
+                    Ok
+                  </button>
+
                 </div>
               </div>
             )}
