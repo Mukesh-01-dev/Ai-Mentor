@@ -54,12 +54,14 @@ export default function Learning() {
 
   // Captions state
   const [captions, setCaptions] = useState([]);
-  const [activeCaptionIndex, setActiveCaptionIndex] = useState(null);
+  const [activeCaption, setActiveCaption] = useState("");
   const celebrities = ["Salman Khan", "Modi ji", "SRK"];
+
+  // map celebrities to videos and vtt files
   const celebrityVideoMap = {
-    "Salman Khan": { video: "http://localhost:5000/videos/salman.mp4", vtt: "http://localhost:5000/videos/salman.vtt" },
-    "Modi ji": { video: "http://localhost:5000/videos/modi.mp4", vtt: "http://localhost:5000/videos/modi.vtt" },
-    "SRK": { video: "http://localhost:5000/videos/srk.mp4", vtt: "http://localhost:5000/videos/srk.vtt" },
+    "Salman Khan": { video: "/videos/salman.mp4", vtt: "/videos/salman.vtt" },
+    "Modi ji": { video: "/videos/modi.mp4", vtt: "/videos/modi.vtt" },
+    SRK: { video: "/videos/srk.mp4", vtt: "/videos/srk.vtt" },
   };
 
   const [selectedCelebrity, setSelectedCelebrity] = useState(null);
@@ -483,6 +485,39 @@ export default function Learning() {
 
 
 
+  // If selectedCelebrity is Salman Khan and the user wants the Reactjs paragraph
+  // shown word-by-word, create per-word cues when video metadata (duration) is available.
+  // useEffect(() => {
+  //   const v = videoRef.current;
+  //   if (!v) return;
+
+  //   const createWordCues = () => {
+  //     if (selectedCelebrity !== "Salman Khan") return;
+  //     const words = Reactjs_PARAGRAPH.split(/\s+/).filter(Boolean);
+  //     if (
+  //       !words.length ||
+  //       !v.duration ||
+  //       !isFinite(v.duration) ||
+  //       v.duration <= 0
+  //     )
+  //       return;
+  //     const per = v.duration / words.length;
+  //     const cues = words.map((w, i) => ({
+  //       start: i * per,
+  //       end: (i + 1) * per,
+  //       text: w,
+  //     }));
+  //     setCaptions(cues);
+  //   };
+
+  //   // If metadata already loaded, create cues immediately
+  //   if (v.duration && isFinite(v.duration) && v.duration > 0) {
+  //     createWordCues();
+  //   }
+
+  //   v.addEventListener("loadedmetadata", createWordCues);
+  //   return () => v.removeEventListener("loadedmetadata", createWordCues);
+  // }, [selectedCelebrity, videoRef.current]);
 
   const { modules, currentLesson } = learningData || {};
 
@@ -760,7 +795,6 @@ export default function Learning() {
     return `${minutes}:${seconds.toString().padStart(2, "0")}`;
   };
 
-
   return (
     <div className="min-h-screen bg-canvas-alt flex flex-col">
       <Header />
@@ -883,39 +917,6 @@ export default function Learning() {
                     </div>
                   ))}
                 </div>
-
-                {/* progress bar */}
-                <div>
-                  <div
-                    onClick={handleSeek}
-                    className="w-full h-2 bg-grey-200 dark:bg-grey-600 rounded cursor-pointer">
-                    <div
-                      className="h-2 bg-blue-600 rounded transition-all"
-                      style={{ width: `${progress}%` }} />
-                  </div>
-
-                  {/* time */}
-                  <div className="flex justify-between text-xs text-gray-500 mt-1">
-                    <span>{formatTime(currentTime)}</span>
-                    <span>{formatTime(duration)}</span>
-                  </div>
-                </div>
-
-                {/* volume */}
-                <div className="flex items-center gap-3">
-                  <button onClick={toggleMute}>
-                    {isMuted ? "🔇" : "🔊"}
-                  </button>
-                  <input
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.01"
-                    value={volume}
-                    onChange={handleVolumeChange}
-                    className="w-full accent-blue-600"
-                  />
-                </div>
               </div>
             </div>
 
@@ -969,7 +970,6 @@ export default function Learning() {
 
 
             </div>
-
           </div>
         </div>
 
@@ -1174,6 +1174,6 @@ export default function Learning() {
           />
         </div>
       </div>
-    </div >
+    </div>
   );
 }

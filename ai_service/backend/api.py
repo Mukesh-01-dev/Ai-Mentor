@@ -11,60 +11,10 @@ from pydantic import BaseModel
 from google import genai
 from config import GEMINI_API_KEY
 
-# ----------------------------
-# Load Environment Variables
-# ----------------------------
-load_dotenv()
-
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-
-if not GEMINI_API_KEY:
-    raise ValueError("GEMINI_API_KEY not found in .env file")
-
-client = Client(api_key=GEMINI_API_KEY)
-
-#---------------------------
-# text to vtt converter
-#----------------------------
-def text_to_vtt(text, vtt_path):
-    sentences = text.split(". ")
-
-    vtt_content = "WEBVTT\n\n"
-    start = 0
-
-    for line in sentences:
-        if not line.strip():
-            continue
-
-        end = start + 5  
-
-        start_time = f"00:00:{start:02d}.000"
-        end_time = f"00:00:{end:02d}.000"
-
-        vtt_content += (
-            f"{start_time} --> {end_time}\n"
-            f"{line.strip()}.\n\n"
-        )
-
-        start = end
-
-    with open(vtt_path, "w", encoding="utf-8") as f:
-        f.write(vtt_content)
-
-# ----------------------------
-# Initialize TTS Engine
-# ----------------------------
-
-engine = pyttsx3.init()
-engine.setProperty("rate", 160)
-
-voices = engine.getProperty("voices")
-engine.setProperty("voice", voices[0].id)
-
-# ----------------------------
+# --------------------------
 # FastAPI App
-# ----------------------------
-app = FastAPI()
+# --------------------------
+app = FastAPI(title="AI Lesson Generator")
 
 app.add_middleware(
     CORSMiddleware,
