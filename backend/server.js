@@ -1,11 +1,10 @@
+// backend/server.js
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
-
 import { connectDB, sequelize } from "./config/db.js";
-
 import authRoutes from "./routes/auth.js";
 import userRoutes from "./routes/userRoutes.js";
 import courseRoutes from "./routes/courseRoutes.js";
@@ -40,6 +39,8 @@ app.get("/", (req, res) => {
   res.send("API is running...");
 });
 
+app.use("/uploads", express.static("uploads"));
+
 // ✅ REGISTER ROUTES (CORRECT PLACE)
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
@@ -66,7 +67,7 @@ const startServer = async () => {
     // Sync database models
     await sequelize.sync({ alter: true });
     console.log("✅ Database models synced successfully");
-
+    
     app.listen(PORT, () => {
       console.log(`✅ Server running on port ${PORT}`);
     });

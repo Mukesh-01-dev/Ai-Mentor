@@ -1,5 +1,8 @@
+// backend/controller/userController.js
 import User from "../models/User.js";
 import jwt from "jsonwebtoken";
+import cloudinary from "../config/cloudinary.js";
+import fs from "fs";
 
 // Generate JWT Token
 const generateToken = (id) => {
@@ -75,6 +78,7 @@ const loginUser = async (req, res) => {
       email: user.email,
       role: user.role,
       bio: user.bio,
+      avatar_url: user.avatar_url, // 🔥 ADD THIS
       purchasedCourses: user.purchasedCourses,
       token: generateToken(user.id),
     });
@@ -102,6 +106,7 @@ const getUserProfile = async (req, res) => {
       email: user.email,
       role: user.role,
       bio: user.bio,
+      avatar_url: user.avatar_url,  // 👈 ADD THIS LINE
       purchasedCourses: user.purchasedCourses,
     });
   } catch (error) {
@@ -153,52 +158,9 @@ const updateCourseProgress = async (req, res) => {
   try {
     if (!req.user) return res.status(401).json({ message: "Not authorized" });
 
-    const { courseId, completedLesson, currentLesson, lessonData } = req.body;
     const user = await User.findByPk(req.user.id);
-
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    // Find the purchased course
-    const courseIndex = user.purchasedCourses.findIndex(
-      (c) => Number(c.courseId) === Number(courseId)
-    );
-
-    if (courseIndex === -1) {
-      return res.status(404).json({ message: "Course not found in user's library" });
-    }
-
-    // Get the course
-    const purchasedCourses = [...user.purchasedCourses];
-    const course = { ...purchasedCourses[courseIndex] };
-    course.progress = course.progress || { completedLessons: [], currentLesson: null, lessonData: {} };
-
-    // Update completed lessons
-    if (completedLesson) {
-      const alreadyCompleted = course.progress.completedLessons.some(
-        (l) => l.lessonId === completedLesson.lessonId
-      );
-      if (!alreadyCompleted) {
-        course.progress.completedLessons.push(completedLesson);
-      }
-    }
-
-    // Update current lesson
-    if (currentLesson) {
-      course.progress.currentLesson = currentLesson;
-    }
-
-    // Update lesson-specific data (e.g., AI captions/text)
-    if (lessonData) {
-      course.progress.lessonData = {
-        ...(course.progress.lessonData || {}),
-        [lessonData.lessonId]: {
-          ...(course.progress.lessonData?.[lessonData.lessonId] || {}),
-          ...lessonData.data
-        }
-      };
-    }
-
-    // Update analytics (simple example)
     user.analytics = user.analytics || {
       totalHours: 0,
       daysStudied: 0,
@@ -208,45 +170,104 @@ const updateCourseProgress = async (req, res) => {
       learningHoursChart: [],
     };
 
-    purchasedCourses[courseIndex] = course;
-    user.purchasedCourses = purchasedCourses;
-
-
-    user.changed("purchasedCourses", true);
     await user.save();
-    console.log("Updated completedLessons:", course.progress.completedLessons);
-
-    res.json({ message: "Progress updated successfully", purchasedCourses: user.purchasedCourses });
+    res.json({ message: "Progress updated successfully" });
   } catch (error) {
     console.error("PROGRESS ERROR:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
 
-// ====================
 // STUB FUNCTIONS (to prevent module crashes)
-// ====================
 const getWatchedVideos = async (req, res) => {
   res.status(501).json({ message: "getWatchedVideos not implemented yet" });
 };
 
-const updateUserSettings = async (req, res) => {
-  res.status(501).json({ message: "updateUserSettings not implemented yet" });
-};
-
-const updateUserProfile = async (req, res) => {
+const getUserSettings = async (req, res) => {
   try {
-    if (!req.user) {
-      return res.status(401).json({ message: "Not authorized" });
+    const userId = req.user.id;
+
+    const user = await User.findByPk(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
     }
 
+    // Return only settings JSON
+    res.json(user.settings);
+
+  } catch (error) {
+    console.error("Failed to fetch settings:", error);
+    res.status(500).json({ message: "Failed to fetch settings" });
+  }
+};
+
+const updateUserSettings = async (req, res) => {
+  try {
     const user = await User.findByPk(req.user.id);
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Update only provided fields
+    const { notifications, security, appearance } = req.body;
+
+    user.settings = {
+      ...user.settings,
+      notifications: notifications
+        ? { ...user.settings.notifications, ...notifications }
+        : user.settings.notifications,
+      security: security
+        ? { ...user.settings.security, ...security }
+        : user.settings.security,
+      appearance: appearance
+        ? { ...user.settings.appearance, ...appearance }
+        : user.settings.appearance,
+    };
+
+    await user.save();
+
+    res.json({
+      message: "Settings updated successfully",
+      settings: user.settings,
+    });
+
+  } catch (error) {
+    console.error("Failed to update settings:", error);
+    res.status(500).json({ message: "Failed to update settings" });
+  }
+};
+
+const updateUserProfile = async (req, res) => {
+  console.log("REQ.FILE:", req.file);
+  console.log("REQ.BODY:", req.body);
+
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: "Not authorized" });
+    }
+
+    const user = await User.findByPk(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Avatar Upload Handling
+    if (req.file) {
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: "user_avatars",
+        public_id: `user_${user.id}`,
+        overwrite: true,
+      });
+
+      user.avatar_url = result.secure_url;
+      user.avatar = `/uploads/${req.file.filename}`;
+
+      // delete temp file
+      fs.unlinkSync(req.file.path);
+    }
+
+    // Update text fields
     user.firstName = req.body.firstName ?? user.firstName;
     user.lastName = req.body.lastName ?? user.lastName;
     user.name = `${user.firstName} ${user.lastName}`.trim();
@@ -263,6 +284,7 @@ const updateUserProfile = async (req, res) => {
       email: user.email,
       role: user.role,
       bio: user.bio,
+      avatar_url: user.avatar_url,  // 👈 added
       purchasedCourses: user.purchasedCourses,
     });
 
@@ -271,7 +293,6 @@ const updateUserProfile = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-
 
 // ❗ DEV / ADMIN ONLY
 const removePurchasedCourse = async (req, res) => {
@@ -294,15 +315,14 @@ const removePurchasedCourse = async (req, res) => {
   }
 };
 
-// ====================
 // EXPORTS
-// ====================
 export {
   registerUser,
   loginUser,
   getUserProfile,
   purchaseCourse,
   updateCourseProgress,
+  getUserSettings,
   getWatchedVideos, // stub
   updateUserSettings, // stub
   updateUserProfile, // stub
