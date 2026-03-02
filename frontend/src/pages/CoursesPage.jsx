@@ -156,33 +156,43 @@ const CoursesPage = () => {
                   </p>
                 )}
 
-                {myCourses.map((course) => (
-                  <div
-                    key={course.id}
-                    className="bg-card rounded-3xl border border-border overflow-hidden shadow-sm"
-                  >
-                    <img
-                      src={course.image}
-                      alt={course.title}
-                      className="h-40 w-full object-cover"
-                    />
+                {myCourses.map((course) => {
+                  const purchasedEntry = user?.purchasedCourses?.find(
+                    (c) => Number(c.courseId) === Number(course.id)
+                  );
+                  const progress = purchasedEntry?.progress;
+                  const hasStarted =
+                    (progress?.completedLessons?.length > 0) ||
+                    (progress?.currentLesson != null);
 
-                    <div className="p-6 space-y-4">
-                      <h3 className="text-lg font-semibold text-main">
-                        {course.title}
-                      </h3>
+                  return (
+                    <div
+                      key={course.id}
+                      className="bg-card rounded-3xl border border-border overflow-hidden shadow-sm"
+                    >
+                      <img
+                        src={course.image}
+                        alt={course.title}
+                        className="h-40 w-full object-cover"
+                      />
 
-                      <p className="text-sm text-slate-400">{course.lessons}</p>
+                      <div className="p-6 space-y-4">
+                        <h3 className="text-lg font-semibold text-main">
+                          {course.title}
+                        </h3>
 
-                      <button
-                        onClick={() => navigate(`/learning/${course.id}`)}
-                        className="w-full py-3 rounded-xl bg-[#2DD4BF] text-white font-semibold"
-                      >
-                        Continue Learning
-                      </button>
+                        <p className="text-sm text-slate-400">{course.lessons}</p>
+
+                        <button
+                          onClick={() => navigate(`/learning/${course.id}`)}
+                          className="w-full py-3 rounded-xl bg-[#2DD4BF] text-white font-semibold"
+                        >
+                          {hasStarted ? "Continue Learning" : "Start Learning"}
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
 
