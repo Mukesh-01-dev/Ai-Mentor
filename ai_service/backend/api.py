@@ -3,13 +3,31 @@
 import os
 import datetime
 import re
+import traceback
 import pyttsx3
+import cloudinary
+import cloudinary.uploader
 from fastapi import FastAPI, BackgroundTasks
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from google import genai
-from config import GEMINI_API_KEY
+from config import (
+    GEMINI_API_KEY,
+    CLOUDINARY_CLOUD_NAME,
+    CLOUDINARY_API_KEY,
+    CLOUDINARY_API_SECRET,
+)
+
+# --------------------------
+# Cloudinary Config
+# --------------------------
+cloudinary.config(
+    cloud_name=CLOUDINARY_CLOUD_NAME,
+    api_key=CLOUDINARY_API_KEY,
+    api_secret=CLOUDINARY_API_SECRET,
+    secure=True,
+)
 
 # --------------------------
 # FastAPI App
@@ -95,8 +113,11 @@ def get_transcript(filename: str):
 
 @app.get("/status/{job_id}")
 def get_status(job_id: str):
-    status = job_status.get(job_id, "not_found")
-    return {"status": status}
+    status_data = job_status.get(job_id, {"status": "not_found"})
+    # Backward compat: handle old string-based entries
+    if isinstance(status_data, str):
+        return {"status": status_data}
+    return status_data
 
 # --------------------------
 # Generate Lesson Endpoint
@@ -111,7 +132,7 @@ def generate_lesson(data: LessonRequest, background_tasks: BackgroundTasks):
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     base_filename = f"{topic_clean}_{timestamp}"
     
-    job_status[base_filename] = "processing"
+    job_status[base_filename] = {"status": "processing"}
 
     # Run as a background task to avoid timeout issues
     background_tasks.add_task(process_lesson, data, base_filename)
@@ -208,11 +229,38 @@ def process_lesson(data: LessonRequest, base_filename: str):
         print(f"🎥 Running ffmpeg command...")
         os.system(ffmpeg_command)
 
-        job_status[base_filename] = "ready"  # 👈 only set AFTER ffmpeg finishes
+        if not os.path.exists(final_video):
+            print(f"❌ FFmpeg failed — video file not found at {final_video}")
+            job_status[base_filename] = {"status": "failed"}
+            return
+
+        # 7️⃣ Upload to Cloudinary
+        cloudinary_url = None
+        try:
+            print(f"☁️ Uploading video to Cloudinary...")
+            upload_result = cloudinary.uploader.upload(
+                final_video,
+                resource_type="video",
+                folder="ai_mentor/videos",
+                public_id=base_filename,
+                overwrite=True,
+                chunk_size=6000000,  # 6 MB chunks for large files
+            )
+            cloudinary_url = upload_result.get("secure_url")
+            print(f"✅ Cloudinary upload success: {cloudinary_url}")
+        except Exception as cloud_err:
+            print(f"⚠️ Cloudinary upload failed (will fall back to local proxy): {cloud_err}")
+
+        job_status[base_filename] = {
+            "status": "ready",
+            "cloudinary_url": cloudinary_url,  # None if upload failed
+        }
         print(f"✅ Lesson ready!")
-        print(f"   Video: {final_video}")
+        print(f"   Video : {final_video}")
+        if cloudinary_url:
+            print(f"   Cloud : {cloudinary_url}")
 
     except Exception as e:
-        job_status[base_filename] = "failed"  # 👈 mark failed on error
+        job_status[base_filename] = {"status": "failed"}  # 👈 mark failed on error
         print(f"❌ Error generating lesson: {e}")
         traceback.print_exc()

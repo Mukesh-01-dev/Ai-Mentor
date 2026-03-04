@@ -383,9 +383,17 @@ export default function Learning() {
                 const statusRes = await fetch(`/api/ai/status/${data.jobId}`, {
                   headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
                 });
-                const { status } = await statusRes.json();
-                if (status === "ready") { isReady = true; break; }
-                if (status === "failed") throw new Error("Video generation failed on server.");
+                const statusData = await statusRes.json();
+                if (statusData.status === "ready") {
+                  isReady = true;
+                  // ☁️ Prefer Cloudinary URL over local proxy URL
+                  if (statusData.cloudinary_url) {
+                    console.log("☁️ Using Cloudinary URL:", statusData.cloudinary_url);
+                    data.videoUrl = statusData.cloudinary_url;
+                  }
+                  break;
+                }
+                if (statusData.status === "failed") throw new Error("Video generation failed on server.");
                 attempts++;
                 await new Promise(r => setTimeout(r, 1000));
               }
