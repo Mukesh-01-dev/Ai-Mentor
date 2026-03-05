@@ -6,6 +6,7 @@ import {
   updateCourseProgress,
   getWatchedVideos,
   updateUserSettings,
+  searchUsers,
 } from "../controllers/userController.js";
 import { protect } from "../middleware/authMiddleware.js";
 import { removePurchasedCourse } from "../controllers/userController.js";
@@ -21,5 +22,6 @@ router.route("/course-progress").put(protect, updateCourseProgress);
 router.route("/watched-videos").get(protect, getWatchedVideos);
 router.route("/settings").put(protect, updateUserSettings);
 router.route("/remove-course").post(protect, removePurchasedCourse);
+router.get("/search",searchUsers);
 
 export default router;

@@ -2,7 +2,7 @@ import { DataTypes, Model } from "sequelize";
 import bcrypt from "bcryptjs";
 import { sequelize } from "../config/db.js";
 
-class User extends Model {}
+class User extends Model { }
 
 User.init(
   {
@@ -44,6 +44,10 @@ User.init(
       type: DataTypes.STRING,
       defaultValue: "",
     },
+    profileImage: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
     purchasedCourses: {
       type: DataTypes.JSONB,
       defaultValue: [],
@@ -67,6 +71,7 @@ User.init(
       type: DataTypes.JSONB,
       defaultValue: [],
     },
+
     settings: {
       type: DataTypes.JSONB,
       defaultValue: {

@@ -1,4 +1,5 @@
 import Discussion from "../models/Discussion.js";
+import DiscussionLike from "../models/DiscussionLike.js";
 import User from "../models/User.js";
 import crypto from "crypto";
 
@@ -44,20 +45,41 @@ const createDiscussion = async (req, res) => {
 const getDiscussions = async (req, res) => {
   try {
     const discussions = await Discussion.findAll({
-      include: [{ model: User, as: "author", attributes: ["name", "email"] }],
+      include: [{ model: User, as: "author", attributes: ["id", "name"] }],
       order: [["createdAt", "DESC"]],
     });
 
-    // Since replies are JSONB and contain user IDs, we might want to populate them
-    // but for simplicity in this conversion, we'll return them as is.
-    // In a real migration, you'd either normalize or fetch users separately.
+    const users = await User.findAll({
+      attributes: ["id", "name"],
+    });
 
-    res.json(discussions);
+    const userMap = {};
+    users.forEach(u => {
+      userMap[u.id] = u.name;
+    });
+
+    const formatted = discussions.map(d => {
+      const discussion = d.toJSON();
+
+      discussion.replies = discussion.replies.map(r => ({
+        ...r,
+        user: {
+          id: r.userId,
+          name: userMap[r.userId] || "Unknown"
+        }
+      }));
+
+      return discussion;
+    });
+
+    res.json(formatted);
   } catch (error) {
     console.error("GET DISCUSSIONS ERROR:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
+
+
 
 // @desc    Add reply to discussion
 // @route   POST /api/discussions/:id/reply
@@ -98,7 +120,11 @@ const addReplyToDiscussion = async (req, res) => {
     await discussion.save();
 
     const updatedDiscussion = await Discussion.findByPk(discussionId, {
-      include: [{ model: User, as: "author", attributes: ["name", "email"] }],
+      include: [{
+        model: User,
+        as: "author",
+        attributes: ["id", "name", "email", "profileImage"]
+      }],
     });
 
     res.json(updatedDiscussion);
@@ -143,7 +169,11 @@ const likeDiscussion = async (req, res) => {
     await discussion.save();
 
     const updatedDiscussion = await Discussion.findByPk(discussionId, {
-      include: [{ model: User, as: "author", attributes: ["name", "email"] }],
+      include: [{
+        model: User,
+        as: "author",
+        attributes: ["id", "name", "email", "profileImage"]
+      }],
     });
 
     res.json(updatedDiscussion);
@@ -196,7 +226,11 @@ const likeReply = async (req, res) => {
     await discussion.save();
 
     const updatedDiscussion = await Discussion.findByPk(discussionId, {
-      include: [{ model: User, as: "author", attributes: ["name", "email"] }],
+      include: [{
+        model: User,
+        as: "author",
+        attributes: ["id", "name", "email", "profileImage"]
+      }],
     });
 
     res.json(updatedDiscussion);

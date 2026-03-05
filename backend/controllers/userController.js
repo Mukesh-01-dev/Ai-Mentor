@@ -1,5 +1,6 @@
 import User from "../models/User.js";
 import jwt from "jsonwebtoken";
+import { Op } from "sequelize";
 
 // Generate JWT Token
 const generateToken = (id) => {
@@ -294,6 +295,32 @@ const removePurchasedCourse = async (req, res) => {
   }
 };
 
+const searchUsers = async (req, res) => {
+  try {
+    const { q } = req.query;
+
+    if (!q || q.trim() === "") {
+      return res.json([]);
+    }
+
+    const users = await User.findAll({
+      where: {
+        name: {
+          [Op.iLike]: `${q}%`,   // prefix search, case-insensitive
+        },
+      },
+      attributes: ["id", "name"],
+      limit: 5,
+      order: [["name", "ASC"]],
+    });
+
+    res.json(users);
+  } catch (error) {
+    console.error("SEARCH USER ERROR:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 // ====================
 // EXPORTS
 // ====================
@@ -307,4 +334,5 @@ export {
   updateUserSettings, // stub
   updateUserProfile, // stub
   removePurchasedCourse,
+  searchUsers,
 };
