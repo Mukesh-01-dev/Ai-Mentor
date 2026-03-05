@@ -3,6 +3,7 @@ import Header from "../components/Header";
 import Sidebar from "../components/Sidebar";
 import { useAuth } from "../context/AuthContext";
 import { useSidebar } from "../context/SidebarContext";
+import LikeButton from "../components/LikeButton";
 import {
   Heart,
   Reply,
@@ -23,7 +24,11 @@ const DiscussionsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [uploadedImages, setUploadedImages] = useState([]);
+  const [mentionQuery, setMentionQuery] = useState("");
+  const [mentionSuggestions, setMentionSuggestions] = useState([]);
+  const [showMentions, setShowMentions] = useState(false);
   const fileInputRef = useRef(null);
+  const descriptionRef = useRef(null);
 
   const tabs = ["Recent", "Unanswered", "My Doubts", "Popular"];
 
@@ -228,16 +233,74 @@ const DiscussionsPage = () => {
   };
 
   const insertMention = () => {
-    const userName = prompt("Enter the user to mention:");
-    if (userName) {
-      setQuestionDescription((prev) => prev + ` @${userName} `);
-    }
+    const textarea = descriptionRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+
+    const newText =
+      questionDescription.substring(0, start) +
+      "@" +
+      questionDescription.substring(end);
+
+    setQuestionDescription(newText);
+
+    // Move cursor after @
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(start + 1, start + 1);
+    }, 0);
   };
 
   const handleReply = async (discussionId) => {
     if (!replyText.trim()) return;
     await addReply(discussionId, replyText);
     setReplyText("");
+  };
+
+  {/* mention changes */ }
+  const handleDescriptionChange = async (e) => {
+    const value = e.target.value;
+    setQuestionDescription(value);
+
+    const match = value.match(/@(\w*)$/);
+
+    if (match) {
+      const query = match[1];
+      setMentionQuery(query);
+      setShowMentions(true);
+
+      if (query.length > 0) {
+        const token = localStorage.getItem("token");
+
+        const res = await fetch(
+          `http://localhost:5000/api/users/search?q=${query}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        const data = await res.json();
+        setMentionSuggestions(data);
+      }
+    } else {
+      setShowMentions(false);
+      setMentionSuggestions([]);
+    }
+  };
+
+  const selectMention = (user) => {
+    const newText = questionDescription.replace(
+      /@\w*$/,
+      `@${user.name} `
+    );
+
+    setQuestionDescription(newText);
+    setShowMentions(false);
+    setMentionSuggestions([]);
   };
 
   // Filter discussions based on active tab
@@ -287,12 +350,33 @@ const DiscussionsPage = () => {
                   className="w-full px-4 py-3 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-main placeholder-muted"
                 />
                 <textarea
+                  ref={descriptionRef}
                   placeholder="Describe your doubt in detail..."
                   value={questionDescription}
-                  onChange={(e) => setQuestionDescription(e.target.value)}
+                  onChange={handleDescriptionChange}
                   rows={4}
                   className="w-full px-4 py-3 bg-input border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none text-main placeholder-muted"
                 />
+                {/*mention */}
+                {showMentions && mentionSuggestions.length > 0 && (
+                  <div className="flex gap-4 overflow-x-auto py-2 scrollbar-hide">
+                    {mentionSuggestions.map((user) => (
+                      <div
+                        key={user.id}
+                        onClick={() => selectMention(user)}
+                        className="flex flex-col items-center cursor-pointer min-w-[70px]"
+                      >
+                        <div className="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center font-semibold">
+                          {user.name.charAt(0).toUpperCase()}
+                        </div>
+                        <span className="text-xs mt-1 text-center">
+                          {user.name}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 {uploadedImages.length > 0 && (
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {uploadedImages.map((img) => (
@@ -338,6 +422,8 @@ const DiscussionsPage = () => {
                       <Code className="w-4 h-4" />
                       <span className="text-sm">Code</span>
                     </button>
+                    {/* mention */}
+
                     <button
                       type="button"
                       onClick={insertMention}
@@ -346,6 +432,7 @@ const DiscussionsPage = () => {
                       <AtSign className="w-4 h-4" />
                       <span className="text-sm">Mention</span>
                     </button>
+
                   </div>
                   <button
                     type="submit"
@@ -397,14 +484,14 @@ const DiscussionsPage = () => {
                     {/* Discussion Header */}
                     <div className="flex items-start space-x-3 sm:space-x-4 mb-4">
                       <img
-                        src="/ui/avatar-4.png"
+                        src={`https://api.dicebear.com/8.x/initials/svg?seed=${discussion.author?.name}`}
                         alt={discussion.user?.name || "User"}
                         className="w-8 h-8 sm:w-10 sm:h-10 rounded-full shrink-0"
                       />
                       <div className="flex-1 min-w-0">
                         <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-2 mb-1">
                           <span className="font-medium text-main">
-                            {discussion.user?.name || "Unknown"}
+                            {discussion.author?.name || "Unknown"}
                           </span>
                           <div className="flex items-center space-x-2">
                             <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
@@ -424,12 +511,25 @@ const DiscussionsPage = () => {
                           {discussion.description}
                         </p>
                         <div className="flex flex-wrap items-center gap-4 sm:gap-6">
-                          <button className="flex items-center space-x-2 text-muted hover:text-red-500">
-                            <Heart className="w-4 h-4" />
-                            <span className="text-sm">
+                          {/*<button className="flex items-center space-x-2 text-muted hover:text-red-500">*/}
+                            <LikeButton
+                              itemId={discussion.id}
+                              likes={discussion.likes || []}
+                              endpoint="http://localhost:5000/api/discussions"
+                              onUpdate={(updatedDiscussion) => {
+                                setDiscussions((prev) =>
+                                  prev.map((d) =>
+                                    d.id === updatedDiscussion.id
+                                      ? updatedDiscussion
+                                      : d
+                                  )
+                                );
+                              }}
+                            />
+                            {/*<span className="text-sm">
                               {discussion.likes?.length || 0}
-                            </span>
-                          </button>
+                            </span>*/}
+                          {/*</button>*/}
                           <button className="flex items-center space-x-2 text-muted hover:text-blue-500">
                             <Reply className="w-4 h-4" />
                             <span className="text-sm">
@@ -472,7 +572,7 @@ const DiscussionsPage = () => {
                         >
                           <div className="flex items-start space-x-3">
                             <img
-                              src="/ui/avatar-4.png"
+                              src={`https://api.dicebear.com/8.x/initials/svg?seed=${reply.user?.name}`}
                               alt={reply.user?.name || "User"}
                               className="w-6 h-6 sm:w-8 sm:h-8 rounded-full shrink-0"
                             />
@@ -494,12 +594,25 @@ const DiscussionsPage = () => {
                               </div>
                               <p className="text-muted mb-2">{reply.text}</p>
                               <div className="flex items-center space-x-4">
-                                <button className="flex items-center space-x-1 text-muted hover:text-red-500">
-                                  <Heart className="w-3 h-3" />
-                                  <span className="text-xs">
+                                {/*<button className="flex items-center space-x-1 text-muted hover:text-red-500">*/}
+                                  <LikeButton
+                                    itemId={discussion.id}
+                                    likes={discussion.likes || []}
+                                    endpoint="http://localhost:5000/api/discussions"
+                                    onUpdate={(updatedDiscussion) => {
+                                      setDiscussions((prev) =>
+                                        prev.map((d) =>
+                                          d.id === updatedDiscussion.id
+                                            ? updatedDiscussion
+                                            : d
+                                        )
+                                      );
+                                    }}
+                                  />
+                                  {/*<span className="text-xs">
                                     {reply.likes?.length || 0}
-                                  </span>
-                                </button>
+                                  </span>*/}
+                                {/*</button>*/}
                                 <button className="text-xs text-muted hover:text-blue-500">
                                   Reply
                                 </button>
@@ -512,8 +625,12 @@ const DiscussionsPage = () => {
                     {/* Reply Input */}
                     <div className="ml-4 sm:ml-8 flex items-start space-x-3">
                       <img
-                        src="/ui/avatar-4.png"
-                        alt="Your avatar"
+                        src={
+                          user?.name
+                            ? `https://api.dicebear.com/8.x/initials/svg?seed=${user.name}`
+                            : "/ui/avatar-4.png"
+                        }
+                        alt={user?.name || "User"}
                         className="w-6 h-6 sm:w-8 sm:h-8 rounded-full shrink-0"
                       />
                       <div className="flex-1">
@@ -542,46 +659,7 @@ const DiscussionsPage = () => {
         </main>
 
         {/* My Courses Sidebar */}
-        <aside className="w-80 mt-8 bg-card border-l border-border p-6 hidden xl:block">
-          <h2 className="text-xl font-bold text-main mb-6">My courses</h2>
-          <div className="space-y-4">
-            {myCourses.map((course, index) => (
-              <div
-                key={index}
-                className={`rounded-xl p-4 border shadow-sm ${course.isActive
-                  ? "bg-teal-50 dark:bg-teal-900/20 border-teal-200 dark:border-teal-800"
-                  : "bg-card border-border"
-                  }`}
-              >
-                <div className="flex items-center space-x-3">
-                  <img
-                    src={course.image}
-                    alt={course.title}
-                    className="w-16 h-16 rounded-lg object-cover"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-medium text-main mb-1">
-                      {course.title}
-                    </h3>
-                    <p className="text-sm text-muted mb-2">
-                      {course.subtitle}
-                    </p>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted">{course.lessons}</span>
-                      <span className="text-muted">{course.progress}%</span>
-                    </div>
-                    <div className="w-full bg-input rounded-full h-2 mt-2">
-                      <div
-                        className={`h-2 rounded-full ${course.progressColor}`}
-                        style={{ width: `${course.progress}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </aside>
+        //
       </div>
     </div>
   );
