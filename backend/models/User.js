@@ -1,3 +1,4 @@
+// backend/models/User.js
 import { DataTypes, Model } from "sequelize";
 import bcrypt from "bcryptjs";
 import { sequelize } from "../config/db.js";
@@ -11,16 +12,20 @@ User.init(
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
     },
+
     firstName: {
       type: DataTypes.STRING,
     },
+
     lastName: {
       type: DataTypes.STRING,
     },
+
     name: {
       type: DataTypes.STRING,
       allowNull: false,
     },
+
     email: {
       type: DataTypes.STRING,
       allowNull: false,
@@ -29,25 +34,37 @@ User.init(
         isEmail: true,
       },
     },
+
     password: {
       type: DataTypes.STRING,
       allowNull: true,
     },
+
     googleId: {
       type: DataTypes.STRING,
     },
+
     role: {
       type: DataTypes.STRING,
       defaultValue: "user",
     },
+
     bio: {
       type: DataTypes.STRING,
       defaultValue: "",
     },
+
+    avatar_url: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      defaultValue: null,
+    },
+
     purchasedCourses: {
       type: DataTypes.JSONB,
       defaultValue: [],
     },
+
     analytics: {
       type: DataTypes.JSONB,
       defaultValue: {
@@ -63,10 +80,12 @@ User.init(
         certificates: 0,
       },
     },
+
     learningHoursChart: {
       type: DataTypes.JSONB,
       defaultValue: [],
     },
+
     settings: {
       type: DataTypes.JSONB,
       defaultValue: {

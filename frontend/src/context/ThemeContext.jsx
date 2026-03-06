@@ -1,4 +1,3 @@
-// change03
 import React, { createContext, useContext, useEffect, useState } from "react";
 const ThemeContext = createContext();
 
@@ -45,7 +44,9 @@ export const ThemeProvider = ({ children }) => {
   }, [theme]);
 
   return (
-    <ThemeContext.Provider value={{ theme, setTheme, isDark }}>
+    <ThemeContext.Provider
+      value={{ theme, setTheme, isDark }}
+    >
       {children}
     </ThemeContext.Provider>
   );

@@ -1,3 +1,4 @@
+// frontend/src/context/AuthContext.jsx
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
 const AuthContext = createContext();
@@ -13,7 +14,7 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
-
+  
   useEffect(() => {
     const token = localStorage.getItem('token');
     const storedUser = localStorage.getItem('user');
@@ -43,8 +44,15 @@ export const AuthProvider = ({ children }) => {
 
       if (response.ok) {
         const userData = await response.json();
-        setUser(userData);
-        localStorage.setItem('user', JSON.stringify(userData));
+
+        const newUser = {
+          ...userData,
+          token: localStorage.getItem("token"),
+          avatar_url: userData.avatar_url || null, // Ensure it exists
+        };
+
+        setUser(newUser);
+        localStorage.setItem("user", JSON.stringify(newUser));
       }
     } catch (error) {
       console.error('Error fetching user profile:', error);
@@ -56,6 +64,7 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    
     // Clear course progress from localStorage
     Object.keys(localStorage).forEach(key => {
       if (key.startsWith('course-progress-')) {
@@ -65,8 +74,20 @@ export const AuthProvider = ({ children }) => {
   };
 
   const updateUser = (updatedUserData) => {
-    setUser(prev => ({ ...prev, ...updatedUserData }));
-    localStorage.setItem('user', JSON.stringify(updatedUserData));
+    setUser((prevUser) => {
+      const newUser = {
+        ...prevUser,
+        ...updatedUserData,
+        settings: {
+          ...prevUser?.settings,
+          ...updatedUserData?.settings,
+        },
+        token: prevUser?.token || localStorage.getItem("token"),
+      };
+
+      localStorage.setItem("user", JSON.stringify(newUser));
+      return newUser;
+    });
   };
 
   const value = {
