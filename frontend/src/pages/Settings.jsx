@@ -850,32 +850,7 @@ export default function Settings() {
               </div>
             )}
             {/* ================= ENROLL POPUP ================= */}
-            {/* {profilePopup && (
-              <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-55">
-                <div className="bg-white dark:bg-slate-800 rounded-2xl p-8 w-[400px] text-center shadow-xl relative">
-
-                  <button
-                    onClick={() => setprofilePopup(false)}
-                    className="absolute top-4 right-4 text-gray-500 hover:text-black"
-                  >
-                    X
-                  </button>
-
-                  <div className="text-5xl mb-4">✅</div>
-
-                  <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-2">
-                    Profile Updated Successfully!
-                  </h2>
-
-                  <button
-                    onClick={() => setprofilePopup(false)}
-                    className="mt-6 px-6 py-2 bg-[#00BEA5] text-white rounded-xl hover:opacity-90"
-                  >
-                    OK
-                  </button>
-                </div>
-              </div>
-            )} */}
+            
             {profilePopup && (
               <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-55 animate-fadeIn">
 
