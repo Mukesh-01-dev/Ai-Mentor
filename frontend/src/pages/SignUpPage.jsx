@@ -30,7 +30,9 @@ const SignUpPage = () => {
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const { login } = useAuth();
@@ -41,8 +43,18 @@ const SignUpPage = () => {
     setShowPassword((prev) => !prev);
   };
 
+  const toggleConfirmPasswordVisibility = () => {
+    setShowConfirmPassword((prev) => !prev);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (password !== confirmPassword) {
+      alert("Passwords do not match");
+      return;
+    }
+    
     setLoading(true);
     try {
       const response = await fetch("http://localhost:5000/api/auth/register", {
@@ -134,6 +146,31 @@ const SignUpPage = () => {
           <div className="flex items-center gap-1.5 mt-1.5 text-gray-500 dark:text-gray-400">
             <Lock size={12} />
             <small className="text-[11px]">Min. 8 chars required</small>
+          </div>
+        </div>
+
+        {/* Confirm Password */}
+        <div className="mb-3 relative">
+          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+            Confirm Password
+          </label>
+          <div className="relative">
+            <input
+              type={showConfirmPassword ? "text" : "password"}
+              className="w-full px-3 py-2 rounded-lg bg-gray-50 border border-gray-200 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00BEA5] focus:border-transparent transition-all dark:bg-[#0f172a] dark:border-gray-700 dark:text-white dark:placeholder-gray-500"
+              placeholder="••••••••••"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              minLength={8}
+              required
+            />
+            <button
+              type="button"
+              onClick={toggleConfirmPasswordVisibility}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+            >
+              {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
           </div>
         </div>
 

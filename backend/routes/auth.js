@@ -10,6 +10,30 @@ const generateToken = (id) => {
     expiresIn: "30d",
   });
 };
+const validatePasswordStrength = (password) => {
+  const minLength = 8;
+  const hasUpperCase = /[A-Z]/.test(password);
+  const hasLowerCase = /[a-z]/.test(password);
+  const hasNumbers = /\d/.test(password);
+  const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+  if (password.length < minLength) {
+    return { valid: false, message: "Password must be at least 8 characters long" };
+  }
+  if (!hasUpperCase) {
+    return { valid: false, message: "Password must contain at least one uppercase letter" };
+  }
+  if (!hasLowerCase) {
+    return { valid: false, message: "Password must contain at least one lowercase letter" };
+  }
+  if (!hasNumbers) {
+    return { valid: false, message: "Password must contain at least one number" };
+  }
+  if (!hasSpecialChar) {
+    return { valid: false, message: "Password must contain at least one special character" };
+  }
+  return { valid: true };
+};
 
 // ================= REGISTER =================
 router.post("/register", async (req, res) => {
@@ -18,6 +42,12 @@ router.post("/register", async (req, res) => {
   try {
     if (!name || !email || !password) {
       return res.status(400).json({ message: "All fields are required" });
+    }
+
+    // Check password strength
+    const passwordCheck = validatePasswordStrength(password);
+    if (!passwordCheck.valid) {
+      return res.status(400).json({ message: passwordCheck.message });
     }
 
     const userExists = await User.findOne({ where: { email } });
@@ -127,6 +157,62 @@ router.post("/google-login", async (req, res) => {
   } catch (error) {
     console.error("Google login error:", error);
     res.status(500).json({ message: "Google login failed" });
+  }
+});
+
+// ================= FORGOT PASSWORD =================
+router.post("/forgot-password", async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+
+    const user = await User.findOne({ where: { email } });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Return user ID for direct password reset 
+    res.json({
+      message: "User found",
+      userId: user.id,
+      email: user.email
+    });
+  } catch (error) {
+    console.error("Forgot password error:", error);
+    res.status(500).json({ message: "Failed to process request" });
+  }
+});
+
+// ================= RESET PASSWORD =================
+router.post("/reset-password", async (req, res) => {
+  const { userId, newPassword } = req.body;
+
+  try {
+    if (!userId || !newPassword) {
+      return res.status(400).json({ message: "User ID and new password are required" });
+    }
+
+    // Check password strength
+    const passwordCheck = validatePasswordStrength(newPassword);
+    if (!passwordCheck.valid) {
+      return res.status(400).json({ message: passwordCheck.message });
+    }
+
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Update password directly (no token verification)
+    await user.update({ password: newPassword });
+
+    res.json({ message: "Password reset successfully" });
+  } catch (error) {
+    console.error("Reset password error:", error);
+    res.status(500).json({ message: "Failed to reset password" });
   }
 });
 
