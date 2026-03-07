@@ -2,6 +2,7 @@
 import express from "express";
 import multer from "multer";
 import path from "path";
+import { changePassword } from "../controllers/userController.js";
 import {
   getUserProfile,
   updateUserProfile,
@@ -32,6 +33,7 @@ router.route("/profile")
   .get(protect, getUserProfile)
   .put(protect, upload.single("avatar"), updateUserProfile);
 
+router.put("/change-password", protect, changePassword);
 router.route("/purchase-course").post(protect, purchaseCourse);
 router.route("/course-progress").put(protect, updateCourseProgress);
 router.route("/watched-videos").get(protect, getWatchedVideos);

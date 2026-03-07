@@ -493,16 +493,17 @@ export default function Settings() {
                             Current Password
                           </label>
                             <input
-                              type={showCurrentPassword ? "text" : "password"}
-                              value={passwordData.currentPassword}
-                              onChange={(e) =>
-                                setPasswordData((prev) => ({
-                                  ...prev,
-                                  currentPassword: e.target.value,
-                                }))
-                              }
-                              className="w-full h-[50px] px-4 pr-12 rounded-xl border border-border text-[16px] font-[Inter] focus:ring-2 focus:ring-primary focus:border-primary bg-input text-main"
-                            />
+  type={showCurrentPassword ? "text" : "password"}
+  autoComplete="current-password"
+  value={passwordData.currentPassword}
+  onChange={(e) =>
+    setPasswordData((prev) => ({
+      ...prev,
+      currentPassword: e.target.value,
+    }))
+  }
+  className="w-full h-[50px] px-4 pr-12 rounded-xl border border-border text-[16px] font-[Inter] focus:ring-2 focus:ring-primary focus:border-primary bg-input text-main"
+/>
                             <button
                               type="button"
                               onClick={() =>
@@ -523,16 +524,17 @@ export default function Settings() {
                             New Password
                           </label>
                             <input
-                              type={showNewPassword ? "text" : "password"}
-                              value={passwordData.newPassword}
-                              onChange={(e) =>
-                                setPasswordData((prev) => ({
-                                  ...prev,
-                                  newPassword: e.target.value,
-                                }))
-                              }
-                              className="w-full h-[50px] px-4 pr-12 rounded-xl border border-border text-[16px] font-[Inter] focus:ring-2 focus:ring-primary focus:border-primary bg-input text-main"
-                            />
+  type={showNewPassword ? "text" : "password"}
+  autoComplete="new-password"
+  value={passwordData.newPassword}
+  onChange={(e) =>
+    setPasswordData((prev) => ({
+      ...prev,
+      newPassword: e.target.value,
+    }))
+  }
+  className="w-full h-[50px] px-4 pr-12 rounded-xl border border-border text-[16px] font-[Inter] focus:ring-2 focus:ring-primary focus:border-primary bg-input text-main"
+/>
                             <button
                               type="button"
                               onClick={() =>
@@ -553,17 +555,19 @@ export default function Settings() {
                           <label className="absolute -top-2 left-4 bg-card px-2 text-[14px] text-muted font-medium font-[Inter]">
                             Confirm New Password
                           </label>
-                          <input
-                            type="password"
-                            value={passwordData.confirmPassword}
-                            onChange={(e) =>
-                              setPasswordData((prev) => ({
-                                ...prev,
-                                confirmPassword: e.target.value,
-                              }))
-                            }
-                            className="w-full h-[50px] px-4 rounded-xl border border-border text-[16px] font-[Inter] focus:ring-2 focus:ring-primary focus:border-primary bg-input text-main"
-                          />
+                          
+<input
+  type="password"
+  autoComplete="new-password"
+  value={passwordData.confirmPassword}
+  onChange={(e) =>
+    setPasswordData((prev) => ({
+      ...prev,
+      confirmPassword: e.target.value,
+    }))
+  }
+  className="w-full h-[50px] px-4 rounded-xl border border-border text-[16px] font-[Inter] focus:ring-2 focus:ring-primary focus:border-primary bg-input text-main"
+/>
                         </div>
                       </div>
                     </div>
@@ -578,34 +582,42 @@ export default function Settings() {
                     </button>
                     <button
                       onClick={async () => {
-                        if (
-                          passwordData.newPassword !==
-                          passwordData.confirmPassword
-                        ) {
-                          alert("New passwords do not match!");
-                          return;
-                        }
-                        setLoading(true);
-                        try {
-                          const token = localStorage.getItem("token");
-                          await axios.put(
-                            "/api/users/settings",
-                            { security: settingsData.security },
-                            { headers: { Authorization: `Bearer ${token}` } }
-                          );
-                          alert("Security settings updated successfully!");
-                          setPasswordData({
-                            currentPassword: "",
-                            newPassword: "",
-                            confirmPassword: "",
-                          });
-                        } catch (error) {
-                          console.error("Error updating settings:", error);
-                          alert("Failed to update settings. Please try again.");
-                        } finally {
-                          setLoading(false);
-                        }
-                      }}
+  if (passwordData.newPassword !== passwordData.confirmPassword) {
+    alert("New passwords do not match!");
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    const token = localStorage.getItem("token");
+
+    await axios.put(
+      "/api/users/change-password",
+      {
+        currentPassword: passwordData.currentPassword,
+        newPassword: passwordData.newPassword,
+      },
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+
+    alert("Password updated successfully!");
+
+    setPasswordData({
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    });
+
+  } catch (error) {
+    console.error(error);
+    alert(error.response?.data?.message || "Failed to update password");
+  } finally {
+    setLoading(false);
+  }
+}}
                       disabled={loading}
                       className="h-[50px] px-6 rounded-xl bg-gradient-to-r from-primary to-primary text-white text-[16px] font-medium font-[Inter] hover:opacity-90 disabled:opacity-50"
                     >
@@ -615,6 +627,8 @@ export default function Settings() {
                 </div>
               </div>
             )}
+
+
 
             {activeSetting === "Appearance" && (
               <div className="max-w-[896px]">

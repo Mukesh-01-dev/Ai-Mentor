@@ -47,10 +47,9 @@ const LoginPage = () => {
       });
 
       if (response.data.token) {
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
-        window.location.href = '/dashboard';
-      }
+  login(response.data);   // update AuthContext
+  navigate("/dashboard");
+}
     } catch (err) {
       alert(err.response?.data?.message || "Invalid Credentials!");
     }
