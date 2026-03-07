@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import Header from "../components/Header";
 import Sidebar from "../components/Sidebar";
+import PopupMessage from "../components/PopupMessage";
 import {
   User,
   Bell,
@@ -14,6 +15,8 @@ import {
   EyeOff,
 } from "lucide-react";
 import axios from "axios";
+
+
 
 
 // change02 
@@ -32,6 +35,11 @@ const settingsNavItems = [
 export default function Settings() {
   // change02 
   const { theme, setTheme } = useTheme();
+
+  const [showPopup, setShowPopup] = useState(false);
+  const [popupType, setPopupType] = useState("");
+  const [popupTitle, setPopupTitle] = useState("");
+  const [popupMessage, setPopupMessage] = useState("");
 
 
   const { sidebarOpen, setSidebarOpen, sidebarCollapsed, setSidebarCollapsed } = useSidebar();
@@ -72,6 +80,15 @@ export default function Settings() {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
+  const showPopupMessage = (type, title, message) => {
+    setPopupType(type);
+    setPopupTitle(title);
+    setPopupMessage(message);
+    setShowPopup(true);
+  };
+
+
+
   const handleSaveChanges = async () => {
     setLoading(true);
     try {
@@ -91,14 +108,23 @@ export default function Settings() {
         }
       );
       updateUser(response.data);
-      alert("Profile updated successfully!");
+      showPopupMessage(
+        "success",
+        "Profile Updated",
+        "Your profile information has been saved successfully."
+      );
     } catch (error) {
       console.error("Error updating profile:", error);
-      alert("Failed to update profile. Please try again.");
+      showPopupMessage(
+        "error",
+        "Update Failed",
+        "Something went wrong. Please try again."
+      );
     } finally {
       setLoading(false);
     }
   };
+
 
   useEffect(() => {
     if (user) {
@@ -112,6 +138,73 @@ export default function Settings() {
       });
     }
   }, [user]);
+
+  const handlePasswordSave = async () => {
+
+    if (!passwordData.currentPassword || !passwordData.newPassword) {
+      showPopupMessage(
+        "error",
+        "Missing Fields",
+        "Please fill all password fields."
+      );
+      return;
+    }
+
+
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      showPopupMessage(
+        "error",
+        "Password Mismatch",
+        "New password and confirm password do not match."
+      );
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const token = localStorage.getItem("token");
+
+      await axios.put(
+        "/api/users/settings",
+        {
+          currentPassword: passwordData.currentPassword,
+          newPassword: passwordData.newPassword,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      showPopupMessage(
+        "success",
+        "Password Updated",
+        "Your password has been updated successfully."
+      );
+
+      setPasswordData({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+
+    } catch (error) {
+      console.error("Error updating password:", error);
+
+      const message =
+        error.response?.data?.message || "Something went wrong. Please try again.";
+
+      showPopupMessage(
+        "error",
+        "Password Update Failed",
+        message
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-canvas-alt flex flex-col">
@@ -272,6 +365,7 @@ export default function Settings() {
                     </button>
                   </div>
                 </div>
+
               </div>
             )}
 
@@ -414,15 +508,28 @@ export default function Settings() {
                         setLoading(true);
                         try {
                           const token = localStorage.getItem("token");
+
                           await axios.put(
                             "/api/users/settings",
                             { notifications: settingsData.notifications },
                             { headers: { Authorization: `Bearer ${token}` } }
                           );
-                          alert("Notification settings updated successfully!");
+
+                          showPopupMessage(
+                            "success",
+                            "Notifications Updated",
+                            "Your notification settings were saved."
+                          );
+
                         } catch (error) {
                           console.error("Error updating settings:", error);
-                          alert("Failed to update settings. Please try again.");
+
+                          showPopupMessage(
+                            "error",
+                            "Update Failed",
+                            "Unable to save notification settings."
+                          );
+
                         } finally {
                           setLoading(false);
                         }
@@ -600,35 +707,7 @@ export default function Settings() {
                       Cancel
                     </button>
                     <button
-                      onClick={async () => {
-                        if (
-                          passwordData.newPassword !==
-                          passwordData.confirmPassword
-                        ) {
-                          alert("New passwords do not match!");
-                          return;
-                        }
-                        setLoading(true);
-                        try {
-                          const token = localStorage.getItem("token");
-                          await axios.put(
-                            "/api/users/settings",
-                            { security: settingsData.security },
-                            { headers: { Authorization: `Bearer ${token}` } }
-                          );
-                          alert("Security settings updated successfully!");
-                          setPasswordData({
-                            currentPassword: "",
-                            newPassword: "",
-                            confirmPassword: "",
-                          });
-                        } catch (error) {
-                          console.error("Error updating settings:", error);
-                          alert("Failed to update settings. Please try again.");
-                        } finally {
-                          setLoading(false);
-                        }
-                      }}
+                      onClick={handlePasswordSave}
                       disabled={loading}
                       className="h-[50px] px-6 rounded-xl bg-linear-to-r from-primary to-primary text-white text-[16px] font-medium font-[Inter] hover:opacity-90 disabled:opacity-50"
                     >
@@ -660,10 +739,9 @@ export default function Settings() {
                           { value: "light", label: "Light", icon: "☀️" },
                           { value: "dark", label: "Dark", icon: "🌙" },
                           { value: "auto", label: "Auto", icon: "⚙️" },
-                        ].map((theme) => (
+                        ].map((themeOption) => (
                           <button
-                            key={theme.value}
-
+                            key={themeOption.value}
 
                             // change02
                             // onClick={() =>
@@ -675,23 +753,23 @@ export default function Settings() {
                             //     },
                             //   }))
                             // }
-                            onClick={() => setTheme(theme.value)}
+                            onClick={() => setTheme(themeOption.value)}
 
 
                             className={`p-4 rounded-xl border-2 transition-colors ${
 
                               // change02
                               // settingsData.appearance.theme === theme.value
-                              theme === theme.value
+                              theme === themeOption.value
 
 
                                 ? "border-primary bg-teal-50 dark:bg-teal-900/20 text-main"
                                 : "border-border hover:border-primary text-muted hover:text-main"
                               }`}
                           >
-                            <div className="text-2xl mb-2">{theme.icon}</div>
+                            <div className="text-2xl mb-2">{themeOption.icon}</div>
                             <div className="text-[14px] font-medium font-[Inter]">
-                              {theme.label}
+                              {themeOption.label}
                             </div>
                           </button>
                         ))}
@@ -741,15 +819,29 @@ export default function Settings() {
                         setLoading(true);
                         try {
                           const token = localStorage.getItem("token");
+
                           await axios.put(
                             "/api/users/settings",
                             { appearance: settingsData.appearance },
                             { headers: { Authorization: `Bearer ${token}` } }
                           );
-                          alert("Appearance settings updated successfully!");
+
+                          showPopupMessage(
+                            "success",
+                            "Appearance Updated",
+                            "Your appearance settings were saved successfully."
+                          );
+
                         } catch (error) {
                           console.error("Error updating settings:", error);
-                          alert("Failed to update settings. Please try again.");
+
+                          showPopupMessage(
+                            "error",
+                            "Update Failed",
+                            "Something went wrong. Please try again."
+                          );
+
+
                         } finally {
                           setLoading(false);
                         }
@@ -817,9 +909,11 @@ export default function Settings() {
                     <button
                       onClick={async () => {
                         setLoading(true);
+
                         try {
                           const token = localStorage.getItem("token");
-                          await axios.put(
+
+                          const response = await axios.put(
                             "/api/users/settings",
                             {
                               appearance: {
@@ -828,10 +922,25 @@ export default function Settings() {
                             },
                             { headers: { Authorization: `Bearer ${token}` } }
                           );
-                          alert("Language settings updated successfully!");
+
+                          if (response.status === 200) {
+                            showPopupMessage(
+                              "success",
+                              "Language Updated",
+                              "Language preference saved successfully."
+                            );
+
+                          }
+
                         } catch (error) {
                           console.error("Error updating settings:", error);
-                          alert("Failed to update settings. Please try again.");
+
+                          showPopupMessage(
+                            "error",
+                            "Update Failed",
+                            "Something went wrong. Please try again."
+                          );
+
                         } finally {
                           setLoading(false);
                         }
@@ -847,7 +956,18 @@ export default function Settings() {
             )}
           </main>
         </div>
+
       </div>
+
+      {showPopup && (
+        <PopupMessage
+          type={popupType}
+          title={popupTitle}
+          message={popupMessage}
+          buttonText="OK"
+          onClose={() => setShowPopup(false)}
+        />
+      )}
     </div>
   );
 }

@@ -230,8 +230,60 @@ const getWatchedVideos = async (req, res) => {
   res.status(501).json({ message: "getWatchedVideos not implemented yet" });
 };
 
+// const updateUserSettings = async (req, res) => {
+//   res.status(501).json({ message: "updateUserSettings not implemented yet" });
+// };
+
 const updateUserSettings = async (req, res) => {
-  res.status(501).json({ message: "updateUserSettings not implemented yet" });
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        message: "Please provide current and new password"
+      });
+    }
+
+    if (newPassword.length < 6) {
+  return res.status(400).json({
+    message: "Password must be at least 6 characters"
+  });
+}
+
+
+    // Find user by ID (from token)
+    const user = await User.findByPk(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found"
+      });
+    }
+
+    // Check current password
+    const isMatch = await user.matchPassword(currentPassword);
+
+    if (!isMatch) {
+      return res.status(400).json({
+        message: "Current password is incorrect"
+      });
+    }
+
+    // Update password
+    user.password = newPassword;
+
+    await user.save();
+
+    res.status(200).json({
+      message: "Password updated successfully"
+    });
+
+  } catch (error) {
+    console.error("Error updating password:", error);
+    res.status(500).json({
+      message: "Server error"
+    });
+  }
 };
 
 const updateUserProfile = async (req, res) => {
