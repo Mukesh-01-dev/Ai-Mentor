@@ -1,5 +1,8 @@
+import { useState } from "react";
 import Sidebar from "../components/Sidebar";
 import { useSidebar } from "../context/SidebarContext";
+import { useEffect } from "react";
+import Header from "../components/Header";
 
 const AdminPage = () => {
   const { sidebarOpen, setSidebarOpen, sidebarCollapsed, setSidebarCollapsed } = useSidebar();

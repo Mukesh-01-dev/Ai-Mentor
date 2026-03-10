@@ -56,6 +56,7 @@ export default function Settings() {
   });
   const [loading, setLoading] = useState(false);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [profilepopup, setProfilePopup] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [passwordData, setPasswordData] = useState({
     currentPassword: "",
@@ -100,7 +101,7 @@ export default function Settings() {
       }, 500);
 
       setAvatarFile(null);
-      alert("Profile updated successfully!");
+      setProfilePopup(true);
     } catch (error) {
       console.error("❌ Error updating profile:", error.response?.data || error);
       alert("Failed to update profile.");
@@ -802,6 +803,41 @@ export default function Settings() {
                   </div>
                 </div>
               </div>
+            )}
+            {/* ======= Profile Popup======= */}
+            {profilepopup && (
+               <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-55 animate-fadeIn">
+
+               <div className="relative bg-gradient-to-br from-white to-slate-100 dark:from-slate-800 dark:to-slate-900 
+                   rounded-3xl p-10 w-[420px] text-center shadow-2xl border border-slate-200 
+                   dark:border-slate-700 transform transition-all duration-300 scale-100 animate-popup">
+
+                 {/* Animated Success Circle */}
+                 <div className="mx-auto mb-6 w-20 h-20 flex items-center justify-center 
+                     rounded-full bg-gradient-to-r from-emerald-400 to-green-500 
+                     shadow-lg animate-bounce">
+                   <span className="text-4xl text-white">✓</span>
+                 </div>
+
+                 {/* Heading */}
+                 <h2 className="text-2xl font-bold bg-gradient-to-r from-emerald-500 to-teal-500 
+                    bg-clip-text text-transparent mb-3">
+                   Profile Updated Successfully!
+                 </h2>
+
+                 {/* Action Button */}
+                 <button
+                   onClick={() => setProfilePopup(false)}
+                   className="px-8 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 
+                  text-white rounded-2xl font-semibold 
+                  shadow-lg hover:scale-105 hover:shadow-emerald-400/40 
+                  transition-all duration-300"
+                 >
+                   Ok
+                 </button>
+
+               </div>
+             </div>
             )}
           </main>
         </div>

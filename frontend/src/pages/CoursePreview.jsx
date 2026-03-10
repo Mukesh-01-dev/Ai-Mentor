@@ -61,10 +61,20 @@ export default function CoursePreview() {
   const [showEnrollPopup, setShowEnrollPopup] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState(null);
 
-  // image src handling
+  // hero image src handling
   const [heroSrc, setHeroSrc] = useState("/ui/course-hero-placeholder.jpg");
   const heroCandidatesRef = useRef([]);
   const heroIndexRef = useRef(0);
+
+  // instructor image candidates + state (brand-first)
+  const [instructorSrc, setInstructorSrc] = useState("/ui/avatar-4.png");
+  const instructorCandidatesRef = useRef([]);
+  const instructorIndexRef = useRef(0);
+
+  // trust badge candidates + state (brand-first)
+  const [trustSrc, setTrustSrc] = useState("/ui/trust-badge.png");
+  const trustCandidatesRef = useRef([]);
+  const trustIndexRef = useRef(0);
 
   // fetch meta & learning
   useEffect(() => {
@@ -98,10 +108,23 @@ export default function CoursePreview() {
 
           // prepare hero image candidates & initial src
           const heroPath = safeGet(meta, "image", safeGet(learning, "course.logo", ""));
-          const candidates = buildImageCandidates(heroPath);
-          heroCandidatesRef.current = candidates;
+          const heroCandidates = buildImageCandidates(heroPath);
+          heroCandidatesRef.current = heroCandidates;
           heroIndexRef.current = 0;
-          setHeroSrc(candidates[0] || "/ui/course-hero-placeholder.jpg");
+          setHeroSrc(heroCandidates[0] || "/ui/course-hero-placeholder.jpg");
+
+          // prepare instructor image candidates: brand-first then backend candidates
+          const brandInstructorPaths = ["/AI_Tutor_New_UI/Course_Preview/Mascot.jpeg", "/brankkit/mascot.png", "/assets/mascot.png"];
+          const backendInstructorCandidates = buildImageCandidates(safeGet(meta, "instructorPhoto", ""));
+          instructorCandidatesRef.current = [...brandInstructorPaths, ...backendInstructorCandidates, "/ui/avatar-4.png"];
+          instructorIndexRef.current = 0;
+          setInstructorSrc(instructorCandidatesRef.current[0] || "/ui/avatar-4.png");
+
+          // prepare trust badge candidates (brand-first)
+          const brandTrustPaths = ["/AI_Tutor_New_UI/Course_Preview/US.png", "/brankkit/US.png", "/assets/US.png"];
+          trustCandidatesRef.current = [...brandTrustPaths, "/ui/trust-badge.png"];
+          trustIndexRef.current = 0;
+          setTrustSrc(trustCandidatesRef.current[0] || "/ui/trust-badge.png");
         }
       } catch (err) {
         if (!cancelled) {
@@ -119,20 +142,41 @@ export default function CoursePreview() {
     };
   }, [courseId]);
 
-  // redirect if purchased
+  // redirect if purchased (keeps behaviour of redirecting to /courses)
   useEffect(() => {
     if (!user || !courseId) return;
     const purchased = Array.isArray(user.purchasedCourses) && user.purchasedCourses.some((c) => Number(c.courseId) === Number(courseId));
     if (purchased) navigate(`/courses`, { replace: true });
   }, [user, courseId, navigate]);
 
-  // image onError -> try next candidate
+  // image error handlers: cycle through candidates
   const handleHeroError = () => {
     const candidates = heroCandidatesRef.current || [];
     const nextIndex = heroIndexRef.current + 1;
     if (nextIndex < candidates.length) {
       heroIndexRef.current = nextIndex;
       setHeroSrc(candidates[nextIndex]);
+    }
+  };
+
+  const handleInstructorError = (ev) => {
+    const candidates = instructorCandidatesRef.current || [];
+    const nextIndex = instructorIndexRef.current + 1;
+    if (nextIndex < candidates.length) {
+      instructorIndexRef.current = nextIndex;
+      // update the <img> directly so React doesn't fight with onError loop
+      ev.currentTarget.src = candidates[nextIndex];
+      setInstructorSrc(candidates[nextIndex]);
+    }
+  };
+
+  const handleTrustError = (ev) => {
+    const candidates = trustCandidatesRef.current || [];
+    const nextIndex = trustIndexRef.current + 1;
+    if (nextIndex < candidates.length) {
+      trustIndexRef.current = nextIndex;
+      ev.currentTarget.src = candidates[nextIndex];
+      setTrustSrc(candidates[nextIndex]);
     }
   };
 
@@ -251,8 +295,6 @@ export default function CoursePreview() {
   const title = safeGet(courseMeta, "title", safeGet(learningData, "course.title", "Course Title"));
   const subtitle = safeGet(learningData, "course.subtitle", safeGet(courseMeta, "subtitle", ""));
   const instructorName = safeGet(courseMeta, "instructor", "Instructor");
-  const instructorPhotoCandidates = buildImageCandidates(safeGet(courseMeta, "instructorPhoto", ""));
-  const instructorPhoto = instructorPhotoCandidates[0] || "/ui/avatar-4.png";
   const rating = safeGet(courseMeta, "rating", 4.8);
   const students = safeGet(courseMeta, "students", `${safeGet(courseMeta, "studentsCount", 0)} students`);
   const duration = safeGet(courseMeta, "duration", safeGet(courseMeta, "totalDuration", "15.5h"));
@@ -299,7 +341,13 @@ export default function CoursePreview() {
                   <p className="text-gray-600 mt-2">{subtitle}</p>
 
                   <div className="flex items-center gap-3 mt-4">
-                    <img src={instructorPhoto} alt={instructorName} className="w-10 h-10 rounded-full object-cover" onError={(e) => { const c = instructorPhotoCandidates; if (c && c.length > 1) e.currentTarget.src = c[1]; }} />
+                    {/* instructor image: brand-first + backend fallback; maintain proportions */}
+                    <img
+                      src={instructorSrc}
+                      alt={instructorName}
+                      className="w-12 h-12 rounded-full object-contain"
+                      onError={handleInstructorError}
+                    />
                     <div className="text-sm text-[#6B7280]">
                       Created by <span className="text-[#FF6C34] font-medium">{instructorName}</span>
                       <div className="text-xs text-gray-400">Last updated {safeGet(courseMeta, "updatedAt", "—") ? new Date(safeGet(courseMeta, "updatedAt", Date.now())).toLocaleDateString() : "—"}</div>
@@ -453,10 +501,15 @@ export default function CoursePreview() {
               </div>
             </div>
 
-            {/* trust card */}
+            {/* trust card (uses US brand image first) */}
             <div className="bg-white rounded-xl p-4 shadow-[0_8px_24px_rgba(15,23,42,0.03)] text-sm text-gray-600">
               <div className="flex items-center gap-3">
-                <img src="/ui/trust-badge.png" alt="trust" className="w-10 h-10 object-contain" />
+                <img
+                  src={trustSrc}
+                  alt="trust"
+                  className="w-10 h-10 object-contain"
+                  onError={handleTrustError}
+                />
                 <div>
                   <div className="font-medium text-gray-800">30-day refund</div>
                   <div className="text-xs text-gray-400">No questions asked</div>
@@ -497,4 +550,3 @@ export default function CoursePreview() {
     </div>
   );
 }
-

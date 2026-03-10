@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import Header from "../components/Header";
 import Sidebar from "../components/Sidebar";
 import { useAuth } from "../context/AuthContext";
@@ -25,13 +25,15 @@ import {
 } from "lucide-react";
 
 const Dashboard = () => {
-  const { sidebarOpen, setSidebarOpen, sidebarCollapsed, setSidebarCollapsed } = useSidebar();
+  const { sidebarOpen, setSidebarOpen, sidebarCollapsed, setSidebarCollapsed } =
+    useSidebar();
   const [coursesData, setCoursesData] = useState({
     statsCards: [],
     allCourses: [],
   });
   const [loading, setLoading] = useState(true);
   const { user, fetchUserProfile } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchAllData = async () => {
@@ -128,14 +130,15 @@ const Dashboard = () => {
     user.purchasedCourses.forEach((purchasedCourse) => {
       // Find the course in allCourses to get lesson count
       const courseInfo = coursesData.allCourses.find(
-        (c) => c.id == purchasedCourse.courseId,
+        (c) => c.id == purchasedCourse.courseId
       );
       if (courseInfo) {
-        const totalLessons = courseInfo.lessonsCount ||
-          (courseInfo.lessons ?
-            (courseInfo.lessons.includes(" of ")
+        const totalLessons =
+          courseInfo.lessonsCount ||
+          (courseInfo.lessons
+            ? courseInfo.lessons.includes(" of ")
               ? parseInt(courseInfo.lessons.split(" of ")[1])
-              : parseInt(courseInfo.lessons.split(" ")[0]))
+              : parseInt(courseInfo.lessons.split(" ")[0])
             : 0);
         const completedLessons =
           purchasedCourse.progress?.completedLessons?.length || 0;
@@ -180,18 +183,19 @@ const Dashboard = () => {
   const myCourses = coursesData.allCourses
     .filter((course) =>
       user?.purchasedCourses?.some(
-        (purchased) => purchased.courseId == course.id,
-      ),
+        (purchased) => purchased.courseId == course.id
+      )
     )
     .map((course) => {
       const purchasedCourse = user?.purchasedCourses?.find(
-        (p) => p.courseId == course.id,
+        (p) => p.courseId == course.id
       );
-      const totalLessons = course.lessonsCount ||
-        (course.lessons ?
-          (course.lessons.includes(" of ")
+      const totalLessons =
+        course.lessonsCount ||
+        (course.lessons
+          ? course.lessons.includes(" of ")
             ? parseInt(course.lessons.split(" of ")[1])
-            : parseInt(course.lessons.split(" ")[0]))
+            : parseInt(course.lessons.split(" ")[0])
           : 0);
       const completedLessons =
         purchasedCourse?.progress?.completedLessons?.length || 0;
@@ -228,18 +232,19 @@ const Dashboard = () => {
   const continueLearning = coursesData.allCourses
     .filter((course) =>
       user?.purchasedCourses?.some(
-        (purchased) => purchased.courseId == course.id,
-      ),
+        (purchased) => purchased.courseId == course.id
+      )
     )
     .filter((course) => {
       const purchasedCourse = user?.purchasedCourses?.find(
-        (p) => p.courseId == course.id,
+        (p) => p.courseId == course.id
       );
-      const totalLessons = course.lessonsCount ||
-        (course.lessons ?
-          (course.lessons.includes(" of ")
+      const totalLessons =
+        course.lessonsCount ||
+        (course.lessons
+          ? course.lessons.includes(" of ")
             ? parseInt(course.lessons.split(" of ")[1])
-            : parseInt(course.lessons.split(" ")[0]))
+            : parseInt(course.lessons.split(" ")[0])
           : 0);
       const completedLessons =
         purchasedCourse?.progress?.completedLessons?.length || 0;
@@ -248,13 +253,14 @@ const Dashboard = () => {
     .slice(0, 3) // Limit to 3 courses
     .map((course) => {
       const purchasedCourse = user?.purchasedCourses?.find(
-        (p) => p.courseId === course.id,
+        (p) => p.courseId === course.id
       );
-      const totalLessons = course.lessonsCount ||
-        (course.lessons ?
-          (course.lessons.includes(" of ")
+      const totalLessons =
+        course.lessonsCount ||
+        (course.lessons
+          ? course.lessons.includes(" of ")
             ? parseInt(course.lessons.split(" of ")[1])
-            : parseInt(course.lessons.split(" ")[0]))
+            : parseInt(course.lessons.split(" ")[0])
           : 0);
       const completedLessons =
         purchasedCourse?.progress?.completedLessons?.length || 0;
@@ -297,14 +303,20 @@ const Dashboard = () => {
     },
   ];
 
+  const handleBrowseCourses = () => {
+    // Navigate to courses page
+    navigate("/courses", { state: { activeTab: "explore" } });
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-canvas-alt flex flex-col">
         <Header />
         <Sidebar activePage="dashboard" />
         <div
-          className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ${sidebarCollapsed ? "lg:ml-20" : "lg:ml-80"
-            }`}
+          className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ${
+            sidebarCollapsed ? "lg:ml-20" : "lg:ml-80"
+          }`}
         >
           <main className="flex-1 mt-10 overflow-x-hidden overflow-y-auto bg-canvas-alt p-6">
             <div className="flex items-center justify-center h-64">
@@ -324,8 +336,9 @@ const Dashboard = () => {
 
       {/* Main Content */}
       <div
-        className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ${sidebarCollapsed ? "lg:ml-20" : "lg:ml-80"
-          }`}
+        className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ${
+          sidebarCollapsed ? "lg:ml-20" : "lg:ml-80"
+        }`}
       >
         {/* Header */}
 
@@ -357,7 +370,7 @@ const Dashboard = () => {
 
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
               {/* Popular Courses */}
-              <div className="xl:col-span-2">
+              {/* <div className="xl:col-span-2">
                 <h2 className="text-xl font-bold text-main mb-6">
                   Popular Courses
                 </h2>
@@ -406,6 +419,151 @@ const Dashboard = () => {
                     </Link>
                   ))}
                 </div>
+              </div> */}
+
+              {/* My Courses Table */}
+              <div className="xl:col-span-2 flex flex-col">
+                <h2 className="text-xl font-bold text-main mb-6">My Courses</h2>
+                <div className="bg-card rounded-xl border border-border overflow-hidden">
+                  <div className="overflow-x-auto">
+                    {myCourses.length !== 0 ? (
+                      <table className="w-full">
+                        <thead className="bg-canvas-alt">
+                          <tr>
+                            <th className="px-4 py-4 text-left text-sm font-medium text-muted">
+                              Course
+                            </th>
+                            <th className="px-4 py-4 text-left text-sm font-medium text-muted">
+                              Progress
+                            </th>
+                            <th className="px-4 py-4 text-left text-sm font-medium text-muted">
+                              Lessons
+                            </th>
+                            <th className="px-4 py-4 text-left text-sm font-medium text-muted">
+                              Level
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200">
+                          {myCourses.map((course, index) => (
+                            <tr key={index} className="hover:bg-canvas-alt">
+                              <td className="px-4 py-4">
+                                <Link
+                                  to={`/learning/${course.id}`}
+                                  className="flex items-center"
+                                >
+                                  <img
+                                    src={course.image}
+                                    alt={course.title}
+                                    className="w-12 h-12 rounded-lg mr-4"
+                                  />
+                                  <div>
+                                    <div className="font-medium text-main hover:text-indigo-600">
+                                      {course.title}
+                                    </div>
+                                    <div className="text-sm text-muted">
+                                      {course.subtitle}
+                                    </div>
+                                  </div>
+                                </Link>
+                              </td>
+                              <td className="px-4 py-4">
+                                <div className="w-20 bg-border rounded-full h-2 mb-1">
+                                  <div
+                                    className={`h-2 rounded-full ${course.progressColor}`}
+                                    style={{ width: `${course.progress}%` }}
+                                  ></div>
+                                </div>
+                                <div className="text-sm text-muted">
+                                  {course.progress}%
+                                </div>
+                              </td>
+                              <td className="px-4 py-4 text-muted">
+                                {course.lessons}
+                              </td>
+                              <td className="px-4 py-4">
+                                <span
+                                  className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${course.levelColor}`}
+                                >
+                                  {course.level}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    ) : (
+                      <div className="p-6 text-center text-muted">
+                        <p>You haven't enrolled in any courses yet.</p>
+                        <button
+                          className="mt-4 px-4 py-2 bg-teal-500 text-white text-sm font-medium rounded-lg hover:bg-teal-600"
+                          onClick={handleBrowseCourses}
+                        >
+                          Browse Courses
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Continue Learning */}
+                {continueLearning.length !== 0 ? (
+                  <div>
+                    <h2 className="text-xl font-bold text-main mt-6 mb-6">
+                      Continue Learning
+                    </h2>
+                    <div className="space-y-4">
+                      {continueLearning.map((item, index) => (
+                        <div
+                          key={index}
+                          className="bg-card rounded-xl p-4 border border-border shadow-sm hover:shadow-md transition-shadow"
+                        >
+                          <div className="flex items-center">
+                            <Link
+                              to={`/course-preview/${item.id}`}
+                              className="flex items-center flex-1"
+                            >
+                              <img
+                                src={item.image}
+                                alt={item.title}
+                                className="w-12 h-12 rounded-lg mr-4"
+                              />
+                              <div className="flex-1">
+                                <h3 className="font-medium text-main mb-1 hover:text-teal-600">
+                                  {item.title}
+                                </h3>
+                                <p className="text-sm text-muted mb-2">
+                                  {item.lesson}
+                                </p>
+                                <div className="w-full bg-border rounded-full h-2 mb-2">
+                                  <div
+                                    className={`h-2 rounded-full ${item.progressColor}`}
+                                    style={{ width: `${item.progress}%` }}
+                                  ></div>
+                                </div>
+                              </div>
+                            </Link>
+                            <Link
+                              to={`/learning/${item.id}`}
+                              className="ml-4 px-4 py-2 bg-teal-500 text-white text-sm font-medium rounded-lg hover:bg-teal-600"
+                            >
+                              Continue
+                            </Link>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-6  text-muted">
+                    <p>Start Learning to get your progress tracked!</p>
+                    <button                      className="mt-4 px-4 py-2 bg-teal-500 text-white text-sm font-medium rounded-lg hover:bg-teal-600"
+                      onClick={() => navigate("/courses")}
+                    >
+                      My Courses
+                    </button> 
+                  </div>
+              )}
               </div>
 
               {/* Course Topics Chart */}
@@ -475,7 +633,7 @@ const Dashboard = () => {
             </div>
 
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-              {/* My Courses Table */}
+              {/* My Courses Table
               <div className="xl:col-span-2">
                 <h2 className="text-xl font-bold text-main mb-6">
                   My Courses
@@ -549,9 +707,9 @@ const Dashboard = () => {
                     </table>
                   </div>
                 </div>
-              </div>
+              </div> */}
 
-              {/* Continue Learning */}
+              {/* Continue Learning
               <div>
                 <h2 className="text-xl font-bold text-main mb-6">
                   Continue Learning
@@ -597,89 +755,7 @@ const Dashboard = () => {
                     </div>
                   ))}
                 </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
-              {/* Calendar */}
-              <div className="xl:col-span-3 bg-card rounded-xl p-6 border border-border">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-bold text-main">
-                    Class Calendar
-                  </h2>
-                  <div className="flex items-center space-x-4">
-                    <button className="p-2 bg-gray-100 text-black rounded-lg">
-                      <ChevronLeftIcon className="w-4 h-4" />
-                    </button>
-                    <span className="text-lg font-medium">December 2024</span>
-                    <button className="p-2 bg-gray-100 text-black rounded-lg">
-                      <ChevronRight className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-7 gap-px mb-4">
-                  {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(
-                    (day) => (
-                      <div
-                        key={day}
-                        className="p-3 text-center text-sm font-medium text-muted"
-                      >
-                        {day}
-                      </div>
-                    ),
-                  )}
-                </div>
-
-                <div className="grid grid-cols-7 gap-px">
-                  {Array.from({ length: 31 }, (_, i) => (
-                    <div
-                      key={i + 1}
-                      className={`p-3 text-center text-sm ${[3, 5, 9, 12, 16, 19, 23].includes(i + 1)
-                        ? "bg-blue-50 dark:bg-blue-100 text-blue-900 rounded-lg"
-                        : "text-main hover:bg-canvas-alt rounded-lg"
-                        }`}
-                    >
-                      {i + 1}
-                    </div>
-                  ))}
-                </div>
-
-                <div className="flex items-center space-x-6 mt-6 text-sm">
-                  <div className="flex items-center">
-                    <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
-                    <span className="text-muted">Upcoming</span>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                    <span className="text-muted">Completed</span>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
-                    <span className="text-muted">Missed</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Today's Schedule */}
-              <div className="bg-card rounded-xl p-6 border border-border">
-                <h3 className="text-lg font-semibold text-main mb-4">
-                  Today's Schedule
-                </h3>
-                <div className="space-y-3">
-                  {schedule.map((item, index) => (
-                    <div
-                      key={index}
-                      className={`p-3 rounded-lg border-l-4 ${item.color}`}
-                    >
-                      <h4 className="font-medium text-black mb-1">
-                        {item.title}
-                      </h4>
-                      <p className="text-sm text-muted">{item.time}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              </div> */}
             </div>
           </div>
         </main>
