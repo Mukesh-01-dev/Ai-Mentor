@@ -41,14 +41,14 @@ const LoginPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/auth/login`, {
+      const response = await axios.post("/api/auth/login", {
         email,
         password
       });
 
       if (response.data.token) {
         localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
+        localStorage.setItem('user', JSON.stringify(response.data));
         window.location.href = '/dashboard';
       }
     } catch (err) {

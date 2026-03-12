@@ -209,9 +209,9 @@ export default function Settings() {
 
                 {/* Settings Card */}
                 <div className="bg-card rounded-[24px] shadow-[0_4px_6px_0_rgba(0,0,0,0.10),0_10px_15px_0_rgba(0,0,0,0.10)] p-8">
-                  <div className="flex gap-8 mb-8">
+                  <div className="flex flex-col md:flex-row gap-8 mb-8">
                     {/* Avatar Section */}
-                    <div className="flex flex-col items-center">
+                    <div className="flex flex-col items-center md:w-1/3">
                       <div className="relative mb-6">
                         <img
                           src={
@@ -222,10 +222,10 @@ export default function Settings() {
                                 : `https://api.dicebear.com/8.x/initials/svg?seed=${formData.firstName}%20${formData.lastName}`
                           }
                           alt="Profile"
-                          className="w-32 h-32 rounded-full border-4 border-[rgba(255,135,89,0.65)] shadow-[0_4px_6px_0_rgba(0,0,0,0.10),0_10px_15px_0_rgba(0,0,0,0.10)]"
+                          className="w-32 h-32 rounded-full border-4 border-[rgba(255,135,89,0.65)] shadow-lg object-cover"
                         />
 
-                        <label className="absolute bottom-2 right-2 w-10 h-10 bg-[#475569] rounded-full flex items-center justify-center cursor-pointer shadow-[0_4px_6px_0_rgba(0,0,0,0.10),0_10px_15px_0_rgba(0,0,0,0.10)]">
+                        <label className="absolute bottom-2 right-2 w-10 h-10 bg-[#475569] rounded-full flex items-center justify-center cursor-pointer shadow-md hover:bg-[#334155] transition-colors">
                           <Camera className="w-[14px] h-[14px] text-white" />
                           <input
                             type="file"
@@ -235,10 +235,10 @@ export default function Settings() {
                           />
                         </label>
                       </div>
-                      <h2 className="text-[20px] font-semibold text-main font-[Inter] mb-1">
+                      <h2 className="text-[20px] font-semibold text-main font-[Inter] mb-1 text-center">
                         {formData.firstName} {formData.lastName}
                       </h2>
-                      <p className="text-[16px] text-muted font-[Inter]">
+                      <p className="text-[16px] text-muted font-[Inter] text-center">
                         Premium Member
                       </p>
                     </div>
@@ -246,9 +246,9 @@ export default function Settings() {
                     {/* Form Section */}
                     <div className="flex-1 space-y-6">
                       {/* First and Last Name */}
-                      <div className="grid grid-cols-2 gap-6">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                         <div className="relative">
-                          <label className="absolute -top-2 left-4 bg-card px-2 text-[14px] text-muted font-medium font-[Inter]">
+                          <label className="absolute -top-2 left-4 bg-card px-2 text-[12px] text-muted font-medium font-[Inter] z-10">
                             First Name
                           </label>
                           <input
@@ -261,7 +261,7 @@ export default function Settings() {
                           />
                         </div>
                         <div className="relative">
-                          <label className="absolute -top-2 left-4 bg-card px-2 text-[14px] text-muted font-medium font-[Inter]">
+                          <label className="absolute -top-2 left-4 bg-card px-2 text-[12px] text-muted font-medium font-[Inter] z-10">
                             Last Name
                           </label>
                           <input
@@ -277,7 +277,7 @@ export default function Settings() {
 
                       {/* Email */}
                       <div className="relative">
-                        <label className="absolute -top-2 left-4 bg-card px-2 text-[14px] text-muted font-medium font-[Inter]">
+                        <label className="absolute -top-2 left-4 bg-card px-2 text-[12px] text-muted font-medium font-[Inter] z-10">
                           Email Address
                         </label>
                         <input
@@ -292,7 +292,7 @@ export default function Settings() {
 
                       {/* Bio */}
                       <div className="relative">
-                        <label className="absolute -top-2 left-4 bg-card px-2 text-[14px] text-muted font-medium font-[Inter]">
+                        <label className="absolute -top-2 left-4 bg-card px-2 text-[12px] text-muted font-medium font-[Inter] z-10">
                           Bio
                         </label>
                         <textarea

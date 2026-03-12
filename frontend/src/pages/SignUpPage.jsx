@@ -71,7 +71,7 @@ const SignUpPage = () => {
 
     setLoading(true);
     try {
-      const response = await fetch(`/api/auth/register`, {
+      const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -84,8 +84,6 @@ const SignUpPage = () => {
           password,
         }),
       });
-
-      const data = await response.json();
 
       if (!response.ok) {
         throw new Error(data.message || "Something went wrong");

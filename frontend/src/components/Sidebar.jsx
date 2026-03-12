@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { ChevronRight, LogOut, Settings, User, ShieldCheck, LayoutGrid } from "lucide-react";
+import { ChevronRight, LogOut, Settings, User, ShieldCheck, LayoutGrid, X } from "lucide-react";
 import API_BASE_URL from "../lib/api";
 import { useSidebar } from "../context/SidebarContext";
 
@@ -51,29 +51,79 @@ const Sidebar = ({ activePage = "dashboard" }) => {
 
   return (
     <>
-      {sidebarOpen && <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[60] lg:hidden" onClick={() => setSidebarOpen(false)} />}
+      {/* Sidebar Overlay for Mobile */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-md z-[60] lg:hidden transition-opacity duration-300" 
+          onClick={() => setSidebarOpen(false)} 
+          aria-hidden="true"
+        />
+      )}
 
-      <div className={`fixed lg:fixed top-18.5 left-0 z-[70] bg-card/70 backdrop-blur-2xl border-r border-border/50 transform transition-all duration-500 ease-out lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"} ${sidebarCollapsed ? "lg:w-24" : "lg:w-80"} w-80 h-[calc(100vh-4rem)] overflow-visible`}>
-        
-        <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} className="hidden lg:flex absolute -right-5 top-8 w-10 h-10 bg-card border border-border rounded-xl items-center justify-center hover:bg-teal-500 hover:text-white transition-all shadow-xl z-[80]">
-          <ChevronRight className={`w-5 h-5 transition-transform duration-500 ${sidebarCollapsed ? "" : "rotate-180"}`} />
+      <aside 
+        className={`fixed top-0 lg:top-[4.5rem] left-0 z-[70] bg-card/70 backdrop-blur-2xl border-r border-border/50 transform transition-all duration-500 ease-out 
+          ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"} 
+          ${sidebarCollapsed ? "lg:w-20" : "lg:w-80"} 
+          w-[280px] sm:w-80 h-full lg:h-[calc(100vh-4.5rem)] overflow-visible`}
+        aria-label="Main Sidebar"
+      >
+        {/* Mobile Header inside Sidebar */}
+        <div className="flex items-center justify-between p-6 lg:hidden border-b border-border/50">
+          <img src="/upto.png" alt="UptoSkills Logo" className="h-8 w-auto" />
+          <button 
+            onClick={() => setSidebarOpen(false)}
+            className="p-2 rounded-xl hover:bg-canvas-alt transition-all"
+            aria-label="Close Sidebar"
+          >
+            <X className="w-5 h-5 text-muted" />
+          </button>
+        </div>
+
+        <button 
+          onClick={() => setSidebarCollapsed(!sidebarCollapsed)} 
+          className="hidden lg:flex absolute -right-4 top-8 w-8 h-8 bg-card border border-border rounded-lg items-center justify-center hover:bg-teal-500 hover:text-white transition-all shadow-xl z-[80]"
+          aria-label={sidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+        >
+          <ChevronRight className={`w-4 h-4 transition-transform duration-500 ${sidebarCollapsed ? "" : "rotate-180"}`} />
         </button>
 
-        <nav className={`mt-8 px-4 h-[calc(100vh-16rem)] scrollbar-hide ${sidebarCollapsed ? "overflow-visible" : "overflow-y-auto"}`}>
-          <div className="space-y-3">
+        <nav className={`mt-4 lg:mt-8 px-4 h-[calc(100vh-16rem)] scrollbar-hide ${sidebarCollapsed ? "overflow-visible" : "overflow-y-auto"}`}>
+          <ul className="space-y-2 lg:space-y-3">
             {navigationItems.map((item) => {
               const isActive = activePage === item.id;
               return (
-                <div key={item.id} onClick={() => navigate(item.path)} className={`group relative flex items-center px-4 py-4 rounded-[1.5rem] cursor-pointer transition-all duration-300 ${sidebarCollapsed ? "justify-center" : ""} ${isActive ? "bg-teal-500 text-white shadow-xl shadow-teal-500/30" : "text-muted hover:bg-canvas-alt"}`}>
-                  <img src={item.icon} alt={item.label} className={`w-5 h-5 shrink-0 transition-transform group-hover:scale-110 ${isActive ? "brightness-0 invert" : ""}`} />
-                  {!sidebarCollapsed && <span className={`ml-4 text-sm font-black uppercase tracking-tight ${isActive ? "text-white" : ""}`}>{item.label}</span>}
-                  {sidebarCollapsed && (
-                    <div className="absolute left-full ml-6 px-4 py-2 bg-slate-900 text-white text-[10px] font-black rounded-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-all shadow-2xl z-50 uppercase tracking-widest">{item.label}</div>
-                  )}
-                </div>
+                <li key={item.id}>
+                  <button 
+                    onClick={() => {
+                      navigate(item.path);
+                      if (window.innerWidth < 1024) setSidebarOpen(false);
+                    }} 
+                    className={`group relative flex items-center w-full px-4 py-3 lg:py-4 rounded-2xl cursor-pointer transition-all duration-300 
+                      ${sidebarCollapsed ? "lg:justify-center" : ""} 
+                      ${isActive ? "bg-teal-500 text-white shadow-lg shadow-teal-500/30" : "text-muted hover:bg-canvas-alt"}`}
+                    aria-current={isActive ? "page" : undefined}
+                  >
+                    <img 
+                      src={item.icon} 
+                      alt="" 
+                      className={`w-5 h-5 shrink-0 transition-transform group-hover:scale-110 ${isActive ? "brightness-0 invert" : ""}`} 
+                    />
+                    <span className={`ml-4 text-xs lg:text-sm font-black uppercase tracking-tight transition-opacity duration-300
+                      ${sidebarCollapsed ? "lg:hidden" : "block"} 
+                      ${isActive ? "text-white" : ""}`}
+                    >
+                      {item.label}
+                    </span>
+                    {sidebarCollapsed && (
+                      <div className="hidden lg:block absolute left-full ml-6 px-4 py-2 bg-slate-900 text-white text-[10px] font-black rounded-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-all shadow-2xl z-50 uppercase tracking-widest whitespace-nowrap">
+                        {item.label}
+                      </div>
+                    )}
+                  </button>
+                </li>
               );
             })}
-          </div>
+          </ul>
         </nav>
 
         {/* --- BOTTOM PROFILE WITH POPUP --- */}
@@ -106,7 +156,7 @@ const Sidebar = ({ activePage = "dashboard" }) => {
             </div>
           </div>
         </div>
-      </div>
+      </aside>
     </>
   );
 };

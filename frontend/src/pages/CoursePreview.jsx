@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import Header from "../components/Header";
 import { useAuth } from "../context/AuthContext";
 import API_BASE_URL from "../lib/api";
-import { Play, ChevronDown, ChevronUp, X } from "lucide-react";
+import { Play, ChevronDown, ChevronUp, X, BookOpen, Clock, CheckCircle, Calendar } from "lucide-react";
 
 /* safe getter */
 function safeGet(obj, path, fallback = undefined) {
@@ -324,100 +324,112 @@ export default function CoursePreview() {
     <div className="min-h-screen bg-[#F6F8FA]">
       <Header />
 
-      <main className="max-w-[1280px] mx-auto px-4 py-8 lg:py-16 mt-6">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <main className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12 mt-[4.5rem]">
+        <div className="flex flex-col lg:grid lg:grid-cols-12 gap-8">
           {/* LEFT: details */}
-          <div className="lg:col-span-8">
-            <div className="bg-white rounded-xl p-6 lg:p-8 shadow-[0_10px_30px_rgba(15,23,42,0.03)]">
-              <div className="flex flex-col gap-4">
-                <div>
-                  <div className="flex flex-wrap gap-2 mb-3">
-                    <span className="text-sm font-medium text-[#FACC15]">Bestseller</span>
-                    <span className="text-sm font-medium bg-[#22C55E] text-white px-3 py-1 rounded-full">Beginner-Friendly</span>
-                    <span className="text-sm font-medium bg-[#3B82F6] text-white px-3 py-1 rounded-full">AI-Generated Content</span>
+          <div className="lg:col-span-8 space-y-6 sm:space-y-8">
+            {/* Mobile Hero Image (Visible only on Mobile/Tablet) */}
+            <div className="lg:hidden bg-card rounded-[2.5rem] overflow-hidden border border-border/50 shadow-sm">
+              <img src={heroSrc} alt="" className="w-full h-56 sm:h-72 object-cover" onError={handleHeroError} />
+            </div>
+
+            <div className="bg-card rounded-[2.5rem] p-6 sm:p-10 border border-border/50 shadow-[0_8px_30px_rgb(0,0,0,0.02)]">
+              <div className="space-y-6">
+                <div className="space-y-4">
+                  <div className="flex flex-wrap gap-2">
+                    <span className="text-[10px] font-black uppercase tracking-widest bg-amber-100 text-amber-700 px-3 py-1 rounded-lg">Bestseller</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest bg-emerald-100 text-emerald-700 px-3 py-1 rounded-lg">Beginner-Friendly</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest bg-blue-100 text-blue-700 px-3 py-1 rounded-lg">AI-Generated Content</span>
                   </div>
 
-                  <h1 className="text-2xl lg:text-4xl font-bold text-[#0D0D0D] leading-tight">{title}</h1>
-                  <p className="text-gray-600 mt-2">{subtitle}</p>
+                  <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-main uppercase tracking-tight leading-[1.1]">{title}</h1>
+                  <p className="text-sm sm:text-base text-muted font-medium leading-relaxed opacity-70">{subtitle}</p>
 
-                  <div className="flex items-center gap-3 mt-4">
-                    {/* instructor image: brand-first + backend fallback; maintain proportions */}
+                  <div className="flex items-center gap-4 pt-2">
                     <img
                       src={instructorSrc}
                       alt={instructorName}
-                      className="w-12 h-12 rounded-full object-contain"
+                      className="w-12 h-12 rounded-2xl object-cover shadow-md border-2 border-white dark:border-slate-800"
                       onError={handleInstructorError}
                     />
-                    <div className="text-sm text-[#6B7280]">
-                      Created by <span className="text-[#FF6C34] font-medium">{instructorName}</span>
-                      <div className="text-xs text-gray-400">Last updated {safeGet(courseMeta, "updatedAt", "—") ? new Date(safeGet(courseMeta, "updatedAt", Date.now())).toLocaleDateString() : "—"}</div>
+                    <div className="space-y-0.5">
+                      <div className="text-[10px] text-muted font-black uppercase tracking-widest opacity-50">Instructor</div>
+                      <div className="text-sm font-black text-main uppercase tracking-tight">{instructorName}</div>
                     </div>
                   </div>
                 </div>
 
-                {/* stats + what you'll learn */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-                  <div className="bg-[#FBFBFF] p-4 rounded-lg text-center shadow-sm">
-                    <div className="text-yellow-400">★★★★★</div>
-                    <div className="text-xl font-semibold">{rating}</div>
-                    <div className="text-xs text-gray-400">12,847 reviews</div>
+                {/* stats grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="bg-canvas-alt/50 p-5 rounded-3xl border border-border/30 text-center space-y-1">
+                    <div className="text-amber-400 text-xs">★★★★★</div>
+                    <div className="text-xl font-black text-main">{rating}</div>
+                    <div className="text-[9px] text-muted font-black uppercase tracking-widest opacity-50">Rating</div>
                   </div>
 
-                  <div className="bg-[#FBFBFF] p-4 rounded-lg text-center shadow-sm">
-                    <div className="text-purple-400 font-semibold text-xl">{students}</div>
-                    <div className="text-xs text-gray-400">Students enrolled</div>
+                  <div className="bg-canvas-alt/50 p-5 rounded-3xl border border-border/30 text-center space-y-1">
+                    <div className="text-xl font-black text-main uppercase">{students}</div>
+                    <div className="text-[9px] text-muted font-black uppercase tracking-widest opacity-50">Students</div>
                   </div>
 
-                  <div className="bg-[#FBFBFF] p-4 rounded-lg text-center shadow-sm">
-                    <div className="text-sky-400 font-semibold text-xl">{duration}</div>
-                    <div className="text-xs text-gray-400">Total content</div>
+                  <div className="bg-canvas-alt/50 p-5 rounded-3xl border border-border/30 text-center space-y-1">
+                    <div className="text-xl font-black text-main uppercase">{duration}</div>
+                    <div className="text-[9px] text-muted font-black uppercase tracking-widest opacity-50">Duration</div>
                   </div>
                 </div>
 
-                <div className="bg-white rounded-xl p-6 border border-[#F3F4F6] mt-6 shadow-[0_8px_24px_rgba(15,23,42,0.03)]">
-                  <h3 className="text-lg font-semibold mb-4">What you'll learn</h3>
-                  <div className="grid sm:grid-cols-2 gap-3 text-sm text-[#374151]">
+                <div className="bg-canvas-alt/30 rounded-3xl p-6 sm:p-8 border border-border/20">
+                  <h3 className="text-sm sm:text-base font-black text-main uppercase tracking-widest mb-6">What you'll learn</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {whatYouWillLearn.map((w, i) => (
                       <div key={i} className="flex items-start gap-3">
-                        <svg className="w-5 h-5 mt-1 flex-shrink-0" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#10B981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                        <div>{typeof w === "string" ? w : (w.text || JSON.stringify(w))}</div>
+                        <div className="mt-1 shrink-0 w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center">
+                          <svg className="w-3 h-3 text-emerald-600" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                        </div>
+                        <div className="text-xs sm:text-sm font-bold text-main/80 leading-relaxed uppercase tracking-tight">
+                          {typeof w === "string" ? w : (w.text || JSON.stringify(w))}
+                        </div>
                       </div>
                     ))}
                   </div>
                 </div>
 
                 {/* Curriculum */}
-                <div className="mt-6">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-lg font-semibold">Curriculum</h3>
-                    <button onClick={toggleAll} className="text-sm text-[#374151] bg-white border border-border px-3 py-1 rounded-lg hover:bg-gray-50">
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm sm:text-base font-black text-main uppercase tracking-widest">Curriculum</h3>
+                    <button onClick={toggleAll} className="text-[10px] font-black text-teal-500 hover:text-teal-600 uppercase tracking-widest">
                       {allExpanded ? "Collapse all" : "Expand all"}
                     </button>
                   </div>
 
                   <div className="space-y-3">
                     {modules.length === 0 ? (
-                      <div className="text-sm text-gray-500">Curriculum details not available.</div>
+                      <div className="p-8 text-center bg-canvas-alt/50 rounded-3xl border border-dashed border-border/50 text-xs font-bold text-muted uppercase">Curriculum not available.</div>
                     ) : modules.map((mod, idx) => {
                       const id = safeGet(mod, "id", `mod-${idx}`);
                       const mt = safeGet(mod, "title", `Module ${idx + 1}`);
                       const lessons = Array.isArray(safeGet(mod, "lessons", [])) ? safeGet(mod, "lessons", []) : [];
                       const isOpen = !!openModules[id];
                       return (
-                        <div key={id} className="bg-white rounded-md border border-[#F3F4F6] p-4">
-                          <button onClick={() => toggleModule(id)} className="w-full flex items-center justify-between text-left" aria-expanded={isOpen}>
-                            <div>
-                              <div className="text-sm font-medium">{mt}</div>
-                              <div className="text-xs text-gray-400">{lessons.length} lessons</div>
+                        <div key={id} className={`bg-card rounded-3xl border transition-all duration-300 ${isOpen ? 'border-teal-500/30 ring-1 ring-teal-500/10' : 'border-border/50'}`}>
+                          <button onClick={() => toggleModule(id)} className="w-full flex items-center justify-between p-5 text-left" aria-expanded={isOpen}>
+                            <div className="flex-1 min-w-0">
+                              <div className="text-xs sm:text-sm font-black text-main uppercase tracking-tight truncate">{mt}</div>
+                              <div className="text-[9px] text-muted font-bold uppercase tracking-widest opacity-50 mt-1">{lessons.length} lessons</div>
                             </div>
-                            <div className="flex items-center gap-3">
-                              <div className="text-xs text-gray-500">{lessons.reduce((acc, l) => { const m = (safeGet(l, "duration", "") || "").match(/\d+/); return acc + (m ? Number(m[0]) : 0); }, 0) > 0 ? `${lessons.reduce((acc, l) => { const m = (safeGet(l, "duration", "") || "").match(/\d+/); return acc + (m ? Number(m[0]) : 0); }, 0)}m` : ""}</div>
-                              {isOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                            <div className="flex items-center gap-4 shrink-0">
+                              <div className="text-[10px] font-black text-muted uppercase tracking-tighter">
+                                {lessons.reduce((acc, l) => { const m = (safeGet(l, "duration", "") || "").match(/\d+/); return acc + (m ? Number(m[0]) : 0); }, 0)}m
+                              </div>
+                              <div className={`p-1.5 rounded-lg transition-colors ${isOpen ? 'bg-teal-500 text-white' : 'bg-canvas-alt text-muted'}`}>
+                                {isOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                              </div>
                             </div>
                           </button>
 
                           {isOpen && (
-                            <div className="mt-3 space-y-2">
+                            <div className="px-5 pb-5 space-y-2 border-t border-border/20 pt-4 animate-in slide-in-from-top-2 duration-300">
                               {lessons.map((lesson) => {
                                 const lid = safeGet(lesson, "id", Math.random().toString(36).slice(2, 9));
                                 const ltitle = safeGet(lesson, "title", "Lesson");
@@ -425,20 +437,24 @@ export default function CoursePreview() {
                                 const lduration = safeGet(lesson, "duration", "");
                                 const ly = safeGet(lesson, "youtubeUrl", "");
                                 return (
-                                  <div key={lid} className="flex items-center justify-between p-2 rounded-md hover:bg-canvas-alt">
-                                    <div className="flex items-center gap-3">
-                                      <div className="w-8 h-8 rounded-md bg-[#F8FAFC] flex items-center justify-center">
-                                        {ltype === "video" ? <Play className="w-4 h-4" /> : <svg className="w-4 h-4" viewBox="0 0 24 24"><path d="M3 6h18v2H3zM3 11h18v2H3zM3 16h18v2H3z" fill="#6B7280" /></svg>}
+                                  <div key={lid} className="flex items-center justify-between p-3 rounded-2xl hover:bg-canvas-alt/50 transition-colors group">
+                                    <div className="flex items-center gap-4 min-w-0">
+                                      <div className="w-8 h-8 shrink-0 rounded-xl bg-canvas-alt flex items-center justify-center text-muted group-hover:bg-teal-500 group-hover:text-white transition-all">
+                                        {ltype === "video" ? <Play className="w-3.5 h-3.5" /> : <BookOpen className="w-3.5 h-3.5" />}
                                       </div>
-                                      <div>
-                                        <div className="text-sm font-medium">{ltitle}</div>
-                                        <div className="text-xs text-gray-400">{ltype}{ly ? " • video" : ""}</div>
+                                      <div className="min-w-0">
+                                        <div className="text-[11px] font-black text-main uppercase tracking-tight truncate">{ltitle}</div>
+                                        <div className="text-[9px] text-muted font-bold uppercase tracking-widest opacity-40">{ltype}</div>
                                       </div>
                                     </div>
 
-                                    <div className="flex items-center gap-3">
-                                      <div className="text-xs text-gray-500">{lduration}</div>
-                                      {ly && <a href={ly} target="_blank" rel="noreferrer" className="text-xs text-indigo-600 font-medium flex items-center gap-1"><Play className="w-3 h-3" /> Play</a>}
+                                    <div className="flex items-center gap-4 shrink-0 ml-4">
+                                      <div className="text-[10px] font-black text-muted/60 tracking-tighter">{lduration}</div>
+                                      {ly && (
+                                        <a href={ly} target="_blank" rel="noreferrer" className="flex items-center justify-center w-8 h-8 rounded-xl bg-teal-500/10 text-teal-600 hover:bg-teal-500 hover:text-white transition-all shadow-sm">
+                                          <Play className="w-3 h-3" />
+                                        </a>
+                                      )}
                                     </div>
                                   </div>
                                 );
@@ -453,66 +469,79 @@ export default function CoursePreview() {
               </div>
             </div>
 
-            {/* long description */}
-            <div className="mt-6 bg-white rounded-xl p-6 shadow-[0_8px_24px_rgba(15,23,42,0.03)]">
-              <h3 className="text-lg font-semibold mb-3">Course description</h3>
-              <div className="text-gray-600 text-sm leading-relaxed">
-                {safeGet(learningData, "course.subtitle", safeGet(courseMeta, "longDescription", safeGet(courseMeta, "description", "Full course description pulled from backend.")))}
+            {/* description */}
+            <div className="bg-card rounded-[2.5rem] p-6 sm:p-10 border border-border/50 shadow-sm">
+              <h3 className="text-sm sm:text-base font-black text-main uppercase tracking-widest mb-4">Course Description</h3>
+              <div className="text-xs sm:text-sm text-muted font-medium leading-relaxed opacity-80 uppercase tracking-tight">
+                {safeGet(learningData, "course.subtitle", safeGet(courseMeta, "longDescription", safeGet(courseMeta, "description", "")))}
               </div>
             </div>
           </div>
 
-          {/* RIGHT: image (top) then Buy Now (below) */}
-          <div className="lg:col-span-4 flex flex-col items-stretch">
-            <div className="bg-white rounded-xl overflow-hidden shadow-md mb-6">
-              <img src={heroSrc} alt={title} className="w-full h-56 object-cover" onError={handleHeroError} />
-            </div>
-
-            <div className="bg-white rounded-xl p-6 shadow-[0_10px_30px_rgba(15,23,42,0.06)] mb-6">
-              <div className="text-center mb-4">
-                <div className="text-sm text-gray-500 mb-1">Lifetime access</div>
-                <div className="text-3xl font-extrabold text-[#0D0D0D] mb-2">{priceDisplay}</div>
-                <div className="text-sm text-gray-400 line-through">₹{priceOriginal}</div>
+          {/* RIGHT: sidebar with sticky pricing */}
+          <div className="lg:col-span-4 space-y-6">
+            <div className="lg:sticky lg:top-24 space-y-6">
+              {/* Desktop Hero Image */}
+              <div className="hidden lg:block bg-card rounded-[2.5rem] overflow-hidden border border-border/50 shadow-xl group">
+                <img src={heroSrc} alt="" className="w-full h-56 object-cover group-hover:scale-110 transition-transform duration-700" onError={handleHeroError} />
               </div>
 
-              {safeGet(courseMeta, "countdown", null) ? (
-                <div className="bg-[#FFF7ED] text-[#B45309] text-center p-3 rounded-md mb-4">
-                  Sale ends in: {safeGet(courseMeta, "countdown.hours", 0)}h {safeGet(courseMeta, "countdown.minutes", 0)}m {safeGet(courseMeta, "countdown.seconds", 0)}s
-                </div>
-              ) : null}
-
-              {isPurchased ? (
-                <button onClick={() => navigate(`/learning/${courseId}`)} className="w-full bg-green-600 text-white font-semibold py-3 rounded-lg mb-3 hover:opacity-95">
-                  Go to Course
-                </button>
-              ) : (
-                <button onClick={openEnrollModal} disabled={isPurchasing} className="w-full bg-gradient-to-r from-[#00BEA5] to-[#54D3C3] text-white font-semibold py-3 rounded-lg mb-3 hover:opacity-95 disabled:opacity-50">
-                  {isPurchasing ? "Processing..." : "Buy Now"}
-                </button>
-              )}
-
-              <div className="mt-4 space-y-3 text-sm text-gray-600">
-                {features.map((f, i) => (
-                  <div key={i} className="flex items-start gap-3">
-                    <svg className="w-4 h-4 mt-1" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#10B981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                    <div>{typeof f === "string" ? f : (f.text || JSON.stringify(f))}</div>
+              <div className="bg-card rounded-[2.5rem] p-8 border border-border/50 shadow-xl space-y-8">
+                <div className="text-center space-y-2">
+                  <div className="text-[10px] font-black text-muted uppercase tracking-[0.2em] opacity-50">One-time payment</div>
+                  <div className="flex items-center justify-center gap-4">
+                    <div className="text-4xl font-black text-main tracking-tighter uppercase">{priceDisplay === "₹0" ? "FREE" : priceDisplay}</div>
+                    <div className="text-lg font-black text-muted line-through opacity-40 uppercase tracking-tighter">₹{priceOriginal}</div>
                   </div>
-                ))}
-              </div>
-            </div>
+                </div>
 
-            {/* trust card (uses US brand image first) */}
-            <div className="bg-white rounded-xl p-4 shadow-[0_8px_24px_rgba(15,23,42,0.03)] text-sm text-gray-600">
-              <div className="flex items-center gap-3">
-                <img
-                  src={trustSrc}
-                  alt="trust"
-                  className="w-10 h-10 object-contain"
-                  onError={handleTrustError}
-                />
-                <div>
-                  <div className="font-medium text-gray-800">30-day refund</div>
-                  <div className="text-xs text-gray-400">No questions asked</div>
+                <div className="space-y-3">
+                  {isPurchased ? (
+                    <button onClick={() => navigate(`/learning/${courseId}`)} className="w-full py-4 rounded-2xl bg-emerald-500 text-white text-[11px] font-black uppercase tracking-widest shadow-lg shadow-emerald-500/20 hover:bg-emerald-600 hover:-translate-y-1 transition-all">
+                      Go to Course
+                    </button>
+                  ) : (
+                    <button onClick={openEnrollModal} disabled={isPurchasing} className="w-full py-4 rounded-2xl bg-teal-500 text-white text-[11px] font-black uppercase tracking-widest shadow-lg shadow-teal-500/20 hover:bg-teal-600 hover:-translate-y-1 transition-all disabled:opacity-50 disabled:translate-y-0">
+                      {isPurchasing ? "Processing..." : "Enroll Now"}
+                    </button>
+                  )}
+                  <button className="w-full py-4 rounded-2xl bg-canvas-alt text-main text-[11px] font-black uppercase tracking-widest border border-border/50 hover:bg-border/30 transition-all">
+                    Share Course
+                  </button>
+                </div>
+
+                <div className="space-y-4 pt-4 border-t border-border/20">
+                  <div className="text-[10px] font-black text-main uppercase tracking-widest">This course includes:</div>
+                  <div className="space-y-3">
+                    {features.map((f, i) => (
+                      <div key={i} className="flex items-start gap-3">
+                        <div className="mt-0.5 shrink-0 w-4 h-4 rounded-full bg-teal-500/10 flex items-center justify-center">
+                          <CheckCircle className="w-2.5 h-2.5 text-teal-600" />
+                        </div>
+                        <div className="text-[11px] font-bold text-muted uppercase tracking-tight leading-tight">
+                          {typeof f === "string" ? f : (f.text || JSON.stringify(f))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Trust Badge */}
+              <div className="bg-card rounded-[2rem] p-5 border border-border/50 shadow-sm">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 shrink-0 rounded-2xl bg-canvas-alt p-2 overflow-hidden border border-border/30">
+                    <img
+                      src={trustSrc}
+                      alt=""
+                      className="w-full h-full object-contain"
+                      onError={handleTrustError}
+                    />
+                  </div>
+                  <div>
+                    <div className="text-[11px] font-black text-main uppercase tracking-tight">Satisfaction Guaranteed</div>
+                    <div className="text-[10px] text-muted font-bold uppercase tracking-tighter opacity-60">30-day money back period</div>
+                  </div>
                 </div>
               </div>
             </div>
