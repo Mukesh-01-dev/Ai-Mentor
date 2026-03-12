@@ -235,7 +235,7 @@ const CoursesPage = () => {
                         <img
                           src={course.image}
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                          alt=""
+                          alt={course.title}
                         />
                         <div className="absolute top-4 right-4 bg-card/90 backdrop-blur-md px-3 py-1.5 rounded-xl text-[10px] font-black flex items-center gap-1.5 shadow-xl border border-border/50">
                           <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
