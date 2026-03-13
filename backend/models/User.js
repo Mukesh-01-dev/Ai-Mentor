@@ -1,8 +1,9 @@
+// backend/models/User.js
 import { DataTypes, Model } from "sequelize";
 import bcrypt from "bcryptjs";
 import { sequelize } from "../config/db.js";
 
-class User extends Model {}
+class User extends Model { }
 
 User.init(
   {
@@ -11,16 +12,20 @@ User.init(
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
     },
+
     firstName: {
       type: DataTypes.STRING,
     },
+
     lastName: {
       type: DataTypes.STRING,
     },
+
     name: {
       type: DataTypes.STRING,
       allowNull: false,
     },
+
     email: {
       type: DataTypes.STRING,
       allowNull: false,
@@ -29,25 +34,37 @@ User.init(
         isEmail: true,
       },
     },
+
     password: {
       type: DataTypes.STRING,
       allowNull: true,
     },
+
     googleId: {
       type: DataTypes.STRING,
     },
+
     role: {
       type: DataTypes.STRING,
       defaultValue: "user",
     },
+
     bio: {
       type: DataTypes.STRING,
       defaultValue: "",
     },
+
+    avatar_url: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      defaultValue: null,
+    },
+
     purchasedCourses: {
       type: DataTypes.JSONB,
       defaultValue: [],
     },
+
     analytics: {
       type: DataTypes.JSONB,
       defaultValue: {
@@ -63,10 +80,12 @@ User.init(
         certificates: 0,
       },
     },
+
     learningHoursChart: {
       type: DataTypes.JSONB,
       defaultValue: [],
     },
+
     settings: {
       type: DataTypes.JSONB,
       defaultValue: {
@@ -86,14 +105,33 @@ User.init(
         },
       },
     },
+    resetPasswordToken: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    resetPasswordExpires: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
   },
   {
     sequelize,
     modelName: "User",
     timestamps: true,
     hooks: {
-      beforeSave: async (user) => {
-        if (user.password && user.changed("password")) {
+      beforeCreate: async (user) => {
+        console.log("Hook: beforeCreate triggered for user:", user.email);
+        if (user.password) {
+          console.log("Hashing password for new user...");
+          const salt = await bcrypt.genSalt(10);
+          user.password = await bcrypt.hash(user.password, salt);
+        }
+      },
+      beforeUpdate: async (user) => {
+        console.log("Hook: beforeUpdate triggered for user:", user.email);
+        console.log("Is password changed?", user.changed("password"));
+        if (user.changed("password")) {
+          console.log("Hashing password for existing user...");
           const salt = await bcrypt.genSalt(10);
           user.password = await bcrypt.hash(user.password, salt);
         }

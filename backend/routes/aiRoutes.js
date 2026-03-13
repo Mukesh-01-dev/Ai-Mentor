@@ -39,15 +39,33 @@ router.post("/generate-video", protect, async (req, res) => {
       },
     });
 
-    if (cachedVideo) {
-      console.log("🎯 Serving cached AI video for:", celebrity);
-      return res.json({
-        videoUrl: cachedVideo.videoUrl,
-        transcriptName: cachedVideo.transcriptName,
-        jobId: cachedVideo.jobId,
-        cached: true,
-      });
+   if (cachedVideo) {
+      console.log("🎯 Cache found. Verifying file exists...");
+
+      const filename = cachedVideo.videoUrl.split("/").pop();
+
+      const videoCheck = await fetch(
+        `${process.env.AI_SERVICE_URL}/video-stream/${filename}`,
+        { method: "HEAD" }   // lightweight check
+      );
+
+      if (!videoCheck.ok) {
+        console.log("⚠️ Cached video missing. Removing from DB...");
+
+        await cachedVideo.destroy();  // delete bad cache
+
+      } else {
+        console.log("✅ Cached video verified.");
+
+        return res.json({
+          videoUrl: cachedVideo.videoUrl,
+          transcriptName: cachedVideo.transcriptName,
+          jobId: cachedVideo.jobId,
+          cached: true,
+        });
+      }
     }
+    
 
     // 📘 Get titles from JSON
     const titles = getCourseAndLessonTitles(courseId, lessonId);
@@ -156,6 +174,22 @@ router.get("/status/:jobId", protect, async (req, res) => {
     }
 
     const data = await response.json();
+
+    // 🌥️ If video is ready and Cloudinary URL is available, persist it to DB
+    if (data.status === "ready" && data.cloudinary_url) {
+      try {
+        const updated = await AIVideo.update(
+          { videoUrl: data.cloudinary_url },
+          { where: { jobId: String(jobId) } }
+        );
+        if (updated[0] > 0) {
+          console.log(`☁️ AIVideo DB updated with Cloudinary URL for jobId: ${jobId}`);
+        }
+      } catch (dbErr) {
+        console.error("⚠️ Failed to update AIVideo with Cloudinary URL:", dbErr.message);
+      }
+    }
+
     res.json(data);
   } catch (error) {
     console.error("❌ Status Proxy Error:", error.message);

@@ -1,3 +1,4 @@
+// frontend/src/context/AuthContext.jsx
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
 const AuthContext = createContext();
@@ -11,21 +12,34 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    const token = localStorage.getItem('token');
+    const storedUser = localStorage.getItem('user');
+    return !!(token && storedUser && storedUser !== "undefined");
+  });
 
+  const [user, setUser] = useState(() => {
+    const storedUser = localStorage.getItem('user');
+    try {
+      return storedUser && storedUser !== "undefined" ? JSON.parse(storedUser) : null;
+    } catch {
+      return null;
+    }
+  });
   useEffect(() => {
     const token = localStorage.getItem('token');
     const storedUser = localStorage.getItem('user');
-    if (token && storedUser) {
-      setIsAuthenticated(true);
-      setUser(JSON.parse(storedUser));
+
+    if (!token || !storedUser || storedUser === "undefined") {
+      setIsAuthenticated(false);
+      setUser(null);
     }
   }, []);
 
   const login = (userData) => {
     setIsAuthenticated(true);
     setUser(userData);
+    // Ensure token is extracted correctly from the response object
     localStorage.setItem('token', userData.token);
     localStorage.setItem('user', JSON.stringify(userData));
   };
@@ -35,7 +49,7 @@ export const AuthProvider = ({ children }) => {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await fetch('http://localhost:5000/api/users/profile', {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/users/profile`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -43,8 +57,15 @@ export const AuthProvider = ({ children }) => {
 
       if (response.ok) {
         const userData = await response.json();
-        setUser(userData);
-        localStorage.setItem('user', JSON.stringify(userData));
+
+        const newUser = {
+          ...userData,
+          token: localStorage.getItem("token"),
+          avatar_url: userData.avatar_url || null, // Ensure it exists
+        };
+
+        setUser(newUser);
+        localStorage.setItem("user", JSON.stringify(newUser));
       }
     } catch (error) {
       console.error('Error fetching user profile:', error);
@@ -56,17 +77,33 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+
     // Clear course progress from localStorage
     Object.keys(localStorage).forEach(key => {
       if (key.startsWith('course-progress-')) {
         localStorage.removeItem(key);
       }
     });
+
+    // Safety: Clear everything to prevent stale data
+    localStorage.clear();
   };
 
   const updateUser = (updatedUserData) => {
-    setUser(prev => ({ ...prev, ...updatedUserData }));
-    localStorage.setItem('user', JSON.stringify(updatedUserData));
+    setUser((prevUser) => {
+      const newUser = {
+        ...prevUser,
+        ...updatedUserData,
+        settings: {
+          ...prevUser?.settings,
+          ...updatedUserData?.settings,
+        },
+        token: prevUser?.token || localStorage.getItem("token"),
+      };
+
+      localStorage.setItem("user", JSON.stringify(newUser));
+      return newUser;
+    });
   };
 
   const value = {

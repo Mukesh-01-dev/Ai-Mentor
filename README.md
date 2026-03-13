@@ -1,116 +1,108 @@
-# AI Tutor - Learning Platform
+# AI Mentor — Learning Platform
 
-An AI-powered learning management system with course management, analytics, and discussion features.
+An AI-powered learning management system with course management, analytics, community discussions, and AI-generated video lessons.
 
 ## Features
 
-- 📚 Course Management
+- 📚 Course Management & Purchasing
 - 📊 Learning Analytics
-- 💬 Discussion Room with AI Suggestions
-- 🔐 User Authentication (JWT)
-- 🎥 Video-based Learning
+- 💬 Community Discussions
+- 🔐 User Authentication (JWT + Google OAuth)
+- 🤖 AI-Generated Lesson Videos (Gemini + TTS + FFmpeg)
 
-## Tech Stac
-- **Frontend**: React + Vite
-- **Backend**: Node.js + Express
+## Tech Stack
+
+- **Frontend**: React 19 + Vite + Tailwind CSS
+- **Backend**: Node.js + Express + Sequelize
 - **Database**: PostgreSQL
-- **AI Services**: Gemini API for AI-powered features
+- **AI Service**: Python + FastAPI + Google Gemini
+- **Auth**: Firebase (Google OAuth) + JWT
 
 ## Prerequisites
 
 - Node.js v18+
 - PostgreSQL v14+
-- npm or yarn
+- Python 3.10+
+- FFmpeg
+- npm
 
-## Installation
+## Quick Start
 
 ### 1. Clone the repository
 ```bash
 git clone <repository-url>
-cd db-updated
+cd AI-Mentor-Updated
 ```
 
 ### 2. Setup Backend
 ```bash
 cd backend
 npm install
-
-# Copy environment file and configure
 cp .env.example .env
-# Edit .env with your database and API credentials
-
-# Run database migrations (if any)
-# Start the server
+# Fill in your database credentials and secrets in .env
 npm run dev
 ```
+> See [`backend/README.md`](./backend/README.md) for full setup guide.
 
 ### 3. Setup Frontend
 ```bash
 cd frontend
 npm install
-
-# Copy environment file and configure
 cp .env.example .env
-# Edit .env with your Firebase credentials
-
-# Start the development server
+# Fill in your Firebase credentials in .env
 npm run dev
 ```
+> See [`frontend/README.md`](./frontend/README.md) for full setup guide.
 
-### 4. Setup AI Service (Optional)
+### 4. Setup AI Service
 ```bash
-cd ai_service/backend
-pip install -r requirements.txt
-
-# Copy environment file and configure
-cp .env.example .env
-# Edit .env with your Gemini API key
-
-# Start the AI service (see ai_service/README.md for details)
-python api.py
+cd ai_service
+python -m venv venv
+.\venv\Scripts\activate   # Windows
+pip install -r backend/requirements.txt
+cp backend/.env.example backend/.env
+# Fill in Gemini and Cloudinary keys in .env
+cd backend
+uvicorn api:app --reload --port 8000
 ```
+> See [`ai_service/README.md`](./ai_service/README.md) for full setup guide.
 
 ## Environment Variables
 
-### Backend (.env)
-```
-DB_NAME=your_database_name
-DB_USER=your_database_user
-DB_PASSWORD=your_database_password
-DB_HOST=localhost
-DB_PORT=5432
-PORT=5000
-JWT_SECRET=your_jwt_secret
-FRONTEND_URL=http://localhost:5173
-```
+Each service has its own `.env` file. Copy the `.env.example` in each folder and fill in your values.
 
-### Frontend (.env)
-```
-VITE_API_BASE_URL=http://localhost:5000
-VITE_FIREBASE_API_KEY=your_firebase_api_key
-VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=your_project_id
-VITE_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
-VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-VITE_FIREBASE_APP_ID=your_app_id
-```
+| Service | Key variables |
+|---|---|
+| `backend/` | `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `JWT_SECRET`, `AI_SERVICE_URL` |
+| `frontend/` | `VITE_API_BASE_URL`, `VITE_FIREBASE_*` |
+| `ai_service/backend/` | `GEMINI_API_KEY`, `CLOUDINARY_*` |
 
 ## Running the Application
 
-1. Start PostgreSQL and create your database
-2. Start the backend server: `cd backend && npm run dev`
-3. Start the frontend: `cd frontend && npm run dev`
-4. Open http://localhost:5173 in your browser
+Start all three services in separate terminals:
+
+```bash
+# Terminal 1 — Backend API
+cd backend && npm run dev
+
+# Terminal 2 — Frontend
+cd frontend && npm run dev
+
+# Terminal 3 — AI Service
+cd ai_service && .\venv\Scripts\activate && cd backend && uvicorn api:app --reload --port 8000
+```
+
+Then open **http://localhost:5173** in your browser.
 
 ## Project Structure
 
 ```
-db-updated/
-├── backend/          # Express.js backend API
-├── frontend/         # React + Vite frontend
-└── ai_service/      # Python AI services (Wav2Lip, TTS, etc.)
+AI-Mentor-Updated/
+├── backend/       # Node.js + Express REST API
+├── frontend/      # React + Vite web application
+└── ai_service/    # Python + FastAPI AI lesson generator
 ```
 
-## License
+## About
 
-MIT
+This project was developed as part of an internship. All rights reserved by the respective authors and organisation.

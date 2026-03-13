@@ -71,6 +71,7 @@ button{
 .line-clamp-2 {
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -120,6 +121,7 @@ button{
 .text-gradient {
   background: linear-gradient(90deg, #4facfe, #7846aa);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 

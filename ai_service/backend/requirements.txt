@@ -4,3 +4,4 @@ python-dotenv
 google-genai
 pyttsx3
 requests
+cloudinary

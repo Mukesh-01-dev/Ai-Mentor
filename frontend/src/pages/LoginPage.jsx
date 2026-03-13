@@ -1,19 +1,18 @@
-import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import AuthLayout from "../components/auth/AuthLayout.jsx";
 import SocialLogin from "../components/auth/SocialLogin";
+import axios from "axios"; // ✅ Yeh line add karna compulsory hai
+import toast from "react-hot-toast";
 
-/* FormInput stays exactly as your designed UI */
 const FormInput = ({ label, type, placeholder, value, onChange }) => {
   return (
     <div className="mb-3">
-      <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-        {label}
-      </label>
+      <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">{label}</label>
       <input
         type={type}
-        className="w-full px-3 py-2 rounded-lg bg-gray-50 border border-gray-200 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00BEA5] focus:border-transparent transition-all dark:bg-[#0f172a] dark:border-gray-700 dark:text-white dark:placeholder-gray-500"
+        className="w-full px-3 py-2 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:ring-2 focus:ring-teal-500 outline-none dark:bg-slate-900 dark:border-gray-700 dark:text-white"
         placeholder={placeholder}
         value={value}
         onChange={onChange}
@@ -23,107 +22,69 @@ const FormInput = ({ label, type, placeholder, value, onChange }) => {
 };
 
 const LoginPage = () => {
-  /* 🔹 LOGIC FROM WORKING LOGIN PAGE (UNCHANGED) */
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [keepLoggedIn, setKeepLoggedIn] = useState(false);
+  const [showLogoutAlert, setShowLogoutAlert] = useState(false);
+
+  useEffect(() => {
+    if (location.state?.logoutSuccess) {
+      setShowLogoutAlert(true);
+      window.history.replaceState({}, document.title);
+      const timer = setTimeout(() => setShowLogoutAlert(false), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [location]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch("http://localhost:5000/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
+      const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/auth/login`, {
+        email,
+        password
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Something went wrong");
+      if (response.data.token) {
+        login(response.data);
+        toast.success("Logged in successfully!");
+        navigate('/dashboard');
       }
-
-      login(data, keepLoggedIn);
-      navigate("/dashboard");
-    } catch (error) {
-      alert(error.message);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Invalid Credentials!");
     }
   };
 
-  /* 🔹 UI */
   return (
-    <AuthLayout
-      title="Welcome Back!"
-      subtitle="Access your AI Learning Journey."
-    >
-      <form onSubmit={handleSubmit} className="space-y-3">
-        <FormInput
-          label="Email Address"
-          type="email"
-          placeholder="Enter your email here"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
+    <AuthLayout title="Welcome Back!" subtitle="Access your AI Learning Journey.">
+      {showLogoutAlert && (
+        <div className="fixed top-8 left-1/2 -translate-x-1/2 z-[100] animate-in slide-in-from-top duration-500">
+          <div className="bg-teal-500 text-white px-8 py-3 rounded-2xl shadow-2xl font-bold border-2 border-white/20">
+            ✅ You have been logged out successfully!
+          </div>
+        </div>
+      )}
 
-        {/* ✅ Direct Password Input */}
-        <div className="mb-3">
-          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-            Password
-          </label>
-          <input
-            type="password"
-            className="w-full px-3 py-2 rounded-lg bg-gray-50 border border-gray-200 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00BEA5] focus:border-transparent transition-all dark:bg-[#0f172a] dark:border-gray-700 dark:text-white dark:placeholder-gray-500"
-            placeholder="••••••••••"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <FormInput label="Email Address" type="email" placeholder="Enter your email" value={email} onChange={(e) => setEmail(e.target.value)} />
+        <FormInput label="Password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} />
+
+        <div className="flex justify-end">
+          <Link to="/forgot-password" size="sm" className="text-xs font-semibold text-teal-600 hover:text-teal-500 transition-colors">
+            Forgot Password?
+          </Link>
         </div>
 
-        {/* Keep Logged In & Forgot Password */}
-        <div className="flex items-center justify-between mb-4">
-          <label className="flex items-center space-x-2 cursor-pointer">
-            <input
-              type="checkbox"
-              className="w-3.5 h-3.5 rounded border-gray-300 text-[#00BEA5] focus:ring-[#00BEA5]"
-              checked={keepLoggedIn}
-              onChange={() => setKeepLoggedIn(!keepLoggedIn)}
-            />
-            <span className="text-xs text-gray-600 dark:text-gray-400">
-              Keep me logged in
-            </span>
-          </label>
-
-          <a
-            href="/forgot-password"
-            className="text-xs font-semibold text-[#00BEA5] hover:text-[#00a08b] transition-colors"
-          >
-            Forgot password?
-          </a>
-        </div>
-
-        <button
-          type="submit"
-          className="w-full py-2.5 rounded-lg bg-linear-to-r from-[#2186df] to-[#02ffbb] text-white font-bold text-base shadow-lg shadow-blue-500/30 hover:shadow-blue-500/40 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer"
-        >
-          Login
+        <button type="submit" className="w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-teal-400 text-white font-black shadow-lg hover:scale-[1.02] transition-all">
+          LOG IN
         </button>
       </form>
 
       <SocialLogin />
-
-      <p className="text-center mt-5 text-sm text-gray-600 dark:text-gray-400">
-        Don't have an account?{" "}
-        <Link
-          to="/signup"
-          className="font-semibold text-[#00BEA5] hover:text-[#00a08b] transition-colors"
-        >
-          Sign Up
-        </Link>
+      <p className="text-center mt-6 text-sm text-muted">
+        New here? <Link to="/signup" className="font-bold text-teal-500 hover:underline">Create Account</Link>
       </p>
     </AuthLayout>
   );

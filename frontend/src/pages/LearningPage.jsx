@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import Header from "../components/Header";
 import Sidebar from "../components/Sidebar";
 import { useNavigate, useParams } from "react-router-dom";
@@ -41,6 +42,7 @@ const getYouTubeVideoId = (url) => {
 export default function Learning() {
 
 
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { id: courseId } = useParams();
   const { user, updateUser } = useAuth();
@@ -383,9 +385,17 @@ export default function Learning() {
                 const statusRes = await fetch(`/api/ai/status/${data.jobId}`, {
                   headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
                 });
-                const { status } = await statusRes.json();
-                if (status === "ready") { isReady = true; break; }
-                if (status === "failed") throw new Error("Video generation failed on server.");
+                const statusData = await statusRes.json();
+                if (statusData.status === "ready") {
+                  isReady = true;
+                  // ☁️ Prefer Cloudinary URL over local proxy URL
+                  if (statusData.cloudinary_url) {
+                    console.log("☁️ Using Cloudinary URL:", statusData.cloudinary_url);
+                    data.videoUrl = statusData.cloudinary_url;
+                  }
+                  break;
+                }
+                if (statusData.status === "failed") throw new Error("Video generation failed on server.");
                 attempts++;
                 await new Promise(r => setTimeout(r, 1000));
               }
@@ -526,7 +536,7 @@ export default function Learning() {
       <div className="min-h-screen bg-canvas-alt flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-          <p className="mt-4 text-muted">Loading...</p>
+          <p className="mt-4 text-muted">{t("learning.loading")}</p>
         </div>
       </div>
     );
@@ -820,7 +830,7 @@ export default function Learning() {
               onClick={() => navigate("/courses")}
               className="hover:text-blue-600 transition-colors"
             >
-              My Course
+              {t("learning.my_course")}
             </button>
             <ChevronRight className="w-4 h-4 text-muted" />
             {/* Show current module name instead of course title */}
@@ -851,7 +861,7 @@ export default function Learning() {
           <div className="flex items-center justify-between">
             {/* Custom Dropdown for Modules and Lessons */}
             <div className="relative min-w-95 max-w-125 flex items-center">
-              <span className="text-main font-semibold mr-3">Contents</span>
+              <span className="text-main font-semibold mr-3">{t("learning.contents")}</span>
               <div className="relative w-full">
                 <div
                   className="bg-canvas-alt border border-border rounded-2xl px-6 py-2 pr-12 text-base text-main cursor-pointer flex items-center justify-between select-none min-h-12"
@@ -946,29 +956,27 @@ export default function Learning() {
                       ></div>
                     </div>
                     <p className="text-sm text-muted mt-2">
-                      {Math.round(progressPercent)}% Complete
+                      {Math.round(progressPercent)}% {t("learning.complete")}
                     </p>
                   </div>
                 );
               })()}
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 w-full max-w-max ml-auto">
               {/* AI Celebrity Button */}
               <button
                 onClick={() => setIsCelebrityModalOpen(true)}
                 className="flex items-center gap-2 px-4 py-2 bg-linear-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all shadow-sm hover:shadow-md"
               >
                 <Sparkles className="w-4 h-4" />
-                <span className="text-sm font-medium">Select AI Voiceover</span>
+                <span className="text-sm font-medium">{t("learning.select_ai_voiceover")}</span>
                 {selectedCelebrity && (
                   <span className="ml-1 px-1.5 py-0.5 bg-white/20 rounded-full text-xs">
                     {selectedCelebrity.split(' ')[0]}
                   </span>
                 )}
               </button>
-
-
             </div>
           </div>
         </div>
@@ -987,8 +995,8 @@ export default function Learning() {
                     <Sparkles className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-semibold text-main">AI Celebrity Voiceover</h2>
-                    <p className="text-xs text-muted mt-0.5">Generate AI voice for this video</p>
+                    <h2 className="text-lg font-semibold text-main">{t("learning.ai_celebrity_title")}</h2>
+                    <p className="text-xs text-muted mt-0.5">{t("learning.ai_celebrity_subtitle")}</p>
                   </div>
                 </div>
                 <button
@@ -1006,7 +1014,7 @@ export default function Learning() {
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted" />
                   <input
                     type="search"
-                    placeholder="Search celebrities..."
+                    placeholder={t("learning.search_celebrities")}
                     value={celebritySearch}
                     onChange={(e) => setCelebritySearch(e.target.value)}
                     className="w-full pl-9 pr-4 py-2 bg-canvas-alt border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm text-main placeholder-muted"
@@ -1065,10 +1073,10 @@ export default function Learning() {
                       </div>
                       <div>
                         <p className="text-sm font-medium text-blue-800 dark:text-blue-300">
-                          AI Voiceover Active
+                          {t("learning.ai_voiceover_active")}
                         </p>
                         <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-                          Currently using <span className="font-semibold">{selectedCelebrity}</span>'s voice for this video
+                          {t("learning.ai_celebrity_subtitle")} — <span className="font-semibold">{selectedCelebrity}</span>
                         </p>
                       </div>
                     </div>
@@ -1082,7 +1090,7 @@ export default function Learning() {
                   onClick={() => setIsCelebrityModalOpen(false)}
                   className="px-4 py-2 text-sm text-muted hover:text-main hover:bg-canvas-alt rounded-lg transition-colors"
                 >
-                  Cancel
+                  {t("common.cancel")}
                 </button>
                 <button
                   onClick={() => setIsCelebrityModalOpen(false)}
@@ -1134,7 +1142,7 @@ export default function Learning() {
                   className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600 transition-all hover:shadow-md disabled:hover:shadow-none"
                 >
                   <ChevronLeft className="w-5 h-5" />
-                  Previous
+                  {t("learning.previous")}
                 </button>
                 <button
                   onClick={handleNext}
@@ -1143,7 +1151,7 @@ export default function Learning() {
                   }
                   className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600 transition-all hover:shadow-md disabled:hover:shadow-none"
                 >
-                  {isNavigating ? "Loading..." : "Next"}
+                  {isNavigating ? t("learning.loading") : t("learning.next")}
                   <ChevronRight className="w-5 h-5" />
                 </button>
               </div>
