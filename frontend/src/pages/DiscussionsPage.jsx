@@ -52,7 +52,8 @@ const avatarColors = [
 ];
 const pickColor = (str) => {
   let h = 0;
-  for (let i = 0; i < (str || "").length; i++) h = str.charCodeAt(i) + ((h << 5) - h);
+  for (let i = 0; i < (str || "").length; i++)
+    h = str.charCodeAt(i) + ((h << 5) - h);
   return avatarColors[Math.abs(h) % avatarColors.length];
 };
 
@@ -66,9 +67,9 @@ const GLOBAL_CATEGORIES = [
 
 const CATEGORY_KEY_MAP = {
   "Course Discussion": "cat_course_discussion",
-  "General": "cat_general",
+  General: "cat_general",
   "Help & Support": "cat_help_support",
-  "Feedback": "cat_feedback",
+  Feedback: "cat_feedback",
   "Off-Topic": "cat_off_topic",
 };
 
@@ -85,7 +86,8 @@ const categoryColorMap = {
 /* ────────────────────────────────────────── */
 const DiscussionsPage = () => {
   const { t } = useTranslation();
-  const getCategoryLabel = (cat) => t(`discussions.${CATEGORY_KEY_MAP[cat]}`, cat);
+  const getCategoryLabel = (cat) =>
+    t(`discussions.${CATEGORY_KEY_MAP[cat]}`, cat);
   const { user } = useAuth();
   const { sidebarCollapsed } = useSidebar();
   const token = localStorage.getItem("token");
@@ -112,7 +114,8 @@ const DiscussionsPage = () => {
   const [globalPosts, setGlobalPosts] = useState([]);
   const [globalLoading, setGlobalLoading] = useState(false);
   const [globalSort, setGlobalSort] = useState("Recent");
-  const [globalCategoryFilter, setGlobalCategoryFilter] = useState("All Categories");
+  const [globalCategoryFilter, setGlobalCategoryFilter] =
+    useState("All Categories");
   const [globalContent, setGlobalContent] = useState("");
   const [globalCategory, setGlobalCategory] = useState("");
   const [expandedGlobalPost, setExpandedGlobalPost] = useState(null);
@@ -132,7 +135,9 @@ const DiscussionsPage = () => {
   // Fetch all courses (from courses.json via API)
   const fetchAllCourses = useCallback(async () => {
     try {
-      const res = await fetch("/api/courses", { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch("/api/courses", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if (!res.ok) return;
       const data = await res.json();
       // courses.json has popularCourses
@@ -238,7 +243,8 @@ const DiscussionsPage = () => {
   }, [activeView, courseSort, fetchCoursePosts]);
 
   useEffect(() => {
-    if (activeView === "global") fetchGlobalPosts(globalCategoryFilter, globalSort);
+    if (activeView === "global")
+      fetchGlobalPosts(globalCategoryFilter, globalSort);
   }, [activeView, globalCategoryFilter, globalSort, fetchGlobalPosts]);
 
   useEffect(() => {
@@ -250,14 +256,18 @@ const DiscussionsPage = () => {
     try {
       const updated = await doAction(postId, "like");
       patchPost(updated, source);
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   };
 
   const handleDislike = async (postId, source) => {
     try {
       const updated = await doAction(postId, "dislike");
       patchPost(updated, source);
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   };
 
   const handleReplySubmit = async (postId, text, source) => {
@@ -265,11 +275,14 @@ const DiscussionsPage = () => {
     try {
       const updated = await doAction(postId, "reply", { text });
       patchPost(updated, source);
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   };
 
   const patchPost = (updated, source) => {
-    const replace = (list) => list.map((p) => (p.id === updated.id ? updated : p));
+    const replace = (list) =>
+      list.map((p) => (p.id === updated.id ? updated : p));
     if (source === "courseGrid") setCoursePosts(replace);
     if (source === "panel") setPanelPosts(replace);
     if (source === "global") setGlobalPosts(replace);
@@ -288,7 +301,9 @@ const DiscussionsPage = () => {
       setPanelPosts((prev) => [newPost, ...prev]);
       setCoursePosts((prev) => [newPost, ...prev]);
       setPanelReplyText("");
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   };
 
   // Post in global
@@ -304,11 +319,14 @@ const DiscussionsPage = () => {
       setGlobalPosts((prev) => [newPost, ...prev]);
       setGlobalContent("");
       setGlobalCategory("");
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   };
 
   /* helper: find course name from coursePosts for display */
-  const courseNameForPost = (post) => post.courseName || `Course #${post.courseId}`;
+  const courseNameForPost = (post) =>
+    post.courseName || `Course #${post.courseId}`;
 
   /* ─────────────────────────────────────────────────────── */
   /*  RENDER                                                  */
@@ -319,8 +337,9 @@ const DiscussionsPage = () => {
       <Sidebar activePage="discussions" />
 
       <div
-        className={`flex-1 flex flex-col transition-all duration-300 mt-10 ${sidebarCollapsed ? "lg:ml-20" : "lg:ml-80"
-          }`}
+        className={`flex-1 flex flex-col transition-all duration-300 mt-10 ${
+          sidebarCollapsed ? "lg:ml-20" : "lg:ml-80"
+        }`}
       >
         {/* ══════ HERO ══════ */}
         <div className="relative overflow-hidden bg-linear-to-br from-teal-700 via-teal-600 to-teal-800 pt-16 pb-12 px-4 sm:px-8">
@@ -338,10 +357,17 @@ const DiscussionsPage = () => {
               {activeView === "courseCommunity" ? (
                 <>
                   {t("discussions.course_communities").split(" ")[0]}{" "}
-                  <span className="text-yellow-400">{t("discussions.course_communities").split(" ").slice(1).join(" ")}</span>
+                  <span className="text-yellow-400">
+                    {t("discussions.course_communities")
+                      .split(" ")
+                      .slice(1)
+                      .join(" ")}
+                  </span>
                 </>
               ) : (
-                <span className="text-orange-400">{t("discussions.global_title")}</span>
+                <span className="text-orange-400">
+                  {t("discussions.global_title")}
+                </span>
               )}
             </h1>
             <p className="text-teal-100 text-sm sm:text-base max-w-xl mx-auto">
@@ -351,20 +377,22 @@ const DiscussionsPage = () => {
             <div className="flex justify-center gap-3 pt-2">
               <button
                 onClick={() => setActiveView("courseCommunity")}
-                className={`flex items-center gap-2 px-6 py-2.5 rounded-full font-semibold text-sm transition-all ${activeView === "courseCommunity"
-                  ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/30"
-                  : "bg-black/30 text-white hover:bg-black/40"
-                  }`}
+                className={`flex items-center gap-2 px-6 py-2.5 rounded-full font-semibold text-sm transition-all ${
+                  activeView === "courseCommunity"
+                    ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/30"
+                    : "bg-black/30 text-white hover:bg-black/40"
+                }`}
               >
                 <BookOpen className="w-4 h-4" />
                 {t("discussions.course_communities")}
               </button>
               <button
                 onClick={() => setActiveView("global")}
-                className={`flex items-center gap-2 px-6 py-2.5 rounded-full font-semibold text-sm transition-all ${activeView === "global"
-                  ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/30"
-                  : "bg-black/30 text-white hover:bg-black/40"
-                  }`}
+                className={`flex items-center gap-2 px-6 py-2.5 rounded-full font-semibold text-sm transition-all ${
+                  activeView === "global"
+                    ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/30"
+                    : "bg-black/30 text-white hover:bg-black/40"
+                }`}
               >
                 <Users className="w-4 h-4" />
                 {t("discussions.global_btn")}
@@ -378,14 +406,20 @@ const DiscussionsPage = () => {
           {/* ░░░░░ COURSE COMMUNITY VIEW ░░░░░ */}
           {activeView === "courseCommunity" && (
             <main className="flex-1 p-4 sm:p-6 overflow-y-auto">
-              <div className={`max-w-5xl mx-auto ${selectedCourse ? "xl:mr-105" : ""}`}>
+              <div
+                className={`max-w-5xl mx-auto ${
+                  selectedCourse ? "xl:mr-105" : ""
+                }`}
+              >
                 {/* header row */}
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-2">
                     <MessageCircle className="w-5 h-5 text-indigo-500" />
                     <h2 className="text-xl font-bold text-main">
                       {t("discussions.recent")}{" "}
-                      <span className="text-muted font-normal text-base">({coursePosts.length})</span>
+                      <span className="text-muted font-normal text-base">
+                        ({coursePosts.length})
+                      </span>
                     </h2>
                   </div>
                   <div className="flex items-center gap-2">
@@ -394,12 +428,15 @@ const DiscussionsPage = () => {
                       <button
                         key={s}
                         onClick={() => setCourseSort(s)}
-                        className={`px-4 py-1.5 text-sm rounded-md font-medium transition-colors ${courseSort === s
-                          ? "bg-red-500 text-white"
-                          : "bg-card border border-border text-muted hover:text-main"
-                          }`}
+                        className={`px-4 py-1.5 text-sm rounded-md font-medium transition-colors ${
+                          courseSort === s
+                            ? "bg-red-500 text-white"
+                            : "bg-card border border-border text-muted hover:text-main"
+                        }`}
                       >
-                        {s === "Recent" ? t("discussions.sort_recent") : t("discussions.sort_popular")}
+                        {s === "Recent"
+                          ? t("discussions.sort_recent")
+                          : t("discussions.sort_popular")}
                       </button>
                     ))}
                   </div>
@@ -407,7 +444,9 @@ const DiscussionsPage = () => {
 
                 {/* grid of discussion cards */}
                 {coursePostsLoading ? (
-                  <div className="text-center py-12 text-muted">{t("discussions.loading")}</div>
+                  <div className="text-center py-12 text-muted">
+                    {t("discussions.loading")}
+                  </div>
                 ) : coursePosts.length === 0 ? (
                   <div className="text-center py-12 text-muted">
                     {t("discussions.no_course")}
@@ -416,12 +455,17 @@ const DiscussionsPage = () => {
                         <button
                           key={c.id}
                           onClick={() =>
-                            setSelectedCourse({ courseId: c.id, courseName: c.title })
+                            setSelectedCourse({
+                              courseId: c.id,
+                              courseName: c.title,
+                            })
                           }
                           className="bg-card border border-border rounded-xl p-4 text-left hover:border-indigo-500 transition-colors"
                         >
                           <h3 className="font-semibold text-main">{c.title}</h3>
-                          <p className="text-xs text-muted mt-1">{c.category}</p>
+                          <p className="text-xs text-muted mt-1">
+                            {c.category}
+                          </p>
                         </button>
                       ))}
                     </div>
@@ -489,7 +533,10 @@ const DiscussionsPage = () => {
                           <button
                             key={c.id}
                             onClick={() =>
-                              setSelectedCourse({ courseId: c.id, courseName: c.title })
+                              setSelectedCourse({
+                                courseId: c.id,
+                                courseName: c.title,
+                              })
                             }
                             className="px-4 py-2 bg-card border border-border rounded-lg text-sm text-main hover:border-indigo-500 transition-colors"
                           >
@@ -516,12 +563,15 @@ const DiscussionsPage = () => {
                         <h3 className="font-bold text-main">Community</h3>
                       </div>
                       <p className="text-xs text-muted mt-0.5">
-                        {selectedCourse.courseName} &bull; {panelPosts.length} messages
+                        {selectedCourse.courseName} &bull; {panelPosts.length}{" "}
+                        messages
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
                       <button
-                        onClick={() => fetchPanelPosts(selectedCourse.courseId, panelSort)}
+                        onClick={() =>
+                          fetchPanelPosts(selectedCourse.courseId, panelSort)
+                        }
                         className="p-1.5 rounded-lg hover:bg-canvas-alt text-muted"
                       >
                         <RefreshCw className="w-4 h-4" />
@@ -541,13 +591,20 @@ const DiscussionsPage = () => {
                       <button
                         key={s}
                         onClick={() => setPanelSort(s)}
-                        className={`flex-1 py-2.5 text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${panelSort === s
-                          ? "bg-indigo-600/10 text-indigo-500 border-b-2 border-indigo-500"
-                          : "text-muted hover:text-main"
-                          }`}
+                        className={`flex-1 py-2.5 text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${
+                          panelSort === s
+                            ? "bg-indigo-600/10 text-indigo-500 border-b-2 border-indigo-500"
+                            : "text-muted hover:text-main"
+                        }`}
                       >
-                        {s === "Recent" ? <Clock className="w-3.5 h-3.5" /> : <TrendingUp className="w-3.5 h-3.5" />}
-                        {s === "Recent" ? t("discussions.sort_recent") : t("discussions.sort_popular")}
+                        {s === "Recent" ? (
+                          <Clock className="w-3.5 h-3.5" />
+                        ) : (
+                          <TrendingUp className="w-3.5 h-3.5" />
+                        )}
+                        {s === "Recent"
+                          ? t("discussions.sort_recent")
+                          : t("discussions.sort_popular")}
                       </button>
                     ))}
                   </div>
@@ -555,7 +612,9 @@ const DiscussionsPage = () => {
                   {/* panel messages */}
                   <div className="flex-1 overflow-y-auto p-4 space-y-4">
                     {panelLoading ? (
-                      <div className="text-center py-8 text-muted text-sm">{t("common.loading")}</div>
+                      <div className="text-center py-8 text-muted text-sm">
+                        {t("common.loading")}
+                      </div>
                     ) : panelPosts.length === 0 ? (
                       <div className="text-center py-8 text-muted text-sm">
                         {t("discussions.no_messages")}
@@ -589,17 +648,22 @@ const DiscussionsPage = () => {
                                   <MoreVertical className="w-4 h-4" />
                                 </button>
                               </div>
-                              <p className="text-sm text-muted mt-1">{post.content}</p>
+                              <p className="text-sm text-muted mt-1">
+                                {post.content}
+                              </p>
                               <div className="flex items-center gap-4 mt-2 text-xs text-muted">
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     handleLike(post.id, "panel");
                                   }}
-                                  className={`flex items-center gap-1 hover:text-indigo-500 ${post.likes?.some((l) => l.userId === user?.id)
-                                    ? "text-indigo-500"
-                                    : ""
-                                    }`}
+                                  className={`flex items-center gap-1 hover:text-indigo-500 ${
+                                    post.likes?.some(
+                                      (l) => l.userId === user?.id
+                                    )
+                                      ? "text-indigo-500"
+                                      : ""
+                                  }`}
                                 >
                                   <ThumbsUp className="w-3.5 h-3.5" />
                                   {post.likes?.length || 0}
@@ -609,10 +673,13 @@ const DiscussionsPage = () => {
                                     e.stopPropagation();
                                     handleDislike(post.id, "panel");
                                   }}
-                                  className={`flex items-center gap-1 hover:text-red-500 ${post.dislikes?.some((d) => d.userId === user?.id)
-                                    ? "text-red-500"
-                                    : ""
-                                    }`}
+                                  className={`flex items-center gap-1 hover:text-red-500 ${
+                                    post.dislikes?.some(
+                                      (d) => d.userId === user?.id
+                                    )
+                                      ? "text-red-500"
+                                      : ""
+                                  }`}
                                 >
                                   <ThumbsDown className="w-3.5 h-3.5" />
                                   {post.dislikes?.length || 0}
@@ -620,14 +687,19 @@ const DiscussionsPage = () => {
                                 <button
                                   type="button"
                                   onClick={() => {
-                                    setPanelReplyingTo(panelReplyingTo === post.id ? null : post.id);
+                                    setPanelReplyingTo(
+                                      panelReplyingTo === post.id
+                                        ? null
+                                        : post.id
+                                    );
                                     setPanelReplyInputText("");
                                   }}
                                   className="hover:text-main cursor-pointer bg-transparent p-0 border-0"
                                   aria-expanded={panelReplyingTo === post.id}
                                   aria-controls={`panel-reply-${post.id}`}
                                 >
-                                  {t("discussions.reply")} ({post.replies?.length || 0})
+                                  {t("discussions.reply")} (
+                                  {post.replies?.length || 0})
                                 </button>
                               </div>
 
@@ -641,7 +713,9 @@ const DiscussionsPage = () => {
                                     type="text"
                                     placeholder="Write a reply..."
                                     value={panelReplyInputText}
-                                    onChange={(e) => setPanelReplyInputText(e.target.value)}
+                                    onChange={(e) =>
+                                      setPanelReplyInputText(e.target.value)
+                                    }
                                     onKeyDown={async (e) => {
                                       if (e.key === "Enter" && !e.shiftKey) {
                                         e.preventDefault();
@@ -650,12 +724,19 @@ const DiscussionsPage = () => {
                                           return;
                                         }
                                         try {
-                                          await handleReplySubmit(post.id, text, "panel");
+                                          await handleReplySubmit(
+                                            post.id,
+                                            text,
+                                            "panel"
+                                          );
                                           setPanelReplyInputText("");
                                           setPanelReplyingTo(null);
                                         } catch (err) {
                                           // Keep input/UI open so the user doesn't lose their text
-                                          console.error("Failed to submit reply from panel input:", err);
+                                          console.error(
+                                            "Failed to submit reply from panel input:",
+                                            err
+                                          );
                                         }
                                       }
                                     }}
@@ -669,12 +750,19 @@ const DiscussionsPage = () => {
                                         return;
                                       }
                                       try {
-                                        await handleReplySubmit(post.id, text, "panel");
+                                        await handleReplySubmit(
+                                          post.id,
+                                          text,
+                                          "panel"
+                                        );
                                         setPanelReplyInputText("");
                                         setPanelReplyingTo(null);
                                       } catch (err) {
                                         // Keep input/UI open so the user doesn't lose their text
-                                        console.error("Failed to submit reply from panel button:", err);
+                                        console.error(
+                                          "Failed to submit reply from panel button:",
+                                          err
+                                        );
                                       }
                                     }}
                                     className="px-3 py-1.5 bg-indigo-600 text-white text-xs font-medium rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-1"
@@ -689,7 +777,10 @@ const DiscussionsPage = () => {
                               {post.replies?.length > 0 && (
                                 <div className="mt-3 space-y-2 border-l-2 border-border pl-3">
                                   {post.replies.map((r) => (
-                                    <div key={r.id} className="flex items-start gap-2">
+                                    <div
+                                      key={r.id}
+                                      className="flex items-start gap-2"
+                                    >
                                       <div
                                         className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0 ${pickColor(
                                           r.userName
@@ -704,7 +795,9 @@ const DiscussionsPage = () => {
                                         <span className="text-[10px] text-muted ml-2">
                                           {getRelativeTime(r.createdAt)}
                                         </span>
-                                        <p className="text-xs text-muted mt-0.5">{r.text}</p>
+                                        <p className="text-xs text-muted mt-0.5">
+                                          {r.text}
+                                        </p>
                                       </div>
                                     </div>
                                   ))}
@@ -726,7 +819,8 @@ const DiscussionsPage = () => {
                         placeholder={t("discussions.share_thoughts")}
                         value={panelReplyText}
                         onChange={(e) => {
-                          if (e.target.value.length <= 1000) setPanelReplyText(e.target.value);
+                          if (e.target.value.length <= 1000)
+                            setPanelReplyText(e.target.value);
                         }}
                         onKeyDown={(e) => {
                           if (e.key === "Enter" && !e.shiftKey) {
@@ -757,7 +851,6 @@ const DiscussionsPage = () => {
           {activeView === "global" && (
             <main className="flex-1 p-4 sm:p-6 overflow-y-auto">
               <div className="max-w-4xl mx-auto space-y-6">
-                
                 {/* Welcome Banner */}
                 {showWelcome && (
                   <div className="relative bg-linear-to-r from-red-900/30 to-orange-900/30 border border-orange-500/30 rounded-xl p-5">
@@ -780,7 +873,8 @@ const DiscussionsPage = () => {
                         </h3>
 
                         <p className="text-muted text-sm mt-1">
-                          Connect, share insights, find partners, and discuss anything globally.
+                          Connect, share insights, find partners, and discuss
+                          anything globally.
                         </p>
 
                         <div className="relative group inline-block">
@@ -800,12 +894,27 @@ const DiscussionsPage = () => {
             `}
                           >
                             <ul className="space-y-1">
-                              <li>• Be respectful and courteous to all members.</li>
-                              <li>• Avoid spam, promotions, or irrelevant links.</li>
-                              <li>• Keep discussions related to learning and courses.</li>
-                              <li>• Respect different opinions and perspectives.</li>
-                              <li>• Do not share personal or sensitive information.</li>
-                              <li>• Help maintain a positive and supportive community.</li>
+                              <li>
+                                • Be respectful and courteous to all members.
+                              </li>
+                              <li>
+                                • Avoid spam, promotions, or irrelevant links.
+                              </li>
+                              <li>
+                                • Keep discussions related to learning and
+                                courses.
+                              </li>
+                              <li>
+                                • Respect different opinions and perspectives.
+                              </li>
+                              <li>
+                                • Do not share personal or sensitive
+                                information.
+                              </li>
+                              <li>
+                                • Help maintain a positive and supportive
+                                community.
+                              </li>
                             </ul>
                           </div>
                         </div>
@@ -830,7 +939,8 @@ const DiscussionsPage = () => {
                     <textarea
                       value={globalContent}
                       onChange={(e) => {
-                        if (e.target.value.length <= 1000) setGlobalContent(e.target.value);
+                        if (e.target.value.length <= 1000)
+                          setGlobalContent(e.target.value);
                       }}
                       placeholder={t("discussions.post_placeholder")}
                       rows={4}
@@ -839,15 +949,38 @@ const DiscussionsPage = () => {
                   </div>
                   <div className="flex items-center justify-between mt-3 flex-wrap gap-3">
                     <div className="flex items-center gap-3">
-                     <div className="relative">
+                      <div className="relative">
                         <select
                           value={globalCategory}
                           onChange={(e) => setGlobalCategory(e.target.value)}
-                          className="appearance-none pl-4 pr-10 py-2 bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500 text-white font-semibold rounded-lg shadow-lg focus:outline-none focus:ring-2 focus:ring-orange-500 cursor-pointer transition duration-300 ease-in-out" 
+                          className="
+    appearance-none
+    pl-4 pr-10 py-2
+    bg-[#ff6d34]
+    hover:bg-[#e65f2c]
+    text-white
+    font-semibold
+    rounded-lg
+    shadow-md
+    border border-[#ff6d34]
+    focus:outline-none
+    focus:ring-2
+    focus:ring-[#00bea3]
+    cursor-pointer
+    transition
+    duration-200
+  "
                         >
-                          <option value="" className="bg-card text-main font-semibold">Select Category *</option>
+                          <option value="" className="bg-white text-[#2D3436]">
+                            Select Category *
+                          </option>
+
                           {GLOBAL_CATEGORIES.map((c) => (
-                            <option key={c} value={c} className="bg-card text-main font-semibold">
+                            <option
+                              key={c}
+                              value={c}
+                              className="bg-white text-[#2D3436]"
+                            >
                               {c}
                             </option>
                           ))}
@@ -855,8 +988,11 @@ const DiscussionsPage = () => {
                         <ChevronDown className="w-4 h-4 text-white/80 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
                       </div>
                       <span
-                        className={`text-sm ${globalContent.length > 900 ? "text-red-400" : "text-muted"
-                          }`}
+                        className={`text-sm ${
+                          globalContent.length > 900
+                            ? "text-red-400"
+                            : "text-muted"
+                        }`}
                       >
                         {globalContent.length}/1000
                       </span>
@@ -878,14 +1014,18 @@ const DiscussionsPage = () => {
                     <MessageCircle className="w-5 h-5 text-orange-500" />
                     <h2 className="text-xl font-bold text-main">
                       {t("discussions.global_list")}{" "}
-                      <span className="text-muted font-normal text-base">({globalPosts.length})</span>
+                      <span className="text-muted font-normal text-base">
+                        ({globalPosts.length})
+                      </span>
                     </h2>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="relative">
                       <select
                         value={globalCategoryFilter}
-                        onChange={(e) => setGlobalCategoryFilter(e.target.value)}
+                        onChange={(e) =>
+                          setGlobalCategoryFilter(e.target.value)
+                        }
                         className="appearance-none pl-3 pr-8 py-1.5 bg-card border border-border rounded-lg text-sm text-muted focus:outline-none cursor-pointer"
                       >
                         <option>{t("discussions.all_categories")}</option>
@@ -902,12 +1042,15 @@ const DiscussionsPage = () => {
                       <button
                         key={s}
                         onClick={() => setGlobalSort(s)}
-                        className={`px-4 py-1.5 text-sm rounded-md font-medium transition-colors ${globalSort === s
-                          ? "bg-red-500 text-white"
-                          : "bg-card border border-border text-muted hover:text-main"
-                          }`}
+                        className={`px-4 py-1.5 text-sm rounded-md font-medium transition-colors ${
+                          globalSort === s
+                            ? "bg-red-500 text-white"
+                            : "bg-card border border-border text-muted hover:text-main"
+                        }`}
                       >
-                        {s === "Recent" ? t("discussions.sort_recent") : t("discussions.sort_popular")}
+                        {s === "Recent"
+                          ? t("discussions.sort_recent")
+                          : t("discussions.sort_popular")}
                       </button>
                     ))}
                   </div>
@@ -915,7 +1058,9 @@ const DiscussionsPage = () => {
 
                 {/* Global Posts */}
                 {globalLoading ? (
-                  <div className="text-center py-12 text-muted">{t("discussions.loading")}</div>
+                  <div className="text-center py-12 text-muted">
+                    {t("discussions.loading")}
+                  </div>
                 ) : globalPosts.length === 0 ? (
                   <div className="text-center py-12 text-muted">
                     {t("discussions.no_global")}
@@ -942,23 +1087,30 @@ const DiscussionsPage = () => {
                               </div>
                               <div className="text-xs text-muted">
                                 {post.createdAt
-                                  ? new Date(post.createdAt).toLocaleDateString()
+                                  ? new Date(
+                                      post.createdAt
+                                    ).toLocaleDateString()
                                   : ""}
                               </div>
                             </div>
                           </div>
                           {post.category && (
                             <span
-                              className={`px-3 py-1 rounded-full text-xs font-medium border ${categoryColorMap[post.category] ||
+                              className={`px-3 py-1 rounded-full text-xs font-medium border ${
+                                categoryColorMap[post.category] ||
                                 "border-gray-500 text-gray-400"
-                                }`}
+                              }`}
                             >
                               {post.category}
                             </span>
                           )}
                         </div>
 
-                        <p className={`text-sm text-muted mb-4 ${expandedGlobalPost === post.id ? "" : "line-clamp-2"}`}>
+                        <p
+                          className={`text-sm text-muted mb-4 ${
+                            expandedGlobalPost === post.id ? "" : "line-clamp-2"
+                          }`}
+                        >
                           {post.content}
                         </p>
 
@@ -966,20 +1118,24 @@ const DiscussionsPage = () => {
                           <div className="flex items-center gap-5 text-xs text-muted">
                             <button
                               onClick={() => handleLike(post.id, "global")}
-                              className={`flex items-center gap-1 hover:text-indigo-500 transition-colors ${post.likes?.some((l) => l.userId === user?.id)
-                                ? "text-indigo-500"
-                                : ""
-                                }`}
+                              className={`flex items-center gap-1 hover:text-indigo-500 transition-colors ${
+                                post.likes?.some((l) => l.userId === user?.id)
+                                  ? "text-indigo-500"
+                                  : ""
+                              }`}
                             >
                               <ThumbsUp className="w-3.5 h-3.5" />
                               {post.likes?.length || 0}
                             </button>
                             <button
                               onClick={() => handleDislike(post.id, "global")}
-                              className={`flex items-center gap-1 hover:text-red-500 transition-colors ${post.dislikes?.some((d) => d.userId === user?.id)
-                                ? "text-red-500"
-                                : ""
-                                }`}
+                              className={`flex items-center gap-1 hover:text-red-500 transition-colors ${
+                                post.dislikes?.some(
+                                  (d) => d.userId === user?.id
+                                )
+                                  ? "text-red-500"
+                                  : ""
+                              }`}
                             >
                               <ThumbsDown className="w-3.5 h-3.5" />
                               {post.dislikes?.length || 0}
@@ -993,13 +1149,17 @@ const DiscussionsPage = () => {
                             <button
                               onClick={() =>
                                 setExpandedGlobalPost(
-                                  expandedGlobalPost === post.id ? null : post.id
+                                  expandedGlobalPost === post.id
+                                    ? null
+                                    : post.id
                                 )
                               }
                               className="px-3 py-1.5 border border-purple-500 text-purple-400 text-xs font-medium rounded-lg hover:bg-purple-500/10 transition-colors flex items-center gap-1"
                             >
                               <ArrowRight className="w-3 h-3" />
-                              {expandedGlobalPost === post.id ? "Collapse" : "View Replies"}
+                              {expandedGlobalPost === post.id
+                                ? "Collapse"
+                                : "View Replies"}
                             </button>
                             <button className="text-muted hover:text-main p-1">
                               <Flag className="w-3.5 h-3.5" />
@@ -1013,7 +1173,10 @@ const DiscussionsPage = () => {
                             {post.replies?.length > 0 && (
                               <div className="space-y-3 pl-3 border-l-2 border-border">
                                 {post.replies.map((r) => (
-                                  <div key={r.id} className="flex items-start gap-2">
+                                  <div
+                                    key={r.id}
+                                    className="flex items-start gap-2"
+                                  >
                                     <div
                                       className={`w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0 ${pickColor(
                                         r.userName
@@ -1030,7 +1193,9 @@ const DiscussionsPage = () => {
                                           {getRelativeTime(r.createdAt)}
                                         </span>
                                       </div>
-                                      <p className="text-xs text-muted mt-0.5">{r.text}</p>
+                                      <p className="text-xs text-muted mt-0.5">
+                                        {r.text}
+                                      </p>
                                     </div>
                                   </div>
                                 ))}
@@ -1041,11 +1206,17 @@ const DiscussionsPage = () => {
                                 type="text"
                                 placeholder="Write a reply..."
                                 value={globalReplyText}
-                                onChange={(e) => setGlobalReplyText(e.target.value)}
+                                onChange={(e) =>
+                                  setGlobalReplyText(e.target.value)
+                                }
                                 onKeyDown={(e) => {
                                   if (e.key === "Enter" && !e.shiftKey) {
                                     e.preventDefault();
-                                    handleReplySubmit(post.id, globalReplyText, "global");
+                                    handleReplySubmit(
+                                      post.id,
+                                      globalReplyText,
+                                      "global"
+                                    );
                                     setGlobalReplyText("");
                                   }
                                 }}
@@ -1053,7 +1224,11 @@ const DiscussionsPage = () => {
                               />
                               <button
                                 onClick={() => {
-                                  handleReplySubmit(post.id, globalReplyText, "global");
+                                  handleReplySubmit(
+                                    post.id,
+                                    globalReplyText,
+                                    "global"
+                                  );
                                   setGlobalReplyText("");
                                 }}
                                 className="px-4 py-2 bg-linear-to-r from-orange-500 to-red-500 text-white text-sm font-medium rounded-lg hover:opacity-90 transition-opacity flex items-center gap-1"
