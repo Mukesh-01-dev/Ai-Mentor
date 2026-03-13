@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Eye, EyeOff, Lock, Moon, Sun, Check, X } from "lucide-react";
+import { Eye, EyeOff, Moon, Sun, Check, X } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
-import { useAuth } from "../context/AuthContext";
 import AuthLayout from "../components/auth/AuthLayout";
 import SocialLogin from "../components/auth/SocialLogin";
 import toast from "react-hot-toast";
@@ -35,7 +34,6 @@ const ValidationItem = ({ label, met }) => (
 );
 
 const SignUpPage = () => {
-  /* 🔹 NEW STATES FOR NAMES */
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -44,11 +42,10 @@ const SignUpPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const { login } = useAuth();
   const { isDark, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
-  /* 🔹 PASSWORD REQUIREMENTS LOGIC */
+  /* PASSWORD REQUIREMENTS LOGIC */
   const passwordRequirements = {
     length: password.length >= 8,
     capital: /[A-Z]/.test(password),
@@ -65,12 +62,14 @@ const SignUpPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (!isPasswordValid) {
       toast.error("Please meet all password requirements.");
       return;
     }
 
     setLoading(true);
+
     try {
       const response = await fetch(`/api/auth/register`, {
         method: "POST",
@@ -91,10 +90,15 @@ const SignUpPage = () => {
       if (!response.ok) {
         throw new Error(data.message || "Something went wrong");
       }
+      // Show success message and redirect to login, so keep it
+      toast.success("Account created successfully! Redirecting to login...");
+      // after 2 seconds, navigate to login page, keep it
+      setTimeout(() => {
+        navigate("/login");
+      }, 2000);
 
-      login(data, false);
-      toast.success("Account created successfully!");
-      navigate("/dashboard");
+
+      
     } catch (error) {
       toast.error(error.message);
     } finally {
@@ -102,7 +106,6 @@ const SignUpPage = () => {
     }
   };
 
-  /* 🔹 UI FROM AUTHLAYOUT SIGNUP */
   return (
     <AuthLayout
       title="Join Us Today!"
@@ -121,7 +124,8 @@ const SignUpPage = () => {
       }
     >
       <form onSubmit={handleSubmit} className="space-y-3">
-        {/* 🔹 FIRST & LAST NAME ROW */}
+
+        {/* FIRST & LAST NAME */}
         <div className="grid grid-cols-2 gap-3">
           <FormInput
             label="First Name"
@@ -155,11 +159,12 @@ const SignUpPage = () => {
           onChange={(e) => setUsername(e.target.value)}
         />
 
-        {/* Password */}
+        {/* PASSWORD */}
         <div className="mb-3 relative">
           <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
             Create a Password
           </label>
+
           <div className="relative">
             <input
               type={showPassword ? "text" : "password"}
@@ -170,6 +175,7 @@ const SignUpPage = () => {
               minLength={8}
               required
             />
+
             <button
               type="button"
               onClick={togglePasswordVisibility}
@@ -179,7 +185,7 @@ const SignUpPage = () => {
             </button>
           </div>
 
-          {/* 🔹 PASSWORD CHECKLIST UI */}
+          {/* PASSWORD CHECKLIST */}
           <div className="mt-2 grid grid-cols-2 gap-1">
             <ValidationItem label="8+ Characters" met={passwordRequirements.length} />
             <ValidationItem label="Uppercase" met={passwordRequirements.capital} />
