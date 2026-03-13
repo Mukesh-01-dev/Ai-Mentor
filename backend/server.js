@@ -13,7 +13,9 @@ import analyticsRoutes from "./routes/analyticsRoutes.js";
 import sidebarRoutes from "./routes/sidebarRoutes.js";
 import aiRoutes from "./routes/aiRoutes.js";
 import communityRoutes from "./routes/communityRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
 import "./models/CommunityPost.js";
+import "./models/Notification.js";
 
 dotenv.config();
 
@@ -22,6 +24,8 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
+app.use(express.json());
+
 app.use(
   cors({
     origin: "http://localhost:5173",
@@ -29,9 +33,6 @@ app.use(
   })
 );
 
-app.use(express.json());
-
-// 🔥 Serve videos folder
 app.use(
   "/videos",
   express.static(path.join(__dirname, "videos"))
@@ -52,6 +53,7 @@ app.use("/api/analytics", analyticsRoutes);
 app.use("/api/sidebar", sidebarRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/community", communityRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 // Global error handler
 app.use((err, req, res, next) => {
@@ -70,7 +72,7 @@ const startServer = async () => {
     // Sync database models
     await sequelize.sync({ alter: true });
     console.log("✅ Database models synced successfully");
-    
+
     app.listen(PORT, () => {
       console.log(`✅ Server running on port ${PORT}`);
     });

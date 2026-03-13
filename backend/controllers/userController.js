@@ -161,6 +161,41 @@ const updateCourseProgress = async (req, res) => {
     const user = await User.findByPk(req.user.id);
     if (!user) return res.status(404).json({ message: "User not found" });
 
+    const { courseId, lessonData, currentLesson, completedLesson } = req.body;
+
+    let courses = [...(user.purchasedCourses || [])];
+    let courseIndex = courses.findIndex(c => Number(c.courseId) === Number(courseId));
+
+    if (courseIndex !== -1) {
+      let progress = courses[courseIndex].progress || { completedLessons: [], currentLesson: null, lessonData: {} };
+      if (!progress.lessonData) progress.lessonData = {};
+
+      if (lessonData && lessonData.lessonId) {
+        progress.lessonData[lessonData.lessonId] = {
+           ...progress.lessonData[lessonData.lessonId],
+           ...lessonData.data
+        };
+      }
+
+      if (currentLesson) {
+        progress.currentLesson = currentLesson;
+      }
+
+      if (completedLesson && !progress.completedLessons.some(l => l.lessonId === completedLesson.lessonId)) {
+        progress.completedLessons.push(completedLesson);
+      }
+
+      courses[courseIndex].progress = progress;
+      user.set('purchasedCourses', courses);
+      
+      // --- DATABASE JSON FIX FOR THE TEAM ---
+      // Sequelize does not automatically detect mutations inside deeply nested JSONB fields.
+      // We MUST explicitly call user.changed('fieldName', true) to force it to execute an UPDATE query.
+      // Without this line, the watch history will silently fail to save to the database.
+      user.changed('purchasedCourses', true);
+      console.log("Saved lesson data for course:", courseId, "lesson:", lessonData?.lessonId);
+    }
+
     user.analytics = user.analytics || {
       totalHours: 0,
       daysStudied: 0,
@@ -171,16 +206,79 @@ const updateCourseProgress = async (req, res) => {
     };
 
     await user.save();
-    res.json({ message: "Progress updated successfully" });
+    res.json({ message: "Progress updated successfully", purchasedCourses: user.purchasedCourses });
   } catch (error) {
     console.error("PROGRESS ERROR:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
 
-// STUB FUNCTIONS (to prevent module crashes)
 const getWatchedVideos = async (req, res) => {
-  res.status(501).json({ message: "getWatchedVideos not implemented yet" });
+  try {
+    const user = await User.findByPk(req.user.id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const courses = user.purchasedCourses || [];
+    console.log("getWatchedVideos - courses loaded:", JSON.stringify(courses, null, 2));
+
+    let videoData = [];
+    let totalSeconds = 0;
+    let completedCount = 0;
+    const uniqueCourses = [];
+
+    courses.forEach(course => {
+      if (course.courseTitle) {
+        uniqueCourses.push({ id: course.courseId, title: course.courseTitle });
+      }
+
+      const lessonData = course.progress?.lessonData || {};
+      Object.keys(lessonData).forEach(lessonId => {
+        const watchHistory = lessonData[lessonId]?.watchHistory;
+        if (watchHistory) {
+          // --- WATCH HISTORY SANITIZATION FOR THE TEAM ---
+          // Prevent UI crashes from previously corrupted data by bounding progress between 0 and 100%.
+          const safeProgress = Math.max(0, Math.min(100, Math.round(watchHistory.progressPercent || 0)));
+          
+          // Fallback to --:-- if the database stored "NaN:NaN" due to browser loading race conditions.
+          const rawDuration = watchHistory.formattedDuration;
+          const displayDuration = (rawDuration === "NaN:NaN" || !rawDuration) ? "--:--" : rawDuration;
+
+          videoData.push({
+            id: `${course.courseId}-${lessonId}`,
+            lessonId: lessonId,
+            courseId: course.courseId,
+            course: course.courseTitle || `Course ${course.courseId}`,
+            title: watchHistory.title || `Lesson ${lessonId}`,
+            thumbnail: watchHistory.thumbnail || "https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=1000&auto=format&fit=crop",
+            duration: displayDuration,
+            progress: safeProgress,
+            status: watchHistory.status || "in-progress",
+            lastWatched: watchHistory.lastWatched || new Date().toISOString(),
+            currentTime: watchHistory.currentTime || 0
+          });
+
+          if (watchHistory.currentTime > 0) {
+            totalSeconds += watchHistory.currentTime;
+          }
+          if (watchHistory.status === "completed" || safeProgress >= 95) {
+             completedCount++;
+          }
+        }
+      });
+    });
+
+    const metrics = {
+      totalHours: (totalSeconds / 3600).toFixed(1),
+      videosCompleted: completedCount,
+      avgSession: "15min", // Mocked for now, can be computed from analytics
+      learningStreak: "3 days", // Mocked for now
+    };
+
+    res.json({ videos: videoData, metrics, courses: uniqueCourses });
+  } catch (error) {
+    console.error("Failed to fetch watched videos:", error);
+    res.status(500).json({ message: "Server error" });
+  }
 };
 
 const getUserSettings = async (req, res) => {
@@ -239,8 +337,6 @@ const updateUserSettings = async (req, res) => {
 };
 
 const updateUserProfile = async (req, res) => {
-  console.log("REQ.FILE:", req.file);
-  console.log("REQ.BODY:", req.body);
 
   try {
     if (!req.user) {

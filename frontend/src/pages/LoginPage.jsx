@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import AuthLayout from "../components/auth/AuthLayout.jsx";
 import SocialLogin from "../components/auth/SocialLogin";
 import axios from "axios"; // ✅ Yeh line add karna compulsory hai
+import toast from "react-hot-toast";
 
 const FormInput = ({ label, type, placeholder, value, onChange }) => {
   return (
@@ -47,12 +48,12 @@ const LoginPage = () => {
       });
 
       if (response.data.token) {
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
-        window.location.href = '/dashboard';
+        login(response.data);
+        toast.success("Logged in successfully!");
+        navigate('/dashboard');
       }
     } catch (err) {
-      alert(err.response?.data?.message || "Invalid Credentials!");
+      toast.error(err.response?.data?.message || "Invalid Credentials!");
     }
   };
 
@@ -69,7 +70,13 @@ const LoginPage = () => {
       <form onSubmit={handleSubmit} className="space-y-4">
         <FormInput label="Email Address" type="email" placeholder="Enter your email" value={email} onChange={(e) => setEmail(e.target.value)} />
         <FormInput label="Password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} />
-        
+
+        <div className="flex justify-end">
+          <Link to="/forgot-password" size="sm" className="text-xs font-semibold text-teal-600 hover:text-teal-500 transition-colors">
+            Forgot Password?
+          </Link>
+        </div>
+
         <button type="submit" className="w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-teal-400 text-white font-black shadow-lg hover:scale-[1.02] transition-all">
           LOG IN
         </button>

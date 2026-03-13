@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react'
-import Header from '../components/Header' // Assuming Header is correctly imported
+import Header from '../components/Header'
 import Sidebar from '../components/Sidebar'
 import { useAuth } from '../context/AuthContext'
 import { useSidebar } from '../context/SidebarContext'
+import { useTranslation } from 'react-i18next'
 
 const Analytics = () => {
+  const { t } = useTranslation();
   const { sidebarOpen, setSidebarOpen, sidebarCollapsed, setSidebarCollapsed } = useSidebar();
   const [analyticsData, setAnalyticsData] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -111,7 +113,7 @@ const Analytics = () => {
               <div className="flex justify-center items-center h-64">
                 <div className="text-center">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FA946D] mx-auto"></div>
-                  <p className="mt-4 text-gray-600">Loading analytics...</p>
+                  <p className="mt-4 text-gray-600">{t("analytics.loading")}</p>
                 </div>
               </div>
             </div>
@@ -138,7 +140,7 @@ const Analytics = () => {
             <div className="max-w-7xl mx-auto space-y-8">
               <div className="flex justify-center items-center h-64">
                 <div className="text-center">
-                  <div className="text-red-500 text-lg">Error loading analytics</div>
+                  <div className="text-red-500 text-lg">{t("analytics.error")}</div>
                   <p className="mt-2 text-muted">{error}</p>
                 </div>
               </div>
@@ -191,7 +193,7 @@ const Analytics = () => {
               <div className="bg-card rounded-xl border border-border p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="text-muted text-sm mb-1">Attendance</div>
+                    <div className="text-muted text-sm mb-1">{t("analytics.attendance")}</div>
                     <div className="text-green-600 dark:text-green-400 text-2xl font-bold">{analyticsData?.attendance || 0}%</div>
                   </div>
                   <div className="w-12 h-12 bg-green-100 dark:bg-green-900/20 rounded-lg flex items-center justify-center">
@@ -206,7 +208,7 @@ const Analytics = () => {
               <div className="bg-card rounded-xl border border-border p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="text-muted text-sm mb-1">Avg Marks</div>
+                    <div className="text-muted text-sm mb-1">{t("analytics.avg_marks")}</div>
                     <div className="text-blue-600 dark:text-blue-400 text-2xl font-bold">{analyticsData?.avgMarks || 0}</div>
                   </div>
                   <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center">
@@ -221,7 +223,7 @@ const Analytics = () => {
               <div className="bg-card rounded-xl border border-border p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="text-muted text-sm mb-1">Daily Hours</div>
+                    <div className="text-muted text-sm mb-1">{t("analytics.daily_hours")}</div>
                     <div className="text-purple-600 dark:text-purple-400 text-2xl font-bold">{analyticsData?.dailyHours || 0}h</div>
                   </div>
                   <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/20 rounded-lg flex items-center justify-center">
@@ -236,7 +238,7 @@ const Analytics = () => {
               <div className="bg-card rounded-xl border border-border p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="text-muted text-sm mb-1">Courses</div>
+                    <div className="text-muted text-sm mb-1">{t("analytics.courses")}</div>
                     <div className="text-orange-600 dark:text-orange-400 text-2xl font-bold">{analyticsData?.totalCourses || 0}</div>
                   </div>
                   <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/20 rounded-lg flex items-center justify-center">
@@ -251,7 +253,7 @@ const Analytics = () => {
               <div className="bg-card rounded-xl border border-border p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="text-muted text-sm mb-1">Certificates</div>
+                    <div className="text-muted text-sm mb-1">{t("analytics.certificates")}</div>
                     <div className="text-yellow-600 dark:text-yellow-400 text-2xl font-bold">{analyticsData?.certificates || 0}</div>
                   </div>
                   <div className="w-12 h-12 bg-yellow-100 dark:bg-yellow-900/20 rounded-lg flex items-center justify-center">
@@ -270,7 +272,7 @@ const Analytics = () => {
               <div className="bg-card rounded-xl border border-border p-6">
                 {/* Calendar Header */}
                 <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-xl font-semibold text-main">Class Calendar</h3>
+                  <h3 className="text-xl font-semibold text-main">{t("analytics.class_calendar")}</h3>
                   <div className="flex items-center space-x-2">
                     <button onClick={handlePrevMonth} className="w-[26px] h-10 bg-canvas dark:bg-zinc-800 rounded-lg flex items-center justify-center">
                       <svg className="w-[10px] h-4" viewBox="0 0 11 16" fill="none">
@@ -317,15 +319,15 @@ const Analytics = () => {
                 <div className="flex items-center space-x-4 mt-6 text-sm">
                   <div className="flex items-center space-x-2">
                     <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                    <span className="text-muted">Upcoming</span>
+                    <span className="text-muted">{t("analytics.upcoming")}</span>
                   </div>
                   <div className="flex items-center space-x-2">
                     <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                    <span className="text-muted">Completed</span>
+                    <span className="text-muted">{t("analytics.completed")}</span>
                   </div>
                   <div className="flex items-center space-x-2">
                     <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                    <span className="text-muted">Missed</span>
+                    <span className="text-muted">{t("analytics.missed")}</span>
                   </div>
                 </div>
               </div>
@@ -341,7 +343,7 @@ const Analytics = () => {
                       <path d="M10 0C10.5531 0 11 0.446875 11 1V3H14.75C15.9937 3 17 4.00625 17 5.25V13.75C17 14.9937 15.9937 16 14.75 16H5.25C4.00625 16 3 14.9937 3 13.75V5.25C3 4.00625 4.00625 3 5.25 3H9V1C9 0.446875 9.44687 0 10 0ZM6.5 12C6.225 12 6 12.225 6 12.5C6 12.775 6.225 13 6.5 13H7.5C7.775 13 8 12.775 8 12.5C8 12.225 7.775 12 7.5 12H6.5ZM9.5 12C9.225 12 9 12.225 9 12.5C9 12.775 9.225 13 9.5 13H10.5C10.775 13 11 12.775 11 12.5C11 12.225 10.775 12 10.5 12H9.5ZM12.5 12C12.225 12 12 12.225 12 12.5C12 12.775 12.225 13 12.5 13H13.5C13.775 13 14 12.775 14 12.5C14 12.225 13.775 12 13.5 12H12.5ZM8.25 8C8.25 7.66848 8.1183 7.35054 7.88388 7.11612C7.64946 6.8817 7.33152 6.75 7 6.75C6.66848 6.75 6.35054 6.8817 6.11612 7.11612C5.8817 7.35054 5.75 7.66848 5.75 8C5.75 8.33152 5.8817 8.64946 6.11612 8.88388C6.35054 9.1183 6.66848 9.25 7 9.25C7.33152 9.25 7.64946 9.1183 7.88388 8.88388C8.1183 8.64946 8.25 8.33152 8.25 8ZM13 9.25C13.3315 9.25 13.6495 9.1183 13.8839 8.88388C14.1183 8.64946 14.25 8.33152 14.25 8C14.25 7.66848 14.1183 7.35054 13.8839 7.11612C13.6495 6.8817 13.3315 6.75 13 6.75C12.6685 6.75 12.3505 6.8817 12.1161 7.11612C11.8817 7.35054 11.75 7.66848 11.75 8C11.75 8.33152 11.8817 8.64946 12.1161 8.88388C12.3505 9.1183 12.6685 9.25 13 9.25ZM1.5 7H2V13H1.5C0.671875 13 0 12.3281 0 11.5V8.5C0 7.67188 0.671875 7 1.5 7ZM18.5 7C19.3281 7 20 7.67188 20 8.5V11.5C20 12.3281 19.3281 13 18.5 13H18V7H18.5Z" fill="white" />
                     </svg>
                   </div>
-                  <h3 className="text-lg font-semibold text-black">AI Insights</h3>
+                  <h3 className="text-lg font-semibold text-black">{t("analytics.ai_insights")}</h3>
                 </div>
                 <div className="space-y-3 text-sm text-gray-700">
                   <p>Your performance in Machine Learning has improved by 15% this week!</p>
@@ -352,7 +354,7 @@ const Analytics = () => {
 
               {/* Today's Schedule */}
               <div className="bg-card rounded-xl border border-border p-6">
-                <h3 className="text-lg font-semibold text-main mb-4">Today's Schedule</h3>
+                <h3 className="text-lg font-semibold text-main mb-4">{t("analytics.schedule")}</h3>
                 <div className="space-y-3">
                   <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 flex items-center space-x-3">
                     <div className="w-2 h-8 bg-blue-500 rounded-full"></div>
@@ -378,10 +380,10 @@ const Analytics = () => {
             {/* Learning Hours Chart */}
             <div className="bg-card rounded-xl border border-border p-6">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold text-main">Learning Hours</h3>
+                <h3 className="text-lg font-semibold text-main">{t("analytics.learning_hours")}</h3>
                 <div className="flex space-x-2">
-                  <button className="px-4 py-1 bg-[#FA946D] text-white text-sm rounded-lg">Week</button>
-                  <button className="px-4 py-1 bg-canvas text-muted text-sm rounded-lg">Month</button>
+                  <button className="px-4 py-1 bg-[#FA946D] text-white text-sm rounded-lg">{t("analytics.week")}</button>
+                  <button className="px-4 py-1 bg-canvas text-muted text-sm rounded-lg">{t("analytics.month")}</button>
                 </div>
               </div>
               <div className="h-64 flex items-end justify-between space-x-2">
@@ -398,14 +400,14 @@ const Analytics = () => {
 
             {/* Course Distribution Chart */}
             <div className="bg-card rounded-xl border border-border p-6">
-              <h3 className="text-lg font-semibold text-main mb-6">Course Distribution</h3>
+              <h3 className="text-lg font-semibold text-main mb-6">{t("analytics.course_distribution")}</h3>
               <div className="flex items-center justify-center h-64">
                 <div className="relative">
                   {/* Simplified pie chart representation */}
                   <div className="w-40 h-40 rounded-full bg-linear-to-r from-[#3CC3DF] to-[#FA946D] flex items-center justify-center">
                     <div className="text-center">
                       <div className="text-2xl font-bold text-gray-800">{analyticsData?.totalCourses || 0}</div>
-                      <div className="text-xs text-gray-600">Total course</div>
+                      <div className="text-xs text-gray-600">{t("analytics.total_course")}</div>
                     </div>
                   </div>
                 </div>
@@ -429,7 +431,7 @@ const Analytics = () => {
 
           {/* Course Performance */}
           <div className="bg-card rounded-xl border border-border p-6 mt-8">
-            <h3 className="text-lg font-semibold text-main mb-6">Course Performance</h3>
+            <h3 className="text-lg font-semibold text-main mb-6">{t("analytics.course_performance")}</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {coursePerformanceData.length > 0 ? coursePerformanceData.map(course => {
                 const progressPercentStr = course.progressPercent > 0 ? `${course.progressPercent}%` : '0%';
@@ -443,13 +445,13 @@ const Analytics = () => {
                       <div className="bg-green-600 dark:bg-green-500 h-2 rounded-full" style={{ width: `${course.progressPercent}%` }}></div>
                     </div>
                     <div className="space-y-1 text-sm">
-                      <div className="text-muted">Progress: {course.completedLessons}/{course.totalLessons} lessons</div>
+                      <div className="text-muted">{t("analytics.progress_lessons")}: {course.completedLessons}/{course.totalLessons} lessons</div>
                       {/* AI Tip can be added later */}
                     </div>
                   </div>
                 );
               }) : (
-                <p className="text-muted col-span-3 text-center">No courses to display performance for.</p>
+                <p className="text-muted col-span-3 text-center">{t("analytics.no_courses")}</p>
               )}
             </div>
           </div>

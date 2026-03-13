@@ -39,24 +39,33 @@ router.post("/generate-video", protect, async (req, res) => {
       },
     });
 
-    if (cachedVideo) {
+   if (cachedVideo) {
       console.log("🎯 Cache found. Verifying file exists...");
+
       const filename = cachedVideo.videoUrl.split("/").pop();
-      const videoCheck = await fetch(`${process.env.AI_SERVICE_URL}/video-stream/${filename}`,
-        {method: "HEAD"} // lightwight check
+
+      const videoCheck = await fetch(
+        `${process.env.AI_SERVICE_URL}/video-stream/${filename}`,
+        { method: "HEAD" }   // lightweight check
       );
+
       if (!videoCheck.ok) {
-        console.log("⚠️ Cached video missing.Removing from DB...");
-        await cachedVideo.destroy(); // delete bad cache
+        console.log("⚠️ Cached video missing. Removing from DB...");
+
+        await cachedVideo.destroy();  // delete bad cache
+
       } else {
         console.log("✅ Cached video verified.");
-        return res.json({videoUrl: cachedVideo.videoUrl,
+
+        return res.json({
+          videoUrl: cachedVideo.videoUrl,
           transcriptName: cachedVideo.transcriptName,
           jobId: cachedVideo.jobId,
           cached: true,
-        })
+        });
       }
     }
+    
 
     // 📘 Get titles from JSON
     const titles = getCourseAndLessonTitles(courseId, lessonId);

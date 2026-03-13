@@ -4,6 +4,7 @@ import os
 import datetime
 import re
 import traceback
+import pyttsx3
 import cloudinary
 import cloudinary.uploader
 from fastapi import FastAPI, BackgroundTasks
@@ -11,32 +12,12 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from google import genai
-from voice_service import generate_voice
 from config import (
     GEMINI_API_KEY,
     CLOUDINARY_CLOUD_NAME,
     CLOUDINARY_API_KEY,
     CLOUDINARY_API_SECRET,
 )
-
-# --------------------------
-# Celebrity Styles
-# --------------------------
-CELEBRITY_STYLES = {
-    "modi": """
-Speak in an energetic and motivational public speech style.
-Use confident and inspiring language.
-Explain the concept like addressing a large audience.
-Use impactful sentences that encourage students to learn.
-""",
-
-    "salman": """
-Speak in a casual, friendly and conversational tone.
-Explain the concept like talking to friends.
-Keep language simple and relaxed.
-Make the explanation fun and engaging.
-"""
-}
 
 # --------------------------
 # Cloudinary Config
@@ -74,29 +55,36 @@ class LessonRequest(BaseModel):
     topic: str
     celebrity: str
 
-
 # --------------------------
 # Helpers
 # --------------------------
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+def get_tts_engine():
+    engine = pyttsx3.init()
+    engine.setProperty("rate", 150)
+    voices = engine.getProperty("voices")
+    if voices:
+        engine.setProperty("voice", voices[0].id)
+    return engine
 
 def get_celebrity_video(celebrity_name: str):
     input_video_dir = os.path.join(BASE_DIR, "backend", "input")
     celebrity_video = os.path.join(input_video_dir, f"{celebrity_name.lower()}.mp4")
-
+    
     if os.path.exists(celebrity_video):
         print(f"🎬 Using celebrity video: {celebrity_video}")
         return celebrity_video
     else:
+        # Fallback to default video (modi.mp4)
         input_video = os.path.join(input_video_dir, "modi.mp4")
         print(f"🎬 Using default video: {input_video}")
         return input_video
 
-
 # --------------------------
 # Serve Files
 # --------------------------
+
 base_output_path = os.path.join(BASE_DIR, "outputs")
 video_output_path = os.path.join(base_output_path, "video")
 text_output_path = os.path.join(base_output_path, "text")
@@ -107,7 +95,6 @@ os.makedirs(text_output_path, exist_ok=True)
 app.mount("/video-stream", StaticFiles(directory=video_output_path), name="video-stream")
 app.mount("/transcript-stream", StaticFiles(directory=text_output_path), name="transcript-stream")
 
-
 # --------------------------
 # Root Route
 # --------------------------
@@ -115,101 +102,84 @@ app.mount("/transcript-stream", StaticFiles(directory=text_output_path), name="t
 def home():
     return {"message": "AI Lesson Generator Backend Running"}
 
-
 @app.get("/transcript/{filename}")
 def get_transcript(filename: str):
     file_path = os.path.join(BASE_DIR, "outputs", "text", filename)
-
     if os.path.exists(file_path):
         with open(file_path, "r", encoding="utf-8") as f:
             content = f.read()
         return {"content": content}
-
     return {"error": "Transcript not found"}
-
 
 @app.get("/status/{job_id}")
 def get_status(job_id: str):
     status_data = job_status.get(job_id, {"status": "not_found"})
-
+    # Backward compat: handle old string-based entries
     if isinstance(status_data, str):
         return {"status": status_data}
-
     return status_data
-
 
 # --------------------------
 # Generate Lesson Endpoint
 # --------------------------
-job_status = {}
 
+job_status = {}
 
 @app.post("/generate")
 def generate_lesson(data: LessonRequest, background_tasks: BackgroundTasks):
-
-    topic_clean = re.sub(r"[^\w\s-]", "", data.topic).strip().replace(" ", "_")
+    # Generate filename here so we can return it immediately
+    topic_clean = re.sub(r'[^\w\s-]', '', data.topic).strip().replace(" ", "_")
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-
     base_filename = f"{topic_clean}_{timestamp}"
-
+    
     job_status[base_filename] = {"status": "processing"}
 
+    # Run as a background task to avoid timeout issues
     background_tasks.add_task(process_lesson, data, base_filename)
-
+    
     return {
         "status": "Processing",
         "filename": f"{base_filename}.mp4",
         "text_file": f"{base_filename}.txt",
         "audio_file": f"{base_filename}.mp3",
-        "jobId": base_filename,
+        "jobId": base_filename
     }
-
 
 # --------------------------
 # Background Task Logic
 # --------------------------
 def process_lesson(data: LessonRequest, base_filename: str):
-
     try:
         print(f"\n🚀 Starting generation for: {data.topic} ({data.celebrity})")
 
-        # Get celebrity style
-        style = CELEBRITY_STYLES.get(
-            data.celebrity.lower(),
-            "Speak like a clear classroom teacher."
-        )
-
-        # 1️⃣ Generate Lesson Text
+        # 1️⃣ Generate Text with detailed prompt
         prompt = f"""
-Explain the topic '{data.topic}' from the subject '{data.course}'.
+        Create a 50 word educational explanation about '{data.topic}' in the subject '{data.course}'.
 
-Instructions:
-- Use simple English
-- 45 to 60 words
-- Clear explanation for students
+        Rules:
+        - 100% English only
+        - No Hindi
+        - No Hinglish
+        - Simple classroom teaching tone
+        - Between 45 and 60 words
 
-Speaking Style:
-{style}
-
-Do not mention the celebrity name in the explanation.
-"""
-
+        Narration style inspired by the celebrity {data.celebrity}.
+        """
+        
         try:
             response = client.models.generate_content(
                 model="gemini-2.5-flash",
-                contents=prompt,
+                contents=prompt
             )
-
             script = response.text.strip().replace("\n", " ")
             print(f"📝 Generated text: {script}")
-
         except Exception as e:
             print(f"❌ Gemini Error: {e}")
             return
 
         # 2️⃣ Create Output Folders
-        base_output_dir = os.path.join(BASE_DIR, "outputs")
 
+        base_output_dir = os.path.join(BASE_DIR, "outputs")
         text_dir = os.path.join(base_output_dir, "text")
         audio_dir = os.path.join(base_output_dir, "audio")
         video_dir = os.path.join(base_output_dir, "video")
@@ -222,27 +192,33 @@ Do not mention the celebrity name in the explanation.
         audio_path = os.path.join(audio_dir, f"{base_filename}.mp3")
         final_video = os.path.join(video_dir, f"{base_filename}.mp4")
 
-        # 3️⃣ Save Script
+        # 3️⃣ Save Text to File
         with open(text_path, "w", encoding="utf-8") as f:
             f.write(script)
-
         print(f"💾 Saved text to: {text_path}")
 
-        # 4️⃣ Generate Voice using XTTS
-        print("🎤 Generating AI voice...")
+        # 4️⃣ Convert Text to Speech (pyttsx3)
+        print("🎵 Starting TTS generation...")
+        try:
+            engine = get_tts_engine()
+            if os.path.exists(audio_path):
+                os.remove(audio_path)
 
-        generate_voice(script, audio_path, data.celebrity)
-
-        print(f"✅ Audio generated: {audio_path}")
+            engine.save_to_file(script, audio_path)
+            engine.runAndWait()
+            engine.stop()
+            print(f"✅ Audio saved: {audio_path}")
+        except Exception as e:
+            print(f"❌ TTS Error: {e}")
+            return
 
         # 5️⃣ Select Video
         input_video = get_celebrity_video(data.celebrity)
-
         if not os.path.exists(input_video):
-            print(f"❌ Video file not found at {input_video}")
+            print(f"❌ Error: Video file not found at {input_video}")
             return
 
-        # 6️⃣ Merge Video + Audio
+        # 6️⃣ Merge Video + Audio (FFmpeg)
         ffmpeg_command = (
             f'ffmpeg -y -stream_loop -1 -i "{input_video}" '
             f'-i "{audio_path}" '
@@ -250,47 +226,41 @@ Do not mention the celebrity name in the explanation.
             f'-c:v copy -c:a aac -shortest "{final_video}"'
         )
 
-        print("🎥 Running ffmpeg...")
-
+        print(f"🎥 Running ffmpeg command...")
         os.system(ffmpeg_command)
 
         if not os.path.exists(final_video):
-            print("❌ FFmpeg failed")
+            print(f"❌ FFmpeg failed — video file not found at {final_video}")
             job_status[base_filename] = {"status": "failed"}
             return
 
         # 7️⃣ Upload to Cloudinary
         cloudinary_url = None
-
         try:
-            print("☁️ Uploading to Cloudinary...")
-
+            print(f"☁️ Uploading video to Cloudinary...")
             upload_result = cloudinary.uploader.upload(
                 final_video,
                 resource_type="video",
                 folder="ai_mentor/videos",
                 public_id=base_filename,
                 overwrite=True,
-                chunk_size=6000000,
+                chunk_size=6000000,  # 6 MB chunks for large files
             )
-
             cloudinary_url = upload_result.get("secure_url")
-
             print(f"✅ Cloudinary upload success: {cloudinary_url}")
-
         except Exception as cloud_err:
-            print(f"⚠️ Cloudinary upload failed: {cloud_err}")
+            print(f"⚠️ Cloudinary upload failed (will fall back to local proxy): {cloud_err}")
 
         job_status[base_filename] = {
             "status": "ready",
-            "cloudinary_url": cloudinary_url,
+            "cloudinary_url": cloudinary_url,  # None if upload failed
         }
-
-        print("✅ Lesson ready!")
+        print(f"✅ Lesson ready!")
+        print(f"   Video : {final_video}")
+        if cloudinary_url:
+            print(f"   Cloud : {cloudinary_url}")
 
     except Exception as e:
-        job_status[base_filename] = {"status": "failed"}
-
+        job_status[base_filename] = {"status": "failed"}  # 👈 mark failed on error
         print(f"❌ Error generating lesson: {e}")
-
         traceback.print_exc()

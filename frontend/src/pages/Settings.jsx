@@ -15,22 +15,26 @@ import {
 } from "lucide-react";
 import axios from "axios";
 import { useTheme } from "../context/ThemeContext";
+import toast from "react-hot-toast";
+import { useTranslation } from "react-i18next";
+import i18n from "../i18n/index.js";
 
-const settingsNavItems = [
-  { icon: User, label: "Profile" },
-  { icon: Bell, label: "Notifications" },
-  { icon: Shield, label: "Password & Security" },
-  { icon: Palette, label: "Appearance" },
-  { icon: Globe, label: "Language" },
+const NAV_KEYS = [
+  { icon: User, key: "profile", labelKey: "settings.nav.profile" },
+  { icon: Bell, key: "notifications", labelKey: "settings.nav.notifications" },
+  { icon: Shield, key: "password_security", labelKey: "settings.nav.password_security" },
+  { icon: Palette, key: "appearance", labelKey: "settings.nav.appearance" },
+  { icon: Globe, key: "language", labelKey: "settings.nav.language" },
 ];
 
 export default function Settings() {
+  const { t } = useTranslation();
   const [originalNotifications, setOriginalNotifications] = useState(null);
   const { theme, setTheme } = useTheme();
   const [avatarFile, setAvatarFile] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [activeSetting, setActiveSetting] = useState("Profile");
+  const [activeSetting, setActiveSetting] = useState("profile");
   const { user, updateUser, fetchUserProfile  } = useAuth();
   const [formData, setFormData] = useState({
     firstName: "",
@@ -101,10 +105,11 @@ export default function Settings() {
       }, 500);
 
       setAvatarFile(null);
+      toast.success("Profile updated successfully!");
       setProfilePopup(true);
     } catch (error) {
       console.error("❌ Error updating profile:", error.response?.data || error);
-      alert("Failed to update profile.");
+      toast.error("Failed to update profile.");
     } finally {
       setLoading(false);
     }
@@ -134,6 +139,9 @@ export default function Settings() {
         });
 
         setSettingsData(data);
+        if (data?.appearance?.language) {
+          i18n.changeLanguage(data.appearance.language);
+        }
       } catch (err) {
         console.error("Failed to fetch notification settings:", err);
       }
@@ -155,36 +163,29 @@ export default function Settings() {
       />
 
       <div
-        className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 mt-3 ${
-          sidebarCollapsed ? "lg:ml-20" : "lg:ml-80"
-        }`}
+        className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 mt-3 ${sidebarCollapsed ? "lg:ml-20" : "lg:ml-80"
+          }`}
       >
         <div className="flex flex-1 mt-15">
           {/* Settings Sidebar */}
           <aside className="w-[280px] bg-card rounded-[24px] shadow-[0_4px_6px_0_rgba(0,0,0,0.10),0_10px_15px_0_rgba(0,0,0,0.10)] m-6 mr-0">
             <nav className="p-6">
               <div className="space-y-2">
-                {settingsNavItems.map((item) => {
+                {NAV_KEYS.map((item) => {
                   const IconComponent = item.icon;
                   return (
                     <button
-                      onClick={() => setActiveSetting(item.label)}
-                      key={item.label}
+                      onClick={() => setActiveSetting(item.key)}
+                      key={item.key}
                       className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-left transition-colors ${
-                        activeSetting === item.label
+                        activeSetting === item.key
                           ? "bg-teal-50 dark:bg-teal-900/20 text-main"
                           : "text-muted hover:bg-canvas-alt"
                       }`}
                     >
-                      <IconComponent
-                        className={`w-4 h-4 ${
-                          activeSetting === item.label
-                            ? "text-[#00BEA5]"
-                            : "text-[#00BEA5]"
-                        }`}
-                      />
+                      <IconComponent className="w-4 h-4 text-[#00BEA5]" />
                       <span className="font-medium text-[16px] font-[Inter]">
-                        {item.label}
+                        {t(item.labelKey)}
                       </span>
                     </button>
                   );
@@ -195,15 +196,15 @@ export default function Settings() {
 
           {/* Main Content */}
           <main className="flex-1 p-8 mt-5">
-            {activeSetting === "Profile" && (
+            {activeSetting === "profile" && (
               <div className="max-w-[896px]">
                 {/* Header */}
                 <div className="mb-8">
                   <h1 className="text-[30px] font-bold text-main font-[Inter] mb-2">
-                    Profile Settings
+                    {t("settings.profile.title")}
                   </h1>
                   <p className="text-[16px] text-muted font-[Inter]">
-                    Manage your account information and preferences
+                    {t("settings.profile.subtitle")}
                   </p>
                 </div>
 
@@ -239,7 +240,7 @@ export default function Settings() {
                         {formData.firstName} {formData.lastName}
                       </h2>
                       <p className="text-[16px] text-muted font-[Inter]">
-                        Premium Member
+                        {t("common.premium_member")}
                       </p>
                     </div>
 
@@ -249,7 +250,7 @@ export default function Settings() {
                       <div className="grid grid-cols-2 gap-6">
                         <div className="relative">
                           <label className="absolute -top-2 left-4 bg-card px-2 text-[14px] text-muted font-medium font-[Inter]">
-                            First Name
+                            {t("settings.profile.first_name")}
                           </label>
                           <input
                             type="text"
@@ -262,7 +263,7 @@ export default function Settings() {
                         </div>
                         <div className="relative">
                           <label className="absolute -top-2 left-4 bg-card px-2 text-[14px] text-muted font-medium font-[Inter]">
-                            Last Name
+                            {t("settings.profile.last_name")}
                           </label>
                           <input
                             type="text"
@@ -278,7 +279,7 @@ export default function Settings() {
                       {/* Email */}
                       <div className="relative">
                         <label className="absolute -top-2 left-4 bg-card px-2 text-[14px] text-muted font-medium font-[Inter]">
-                          Email Address
+                          {t("settings.profile.email")}
                         </label>
                         <input
                           type="email"
@@ -293,7 +294,7 @@ export default function Settings() {
                       {/* Bio */}
                       <div className="relative">
                         <label className="absolute -top-2 left-4 bg-card px-2 text-[14px] text-muted font-medium font-[Inter]">
-                          Bio
+                          {t("settings.profile.bio")}
                         </label>
                         <textarea
                           value={formData.bio}
@@ -312,42 +313,42 @@ export default function Settings() {
                       type="button"
                       className="h-[50px] px-6 rounded-xl border border-border bg-card text-main text-[16px] font-medium font-[Inter] hover:bg-canvas-alt"
                     >
-                      Cancel
+                      {t("common.cancel")}
                     </button>
                     <button
                       onClick={handleSaveChanges}
                       disabled={loading}
                       className="h-[50px] px-6 rounded-xl bg-gradient-to-r from-primary to-primary text-white text-[16px] font-medium font-[Inter] hover:opacity-90 disabled:opacity-50"
                     >
-                      {loading ? "Saving..." : "Save Changes"}
+                      {loading ? t("common.saving") : t("common.save_changes")}
                     </button>
                   </div>
                 </div>
               </div>
             )}
 
-            {activeSetting === "Notifications" && (
+            {activeSetting === "notifications" && (
               <div className="max-w-[896px]">
                 <div className="mb-8">
                   <h1 className="text-[30px] font-bold text-main font-[Inter] mb-2">
-                    Notification Settings
+                    {t("settings.notifications.title")}
                   </h1>
                   <p className="text-[16px] text-muted font-[Inter]">
-                    Choose how you want to be notified about updates
+                    {t("settings.notifications.subtitle")}
                   </p>
                 </div>
                 <div className="bg-card rounded-[24px] shadow p-8">
                   <div className="space-y-6">
                     {[
-                      { label: "Email Notifications", key: "emailNotifications", desc: "Receive notifications via email" },
-                      { label: "Push Notifications", key: "pushNotifications", desc: "Receive push notifications in your browser" },
-                      { label: "Course Updates", key: "courseUpdates", desc: "Get notified about new lessons and course updates" },
-                      { label: "Discussion Replies", key: "discussionReplies", desc: "Get notified when someone replies to your discussions" },
+                      { labelKey: "settings.notifications.email", key: "emailNotifications", descKey: "settings.notifications.email_desc" },
+                      { labelKey: "settings.notifications.push", key: "pushNotifications", descKey: "settings.notifications.push_desc" },
+                      { labelKey: "settings.notifications.course_updates", key: "courseUpdates", descKey: "settings.notifications.course_updates_desc" },
+                      { labelKey: "settings.notifications.discussion_replies", key: "discussionReplies", descKey: "settings.notifications.discussion_replies_desc" },
                     ].map((item) => (
                       <div key={item.key} className="flex items-center justify-between">
                         <div>
-                          <h3 className="text-[16px] font-semibold text-main">{item.label}</h3>
-                          <p className="text-[14px] text-muted">{item.desc}</p>
+                          <h3 className="text-[16px] font-semibold text-main">{t(item.labelKey)}</h3>
+                          <p className="text-[14px] text-muted">{t(item.descKey)}</p>
                         </div>
                         <label className="relative inline-flex items-center cursor-pointer">
                           <input
@@ -379,14 +380,14 @@ export default function Settings() {
                       }}
                       className="h-[50px] px-6 rounded-xl border border-border bg-card text-main hover:bg-canvas-alt"
                     >
-                      Cancel
+                      {t("common.cancel")}
                     </button>
                     <button
                       onClick={async () => {
                         setLoading(true);
                         try {
                           const token = localStorage.getItem("token");
-            
+
                           await axios.put(
                             "/api/users/settings",
                             {
@@ -396,11 +397,11 @@ export default function Settings() {
                           );
 
 
-                          alert("Notification settings updated successfully!");
+                          toast.success("Notification settings updated successfully!");
                           setOriginalNotifications({ ...settingsData.notifications });
                         } catch (error) {
                           console.error("Error updating settings:", error);
-                          alert("Failed to update settings. Please try again.");
+                          toast.error("Failed to update settings. Please try again.");
                         } finally {
                           setLoading(false);
                         }
@@ -408,21 +409,21 @@ export default function Settings() {
                       disabled={loading}
                       className="h-[50px] px-6 rounded-xl bg-gradient-to-r from-primary to-primary text-white hover:opacity-90 disabled:opacity-50"
                     >
-                      {loading ? "Saving..." : "Save Changes"}
+                      {loading ? t("common.saving") : t("common.save_changes")}
                     </button>
                   </div>
                 </div>
               </div>
             )}
 
-            {activeSetting === "Password & Security" && (
+            {activeSetting === "password_security" && (
               <div className="max-w-[896px]">
                 <div className="mb-8">
                   <h1 className="text-[30px] font-bold text-main font-[Inter] mb-2">
-                    Password & Security
+                    {t("settings.security.title")}
                   </h1>
                   <p className="text-[16px] text-muted font-[Inter]">
-                    Manage your password and security preferences
+                    {t("settings.security.subtitle")}
                   </p>
                 </div>
                 <div className="bg-card rounded-[24px] shadow-[0_4px_6px_0_rgba(0,0,0,0.10),0_10px_15px_0_rgba(0,0,0,0.10)] p-8">
@@ -430,10 +431,10 @@ export default function Settings() {
                     <div className="flex items-center justify-between">
                       <div>
                         <h3 className="text-[16px] font-semibold text-main font-[Inter]">
-                          Two-Factor Authentication
+                          {t("settings.security.two_factor")}
                         </h3>
                         <p className="text-[14px] text-muted font-[Inter]">
-                          Add an extra layer of security to your account
+                          {t("settings.security.two_factor_desc")}
                         </p>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
@@ -458,11 +459,10 @@ export default function Settings() {
                     <div className="flex items-center justify-between">
                       <div>
                         <h3 className="text-[16px] font-semibold text-main font-[Inter]">
-                          Login Alerts
+                          {t("settings.security.login_alerts")}
                         </h3>
                         <p className="text-[14px] text-muted font-[Inter]">
-                          Get notified when your account is accessed from a new
-                          device
+                          {t("settings.security.login_alerts_desc")}
                         </p>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
@@ -486,24 +486,25 @@ export default function Settings() {
 
                     <div className="border-t border-border pt-6">
                       <h3 className="text-[18px] font-semibold text-main font-[Inter]  mb-4">
-                        Change Password
+                        {t("settings.security.change_password")}
                       </h3>
                       <div className="space-y-5">
                         <div className="relative">
                           <label className="absolute -top-2 left-4 bg-card px-2 text-[14px] text-muted font-medium font-[Inter]">
-                            Current Password
+                            {t("settings.security.current_password")}
                           </label>
                             <input
-                              type={showCurrentPassword ? "text" : "password"}
-                              value={passwordData.currentPassword}
-                              onChange={(e) =>
-                                setPasswordData((prev) => ({
-                                  ...prev,
-                                  currentPassword: e.target.value,
-                                }))
-                              }
-                              className="w-full h-[50px] px-4 pr-12 rounded-xl border border-border text-[16px] font-[Inter] focus:ring-2 focus:ring-primary focus:border-primary bg-input text-main"
-                            />
+  type={showCurrentPassword ? "text" : "password"}
+  autoComplete="current-password"
+  value={passwordData.currentPassword}
+  onChange={(e) =>
+    setPasswordData((prev) => ({
+      ...prev,
+      currentPassword: e.target.value,
+    }))
+  }
+  className="w-full h-[50px] px-4 pr-12 rounded-xl border border-border text-[16px] font-[Inter] focus:ring-2 focus:ring-primary focus:border-primary bg-input text-main"
+/>
                             <button
                               type="button"
                               onClick={() =>
@@ -521,19 +522,20 @@ export default function Settings() {
 
                         <div className="relative">
                           <label className="absolute -top-2 left-4 bg-card px-2 text-[14px] text-muted font-medium font-[Inter]">
-                            New Password
+                            {t("settings.security.new_password")}
                           </label>
                             <input
-                              type={showNewPassword ? "text" : "password"}
-                              value={passwordData.newPassword}
-                              onChange={(e) =>
-                                setPasswordData((prev) => ({
-                                  ...prev,
-                                  newPassword: e.target.value,
-                                }))
-                              }
-                              className="w-full h-[50px] px-4 pr-12 rounded-xl border border-border text-[16px] font-[Inter] focus:ring-2 focus:ring-primary focus:border-primary bg-input text-main"
-                            />
+  type={showNewPassword ? "text" : "password"}
+  autoComplete="new-password"
+  value={passwordData.newPassword}
+  onChange={(e) =>
+    setPasswordData((prev) => ({
+      ...prev,
+      newPassword: e.target.value,
+    }))
+  }
+  className="w-full h-[50px] px-4 pr-12 rounded-xl border border-border text-[16px] font-[Inter] focus:ring-2 focus:ring-primary focus:border-primary bg-input text-main"
+/>
                             <button
                               type="button"
                               onClick={() =>
@@ -552,19 +554,21 @@ export default function Settings() {
 
                         <div className="relative">
                           <label className="absolute -top-2 left-4 bg-card px-2 text-[14px] text-muted font-medium font-[Inter]">
-                            Confirm New Password
+                            {t("settings.security.confirm_password")}
                           </label>
-                          <input
-                            type="password"
-                            value={passwordData.confirmPassword}
-                            onChange={(e) =>
-                              setPasswordData((prev) => ({
-                                ...prev,
-                                confirmPassword: e.target.value,
-                              }))
-                            }
-                            className="w-full h-[50px] px-4 rounded-xl border border-border text-[16px] font-[Inter] focus:ring-2 focus:ring-primary focus:border-primary bg-input text-main"
-                          />
+                          
+<input
+  type="password"
+  autoComplete="new-password"
+  value={passwordData.confirmPassword}
+  onChange={(e) =>
+    setPasswordData((prev) => ({
+      ...prev,
+      confirmPassword: e.target.value,
+    }))
+  }
+  className="w-full h-[50px] px-4 rounded-xl border border-border text-[16px] font-[Inter] focus:ring-2 focus:ring-primary focus:border-primary bg-input text-main"
+/>
                         </div>
                       </div>
                     </div>
@@ -575,7 +579,7 @@ export default function Settings() {
                       type="button"
                       className="h-[50px] px-6 rounded-xl border border-border bg-card text-main text-[16px] font-medium font-[Inter] hover:bg-canvas-alt"
                     >
-                      Cancel
+                      {t("common.cancel")}
                     </button>
                     <button
                       onClick={async () => {
@@ -583,7 +587,7 @@ export default function Settings() {
                           passwordData.newPassword !==
                           passwordData.confirmPassword
                         ) {
-                          alert("New passwords do not match!");
+                          toast.error("New passwords do not match!");
                           return;
                         }
                         setLoading(true);
@@ -594,7 +598,7 @@ export default function Settings() {
                             { security: settingsData.security },
                             { headers: { Authorization: `Bearer ${token}` } }
                           );
-                          alert("Security settings updated successfully!");
+                          toast.success("Security settings updated successfully!");
                           setPasswordData({
                             currentPassword: "",
                             newPassword: "",
@@ -602,7 +606,7 @@ export default function Settings() {
                           });
                         } catch (error) {
                           console.error("Error updating settings:", error);
-                          alert("Failed to update settings. Please try again.");
+                          toast.error("Failed to update settings. Please try again.");
                         } finally {
                           setLoading(false);
                         }
@@ -610,56 +614,56 @@ export default function Settings() {
                       disabled={loading}
                       className="h-[50px] px-6 rounded-xl bg-gradient-to-r from-primary to-primary text-white text-[16px] font-medium font-[Inter] hover:opacity-90 disabled:opacity-50"
                     >
-                      {loading ? "Saving..." : "Save Changes"}
+                      {loading ? t("common.saving") : t("common.save_changes")}
                     </button>
                   </div>
                 </div>
               </div>
             )}
 
-            {activeSetting === "Appearance" && (
+            {activeSetting === "appearance" && (
               <div className="max-w-[896px]">
                 <div className="mb-8">
                   <h1 className="text-[30px] font-bold text-main font-[Inter] mb-2">
-                    Appearance Settings
+                    {t("settings.appearance.title")}
                   </h1>
                   <p className="text-[16px] text-muted font-[Inter]">
-                    Customize the look and feel of your interface
+                    {t("settings.appearance.subtitle")}
                   </p>
                 </div>
                 <div className="bg-card rounded-[24px] shadow-[0_4px_6px_0_rgba(0,0,0,0.10),0_10px_15px_0_rgba(0,0,0,0.10)] p-8">
                   <div className="space-y-6">
                     <div>
                       <h3 className="text-[16px] font-semibold text-main font-[Inter] mb-3">
-                        Theme
+                        {t("settings.appearance.theme")}
                       </h3>
                       <div className="grid grid-cols-3 gap-4">
                         {[
-                          { value: "light", label: "Light", icon: "☀️" },
-                          { value: "dark", label: "Dark", icon: "🌙" },
-                          { value: "auto", label: "Auto", icon: "⚙️" },
-                        ].map((theme) => (
+                          { value: "light", labelKey: "settings.appearance.light", icon: "☀️" },
+                          { value: "dark", labelKey: "settings.appearance.dark", icon: "🌙" },
+                          { value: "auto", labelKey: "settings.appearance.auto", icon: "⚙️" },
+                        ].map((themeOption) => (
                           <button
-                            key={theme.value}
-                            onClick={() => setTheme(theme.value)}
+                            key={themeOption.value}
+                            onClick={() => setTheme(themeOption.value)}
                             className={`p-4 rounded-xl border-2 transition-colors ${
-                              theme === theme.value
+                              theme === themeOption.value
                                 ? "border-primary bg-teal-50 dark:bg-teal-900/20 text-main"
                                 : "border-border hover:border-primary text-muted hover:text-main"
                             }`}
                           >
-                            <div className="text-2xl mb-2">{theme.icon}</div>
+                            <div className="text-2xl mb-2">{themeOption.icon}</div>
                             <div className="text-[14px] font-medium font-[Inter]">
-                              {theme.label}
+                              {t(themeOption.labelKey)}
                             </div>
                           </button>
                         ))}
                       </div>
                     </div>
 
-                    <div>
+                    {/* <div>
                       <h3 className="text-[16px] font-semibold text-main font-[Inter] mb-3">
-                        Language
+                        {t("settings.appearance.language")}
                       </h3>
                       <select
                         value={settingsData.appearance.language}
@@ -675,25 +679,25 @@ export default function Settings() {
                         className="w-full h-[50px] px-4 rounded-xl border border-border text-[16px] font-[Inter] focus:ring-2 focus:ring-primary focus:border-primary bg-input text-main"
                       >
                         <option value="en">English</option>
-                        <option value="es">Español</option>
-                        <option value="fr">Français</option>
-                        <option value="de">Deutsch</option>
-                        <option value="it">Italiano</option>
-                        <option value="pt">Português</option>
-                        <option value="ru">Русский</option>
-                        <option value="zh">中文</option>
-                        <option value="ja">日本語</option>
-                        <option value="ko">한국어</option>
+                        <option value="es">Spanish</option>
+                        <option value="zh">Chinese (Mandarin)</option>
+                        <option value="hi">Hindi</option>
+                        <option value="ar">Arabic</option>
+                        <option value="pt">Portuguese</option>
+                        <option value="fr">French</option>
+                        <option value="ru">Russian</option>
+                        <option value="ja">Japanese</option>
+                        <option value="de">German</option>
                       </select>
-                    </div>
+                    </div> */}
                   </div>
 
-                  <div className="flex justify-end gap-4 pt-6 border-t border-border mt-6">
+                  {/* <div className="flex justify-end gap-4 pt-6 border-t border-border mt-6">
                     <button
                       type="button"
                       className="h-[50px] px-6 rounded-xl border border-border bg-card text-main text-[16px] font-medium font-[Inter] hover:bg-canvas-alt"
                     >
-                      Cancel
+                      {t("common.cancel")}
                     </button>
                     <button
                       onClick={async () => {
@@ -705,10 +709,11 @@ export default function Settings() {
                             { appearance: settingsData.appearance },
                             { headers: { Authorization: `Bearer ${token}` } }
                           );
-                          alert("Appearance settings updated successfully!");
+                          i18n.changeLanguage(settingsData.appearance.language);
+                          toast.success("Appearance settings updated successfully!");
                         } catch (error) {
                           console.error("Error updating settings:", error);
-                          alert("Failed to update settings. Please try again.");
+                          toast.error("Failed to update settings. Please try again.");
                         } finally {
                           setLoading(false);
                         }
@@ -716,28 +721,28 @@ export default function Settings() {
                       disabled={loading}
                       className="h-[50px] px-6 rounded-xl bg-gradient-to-r from-primary to-primary text-white text-[16px] font-medium font-[Inter] hover:opacity-90 disabled:opacity-50"
                     >
-                      {loading ? "Saving..." : "Save Changes"}
+                      {loading ? t("common.saving") : t("common.save_changes")}
                     </button>
-                  </div>
+                  </div> */}
                 </div>
               </div>
             )}
 
-            {activeSetting === "Language" && (
+            {activeSetting === "language" && (
               <div className="max-w-[896px]">
                 <div className="mb-8">
                   <h1 className="text-[30px] font-bold text-main font-[Inter] mb-2">
-                    Language Settings
+                    {t("settings.language.title")}
                   </h1>
                   <p className="text-[16px] text-muted font-[Inter]">
-                    Choose your preferred language for the interface
+                    {t("settings.language.subtitle")}
                   </p>
                 </div>
                 <div className="bg-card rounded-[24px] shadow-[0_4px_6px_0_rgba(0,0,0,0.10),0_10px_15px_0_rgba(0,0,0,0.10)] p-8">
                   <div className="space-y-6">
                     <div>
                       <h3 className="text-[16px] font-semibold text-main font-[Inter] mb-3">
-                        Interface Language
+                        {t("settings.language.interface_language")}
                       </h3>
                       <select
                         value={settingsData.appearance.language}
@@ -753,15 +758,15 @@ export default function Settings() {
                         className="w-full h-[50px] px-4 rounded-xl border border-border text-[16px] font-[Inter] focus:ring-2 focus:ring-primary focus:border-primary bg-input text-main"
                       >
                         <option value="en">English</option>
-                        <option value="es">Español</option>
-                        <option value="fr">Français</option>
-                        <option value="de">Deutsch</option>
-                        <option value="it">Italiano</option>
-                        <option value="pt">Português</option>
-                        <option value="ru">Русский</option>
-                        <option value="zh">中文</option>
-                        <option value="ja">日本語</option>
-                        <option value="ko">한국어</option>
+                        <option value="es">Spanish</option>
+                        <option value="zh">Chinese (Mandarin)</option>
+                        <option value="hi">Hindi</option>
+                        <option value="ar">Arabic</option>
+                        <option value="pt">Portuguese</option>
+                        <option value="fr">French</option>
+                        <option value="ru">Russian</option>
+                        <option value="ja">Japanese</option>
+                        <option value="de">German</option>
                       </select>
                     </div>
                   </div>
@@ -771,7 +776,7 @@ export default function Settings() {
                       type="button"
                       className="h-[50px] px-6 rounded-xl border border-border bg-card text-main text-[16px] font-medium font-[Inter] hover:bg-canvas-alt"
                     >
-                      Cancel
+                      {t("common.cancel")}
                     </button>
                     <button
                       onClick={async () => {
@@ -787,10 +792,11 @@ export default function Settings() {
                             },
                             { headers: { Authorization: `Bearer ${token}` } }
                           );
-                          alert("Language settings updated successfully!");
+                          i18n.changeLanguage(settingsData.appearance.language);
+                          toast.success("Language settings updated successfully!");
                         } catch (error) {
                           console.error("Error updating settings:", error);
-                          alert("Failed to update settings. Please try again.");
+                          toast.error("Failed to update settings. Please try again.");
                         } finally {
                           setLoading(false);
                         }
@@ -798,13 +804,13 @@ export default function Settings() {
                       disabled={loading}
                       className="h-[50px] px-6 rounded-xl bg-gradient-to-r from-[#00BEA5] to-[#00BEA5] text-white text-[16px] font-medium font-[Inter] hover:opacity-90 disabled:opacity-50"
                     >
-                      {loading ? "Saving..." : "Save Changes"}
+                      {loading ? t("common.saving") : t("common.save_changes")}
                     </button>
                   </div>
                 </div>
               </div>
             )}
-            //=== Profile Popup======//
+            {/* ======= Profile Popup====== */}
             {profilepopup && (
                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-55 animate-fadeIn">
 
@@ -822,7 +828,7 @@ export default function Settings() {
                  {/* Heading */}
                  <h2 className="text-2xl font-bold bg-gradient-to-r from-emerald-500 to-teal-500 
                     bg-clip-text text-transparent mb-3">
-                   Profile Updated Successfully!
+                   {t("settings.profile.updated")}
                  </h2>
 
                  {/* Action Button */}
@@ -833,7 +839,7 @@ export default function Settings() {
                   shadow-lg hover:scale-105 hover:shadow-emerald-400/40 
                   transition-all duration-300"
                  >
-                   Ok
+                   {t("common.ok")}
                  </button>
 
                </div>

@@ -3,7 +3,7 @@ import { DataTypes, Model } from "sequelize";
 import bcrypt from "bcryptjs";
 import { sequelize } from "../config/db.js";
 
-class User extends Model {}
+class User extends Model { }
 
 User.init(
   {
@@ -105,14 +105,33 @@ User.init(
         },
       },
     },
+    resetPasswordToken: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    resetPasswordExpires: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
   },
   {
     sequelize,
     modelName: "User",
     timestamps: true,
     hooks: {
-      beforeSave: async (user) => {
-        if (user.password && user.changed("password")) {
+      beforeCreate: async (user) => {
+        console.log("Hook: beforeCreate triggered for user:", user.email);
+        if (user.password) {
+          console.log("Hashing password for new user...");
+          const salt = await bcrypt.genSalt(10);
+          user.password = await bcrypt.hash(user.password, salt);
+        }
+      },
+      beforeUpdate: async (user) => {
+        console.log("Hook: beforeUpdate triggered for user:", user.email);
+        console.log("Is password changed?", user.changed("password"));
+        if (user.changed("password")) {
+          console.log("Hashing password for existing user...");
           const salt = await bcrypt.genSalt(10);
           user.password = await bcrypt.hash(user.password, salt);
         }

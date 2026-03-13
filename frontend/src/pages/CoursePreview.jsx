@@ -4,6 +4,7 @@ import Header from "../components/Header";
 import { useAuth } from "../context/AuthContext";
 import API_BASE_URL from "../lib/api";
 import { Play, ChevronDown, ChevronUp, X } from "lucide-react";
+import toast from "react-hot-toast";
 
 /* safe getter */
 function safeGet(obj, path, fallback = undefined) {
@@ -258,11 +259,11 @@ export default function CoursePreview() {
         setSelectedCourse(null);
         navigate("/courses", { replace: true });
       } else {
-        alert(data.message || "Failed to purchase course");
+        toast.error(data.message || "Failed to purchase course");
       }
     } catch (err) {
       console.error("Purchase error:", err);
-      alert("Failed to purchase course. Please try again.");
+      toast.error("Failed to purchase course. Please try again.");
     } finally {
       setIsPurchasing(false);
       purchaseLock.current = false;

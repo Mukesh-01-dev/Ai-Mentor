@@ -1,47 +1,111 @@
-# AI Lesson Generator Service
+# AI Mentor — AI Service Backend (Python / FastAPI)
 
 This service generates AI-powered short video lessons using:
-- **Google Gemini** for script generation.
-- **XTTS (Coqui TTS)** for celebrity voice cloning.
-- **FFmpeg** for video processing and looping.
-- **FastAPI** for the backend API.
-- **Cloudinary** for hosting generated lesson videos.
 
-The service converts a topic or prompt into a short AI teaching video narrated in a celebrity-style voice.
+- **Google Gemini** for script generation
+- **XTTS (Coqui TTS)** for celebrity voice cloning
+- **FFmpeg** for video processing and merging
+- **FastAPI** for the backend API
+- **Cloudinary** for hosting generated lesson videos
+
+The Python microservice powers the **AI Lesson feature** of the AI Mentor platform.
+
+Given a **course, topic, or prompt** and a **celebrity voice**, the service:
+
+1. 📝 Generates a short educational script using **Google Gemini**
+2. 🎙️ Clones the selected celebrity voice using **XTTS**
+3. 🎥 Merges generated audio with a celebrity video using **FFmpeg**
+4. ☁️ Uploads the final lesson video to **Cloudinary**
+
+The Node.js backend calls this FastAPI service to generate AI teaching videos.
 
 ---
 
-## 🚀 Prerequisites
+# 🛠 Tech Stack
 
-Ensure you have the following installed:
+| Layer | Technology |
+|---|---|
+| Framework | FastAPI + Uvicorn |
+| AI Model | Google Gemini (`gemini-2.5-flash`) |
+| Voice Cloning | XTTS (Coqui TTS) |
+| Video Processing | FFmpeg |
+| Cloud Storage | Cloudinary |
+| Config | python-dotenv |
+
+---
+
+# 📁 Project Structure
+
+```
+ai_service/
+├── backend/
+│   ├── api.py
+│   ├── voice_service.py
+│   ├── config.py
+│   ├── requirements.txt
+│   ├── input/
+│   │   ├── modi.mp4
+│   │   └── salman.mp4
+│   ├── voices/
+│   │   ├── modi.wav
+│   │   └── salman.wav
+│   └── .env.example
+│
+└── outputs/
+    ├── video/
+    ├── audio/
+    └── text/
+```
+
+Generated lesson files are automatically saved in the **outputs folder**.
+
+---
+
+# ✅ Prerequisites
 
 ### 1. Python 3.10+
-- **Check Installation**: Open your terminal and run:
-  ```bash
-  python --version
-  ```
-- **Note**: During installation, make sure to check **"Add Python to PATH"**.
+
+Check installation:
+
+```bash
+python --version
+```
+
+When installing Python on Windows, ensure **"Add Python to PATH"** is enabled.
+
+---
 
 ### 2. FFmpeg
-FFmpeg is essential for video and audio processing.
 
-- **Windows (winget)**:
-  ```bash
-  winget install ffmpeg
-  ```
+FFmpeg is required for merging audio and video.
 
-- **Manual**: Download from [ffmpeg.org](https://ffmpeg.org/download.html), extract, and add the `bin` folder to your System PATH.
+Install using winget:
 
-- **Verify Installation**:
-  ```bash
-  ffmpeg -version
-  ```
+```powershell
+winget install ffmpeg
+```
+
+Or download manually:
+
+https://ffmpeg.org/download.html
+
+Verify installation:
+
+```bash
+ffmpeg -version
+```
+
+---
 
 ### 3. Visual Studio Build Tools (Windows Only)
 
-Required for some Python dependencies.
+Required for compiling some Python dependencies.
 
-Install:
+Download:
+
+https://visualstudio.microsoft.com/downloads/
+
+Install workload:
 
 ```
 Desktop development with C++
@@ -49,18 +113,25 @@ Desktop development with C++
 
 ---
 
-## 📥 Installation
+# 📥 Installation
 
-### 1. Create and Activate Virtual Environment
-
-Navigate to the `ai_service` directory:
+Navigate to the AI service folder:
 
 ```bash
 cd ai_service
+```
+
+---
+
+### 1️⃣ Create Virtual Environment
+
+```bash
 python -m venv venv
 ```
 
-**Activate the environment**
+---
+
+### 2️⃣ Activate Environment
 
 Windows:
 
@@ -68,7 +139,7 @@ Windows:
 .\venv\Scripts\activate
 ```
 
-Linux / Mac:
+Mac / Linux:
 
 ```bash
 source venv/bin/activate
@@ -76,7 +147,7 @@ source venv/bin/activate
 
 ---
 
-### 2. Install Dependencies
+### 3️⃣ Install Dependencies
 
 ```bash
 pip install -r backend/requirements.txt
@@ -84,33 +155,41 @@ pip install -r backend/requirements.txt
 
 ---
 
-## ⚙️ Configuration
+# ⚙️ Configuration
 
-### 1. Environment Variables
+Create a `.env` file inside:
 
-Create a `.env` file inside the `ai_service/backend` directory:
+```
+ai_service/backend/
+```
+
+Add:
 
 ```env
 GEMINI_API_KEY=your_gemini_api_key
+
 CLOUDINARY_CLOUD_NAME=your_cloud_name
 CLOUDINARY_API_KEY=your_api_key
 CLOUDINARY_API_SECRET=your_api_secret
 ```
 
-> [!TIP]  
-> Get a free Gemini API key from [Google AI Studio](https://aistudio.google.com/app/apikey).
+Get a Gemini API key from:
+
+https://aistudio.google.com/app/apikey
+
+Get Cloudinary credentials from:
+
+https://cloudinary.com/console
 
 ---
 
-### 2. Input Videos
+# 🎥 Input Videos
 
-Place your source videos in:
+Place celebrity source videos in:
 
 ```
 ai_service/backend/input/
 ```
-
-The service looks for videos matching the celebrity name.
 
 Example:
 
@@ -120,11 +199,15 @@ input/
 └── salman.mp4
 ```
 
-**Mandatory**: Ensure `modi.mp4` exists as a fallback video.
+Important:
+
+```
+modi.mp4 must exist as fallback video
+```
 
 ---
 
-### 3. Voice Samples
+# 🎙 Voice Samples
 
 Place celebrity voice samples in:
 
@@ -140,121 +223,180 @@ voices/
 └── salman.wav
 ```
 
-These samples are used by **XTTS for voice cloning**.
+These audio samples are used by **XTTS for voice cloning**.
 
 ---
 
-## 🏃 Running the Service
+# 🚀 Running the Service
 
-Start the FastAPI server:
+Activate the virtual environment first.
+
+Then run:
 
 ```bash
 cd backend
 uvicorn api:app --reload --port 8000
 ```
 
----
+The API will start at:
 
-## 🧪 Testing the API (using Swagger)
+```
+http://localhost:8000
+```
 
-FastAPI comes with built-in documentation (Swagger) that makes testing very easy.
-
-1. **Open Swagger**
+Swagger documentation:
 
 ```
 http://localhost:8000/docs
 ```
 
-2. **Try it out**
+---
 
-- Click **POST `/generate`**
-- Click **Try it out**
-- Enter parameters:
+# 📡 API Reference
+
+## GET /
+
+Health check
+
+Response:
+
+```json
+{
+  "message": "AI Lesson Generator Backend Running"
+}
+```
+
+---
+
+## POST /generate
+
+Generate a lesson video.
+
+Example request:
 
 ```json
 {
   "course": "ReactJS",
-  "topic": "Introduction to ReactJS",
+  "topic": "Introduction to Components",
   "celebrity": "modi"
 }
 ```
 
-Or using a custom prompt:
+Response:
 
 ```json
 {
-  "prompt": "Explain artificial intelligence in simple terms",
-  "celebrity": "salman"
+  "status": "Processing",
+  "filename": "lesson_video.mp4",
+  "jobId": "lesson_20240101"
 }
 ```
 
-Click **Execute**.
-
 ---
 
-## 📂 Project Structure
+## GET /status/{job_id}
 
-```
-ai_service/
-├── backend/
-│   ├── api.py                # Main FastAPI application
-│   ├── voice_service.py      # XTTS voice generation
-│   ├── config.py             # Environment configuration
-│   ├── requirements.txt      # Python dependencies
-│   ├── input/                # Source videos
-│   ├── voices/               # Celebrity voice samples
-│   └── outputs/              # Generated files
-│       ├── video/
-│       ├── audio/
-│       └── text/
+Check job progress.
+
+Processing:
+
+```json
+{ "status": "processing" }
 ```
 
----
+Completed:
 
-## 🛠 Troubleshooting
+```json
+{
+  "status": "ready",
+  "cloudinary_url": "https://res.cloudinary.com/..."
+}
+```
 
-### FFmpeg Error
+Failed:
 
-Ensure FFmpeg is added to your system PATH.
-
-Check:
-
-```bash
-ffmpeg -version
+```json
+{
+  "status": "failed"
+}
 ```
 
 ---
 
-### Gemini API Error
+## GET /transcript/{filename}
 
-Check your API key inside `.env` and ensure internet access.
+Returns generated lesson text.
 
----
+Example response:
 
-### XTTS Voice Error
-
-Ensure voice files exist:
-
-```
-voices/modi.wav
-voices/salman.wav
+```json
+{
+  "content": "Today we will learn about..."
+}
 ```
 
 ---
 
+# 🔄 Generation Pipeline
 
-### Activation Error
-
-If `.\venv\Scripts\activate` fails on PowerShell:
-
-```powershell
-Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 ```
-
-Then try activating the environment again.
+User Request
+     │
+     ▼
+FastAPI API
+     │
+     ▼
+Gemini → generates lesson script
+     │
+     ▼
+XTTS → clones celebrity voice
+     │
+     ▼
+FFmpeg → merges voice + video
+     │
+     ▼
+Cloudinary → uploads final video
+     │
+     ▼
+Video URL returned to client
+```
 
 ---
 
-## 📜 License
+# 🧪 Testing
+
+Open Swagger UI:
+
+```
+http://localhost:8000/docs
+```
+
+Test the **POST /generate** endpoint.
+
+Example request:
+
+```json
+{
+  "course": "Physics",
+  "topic": "Newton Laws",
+  "celebrity": "modi"
+}
+```
+
+---
+
+# 🛠 Troubleshooting
+
+| Problem | Solution |
+|---|---|
+| FFmpeg not found | Ensure FFmpeg is installed and added to system PATH |
+| GEMINI_API_KEY missing | Check `.env` file |
+| Cloudinary upload fails | Verify API credentials |
+| Voice generation fails | Ensure `voices/modi.wav` exists |
+| Server does not start | Activate virtual environment first |
+
+---
+
+# 📜 License
 
 MIT
