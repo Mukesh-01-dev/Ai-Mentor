@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Moon, Sun, Check, X } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
@@ -44,6 +44,7 @@ const SignUpPage = () => {
 
   const { isDark, toggleTheme } = useTheme();
   const navigate = useNavigate();
+  const timeoutRef = useRef(null);
 
   /* PASSWORD REQUIREMENTS LOGIC */
   const passwordRequirements = {
@@ -55,6 +56,15 @@ const SignUpPage = () => {
   };
 
   const isPasswordValid = Object.values(passwordRequirements).every(Boolean);
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    };
+  }, []);
 
   const togglePasswordVisibility = () => {
     setShowPassword((prev) => !prev);
@@ -93,7 +103,10 @@ const SignUpPage = () => {
       // Show success message and redirect to login, so keep it
       toast.success("Account created successfully! Redirecting to login...");
       // after 2 seconds, navigate to login page, keep it
-      setTimeout(() => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      timeoutRef.current = setTimeout(() => {
         navigate("/login");
       }, 2000);
 
