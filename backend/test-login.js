@@ -1,18 +1,24 @@
-import axios from 'axios';
 
 async function testLogin() {
     try {
-        const res = await axios.post('http://localhost:5000/api/auth/login', {
-            email: 'test@test.com',
-            password: 'password123'
+        const response = await fetch('http://localhost:5000/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                email: 'test@test.com',
+                password: 'password123'
+            }),
         });
-        console.log(res.data);
-    } catch (err) {
-        if (err.response) {
-            console.error(err.response.data);
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            console.error(data);
         } else {
-            console.error(err.message);
+            console.log(data);
         }
+    } catch (err) {
+        console.error(err.message);
     }
 }
 

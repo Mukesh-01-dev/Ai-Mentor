@@ -49,7 +49,7 @@ export const AuthProvider = ({ children }) => {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/users/profile`, {
+      const response = await fetch(`/api/users/profile`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

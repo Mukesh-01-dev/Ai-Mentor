@@ -15,7 +15,7 @@ import {
   MoreVertical,
   ChevronDown,
 } from "lucide-react";
-import API_BASE_URL from "../lib/api";
+
 
 const WatchedVideos = () => {
   const { t } = useTranslation();
@@ -40,7 +40,7 @@ const WatchedVideos = () => {
       try {
         const token = localStorage.getItem("token");
         const response = await fetch(
-          `${API_BASE_URL}/api/users/watched-videos`,
+          `/api/users/watched-videos`,
           {
             headers: {
               Authorization: `Bearer ${token}`,

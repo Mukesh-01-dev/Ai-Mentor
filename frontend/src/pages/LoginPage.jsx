@@ -3,7 +3,7 @@ import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import AuthLayout from "../components/auth/AuthLayout.jsx";
 import SocialLogin from "../components/auth/SocialLogin";
-import axios from "axios"; // ✅ Yeh line add karna compulsory hai
+
 import toast from "react-hot-toast";
 
 const FormInput = ({ label, type, placeholder, value, onChange }) => {
@@ -42,18 +42,25 @@ const LoginPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/auth/login`, {
-        email,
-        password
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
       });
 
-      if (response.data.token) {
-        login(response.data);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Invalid Credentials!");
+      }
+
+      if (data.token) {
+        login(data);
         toast.success("Logged in successfully!");
         navigate('/dashboard');
       }
     } catch (err) {
-      toast.error(err.response?.data?.message || "Invalid Credentials!");
+      toast.error(err.message || "Invalid Credentials!");
     }
   };
 

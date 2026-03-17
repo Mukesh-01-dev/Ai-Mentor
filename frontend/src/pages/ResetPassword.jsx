@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { Eye, EyeOff, Lock, ArrowLeft } from "lucide-react";
 import AuthLayout from "../components/auth/AuthLayout";
-import axios from "axios";
+
 
 const ResetPassword = () => {
     const { token } = useParams();
@@ -25,16 +25,24 @@ const ResetPassword = () => {
         setError("");
 
         try {
-            await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/auth/reset-password/${token}`, {
-                password,
+            const response = await fetch(`/api/auth/reset-password/${token}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ password }),
             });
+
+            const data = await response.json().catch(() => ({}));
+
+            if (!response.ok) {
+                throw new Error(data.message || "Request failed");
+            }
 
             setSuccess(true);
             setTimeout(() => {
                 navigate("/login");
             }, 3000);
         } catch (err) {
-            setError(err.response?.data?.message || err.message);
+            setError(err.message);
         } finally {
             setLoading(false);
         }

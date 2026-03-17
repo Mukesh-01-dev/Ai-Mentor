@@ -5,7 +5,7 @@ import { Star, Bookmark, X, BookOpen, Search } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useSidebar } from "../context/SidebarContext";
 import { useNavigate, useLocation } from "react-router-dom";
-import API_BASE_URL from "../lib/api";
+
 import { useTranslation } from "react-i18next";
 
 const CoursesPage = () => {
@@ -45,8 +45,8 @@ const CoursesPage = () => {
         const token = localStorage.getItem("token");
 
         const [exploreRes, myRes] = await Promise.all([
-          fetch(`${API_BASE_URL}/api/courses`),
-          fetch(`${API_BASE_URL}/api/courses/my-courses`, {
+          fetch(`/api/courses`),
+          fetch(`/api/courses/my-courses`, {
             headers: {
               Authorization: `Bearer ${token}`,
             },
@@ -83,7 +83,7 @@ const CoursesPage = () => {
     try {
       const token = localStorage.getItem("token");
 
-      await fetch(`${API_BASE_URL}/api/users/purchase-course`, {
+      await fetch(`/api/users/purchase-course`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -96,8 +96,8 @@ const CoursesPage = () => {
       });
 
       const [exploreRes, myRes] = await Promise.all([
-        fetch(`${API_BASE_URL}/api/courses`),
-        fetch(`${API_BASE_URL}/api/courses/my-courses`, {
+        fetch(`/api/courses`),
+        fetch(`/api/courses/my-courses`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
       ]);

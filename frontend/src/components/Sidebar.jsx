@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { ChevronRight, LogOut, Settings, User, ShieldCheck, LayoutGrid } from "lucide-react";
-import API_BASE_URL from "../lib/api";
+
 import { useSidebar } from "../context/SidebarContext";
 import { useTranslation } from "react-i18next";
 
@@ -45,7 +45,7 @@ const Sidebar = ({ activePage = "dashboard" }) => {
       try {
         const token = localStorage.getItem("token");
         if (!token) return;
-        const response = await fetch(`${API_BASE_URL}/api/sidebar/navigation`, {
+        const response = await fetch(`/api/sidebar/navigation`, {
           headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
         });
         if (!response.ok) return;

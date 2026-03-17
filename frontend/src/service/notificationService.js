@@ -1,5 +1,3 @@
-import API_BASE_URL from "../lib/api";
-
 const getHeaders = () => {
   const token = localStorage.getItem("token");
   return {
@@ -10,7 +8,7 @@ const getHeaders = () => {
 
 export const fetchNotifications = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/notifications`, {
+    const response = await fetch(`/api/notifications`, {
       headers: getHeaders(),
     });
     if (!response.ok) throw new Error("Failed to fetch notifications");
@@ -23,7 +21,7 @@ export const fetchNotifications = async () => {
 
 export const markAsReadApi = async (id) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/notifications/${id}/read`, {
+    const response = await fetch(`/api/notifications/${id}/read`, {
       method: "PATCH",
       headers: getHeaders(),
     });
@@ -37,7 +35,7 @@ export const markAsReadApi = async (id) => {
 
 export const markAllAsReadApi = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/notifications/read-all`, {
+    const response = await fetch(`/api/notifications/read-all`, {
       method: "PATCH",
       headers: getHeaders(),
     });
@@ -51,7 +49,7 @@ export const markAllAsReadApi = async () => {
 
 export const clearAllNotificationsApi = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/notifications/clear`, {
+    const response = await fetch(`/api/notifications/clear`, {
       method: "DELETE",
       headers: getHeaders(),
     });

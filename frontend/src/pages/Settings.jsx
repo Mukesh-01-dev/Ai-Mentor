@@ -13,7 +13,7 @@ import {
   Eye,
   EyeOff,
 } from "lucide-react";
-import axios from "axios";
+
 import { useTheme } from "../context/ThemeContext";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
@@ -109,17 +109,24 @@ export default function Settings() {
         form.append("avatar", avatarFile);
       }
 
-      const response = await axios.put("/api/users/profile", form, {
+      const response = await fetch("/api/users/profile", {
+        method: "PUT",
         headers: {
           Authorization: `Bearer ${token}`,
-          "Content-Type": "multipart/form-data",
         },
+        body: form,
       });
 
-      console.log("✅ Backend response:", response.data);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to update profile");
+      }
+
+      console.log("✅ Backend response:", data);
 
       // 🔥 FIX 1: Update context FIRST with fresh data
-      updateUser(response.data);
+      updateUser(data);
 
       // 🔥 FIX 2: Wait for state to update, THEN fetch (or skip fetch entirely)
       setTimeout(async () => {
@@ -131,7 +138,7 @@ export default function Settings() {
       toast.success("Profile updated successfully!");
       setProfilePopup(true);
     } catch (error) {
-      console.error("❌ Error updating profile:", error.response?.data || error);
+      console.error("❌ Error updating profile:", error);
       toast.error("Failed to update profile.");
     } finally {
       setLoading(false);
@@ -157,9 +164,11 @@ export default function Settings() {
       if (!user) return;
       try {
         const token = localStorage.getItem("token");
-        const { data } = await axios.get("/api/users/settings", {
+        const response = await fetch("/api/users/settings", {
           headers: { Authorization: `Bearer ${token}` },
         });
+
+        const data = await response.json();
 
         setSettingsData(data);
         if (data?.appearance?.language) {
@@ -459,12 +468,18 @@ export default function Settings() {
                         try {
                           const token = localStorage.getItem("token");
 
-                          await axios.put(
+                          await fetch(
                             "/api/users/settings",
                             {
-                              notifications: { ...settingsData.notifications },
-                            },
-                            { headers: { Authorization: `Bearer ${token}` } }
+                              method: "PUT",
+                              headers: {
+                                "Content-Type": "application/json",
+                                Authorization: `Bearer ${token}`,
+                              },
+                              body: JSON.stringify({
+                                notifications: { ...settingsData.notifications },
+                              }),
+                            }
                           );
 
 
@@ -652,50 +667,40 @@ export default function Settings() {
                     </button>
                     <button
                       onClick={async () => {
-
-  if (!passwordData.currentPassword || !passwordData.newPassword) {
-    toast.error("Please fill all fields!");
-    return;
-  }
-
-  if (passwordData.newPassword !== passwordData.confirmPassword) {
-    toast.error("New passwords do not match!");
-    return;
-  }
-
-  setLoading(true);
-
-  try {
-    const token = localStorage.getItem("token");
-
-    await axios.put(
-      "/api/users/change-password",
-      {
-        currentPassword: passwordData.currentPassword,
-        newPassword: passwordData.newPassword
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      }
-    );
-
-    toast.success("Password updated successfully!");
-
-    setPasswordData({
-      currentPassword: "",
-      newPassword: "",
-      confirmPassword: ""
-    });
-
-  } catch (error) {
-    console.error("Password update error:", error);
-    toast.error(error.response?.data?.message || "Failed to update password");
-  } finally {
-    setLoading(false);
-  }
-}}
+                        if (
+                          passwordData.newPassword !==
+                          passwordData.confirmPassword
+                        ) {
+                          toast.error("New passwords do not match!");
+                          return;
+                        }
+                        setLoading(true);
+                        try {
+                          const token = localStorage.getItem("token");
+                          await fetch(
+                            "/api/users/settings",
+                            {
+                              method: "PUT",
+                              headers: {
+                                "Content-Type": "application/json",
+                                Authorization: `Bearer ${token}`,
+                              },
+                              body: JSON.stringify({ security: settingsData.security }),
+                            }
+                          );
+                          toast.success("Security settings updated successfully!");
+                          setPasswordData({
+                            currentPassword: "",
+                            newPassword: "",
+                            confirmPassword: "",
+                          });
+                        } catch (error) {
+                          console.error("Error updating settings:", error);
+                          toast.error("Failed to update settings. Please try again.");
+                        } finally {
+                          setLoading(false);
+                        }
+                      }}
                       disabled={loading}
                       className="h-[50px] px-6 rounded-xl bg-gradient-to-r from-primary to-primary text-white text-[16px] font-medium font-[Inter] hover:opacity-90 disabled:opacity-50"
                     >
@@ -788,10 +793,16 @@ export default function Settings() {
                         setLoading(true);
                         try {
                           const token = localStorage.getItem("token");
-                          await axios.put(
+                          await fetch(
                             "/api/users/settings",
-                            { appearance: settingsData.appearance },
-                            { headers: { Authorization: `Bearer ${token}` } }
+                            {
+                              method: "PUT",
+                              headers: {
+                                "Content-Type": "application/json",
+                                Authorization: `Bearer ${token}`,
+                              },
+                              body: JSON.stringify({ appearance: settingsData.appearance }),
+                            }
                           );
                           i18n.changeLanguage(settingsData.appearance.language);
                           toast.success("Appearance settings updated successfully!");
@@ -867,14 +878,20 @@ export default function Settings() {
                         setLoading(true);
                         try {
                           const token = localStorage.getItem("token");
-                          await axios.put(
+                          await fetch(
                             "/api/users/settings",
                             {
-                              appearance: {
-                                language: settingsData.appearance.language,
+                              method: "PUT",
+                              headers: {
+                                "Content-Type": "application/json",
+                                Authorization: `Bearer ${token}`,
                               },
-                            },
-                            { headers: { Authorization: `Bearer ${token}` } }
+                              body: JSON.stringify({
+                                appearance: {
+                                  language: settingsData.appearance.language,
+                                },
+                              }),
+                            }
                           );
                           i18n.changeLanguage(settingsData.appearance.language);
                           toast.success("Language settings updated successfully!");

@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Header from "../components/Header";
 import { useAuth } from "../context/AuthContext";
-import API_BASE_URL from "../lib/api";
+
 import { Play, ChevronDown, ChevronUp, X } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -31,9 +31,9 @@ function buildImageCandidates(imagePath) {
     // try prefixed by slash
     candidates.push("/" + p);
     // try prefixing API base
-    candidates.push(`${API_BASE_URL}/${p}`);
+    candidates.push(`/${p}`);
     // try common uploads folder
-    candidates.push(`${API_BASE_URL}/uploads/${p}`);
+    candidates.push(`/uploads/${p}`);
   }
 
   // finally fallback placeholder
@@ -84,8 +84,8 @@ export default function CoursePreview() {
       setLoading(true);
       setError(null);
       try {
-        const metaUrl = `${API_BASE_URL}/api/courses/${courseId}`;
-        const learnUrl = `${API_BASE_URL}/api/courses/${courseId}/learning`;
+        const metaUrl = `/api/courses/${courseId}`;
+        const learnUrl = `/api/courses/${courseId}/learning`;
 
         const [metaRes, learnRes] = await Promise.all([
           fetch(metaUrl),
@@ -235,7 +235,7 @@ export default function CoursePreview() {
 
     try {
       const token = localStorage.getItem("token");
-      const purchaseUrl = `${API_BASE_URL}/api/users/purchase-course`;
+      const purchaseUrl = `/api/users/purchase-course`;
       const response = await fetch(purchaseUrl, {
         method: "POST",
         headers: {

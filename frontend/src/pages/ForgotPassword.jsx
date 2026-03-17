@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Mail, ArrowLeft } from "lucide-react";
 import AuthLayout from "../components/auth/AuthLayout";
-import axios from "axios";
+
 
 const ForgotPassword = () => {
     const [email, setEmail] = useState("");
@@ -17,13 +17,21 @@ const ForgotPassword = () => {
         setError("");
 
         try {
-            await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/auth/forgot-password`, {
-                email,
+            const response = await fetch("/api/auth/forgot-password", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email }),
             });
+
+            const data = await response.json().catch(() => ({}));
+
+            if (!response.ok) {
+                throw new Error(data.message || "Request failed");
+            }
 
             setMessage("If an account exists for " + email + ", you will receive a password reset link shortly.");
         } catch (err) {
-            setError(err.response?.data?.message || err.message);
+            setError(err.message);
         } finally {
             setLoading(false);
         }
