@@ -223,16 +223,19 @@ export default function CoursePreview() {
   };
 
   // confirm enrollment from modal -> purchase and redirect to /courses
-  const confirmEnroll = async () => {
-    if (!selectedCourse) return;
+const confirmEnroll = async () => {
+  if (!selectedCourse) return;
 
-    if (purchaseLock.current) return;
-    purchaseLock.current = true;
-    setIsPurchasing(true);
+  if (purchaseLock.current) return;
+  purchaseLock.current = true;
+  setIsPurchasing(true);
 
-    try {
-      const token = localStorage.getItem("token");
-      const response = await fetch("/api/users/purchase-course", {
+  try {
+    const token = localStorage.getItem("token");
+
+    const response = await fetch(
+      `${API_BASE_URL}/api/payments/create-checkout-session`,
+      {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -240,35 +243,28 @@ export default function CoursePreview() {
         },
         body: JSON.stringify({
           courseId: Number(selectedCourse.id),
-          courseTitle: selectedCourse.title,
         }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        if (updateUser) {
-          updateUser({
-            ...user,
-            purchasedCourses: data.purchasedCourses,
-          });
-        }
-
-        // close modal and redirect to Courses page (My Courses)
-        setShowEnrollPopup(false);
-        setSelectedCourse(null);
-        navigate("/courses", { replace: true });
-      } else {
-        toast.error(data.message || "Failed to purchase course");
       }
-    } catch (err) {
-      console.error("Purchase error:", err);
-      toast.error("Failed to purchase course. Please try again.");
-    } finally {
-      setIsPurchasing(false);
-      purchaseLock.current = false;
+    );
+
+    const data = await response.json();
+
+    if (response.ok && data.url) {
+      setShowEnrollPopup(false);
+      setSelectedCourse(null);
+      window.location.href = data.url;
+      return;
+    } else {
+      toast.error(data.message || "Failed to start payment");
     }
-  };
+  } catch (err) {
+    console.error("Payment error:", err);
+    toast.error("Failed to start payment. Please try again.");
+  } finally {
+    setIsPurchasing(false);
+    purchaseLock.current = false;
+  }
+};
 
   if (loading) {
     return (

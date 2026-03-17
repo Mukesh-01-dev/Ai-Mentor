@@ -61,6 +61,8 @@ const AdminPage = () => {
         body: JSON.stringify({ ...newCourse, id: parseInt(newCourse.id), rating: parseFloat(newCourse.rating) }),
       });
 
+
+      
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Failed to add course');
