@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "cors": "^2.8.6",
+    "helmet": "^8.1.0"
+  }
+}

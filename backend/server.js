@@ -2,6 +2,7 @@
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
+import helmet from "helmet";
 import path from "path";
 import { fileURLToPath } from "url";
 import { connectDB, sequelize } from "./config/db.js";
@@ -21,10 +22,23 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+app.use(helmet());
+
+app.use(
+  helmet.contentSecurityPolicy({
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", "data:"],
+      styleSrc: ["'self'", "https:"],
+      objectSrc: ["'none'"],
+    },
+  })
+);
 
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: process.env.ALLOWED_ORIGIN || "http://localhost:5173",
     credentials: true,
   })
 );
