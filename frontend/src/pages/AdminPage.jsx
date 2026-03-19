@@ -66,7 +66,8 @@ const AdminPage = () => {
         throw new Error(errorData.message || 'Failed to add course');
       }
 
-      await fetchCourses(); // Refresh list
+      await fetchCourses();
+      window.dispatchEvent(new Event("coursesUpdated")); // Refresh list
       setNewCourse({ id: '', title: '', category: '', level: '', rating: 4.5, students: '0 students', lessons: '0 lessons', price: '₹0', image: '', categoryColor: 'bg-blue-100 text-blue-600' });
       toast.success('Course added successfully!');
     } catch (error) {
@@ -104,7 +105,8 @@ const AdminPage = () => {
       if (!response.ok) {
         throw new Error('Failed to delete course');
       }
-      await fetchCourses(); // Refresh list
+      await fetchCourses();
+      window.dispatchEvent(new Event("coursesUpdated")); // Refresh list
       toast.success('Course deleted successfully!');
     } catch (error) {
       console.error('Error deleting course:', error);
@@ -203,6 +205,7 @@ const AdminPage = () => {
         throw new Error('Failed to add lessons');
       }
       toast.success('Lessons added successfully!');
+      window.dispatchEvent(new Event("coursesUpdated"));
       setNewLessons([{ id: '', title: '', duration: '', completed: false, playing: false, type: 'video' }]);
       setSelectedModule('');
       await handleManageCourse(selectedCourse.id); // Refresh course data to include new lessons
@@ -326,6 +329,7 @@ const AdminPage = () => {
                               throw new Error('Failed to add modules');
                             }
                             toast.success('Modules added successfully!');
+                            window.dispatchEvent(new Event("coursesUpdated"));
                             setNewModules([{ id: '', title: '' }]);
                             await handleManageCourse(selectedCourse.id); // Refresh course data to include new modules
                           } catch (error) {
@@ -477,3 +481,358 @@ const AdminPage = () => {
 };
 
 export default AdminPage;
+
+// import { useState, useEffect } from "react";
+// import Sidebar from "../components/Sidebar";
+// import { useSidebar } from "../context/SidebarContext";
+// import toast from "react-hot-toast";
+// import Header from "../components/Header";
+
+// const AdminPage = () => {
+//   const { sidebarCollapsed } = useSidebar();
+
+//   const [courses, setCourses] = useState([]);
+//   const [selectedCourse, setSelectedCourse] = useState(null);
+//   const [activeTab, setActiveTab] = useState("modules");
+
+//   const [newCourse, setNewCourse] = useState({
+//     id: "",
+//     title: "",
+//     category: "",
+//     level: "",
+//     rating: 4.5,
+//     students: "0 students",
+//     lessons: "0 lessons",
+//     price: "₹0",
+//     image: "",
+//     categoryColor: "bg-blue-100 text-blue-600",
+//   });
+
+//   const [videoUrl, setVideoUrl] = useState("");
+//   const [selectedLesson, setSelectedLesson] = useState("");
+//   const [selectedModule, setSelectedModule] = useState("");
+
+//   const [newModules, setNewModules] = useState([{ id: "", title: "" }]);
+//   const [newLessons, setNewLessons] = useState([
+//     { id: "", title: "", duration: "", type: "video" },
+//   ]);
+
+//   // ✅ FETCH COURSES
+//   const fetchCourses = async () => {
+//     try {
+//       const res = await fetch("/api/courses");
+//       const data = await res.json();
+//       setCourses(data || []);
+//     } catch (err) {
+//       toast.error("Failed to fetch courses");
+//     }
+//   };
+
+//   useEffect(() => {
+//     fetchCourses();
+//   }, []);
+
+//   // ✅ INPUT CHANGE
+//   const handleInputChange = (e) => {
+//     const { name, value } = e.target;
+//     setNewCourse((prev) => ({ ...prev, [name]: value }));
+//   };
+
+//   // ✅ ADD COURSE
+//   const handleAddCourse = async (e) => {
+//     e.preventDefault();
+//     const token = localStorage.getItem("token");
+
+//     try {
+//       const res = await fetch("/api/courses", {
+//         method: "POST",
+//         headers: {
+//           "Content-Type": "application/json",
+//           Authorization: `Bearer ${token}`,
+//         },
+//         body: JSON.stringify({
+//           ...newCourse,
+//           id: Number(newCourse.id),
+//           rating: Number(newCourse.rating),
+//         }),
+//       });
+
+//       if (!res.ok) throw new Error("Failed to add course");
+
+//       toast.success("Course added!");
+//       setNewCourse({
+//         id: "",
+//         title: "",
+//         category: "",
+//         level: "",
+//         rating: 4.5,
+//         students: "0 students",
+//         lessons: "0 lessons",
+//         price: "₹0",
+//         image: "",
+//         categoryColor: "bg-blue-100 text-blue-600",
+//       });
+
+//       fetchCourses();
+//     } catch (err) {
+//       toast.error(err.message);
+//     }
+//   };
+
+//   // ✅ MANAGE COURSE
+//   const handleManageCourse = async (id) => {
+//     try {
+//       const res = await fetch(`/api/courses/${id}`);
+//       const data = await res.json();
+//       setSelectedCourse(data);
+//     } catch {
+//       toast.error("Failed to load course");
+//     }
+//   };
+
+//   // ✅ DELETE
+//   const handleDeleteCourse = async (id) => {
+//     if (!window.confirm("Delete course?")) return;
+
+//     const token = localStorage.getItem("token");
+
+//     try {
+//       await fetch(`/api/courses/${id}`, {
+//         method: "DELETE",
+//         headers: { Authorization: `Bearer ${token}` },
+//       });
+
+//       toast.success("Deleted!");
+//       fetchCourses();
+//     } catch {
+//       toast.error("Delete failed");
+//     }
+//   };
+
+//   // ✅ ADD MODULES
+//   const saveModules = async () => {
+//     const token = localStorage.getItem("token");
+
+//     try {
+//       await fetch(`/api/courses/${selectedCourse.id}/modules`, {
+//         method: "POST",
+//         headers: {
+//           "Content-Type": "application/json",
+//           Authorization: `Bearer ${token}`,
+//         },
+//         body: JSON.stringify({ modules: newModules }),
+//       });
+
+//       toast.success("Modules added!");
+//       setNewModules([{ id: "", title: "" }]);
+//       handleManageCourse(selectedCourse.id);
+//     } catch {
+//       toast.error("Failed modules");
+//     }
+//   };
+
+//   // ✅ ADD LESSONS
+//   const saveLessons = async () => {
+//     if (!selectedModule) return toast.error("Select module");
+
+//     const token = localStorage.getItem("token");
+
+//     try {
+//       await fetch(
+//         `/api/courses/${selectedCourse.id}/modules/${selectedModule}/lessons`,
+//         {
+//           method: "POST",
+//           headers: {
+//             "Content-Type": "application/json",
+//             Authorization: `Bearer ${token}`,
+//           },
+//           body: JSON.stringify({ lessons: newLessons }),
+//         }
+//       );
+
+//       toast.success("Lessons added!");
+//       setNewLessons([{ id: "", title: "", duration: "", type: "video" }]);
+//       setSelectedModule("");
+//       handleManageCourse(selectedCourse.id);
+//     } catch {
+//       toast.error("Failed lessons");
+//     }
+//   };
+
+//   // ✅ UPDATE VIDEO
+//   const updateVideo = async () => {
+//     if (!selectedLesson || !videoUrl) {
+//       return toast.error("Select lesson + URL");
+//     }
+
+//     const token = localStorage.getItem("token");
+
+//     try {
+//       await fetch(
+//         `/api/courses/${selectedCourse.id}/lessons/${selectedLesson}/video`,
+//         {
+//           method: "PUT",
+//           headers: {
+//             "Content-Type": "application/json",
+//             Authorization: `Bearer ${token}`,
+//           },
+//           body: JSON.stringify({ youtubeUrl: videoUrl }),
+//         }
+//       );
+
+//       toast.success("Video updated!");
+//       setVideoUrl("");
+//       setSelectedLesson("");
+//     } catch {
+//       toast.error("Update failed");
+//     }
+//   };
+
+//   return (
+//     <div className="min-h-screen flex flex-col">
+//       <Header />
+//       <Sidebar activePage="admin" />
+
+//       <main
+//         className={`mt-16 p-8 ${
+//           sidebarCollapsed ? "lg:ml-20" : "lg:ml-80"
+//         }`}
+//       >
+//         <h1 className="text-3xl font-bold mb-6">Admin Panel</h1>
+
+//         {/* ADD COURSE */}
+//         <form
+//           onSubmit={handleAddCourse}
+//           className="grid grid-cols-2 gap-4 mb-8"
+//         >
+//           <input name="id" value={newCourse.id} onChange={handleInputChange} placeholder="ID" required />
+//           <input name="title" value={newCourse.title} onChange={handleInputChange} placeholder="Title" required />
+//           <input name="category" value={newCourse.category} onChange={handleInputChange} placeholder="Category" required />
+//           <input name="level" value={newCourse.level} onChange={handleInputChange} placeholder="Level" required />
+//           <button className="col-span-2 bg-blue-600 text-white p-2 rounded">
+//             Add Course
+//           </button>
+//         </form>
+
+//         {/* COURSE LIST */}
+//         {courses.map((c) => (
+//           <div key={c.id} className="flex justify-between border p-3 mb-2">
+//             <span>{c.title}</span>
+//             <div className="space-x-2">
+//               <button onClick={() => handleManageCourse(c.id)}>Manage</button>
+//               <button onClick={() => handleDeleteCourse(c.id)}>Delete</button>
+//             </div>
+//           </div>
+//         ))}
+
+//         {/* MODAL */}
+//         {selectedCourse && (
+//           <div className="fixed inset-0 bg-black/50 flex justify-center items-center">
+//             <div className="bg-white p-6 w-[700px] max-h-[90vh] overflow-y-auto">
+//               <h2 className="text-xl font-bold mb-4">
+//                 {selectedCourse.title}
+//               </h2>
+
+//               {/* MODULES */}
+//               <h3 className="font-semibold">Modules</h3>
+//               {newModules.map((m, i) => (
+//                 <div key={i}>
+//                   <input
+//                     placeholder="ID"
+//                     value={m.id}
+//                     onChange={(e) => {
+//                       const copy = [...newModules];
+//                       copy[i].id = e.target.value;
+//                       setNewModules(copy);
+//                     }}
+//                   />
+//                   <input
+//                     placeholder="Title"
+//                     value={m.title}
+//                     onChange={(e) => {
+//                       const copy = [...newModules];
+//                       copy[i].title = e.target.value;
+//                       setNewModules(copy);
+//                     }}
+//                   />
+//                 </div>
+//               ))}
+//               <button onClick={() => setNewModules([...newModules, { id: "", title: "" }])}>
+//                 + Module
+//               </button>
+//               <button onClick={saveModules}>Save Modules</button>
+
+//               {/* LESSONS */}
+//               <h3 className="mt-4 font-semibold">Lessons</h3>
+//               <select onChange={(e) => setSelectedModule(e.target.value)}>
+//                 <option>Select Module</option>
+//                 {selectedCourse.modules?.map((m) => (
+//                   <option key={m.id} value={m.id}>
+//                     {m.title}
+//                   </option>
+//                 ))}
+//               </select>
+
+//               {newLessons.map((l, i) => (
+//                 <div key={i}>
+//                   <input
+//                     placeholder="Lesson ID"
+//                     value={l.id}
+//                     onChange={(e) => {
+//                       const copy = [...newLessons];
+//                       copy[i].id = e.target.value;
+//                       setNewLessons(copy);
+//                     }}
+//                   />
+//                   <input
+//                     placeholder="Title"
+//                     value={l.title}
+//                     onChange={(e) => {
+//                       const copy = [...newLessons];
+//                       copy[i].title = e.target.value;
+//                       setNewLessons(copy);
+//                     }}
+//                   />
+//                 </div>
+//               ))}
+//               <button onClick={() => setNewLessons([...newLessons, { id: "", title: "" }])}>
+//                 + Lesson
+//               </button>
+//               <button onClick={saveLessons}>Save Lessons</button>
+
+//               {/* VIDEO */}
+//               <h3 className="mt-4 font-semibold">Video</h3>
+//               <select onChange={(e) => setSelectedLesson(e.target.value)}>
+//                 <option>Select Lesson</option>
+//                 {selectedCourse.modules?.flatMap((m) =>
+//                   m.lessons?.map((l) => (
+//                     <option key={l.id} value={l.id}>
+//                       {m.title} - {l.title}
+//                     </option>
+//                   ))
+//                 )}
+//               </select>
+
+//               <input
+//                 placeholder="YouTube URL"
+//                 value={videoUrl}
+//                 onChange={(e) => setVideoUrl(e.target.value)}
+//               />
+
+//               <button onClick={updateVideo}>Update Video</button>
+
+//               <button
+//                 className="mt-4 text-red-500"
+//                 onClick={() => setSelectedCourse(null)}
+//               >
+//                 Close
+//               </button>
+//             </div>
+//           </div>
+//         )}
+//       </main>
+//     </div>
+//   );
+// };
+
+// export default AdminPage;

@@ -56,9 +56,9 @@ const App = () => {
       </Route>
 
       {/* Admin Routes */}
-      <Route element={<AdminRoute />}>
+      {/* <Route element={<AdminRoute />}> */}
         <Route path="/admin" element={<AdminPage />} />
-      </Route>
+      {/* </Route> */}
 
       {/* Other public routes */}
       <Route path="/course-preview/:courseId" element={<CoursePreview />} />

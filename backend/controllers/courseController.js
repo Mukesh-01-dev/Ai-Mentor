@@ -208,11 +208,69 @@ const getStatsCards = async (req, res) => {
 };
 
 const addCourse = async (req, res) => {
-  res.status(501).json({ message: "addCourse not implemented" });
+  try {
+    const coursesPath = path.join(
+      __dirname,
+      "../../frontend/public/data/courses.json"
+    );
+
+    const rawData = fs.readFileSync(coursesPath, "utf-8");
+    const jsonData = JSON.parse(rawData);
+
+    const newCourse = req.body;
+
+    // Ensure array exists
+    if (!jsonData.popularCourses) {
+      jsonData.popularCourses = [];
+    }
+
+    // Push new course
+    jsonData.popularCourses.push(newCourse);
+
+    // Save back to file
+    fs.writeFileSync(
+      coursesPath,
+      JSON.stringify(jsonData, null, 2),
+      "utf-8"
+    );
+
+    res.status(201).json({
+      message: "Course added successfully",
+      course: newCourse,
+    });
+  } catch (error) {
+    console.error("ADD COURSE ERROR:", error);
+    res.status(500).json({ message: "Failed to add course" });
+  }
 };
 
 const deleteCourse = async (req, res) => {
-  res.status(501).json({ message: "deleteCourse not implemented" });
+  try {
+    const coursesPath = path.join(
+      __dirname,
+      "../../frontend/public/data/courses.json"
+    );
+
+    const rawData = fs.readFileSync(coursesPath, "utf-8");
+    const jsonData = JSON.parse(rawData);
+
+    const courseId = Number(req.params.id);
+
+    jsonData.popularCourses = jsonData.popularCourses.filter(
+      (c) => c.id !== courseId
+    );
+
+    fs.writeFileSync(
+      coursesPath,
+      JSON.stringify(jsonData, null, 2),
+      "utf-8"
+    );
+
+    res.json({ message: "Course deleted successfully" });
+  } catch (error) {
+    console.error("DELETE COURSE ERROR:", error);
+    res.status(500).json({ message: "Failed to delete course" });
+  }
 };
 
 const updateLessonVideo = async (req, res) => {
@@ -228,7 +286,45 @@ const addLessons = async (req, res) => {
 };
 
 const addModules = async (req, res) => {
-  res.status(501).json({ message: "addModules not implemented" });
+  try {
+    const learningPath = path.join(
+      __dirname,
+      "../../frontend/public/data/learning.json"
+    );
+
+    const raw = fs.readFileSync(learningPath, "utf-8");
+    const jsonData = JSON.parse(raw);
+
+    const courseId = req.params.id;
+    const { modules } = req.body;
+
+    if (!jsonData[courseId]) {
+      jsonData[courseId] = {
+        course: { id: Number(courseId) },
+        modules: [],
+      };
+    }
+
+    if (!jsonData[courseId].modules) {
+      jsonData[courseId].modules = [];
+    }
+
+    // ✅ FIX HERE
+    const formattedModules = modules.map((mod) => ({
+      id: mod.id,
+      title: mod.title,
+      lessons: [],
+    }));
+
+    jsonData[courseId].modules.push(...formattedModules);
+
+    fs.writeFileSync(learningPath, JSON.stringify(jsonData, null, 2));
+
+    res.json({ message: "Modules added to learning page!" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to add modules" });
+  }
 };
 
 /* =========================

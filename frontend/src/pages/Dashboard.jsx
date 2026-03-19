@@ -37,46 +37,90 @@ const Dashboard = () => {
   const { user, fetchUserProfile } = useAuth();
   const navigate = useNavigate();
 
+  // useEffect(() => {
+  //   const fetchAllData = async () => {
+  //     setLoading(true);
+  //     try {
+  //       const token = localStorage.getItem("token");
+  //       const headers = {
+  //         Authorization: `Bearer ${token}`,
+  //         "Content-Type": "application/json",
+  //       };
+
+  //       const [coursesRes, statsRes] = await Promise.all([
+  //         fetch("/api/courses", { headers }),
+  //         fetch("/api/courses/stats/cards", { headers }),
+  //       ]);
+
+  //       if (!coursesRes.ok) {
+  //         throw new Error(`Courses API failed: ${coursesRes.status}`);
+  //       }
+  //       if (!statsRes.ok) {
+  //         throw new Error(`Stats API failed: ${statsRes.status}`);
+  //       }
+
+  //       const allCourses = await coursesRes.json();
+  //       const { statsCards } = await statsRes.json();
+
+  //       console.log("Fetched allCourses:", allCourses);
+  //       console.log("Fetched statsCards:", statsCards);
+
+  //       setCoursesData({ allCourses, statsCards });
+  //       await fetchUserProfile(); // Ensure user data is up to date
+  //     } catch (error) {
+  //       console.error("Error fetching dashboard data:", error);
+  //       console.log("Error details:", error);
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
+
+  //   fetchAllData();
+  // }, []); // Remove fetchUserProfile dependency to prevent re-fetching on every render
+
   useEffect(() => {
-    const fetchAllData = async () => {
-      setLoading(true);
-      try {
-        const token = localStorage.getItem("token");
-        const headers = {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        };
+  const fetchAllData = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      const headers = {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      };
 
-        const [coursesRes, statsRes] = await Promise.all([
-          fetch("/api/courses", { headers }),
-          fetch("/api/courses/stats/cards", { headers }),
-        ]);
+      const [coursesRes, statsRes] = await Promise.all([
+        fetch("/api/courses", { headers }),
+        fetch("/api/courses/stats/cards", { headers }),
+      ]);
 
-        if (!coursesRes.ok) {
-          throw new Error(`Courses API failed: ${coursesRes.status}`);
-        }
-        if (!statsRes.ok) {
-          throw new Error(`Stats API failed: ${statsRes.status}`);
-        }
+      const allCourses = await coursesRes.json();
+      const { statsCards } = await statsRes.json();
 
-        const allCourses = await coursesRes.json();
-        const { statsCards } = await statsRes.json();
+      setCoursesData({ allCourses, statsCards });
+      await fetchUserProfile();
+    } catch (error) {
+      console.error("Error fetching dashboard data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        console.log("Fetched allCourses:", allCourses);
-        console.log("Fetched statsCards:", statsCards);
+  // ✅ Initial load
+  fetchAllData();
 
-        setCoursesData({ allCourses, statsCards });
-        await fetchUserProfile(); // Ensure user data is up to date
-      } catch (error) {
-        console.error("Error fetching dashboard data:", error);
-        console.log("Error details:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
+  // ✅ LISTEN for Admin changes
+  const handleCoursesUpdate = () => {
+    console.log("Courses updated → refreshing dashboard...");
     fetchAllData();
-  }, []); // Remove fetchUserProfile dependency to prevent re-fetching on every render
+  };
+
+  window.addEventListener("coursesUpdated", handleCoursesUpdate);
+
+  // ✅ Cleanup
+  return () => {
+    window.removeEventListener("coursesUpdated", handleCoursesUpdate);
+  };
+}, []);
 
   // Calculate dynamic stats based on user's actual progress
   const calculateStats = () => {
