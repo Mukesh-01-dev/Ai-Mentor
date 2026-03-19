@@ -3,29 +3,59 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const connectionString = process.env.NEON_DATABASE_URL;
+let sequelize;
 
-if (!connectionString) {
-  throw new Error("NEON_DATABASE_URL environment variable is not set");
-}
+// Check if using Neon (cloud) or local PostgreSQL
+const neonUrl = process.env.NEON_DATABASE_URL;
+const localDbName = process.env.DB_NAME;
+const localDbUser = process.env.DB_USER;
+const localDbPassword = process.env.DB_PASSWORD;
+const localDbHost = process.env.DB_HOST || "localhost";
+const localDbPort = process.env.DB_PORT || 5432;
 
-const sequelize = new Sequelize(connectionString, {
-  dialect: "postgres",
-  logging: false,
-  // Pool settings help avoid exhausting Neon connections
-  pool: {
-    max: parseInt(process.env.DB_POOL_MAX, 10) || 5,
-    min: parseInt(process.env.DB_POOL_MIN, 10) || 0,
-    acquire: parseInt(process.env.DB_POOL_ACQUIRE, 10) || 30000,
-    idle: parseInt(process.env.DB_POOL_IDLE, 10) || 10000,
-  },
-  dialectOptions: {
-    ssl: {
-      require: true,
-      rejectUnauthorized: true,
+if (neonUrl) {
+  // Use Neon (cloud Postgres)
+  console.log("📦 Connecting to Neon database (cloud)...");
+  sequelize = new Sequelize(neonUrl, {
+    dialect: "postgres",
+    logging: false,
+    pool: {
+      max: parseInt(process.env.DB_POOL_MAX, 10) || 5,
+      min: parseInt(process.env.DB_POOL_MIN, 10) || 0,
+      acquire: parseInt(process.env.DB_POOL_ACQUIRE, 10) || 30000,
+      idle: parseInt(process.env.DB_POOL_IDLE, 10) || 10000,
     },
-  },
-});
+    dialectOptions: {
+      ssl: {
+        require: true,
+        rejectUnauthorized: true,
+      },
+    },
+  });
+} else if (localDbName && localDbUser) {
+  // Use local PostgreSQL
+  console.log(`🗄️  Connecting to local PostgreSQL: ${localDbName}@${localDbHost}:${localDbPort}...`);
+  sequelize = new Sequelize(localDbName, localDbUser, localDbPassword, {
+    host: localDbHost,
+    port: localDbPort,
+    dialect: "postgres",
+    logging: false,
+    pool: {
+      max: 10,
+      min: 0,
+      acquire: 30000,
+      idle: 10000,
+    },
+  });
+} else {
+  throw new Error(
+    "❌ No database configuration found!\n\n" +
+    "Please set one of:\n" +
+    "1. NEON_DATABASE_URL (for cloud Postgres)\n" +
+    "2. DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT (for local Postgres)\n\n" +
+    "See .env.example for details."
+  );
+}
 
 async function connectDB() {
   try {

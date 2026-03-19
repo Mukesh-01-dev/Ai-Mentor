@@ -16,6 +16,16 @@ import communityRoutes from "./routes/communityRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import "./models/CommunityPost.js";
 import "./models/Notification.js";
+import Course from "./models/Course.js";
+import Module from "./models/Module.js";
+import Lesson from "./models/Lesson.js";
+
+// Set up model associations
+Course.hasMany(Module, { foreignKey: "courseId", onDelete: "CASCADE" });
+Module.belongsTo(Course, { foreignKey: "courseId" });
+
+Module.hasMany(Lesson, { foreignKey: "moduleId", onDelete: "CASCADE" });
+Lesson.belongsTo(Module, { foreignKey: "moduleId" });
 
 dotenv.config();
 
@@ -70,7 +80,10 @@ const startServer = async () => {
   try {
     await connectDB();
     // Sync database models
-    await sequelize.sync({ alter: true });
+    // Use force: true to drop and recreate tables (FOR FIRST TIME SETUP ONLY)
+    // Use alter: true for gradual schema updates (safer for production)
+    const forceSync = process.env.FORCE_SYNC === 'true';
+    await sequelize.sync({ force: forceSync || false, alter: !forceSync });
     console.log("✅ Database models synced successfully");
 
     app.listen(PORT, () => {
