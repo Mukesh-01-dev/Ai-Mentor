@@ -10,6 +10,7 @@ An AI-powered learning management system with course management, analytics, comm
 - 🔐 User Authentication (JWT + Google OAuth)
 - 🤖 AI-Generated Lesson Videos (Gemini + TTS + FFmpeg)
 
+Hi
 ## Tech Stack
 
 - **Frontend**: React 19 + Vite + Tailwind CSS
