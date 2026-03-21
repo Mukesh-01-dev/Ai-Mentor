@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Header from "../components/Header";
 import Sidebar from "../components/Sidebar";
-import { Star, Bookmark, X } from "lucide-react";
+import { Star } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useSidebar } from "../context/SidebarContext";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -10,75 +10,24 @@ import { useTranslation } from "react-i18next";
 
 const CoursesPage = () => {
   const { t } = useTranslation();
-  const { sidebarOpen, setSidebarOpen, sidebarCollapsed, setSidebarCollapsed } = useSidebar();
+  const { sidebarCollapsed } = useSidebar();
   const [activeTab, setActiveTab] = useState("my-courses");
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  /* ================= STATE ================= */
   const [exploreCourses, setExploreCourses] = useState([]);
   const [myCourses, setMyCourses] = useState([]);
-  const [loading, setLoading] = useState(true);
 
-  const [showEnrollPopup, setShowEnrollPopup] = useState(false);
-  const [selectedCourse, setSelectedCourse] = useState(null);
+  const location = useLocation();
 
-  /* ================= FETCH COURSES ================= */
+  // Filter courses (not already enrolled)
+  const filteredCourses = exploreCourses.filter(
+    (course) => !myCourses.some((c) => c.id === course.id)
+  );
+
   useEffect(() => {
     const fetchCourses = async () => {
-      try {
-        const token = localStorage.getItem("token");
-
-        const [exploreRes, myRes] = await Promise.all([
-          fetch(`${API_BASE_URL}/api/courses`),
-          fetch(`${API_BASE_URL}/api/courses/my-courses`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }),
-        ]);
-
-        const exploreData = await exploreRes.json();
-        const myData = myRes.ok ? await myRes.json() : [];
-
-        setExploreCourses(exploreData);
-        setMyCourses(myData);
-      } catch (error) {
-        console.error("Error fetching courses:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCourses();
-  }, []);
-
-  // If navigated here with state (e.g. from Dashboard), apply requested tab
-  const location = useLocation();
-  useEffect(() => {
-    if (location?.state?.activeTab === "explore") {
-      setActiveTab("explore");
-    }
-  }, [location]);
-
-  /* ================= ENROLL ================= */
-  const handleEnroll = async () => {
-    if (!selectedCourse) return;
-
-    try {
       const token = localStorage.getItem("token");
-
-      await fetch(`${API_BASE_URL}/api/users/purchase-course`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          courseId: selectedCourse.id,
-          courseTitle: selectedCourse.title,
-        }),
-      });
 
       const [exploreRes, myRes] = await Promise.all([
         fetch(`${API_BASE_URL}/api/courses`),
@@ -88,33 +37,24 @@ const CoursesPage = () => {
       ]);
 
       setExploreCourses(await exploreRes.json());
-      setMyCourses(await myRes.json());
+      setMyCourses(myRes.ok ? await myRes.json() : []);
+    };
 
-      setShowEnrollPopup(false);
-      setSelectedCourse(null);
-      setActiveTab("my-courses");
-    } catch (error) {
-      console.error("Enroll error:", error);
+    fetchCourses();
+  }, []);
+
+  useEffect(() => {
+    if (location?.state?.activeTab === "explore") {
+      setActiveTab("explore");
     }
-  };
+  }, [location]);
 
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-canvas-alt flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-main mb-4">Please Login</h1>
-          <p className="text-muted">
-            You need to be logged in to access the courses page.
-          </p>
-        </div>
-      </div>
-    );
-  }
+  if (!user)
+    return <h1 className="text-center mt-20 text-main">Please Login</h1>;
 
   return (
     <div className="min-h-screen bg-canvas-alt flex flex-col">
       <Header />
-
       <Sidebar activePage="courses" />
 
       <div
@@ -123,187 +63,160 @@ const CoursesPage = () => {
         }`}
       >
         <main className="mt-16 p-8">
-          <div className="max-w-7xl mx-auto space-y-10">
-            {/* HEADER */}
-            <div>
-              <h1 className="text-3xl font-bold text-main">
-                {t("courses.title")}
-              </h1>
-              <p className="text-muted mt-1">
-                {t("courses.subtitle")}
-              </p>
-            </div>
 
-            {/* Tabs */}
-            <div className="bg-card rounded-xl p-2 inline-flex border border-border shadow-sm">
-              <button
-                onClick={() => setActiveTab("my-courses")}
-                className={`px-6 py-2 rounded-lg font-semibold ${
-                  activeTab === "my-courses"
-                    ? "bg-[#2DD4BF] text-white shadow"
-                    : "text-muted"
-                }`}
-              >
-                {t("courses.my_courses")}
-              </button>
-              <button
-                onClick={() => setActiveTab("explore")}
-                className={`px-6 py-2 rounded-lg font-semibold ${
-                  activeTab === "explore"
-                    ? "bg-[#2DD4BF] text-white shadow"
-                    : "text-muted"
-                }`}
-              >
-                {t("courses.explore")}
-              </button>
-            </div>
+          {/* 💚 GREEN HEADER */}
+          <div className="bg-gradient-to-r from-[#2DD4BF] to-[#22c55e] rounded-2xl p-6 shadow-lg mb-10 text-white">
+            <h1 className="text-3xl font-bold">
+              {t("courses.title")}
+            </h1>
+            <p className="mt-1 opacity-90">
+              {t("courses.subtitle")}
+            </p>
+          </div>
 
-            {/* ================= MY COURSES ================= */}
-            {activeTab === "my-courses" && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                {myCourses.length === 0 && (
-                  <p className="text-slate-500">
-                    {t("courses.not_enrolled")}
+          {/* Tabs */}
+          <div className="flex gap-4 mb-8">
+            <button
+              onClick={() => setActiveTab("my-courses")}
+              className={`px-6 py-2 rounded-full font-semibold transition ${
+                activeTab === "my-courses"
+                  ? "bg-[#2DD4BF] text-white shadow"
+                  : "bg-card text-muted border border-border hover:shadow-sm"
+              }`}
+            >
+              {t("courses.my_courses")}
+            </button>
+
+            <button
+              onClick={() => setActiveTab("explore")}
+              className={`px-6 py-2 rounded-full font-semibold transition ${
+                activeTab === "explore"
+                  ? "bg-[#2DD4BF] text-white shadow"
+                  : "bg-card text-muted border border-border hover:shadow-sm"
+              }`}
+            >
+              {t("courses.explore")}
+            </button>
+          </div>
+
+          {/* ================= MY COURSES ================= */}
+          {activeTab === "my-courses" && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+
+              {/* EMPTY */}
+              {myCourses.length === 0 && (
+                <div className="col-span-full bg-card border border-border rounded-2xl p-10 text-center shadow-sm">
+                  <div className="text-4xl mb-3">📘</div>
+                  <h2 className="text-xl font-semibold text-main">
+                    No enrolled courses
+                  </h2>
+                  <p className="text-muted mt-2">
+                    Start learning by exploring courses!
                   </p>
-                )}
+                </div>
+              )}
 
-                {myCourses.map((course) => {
-                  const purchasedEntry = user?.purchasedCourses?.find(
-                    (c) => Number(c.courseId) === Number(course.id)
-                  );
-                  const progress = purchasedEntry?.progress;
-                  const hasStarted =
-                    (progress?.completedLessons?.length > 0) ||
-                    (progress?.currentLesson != null);
+              {/* CARDS */}
+              {myCourses.map((course) => (
+                <div
+                  key={course.id}
+                  className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm hover:shadow-lg hover:-translate-y-1 transition duration-300"
+                >
+                  <img
+                    src={course.image}
+                    className="h-44 w-full object-cover"
+                    alt=""
+                  />
 
-                  return (
-                    <div
-                      key={course.id}
-                      className="bg-card rounded-3xl border border-border overflow-hidden shadow-sm"
+                  <div className="p-5">
+                    <h3 className="font-semibold text-main">
+                      {course.title}
+                    </h3>
+
+                    <p className="text-sm text-muted mt-1">
+                      {course.lessons}
+                    </p>
+
+                    <button
+                      onClick={() => navigate(`/learning/${course.id}`)}
+                      className="mt-4 w-full py-2 rounded-lg bg-[#2DD4BF] text-white font-semibold hover:opacity-90"
                     >
+                      Start Learning
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* ================= EXPLORE ================= */}
+          {activeTab === "explore" && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+
+              {/* EMPTY */}
+              {filteredCourses.length === 0 ? (
+                <div className="col-span-full bg-card border border-border p-10 rounded-2xl text-center shadow-sm">
+                  <div className="text-5xl mb-4">📚</div>
+                  <h2 className="text-xl font-semibold text-main">
+                    No Courses Available
+                  </h2>
+                  <p className="text-muted mt-2">
+                    Please check back later.
+                  </p>
+                </div>
+              ) : (
+
+                /* CARDS */
+                filteredCourses.map((course) => (
+                  <div
+                    key={course.id}
+                    className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm hover:shadow-lg hover:-translate-y-1 transition duration-300"
+                  >
+                    <div className="relative">
                       <img
                         src={course.image}
-                        alt={course.title}
-                        className="h-40 w-full object-cover"
+                        className="h-44 w-full object-cover"
+                        alt=""
                       />
 
-                      <div className="p-6 space-y-4">
-                        <h3 className="text-lg font-semibold text-main">
-                          {course.title}
-                        </h3>
+                      <div className="absolute top-3 right-3 bg-card px-2 py-1 rounded-full text-xs flex items-center gap-1 shadow">
+                        <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
+                        {course.rating}
+                      </div>
+                    </div>
 
-                        <p className="text-sm text-slate-400">{course.lessons}</p>
+                    <div className="p-5">
+                      <h3 className="font-semibold text-main">
+                        {course.title}
+                      </h3>
+
+                      <p className="text-sm text-muted mt-1">
+                        {course.lessons} • {course.level}
+                      </p>
+
+                      <div className="flex justify-between items-center mt-4">
+                        <span className="font-bold text-green-600">
+                          Free
+                        </span>
 
                         <button
-                          onClick={() => navigate(`/learning/${course.id}`)}
-                          className="w-full py-3 rounded-xl bg-[#2DD4BF] text-white font-semibold"
+                          onClick={() =>
+                            navigate(`/course-preview/${course.id}`)
+                          }
+                          className="px-4 py-2 bg-[#2DD4BF] text-white rounded-lg text-sm hover:opacity-90"
                         >
-                          {hasStarted ? t("common.continue_learning") : t("common.start_learning")}
+                          Enroll
                         </button>
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-            )}
+                  </div>
+                ))
+              )}
+            </div>
+          )}
 
-            {/* ================= EXPLORE COURSES ================= */}
-            {activeTab === "explore" && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                {exploreCourses
-                  .filter(
-                    (course) => !myCourses.some((c) => c.id === course.id)
-                  )
-                  .map((course) => (
-                    <div
-                      key={course.id}
-                      className="bg-card rounded-3xl border border-border overflow-hidden shadow-sm"
-                    >
-                      <div className="relative h-40">
-                        <img
-                          src={course.image}
-                          className="w-full h-full object-cover"
-                          alt={course.title}
-                        />
-                        <div className="absolute bottom-3 right-3 bg-white px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-1 shadow">
-                          <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
-                          {course.rating}
-                        </div>
-                      </div>
-
-                      <div className="p-4 space-y-3">
-                        <h3 className="text-sm font-semibold">
-                          {course.title}
-                        </h3>
-
-                        <p className="text-xs text-muted">
-                          {course.lessons} lessons • {course.level}
-                        </p>
-
-                        <div className="flex justify-between items-center">
-                          <div>
-                            <span className="line-through text-sm text-slate-400 mr-2">
-                              {course.price}
-                            </span>
-                            <span className="font-bold text-green-600">₹0</span>
-                          </div>
-
-                          {/* Changed: redirect to course preview instead of opening enroll popup */}
-                          <button
-                            onClick={() => navigate(`/course-preview/${course.id}`)}
-                            className="px-4 py-2 rounded-lg bg-[#2DD4BF] text-white text-xs font-semibold"
-                          >
-                            {t("common.enroll")}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-              </div>
-            )}
-          </div>
         </main>
       </div>
-
-      {/* ================= ENROLL POPUP ================= */}
-      {showEnrollPopup && selectedCourse && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white w-full max-w-md rounded-2xl p-6 relative">
-            <button
-              onClick={() => setShowEnrollPopup(false)}
-              className="absolute top-4 right-4"
-            >
-              <X />
-            </button>
-
-            <img
-              src={selectedCourse.image}
-              alt={selectedCourse.title}
-              className="w-full h-40 object-cover rounded-xl mb-4"
-            />
-
-            <h2 className="text-xl font-bold">{selectedCourse.title}</h2>
-
-            <p className="text-sm text-slate-500 mt-1">
-              {selectedCourse.category} • {selectedCourse.level}
-            </p>
-
-            <div className="flex justify-between items-center mt-4">
-              <span className="line-through text-slate-400">
-                {selectedCourse.price}
-              </span>
-              <span className="text-lg font-bold text-green-600">₹0</span>
-            </div>
-
-            <button
-              onClick={handleEnroll}
-              className="w-full mt-6 py-3 rounded-xl bg-[#2DD4BF] text-white font-semibold"
-            >
-              {t("courses.confirm_enrollment")}
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
