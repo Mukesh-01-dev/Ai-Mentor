@@ -77,16 +77,19 @@ export default function CoursePreview() {
   const trustCandidatesRef = useRef([]);
   const trustIndexRef = useRef(0);
 
-  // fetch meta & learning
+  // fetch meta & learning (use API_BASE_URL)
   useEffect(() => {
     let cancelled = false;
     const fetchAll = async () => {
       setLoading(true);
       setError(null);
       try {
+        const metaUrl = `${API_BASE_URL}/api/courses/${courseId}`;
+        const learnUrl = `${API_BASE_URL}/api/courses/${courseId}/learning`;
+
         const [metaRes, learnRes] = await Promise.all([
-          fetch(`/api/courses/${courseId}`),
-          fetch(`/api/courses/${courseId}/learning`),
+          fetch(metaUrl),
+          fetch(learnUrl),
         ]);
 
         if (!metaRes.ok) throw new Error("Failed to fetch course meta");
@@ -232,7 +235,8 @@ export default function CoursePreview() {
 
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("/api/users/purchase-course", {
+      const purchaseUrl = `${API_BASE_URL}/api/users/purchase-course`;
+      const response = await fetch(purchaseUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -272,10 +276,10 @@ export default function CoursePreview() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F6F8FA] flex items-center justify-center">
+      <div className="min-h-screen bg-canvas flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto" />
-          <p className="mt-4 text-gray-600">Loading course...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto" />
+          <p className="mt-4 text-muted">Loading course...</p>
         </div>
       </div>
     );
@@ -283,10 +287,10 @@ export default function CoursePreview() {
 
   if (error || (!courseMeta && !learningData)) {
     return (
-      <div className="min-h-screen bg-[#F6F8FA] flex items-center justify-center">
+      <div className="min-h-screen bg-canvas flex items-center justify-center">
         <div className="text-center p-6">
           <h2 className="text-2xl font-semibold text-red-600 mb-2">{error || "Course not found"}</h2>
-          <p className="text-gray-600">Please check the course ID or try again later.</p>
+          <p className="text-muted">Please check the course ID or try again later.</p>
         </div>
       </div>
     );
@@ -322,14 +326,14 @@ export default function CoursePreview() {
   const isPurchased = Array.isArray(user?.purchasedCourses) && user.purchasedCourses.some((c) => Number(c.courseId) === Number(courseId));
 
   return (
-    <div className="min-h-screen bg-[#F6F8FA]">
+    <div className="min-h-screen bg-canvas text-main">
       <Header />
 
       <main className="max-w-[1280px] mx-auto px-4 py-8 lg:py-16 mt-6">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* LEFT: details */}
           <div className="lg:col-span-8">
-            <div className="bg-white rounded-xl p-6 lg:p-8 shadow-[0_10px_30px_rgba(15,23,42,0.03)]">
+            <div className="bg-card rounded-xl p-6 lg:p-8 shadow-[0_10px_30px_rgba(15,23,42,0.03)]">
               <div className="flex flex-col gap-4">
                 <div>
                   <div className="flex flex-wrap gap-2 mb-3">
@@ -338,8 +342,8 @@ export default function CoursePreview() {
                     <span className="text-sm font-medium bg-[#3B82F6] text-white px-3 py-1 rounded-full">AI-Generated Content</span>
                   </div>
 
-                  <h1 className="text-2xl lg:text-4xl font-bold text-[#0D0D0D] leading-tight">{title}</h1>
-                  <p className="text-gray-600 mt-2">{subtitle}</p>
+                  <h1 className="text-2xl lg:text-4xl font-bold text-main leading-tight">{title}</h1>
+                  <p className="text-muted mt-2">{subtitle}</p>
 
                   <div className="flex items-center gap-3 mt-4">
                     {/* instructor image: brand-first + backend fallback; maintain proportions */}
@@ -349,35 +353,35 @@ export default function CoursePreview() {
                       className="w-12 h-12 rounded-full object-contain"
                       onError={handleInstructorError}
                     />
-                    <div className="text-sm text-[#6B7280]">
-                      Created by <span className="text-[#FF6C34] font-medium">{instructorName}</span>
-                      <div className="text-xs text-gray-400">Last updated {safeGet(courseMeta, "updatedAt", "—") ? new Date(safeGet(courseMeta, "updatedAt", Date.now())).toLocaleDateString() : "—"}</div>
+                    <div className="text-sm text-muted">
+                      Created by <span className="text-primary font-medium">{instructorName}</span>
+                      <div className="text-xs text-muted">Last updated {safeGet(courseMeta, "updatedAt", "—") ? new Date(safeGet(courseMeta, "updatedAt", Date.now())).toLocaleDateString() : "—"}</div>
                     </div>
                   </div>
                 </div>
 
                 {/* stats + what you'll learn */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-                  <div className="bg-[#FBFBFF] p-4 rounded-lg text-center shadow-sm">
+                  <div className="bg-card p-4 rounded-lg text-center shadow-sm">
                     <div className="text-yellow-400">★★★★★</div>
                     <div className="text-xl font-semibold">{rating}</div>
-                    <div className="text-xs text-gray-400">12,847 reviews</div>
+                    <div className="text-xs text-muted">12,847 reviews</div>
                   </div>
 
-                  <div className="bg-[#FBFBFF] p-4 rounded-lg text-center shadow-sm">
+                  <div className="bg-card p-4 rounded-lg text-center shadow-sm">
                     <div className="text-purple-400 font-semibold text-xl">{students}</div>
-                    <div className="text-xs text-gray-400">Students enrolled</div>
+                    <div className="text-xs text-muted">Students enrolled</div>
                   </div>
 
-                  <div className="bg-[#FBFBFF] p-4 rounded-lg text-center shadow-sm">
+                  <div className="bg-card p-4 rounded-lg text-center shadow-sm">
                     <div className="text-sky-400 font-semibold text-xl">{duration}</div>
-                    <div className="text-xs text-gray-400">Total content</div>
+                    <div className="text-xs text-muted">Total content</div>
                   </div>
                 </div>
 
-                <div className="bg-white rounded-xl p-6 border border-[#F3F4F6] mt-6 shadow-[0_8px_24px_rgba(15,23,42,0.03)]">
+                <div className="bg-card rounded-xl p-6 border border-border mt-6 shadow-[0_8px_24px_rgba(15,23,42,0.03)]">
                   <h3 className="text-lg font-semibold mb-4">What you'll learn</h3>
-                  <div className="grid sm:grid-cols-2 gap-3 text-sm text-[#374151]">
+                  <div className="grid sm:grid-cols-2 gap-3 text-sm text-muted">
                     {whatYouWillLearn.map((w, i) => (
                       <div key={i} className="flex items-start gap-3">
                         <svg className="w-5 h-5 mt-1 flex-shrink-0" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#10B981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
@@ -391,28 +395,28 @@ export default function CoursePreview() {
                 <div className="mt-6">
                   <div className="flex items-center justify-between mb-3">
                     <h3 className="text-lg font-semibold">Curriculum</h3>
-                    <button onClick={toggleAll} className="text-sm text-[#374151] bg-white border border-border px-3 py-1 rounded-lg hover:bg-gray-50">
+                    <button onClick={toggleAll} className="text-sm text-muted bg-card border border-border px-3 py-1 rounded-lg hover:bg-canvas-alt">
                       {allExpanded ? "Collapse all" : "Expand all"}
                     </button>
                   </div>
 
                   <div className="space-y-3">
                     {modules.length === 0 ? (
-                      <div className="text-sm text-gray-500">Curriculum details not available.</div>
+                      <div className="text-sm text-muted">Curriculum details not available.</div>
                     ) : modules.map((mod, idx) => {
                       const id = safeGet(mod, "id", `mod-${idx}`);
                       const mt = safeGet(mod, "title", `Module ${idx + 1}`);
                       const lessons = Array.isArray(safeGet(mod, "lessons", [])) ? safeGet(mod, "lessons", []) : [];
                       const isOpen = !!openModules[id];
                       return (
-                        <div key={id} className="bg-white rounded-md border border-[#F3F4F6] p-4">
+                        <div key={id} className="bg-card rounded-md border border-border p-4">
                           <button onClick={() => toggleModule(id)} className="w-full flex items-center justify-between text-left" aria-expanded={isOpen}>
                             <div>
-                              <div className="text-sm font-medium">{mt}</div>
-                              <div className="text-xs text-gray-400">{lessons.length} lessons</div>
+                              <div className="text-sm font-medium text-main">{mt}</div>
+                              <div className="text-xs text-muted">{lessons.length} lessons</div>
                             </div>
                             <div className="flex items-center gap-3">
-                              <div className="text-xs text-gray-500">{lessons.reduce((acc, l) => { const m = (safeGet(l, "duration", "") || "").match(/\d+/); return acc + (m ? Number(m[0]) : 0); }, 0) > 0 ? `${lessons.reduce((acc, l) => { const m = (safeGet(l, "duration", "") || "").match(/\d+/); return acc + (m ? Number(m[0]) : 0); }, 0)}m` : ""}</div>
+                              <div className="text-xs text-muted">{lessons.reduce((acc, l) => { const m = (safeGet(l, "duration", "") || "").match(/\d+/); return acc + (m ? Number(m[0]) : 0); }, 0) > 0 ? `${lessons.reduce((acc, l) => { const m = (safeGet(l, "duration", "") || "").match(/\d+/); return acc + (m ? Number(m[0]) : 0); }, 0)}m` : ""}</div>
                               {isOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
                             </div>
                           </button>
@@ -428,18 +432,18 @@ export default function CoursePreview() {
                                 return (
                                   <div key={lid} className="flex items-center justify-between p-2 rounded-md hover:bg-canvas-alt">
                                     <div className="flex items-center gap-3">
-                                      <div className="w-8 h-8 rounded-md bg-[#F8FAFC] flex items-center justify-center">
+                                      <div className="w-8 h-8 rounded-md bg-canvas-alt flex items-center justify-center">
                                         {ltype === "video" ? <Play className="w-4 h-4" /> : <svg className="w-4 h-4" viewBox="0 0 24 24"><path d="M3 6h18v2H3zM3 11h18v2H3zM3 16h18v2H3z" fill="#6B7280" /></svg>}
                                       </div>
                                       <div>
-                                        <div className="text-sm font-medium">{ltitle}</div>
-                                        <div className="text-xs text-gray-400">{ltype}{ly ? " • video" : ""}</div>
+                                        <div className="text-sm font-medium text-main">{ltitle}</div>
+                                        <div className="text-xs text-muted">{ltype}{ly ? " • video" : ""}</div>
                                       </div>
                                     </div>
 
                                     <div className="flex items-center gap-3">
-                                      <div className="text-xs text-gray-500">{lduration}</div>
-                                      {ly && <a href={ly} target="_blank" rel="noreferrer" className="text-xs text-indigo-600 font-medium flex items-center gap-1"><Play className="w-3 h-3" /> Play</a>}
+                                      <div className="text-xs text-muted">{lduration}</div>
+                                      {ly && <a href={ly} target="_blank" rel="noreferrer" className="text-xs text-primary font-medium flex items-center gap-1"><Play className="w-3 h-3" /> Play</a>}
                                     </div>
                                   </div>
                                 );
@@ -455,9 +459,9 @@ export default function CoursePreview() {
             </div>
 
             {/* long description */}
-            <div className="mt-6 bg-white rounded-xl p-6 shadow-[0_8px_24px_rgba(15,23,42,0.03)]">
-              <h3 className="text-lg font-semibold mb-3">Course description</h3>
-              <div className="text-gray-600 text-sm leading-relaxed">
+            <div className="mt-6 bg-card rounded-xl p-6 shadow-[0_8px_24px_rgba(15,23,42,0.03)]">
+              <h3 className="text-lg font-semibold mb-3 text-main">Course description</h3>
+              <div className="text-muted text-sm leading-relaxed">
                 {safeGet(learningData, "course.subtitle", safeGet(courseMeta, "longDescription", safeGet(courseMeta, "description", "Full course description pulled from backend.")))}
               </div>
             </div>
@@ -465,15 +469,15 @@ export default function CoursePreview() {
 
           {/* RIGHT: image (top) then Buy Now (below) */}
           <div className="lg:col-span-4 flex flex-col items-stretch">
-            <div className="bg-white rounded-xl overflow-hidden shadow-md mb-6">
+            <div className="bg-card rounded-xl overflow-hidden shadow-md mb-6">
               <img src={heroSrc} alt={title} className="w-full h-56 object-cover" onError={handleHeroError} />
             </div>
 
-            <div className="bg-white rounded-xl p-6 shadow-[0_10px_30px_rgba(15,23,42,0.06)] mb-6">
+            <div className="bg-card rounded-xl p-6 shadow-[0_10px_30px_rgba(15,23,42,0.06)] mb-6 border border-border">
               <div className="text-center mb-4">
-                <div className="text-sm text-gray-500 mb-1">Lifetime access</div>
-                <div className="text-3xl font-extrabold text-[#0D0D0D] mb-2">{priceDisplay}</div>
-                <div className="text-sm text-gray-400 line-through">₹{priceOriginal}</div>
+                <div className="text-sm text-muted mb-1">Lifetime access</div>
+                <div className="text-3xl font-extrabold text-main mb-2">{priceDisplay}</div>
+                <div className="text-sm text-muted line-through">₹{priceOriginal}</div>
               </div>
 
               {safeGet(courseMeta, "countdown", null) ? (
@@ -487,12 +491,12 @@ export default function CoursePreview() {
                   Go to Course
                 </button>
               ) : (
-                <button onClick={openEnrollModal} disabled={isPurchasing} className="w-full bg-gradient-to-r from-[#00BEA5] to-[#54D3C3] text-white font-semibold py-3 rounded-lg mb-3 hover:opacity-95 disabled:opacity-50">
+                <button onClick={openEnrollModal} disabled={isPurchasing} className="w-full bg-primary text-white font-semibold py-3 rounded-lg mb-3 hover:opacity-95 disabled:opacity-50">
                   {isPurchasing ? "Processing..." : "Buy Now"}
                 </button>
               )}
 
-              <div className="mt-4 space-y-3 text-sm text-gray-600">
+              <div className="mt-4 space-y-3 text-sm text-muted">
                 {features.map((f, i) => (
                   <div key={i} className="flex items-start gap-3">
                     <svg className="w-4 h-4 mt-1" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#10B981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
@@ -503,7 +507,7 @@ export default function CoursePreview() {
             </div>
 
             {/* trust card (uses US brand image first) */}
-            <div className="bg-white rounded-xl p-4 shadow-[0_8px_24px_rgba(15,23,42,0.03)] text-sm text-gray-600">
+            <div className="bg-card rounded-xl p-4 shadow-[0_8px_24px_rgba(15,23,42,0.03)] text-sm text-muted border border-border">
               <div className="flex items-center gap-3">
                 <img
                   src={trustSrc}
@@ -512,8 +516,8 @@ export default function CoursePreview() {
                   onError={handleTrustError}
                 />
                 <div>
-                  <div className="font-medium text-gray-800">30-day refund</div>
-                  <div className="text-xs text-gray-400">No questions asked</div>
+                  <div className="font-medium text-main">30-day refund</div>
+                  <div className="text-xs text-muted">No questions asked</div>
                 </div>
               </div>
             </div>
@@ -524,25 +528,25 @@ export default function CoursePreview() {
       {/* ENROLL CONFIRM POPUP (same style as CoursesPage) */}
       {showEnrollPopup && selectedCourse && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white w-full max-w-md rounded-2xl p-6 relative">
+          <div className="bg-card w-full max-w-md rounded-2xl p-6 relative border border-border">
             <button onClick={() => setShowEnrollPopup(false)} className="absolute top-4 right-4">
               <X />
             </button>
 
             <img src={selectedCourse.image} alt={selectedCourse.title} className="w-full h-40 object-cover rounded-xl mb-4" />
 
-            <h2 className="text-xl font-bold">{selectedCourse.title}</h2>
+            <h2 className="text-xl font-bold text-main">{selectedCourse.title}</h2>
 
-            <p className="text-sm text-slate-500 mt-1">
+            <p className="text-sm text-muted mt-1">
               {selectedCourse.category} • {selectedCourse.level}
             </p>
 
             <div className="flex justify-between items-center mt-4">
-              <span className="line-through text-slate-400">{selectedCourse.price}</span>
+              <span className="line-through text-muted">{selectedCourse.price}</span>
               <span className="text-lg font-bold text-green-600">₹0</span>
             </div>
 
-            <button onClick={confirmEnroll} className="w-full mt-6 py-3 rounded-xl bg-[#2DD4BF] text-white font-semibold">
+            <button onClick={confirmEnroll} className="w-full mt-6 py-3 rounded-xl bg-primary text-white font-semibold">
               {isPurchasing ? "Processing..." : "Confirm Enrollment"}
             </button>
           </div>

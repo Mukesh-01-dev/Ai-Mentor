@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Sidebar from "../components/Sidebar";
 import { useSidebar } from "../context/SidebarContext";
 import toast from "react-hot-toast";
-import { useEffect } from "react";
 import Header from "../components/Header";
+import API_BASE_URL from "../lib/api";
 
 const AdminPage = () => {
   const { sidebarOpen, setSidebarOpen, sidebarCollapsed, setSidebarCollapsed } = useSidebar();
@@ -31,7 +31,7 @@ const AdminPage = () => {
 
   const fetchCourses = async () => {
     try {
-      const response = await fetch('/api/courses');
+      const response = await fetch(`${API_BASE_URL}/api/courses`);
       const data = await response.json();
       setCourses(data);
     } catch (error) {
@@ -52,7 +52,7 @@ const AdminPage = () => {
     e.preventDefault();
     const token = localStorage.getItem('token');
     try {
-      const response = await fetch('/api/courses', {
+      const response = await fetch(`${API_BASE_URL}/api/courses`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -77,7 +77,7 @@ const AdminPage = () => {
 
   const handleManageCourse = async (courseId) => {
     try {
-      const response = await fetch(`/api/courses/${courseId}`);
+      const response = await fetch(`${API_BASE_URL}/api/courses/${courseId}`);
       if (response.ok) {
         const fullCourse = await response.json();
         setSelectedCourse(fullCourse);
@@ -119,7 +119,7 @@ const AdminPage = () => {
     }
     const token = localStorage.getItem('token');
     try {
-      const response = await fetch(`/api/courses/${selectedCourse.id}/lessons/${selectedLesson}/video`, {
+      const response = await fetch(`${API_BASE_URL}/api/courses/${selectedCourse.id}/lessons/${selectedLesson}/video`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -153,7 +153,7 @@ const AdminPage = () => {
   const handleAddSubtopics = async () => {
     const token = localStorage.getItem('token');
     try {
-      const response = await fetch(`/api/courses/${selectedCourse.id}/subtopics`, {
+      const response = await fetch(`${API_BASE_URL}/api/courses/${selectedCourse.id}/subtopics`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -190,7 +190,7 @@ const AdminPage = () => {
     }
     const token = localStorage.getItem('token');
     try {
-      const response = await fetch(`/api/courses/${selectedCourse.id}/modules/${selectedModule}/lessons`, {
+      const response = await fetch(`${API_BASE_URL}/api/courses/${selectedCourse.id}/modules/${selectedModule}/lessons`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -313,7 +313,7 @@ const AdminPage = () => {
                         <button onClick={async () => {
                           const token = localStorage.getItem('token');
                           try {
-                            const response = await fetch(`/api/courses/${selectedCourse.id}/modules`, {
+                            const response = await fetch(`${API_BASE_URL}/api/courses/${selectedCourse.id}/modules`, {
                               method: 'POST',
                               headers: {
                                 'Content-Type': 'application/json',

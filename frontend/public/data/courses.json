@@ -126,6 +126,27 @@
       "subtopics": [],
       "createdAt": "2026-01-27T00:00:00.000Z",
       "updatedAt": "2026-01-27T00:00:00.000Z"
+    },
+    {
+      "id": 4,
+      "title": "PostgreSQL",
+      "category": "Databases",
+      "categoryColor": "bg-blue-100 text-blue-600",
+      "lessons": "40 lessons",
+      "lessonsCount": 40,
+      "level": "Intermediate",
+      "price": "₹999",
+      "priceValue": 999,
+      "currency": "INR",
+      "rating": 4.8,
+      "students": "800 students",
+      "studentsCount": 800,
+      "image": "AI_Tutor_New_UI/Dashboard/full_stack_web_dev.png",
+      "isBookmarked": false,
+      "modules": [],
+      "subtopics": [],
+      "createdAt": "2026-03-14T00:00:00.000Z",
+      "updatedAt": "2026-03-14T00:00:00.000Z"
     }
   ]
 }

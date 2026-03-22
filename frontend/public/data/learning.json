@@ -535,5 +535,467 @@
         ]
       }
     }
+  },
+  "4": {
+    "modules": [
+      {
+        "id": "module-1",
+        "title": "Module 1: Introduction to PostgreSQL",
+        "lessons": [
+          {
+            "id": "what-is-postgresql",
+            "title": "What is PostgreSQL?",
+            "duration": "12 min",
+            "completed": false,
+            "playing": true,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=qw--VYLpxG4"
+          },
+          {
+            "id": "installing-postgresql",
+            "title": "Installing PostgreSQL",
+            "duration": "10 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=xaWlS9HtWYw"
+          },
+          {
+            "id": "postgresql-architecture",
+            "title": "PostgreSQL Architecture",
+            "duration": "14 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=2jshzBvNW9o"
+          },
+          {
+            "id": "setting-up-environment",
+            "title": "Setting Up Your Environment",
+            "duration": "9 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=T8R1_nOGTex"
+          }
+        ]
+      },
+      {
+        "id": "module-2",
+        "title": "Module 2: Basic SQL Operations",
+        "lessons": [
+          {
+            "id": "creating-databases",
+            "title": "Creating Databases",
+            "duration": "11 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=HpD4Mf-QS64"
+          },
+          {
+            "id": "creating-tables",
+            "title": "Creating Tables",
+            "duration": "13 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=Y4cLdMUvwAE"
+          },
+          {
+            "id": "insert-update-delete",
+            "title": "Insert Update Delete",
+            "duration": "15 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=RhAAjy_iP5w"
+          },
+          {
+            "id": "select-queries",
+            "title": "Select Queries",
+            "duration": "14 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=eMJk4ysfAfE"
+          },
+          {
+            "id": "filtering-sorting",
+            "title": "Filtering and Sorting Data",
+            "duration": "12 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=0nwcqv4vjV8"
+          }
+        ]
+      },
+      {
+        "id": "module-3",
+        "title": "Module 3: Advanced SQL Queries",
+        "lessons": [
+          {
+            "id": "joins",
+            "title": "Joins",
+            "duration": "16 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=2vXlKNl7QAI"
+          },
+          {
+            "id": "aggregate-functions",
+            "title": "Aggregate Functions",
+            "duration": "11 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=mFhqLZ1xpnQ"
+          },
+          {
+            "id": "group-by-having",
+            "title": "Group By and Having",
+            "duration": "13 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=_aYKvWbkqrE"
+          },
+          {
+            "id": "subqueries",
+            "title": "Subqueries and Nested Queries",
+            "duration": "15 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=8C4i--d5z3s"
+          }
+        ]
+      },
+      {
+        "id": "module-4",
+        "title": "Module 4: Indexes and Performance",
+        "lessons": [
+          {
+            "id": "indexes",
+            "title": "Indexes",
+            "duration": "12 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=fsG1XaZEUhQ"
+          },
+          {
+            "id": "query-optimization",
+            "title": "Query Optimization",
+            "duration": "14 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=P5NKmlQQ7tE"
+          },
+          {
+            "id": "explain-analyze",
+            "title": "EXPLAIN and ANALYZE",
+            "duration": "13 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=WF5-LKdB-Jo"
+          },
+          {
+            "id": "performance-tuning",
+            "title": "Performance Tuning",
+            "duration": "16 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=ghTaVCWXgfI"
+          }
+        ]
+      },
+      {
+        "id": "module-5",
+        "title": "Module 5: Views and Functions",
+        "lessons": [
+          {
+            "id": "views-and-functions",
+            "title": "Views and Virtual Tables",
+            "duration": "18 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=AGMnArz6HhY"
+          },
+          {
+            "id": "stored-procedures",
+            "title": "Stored Procedures",
+            "duration": "16 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=m9Gh0TUedjI"
+          },
+          {
+            "id": "triggers",
+            "title": "Triggers",
+            "duration": "14 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=bNPWpHKTJVE"
+          },
+          {
+            "id": "user-defined-functions",
+            "title": "User Defined Functions",
+            "duration": "13 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=3FZWQNIBHpw"
+          }
+        ]
+      },
+      {
+        "id": "module-6",
+        "title": "Module 6: Transactions and Data Integrity",
+        "lessons": [
+          {
+            "id": "transactions",
+            "title": "Transactions and ACID",
+            "duration": "15 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=V4r7TuLfmPg"
+          },
+          {
+            "id": "constraints",
+            "title": "Database Constraints",
+            "duration": "12 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=zJX6YHlzpTE"
+          },
+          {
+            "id": "foreign-keys",
+            "title": "Foreign Keys and Relationships",
+            "duration": "13 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=lVLhBMPSqAY"
+          },
+          {
+            "id": "data-validation",
+            "title": "Data Validation and Integrity",
+            "duration": "11 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=FPsQmNsz2Oc"
+          }
+        ]
+      },
+      {
+        "id": "module-7",
+        "title": "Module 7: Security and Access Control",
+        "lessons": [
+          {
+            "id": "user-roles",
+            "title": "Users and Roles",
+            "duration": "12 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=0xQSzL5zUTw"
+          },
+          {
+            "id": "permissions",
+            "title": "Permissions and Privileges",
+            "duration": "14 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=F_rYYpXYECk"
+          },
+          {
+            "id": "encryption",
+            "title": "Encryption and SSL",
+            "duration": "13 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=PREB_Y5f9vg"
+          },
+          {
+            "id": "authentication",
+            "title": "Authentication Methods",
+            "duration": "11 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=GEfZI6R6WtY"
+          }
+        ]
+      },
+      {
+        "id": "module-8",
+        "title": "Module 8: Backup and Recovery",
+        "lessons": [
+          {
+            "id": "backup-strategies",
+            "title": "Backup Strategies",
+            "duration": "14 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=YhkBRx6J7HQ"
+          },
+          {
+            "id": "full-backup",
+            "title": "Full Database Backup",
+            "duration": "12 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=-_qRz2a7kUA"
+          },
+          {
+            "id": "incremental-backup",
+            "title": "Incremental Backup",
+            "duration": "11 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=DKBMVvVqbD8"
+          },
+          {
+            "id": "restore-recovery",
+            "title": "Restore and Recovery",
+            "duration": "13 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=qXeO-1CXRME"
+          }
+        ]
+      },
+      {
+        "id": "module-9",
+        "title": "Module 9: Replication and High Availability",
+        "lessons": [
+          {
+            "id": "replication-basics",
+            "title": "Replication Basics",
+            "duration": "15 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=_TYO1yPxHXo"
+          },
+          {
+            "id": "streaming-replication",
+            "title": "Streaming Replication",
+            "duration": "14 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=zzCqhkRy4W4"
+          },
+          {
+            "id": "failover",
+            "title": "Failover and Recovery",
+            "duration": "12 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=NP4ZXPvIrLI"
+          }
+        ]
+      },
+      {
+        "id": "module-10",
+        "title": "Module 10: Real World Applications",
+        "lessons": [
+          {
+            "id": "web-app-integration",
+            "title": "Web Application Integration",
+            "duration": "16 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=WYDPj2T9scA"
+          },
+          {
+            "id": "data-migration",
+            "title": "Data Migration Strategies",
+            "duration": "14 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=phNo84UqKPw"
+          },
+          {
+            "id": "json-support",
+            "title": "JSON Support in PostgreSQL",
+            "duration": "13 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=GhM8cksMxlc"
+          },
+          {
+            "id": "best-practices",
+            "title": "PostgreSQL Best Practices",
+            "duration": "15 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=oeIzKqLWruw"
+          }
+        ]
+      }
+    ],
+    "course": {
+      "title": "PostgreSQL",
+      "subtitle": "Learn PostgreSQL Database Fundamentals and SQL Operations",
+      "logo": "AI_Tutor_New_UI/Dashboard/full_stack_web_dev.png",
+      "progress": 0
+    },
+    "currentLesson": {
+      "id": "what-is-postgresql",
+      "title": "What is PostgreSQL?",
+      "module": "Module 1: Introduction to PostgreSQL",
+      "youtubeUrl": "",
+      "content": {
+        "introduction": "PostgreSQL is a powerful, open-source relational database system known for its reliability, robustness, and rich feature set. Learn the fundamentals of PostgreSQL database management and SQL operations.",
+        "keyConcepts": [
+          {
+            "title": "Relational Database",
+            "description": "Organize data in tables with relationships and structured queries.",
+            "borderColor": "border-[#3B82F6]",
+            "bgColor": "bg-white",
+            "textColor": "text-black"
+          },
+          {
+            "title": "SQL Operations",
+            "description": "Master Create, Read, Update, and Delete operations on databases.",
+            "borderColor": "border-[#60A5FA]",
+            "bgColor": "bg-white",
+            "textColor": "text-black"
+          },
+          {
+            "title": "Data Integrity",
+            "description": "Ensure data consistency and reliability with advanced PostgreSQL features.",
+            "borderColor": "border-[#1E40AF]",
+            "bgColor": "bg-white",
+            "textColor": "text-black"
+          }
+        ]
+      }
+    }
   }
 }

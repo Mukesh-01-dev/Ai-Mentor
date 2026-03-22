@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 import { useSidebar } from "../context/SidebarContext";
@@ -18,6 +19,7 @@ import API_BASE_URL from "../lib/api";
 
 const WatchedVideos = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { sidebarOpen, setSidebarOpen, sidebarCollapsed, setSidebarCollapsed } = useSidebar();
   const [searchQuery, setSearchQuery] = useState("");
   const [courseFilter, setCourseFilter] = useState("All Courses");
@@ -308,12 +310,11 @@ const WatchedVideos = () => {
                 ? "bg-canvas text-main hover:bg-canvas-alt"
                 : "bg-orange-500 text-white"
               }`}
-            onClick={() =>
-              console.log(
-                video.status === "completed" ? "Rewatching" : "Resuming",
-                video.title
-              )
-            }
+            // --- VIDEO RESUME NAVIGATION FOR THE TEAM ---
+            // When the user clicks Resume, we navigate them to the course URL but WE ALSO PASS STATE.
+            // LearningPage uses `location.state.lessonId` to override the default course progression
+            // and forcefully jump the user to this specific video instead.
+            onClick={() => navigate(`/learning/${video.courseId}`, { state: { lessonId: video.lessonId } })}
           >
             {video.status === "completed" ? t("watched.rewatch") : t("watched.resume")}
           </button>

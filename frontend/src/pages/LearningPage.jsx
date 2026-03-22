@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import Header from "../components/Header";
 import Sidebar from "../components/Sidebar";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useSidebar } from "../context/SidebarContext";
 import { getAIVideo } from "../service/aiService";
@@ -89,6 +89,8 @@ export default function Learning() {
   const lastLessonIdRef = useRef(null);
   const lastCelebrityRef = useRef(null);
   const hasRestoredProgressRef = useRef(false);
+  const jumpToTimeRef = useRef(null);
+  const lastSavedTimeRef = useRef(0);
 
   // Auto-scroll transcript to keep active caption visible
   useEffect(() => {
@@ -179,12 +181,22 @@ export default function Learning() {
 
           let initialLesson = null;
 
-          if (userProgress?.currentLesson?.lessonId) {
+          // --- WATCH HISTORY RESTORATION LOGIC FOR THE TEAM ---
+          // Determine which lesson to load first based on priority:
+
+          // Priority 1: Check if the user clicked "Resume" on a specific video from the Watched Videos dashboard.
+          // This is passed via React Router's location state.
+          if (location?.state?.lessonId) {
+            initialLesson = findFullLesson(location.state.lessonId);
+          }
+
+          // Priority 2: If no specific video was requested, fallback to the user's globally saved progress
+          // This picks up where they left off the last time they closed this course.
+          if (!initialLesson && userProgress?.currentLesson?.lessonId) {
             initialLesson = findFullLesson(userProgress.currentLesson.lessonId);
           }
 
-          // If no progress or lesson not found, fallback to the course's default currentLesson 
-          // or the very first lesson of the first module
+          // Priority 3: First time opening the course. Fallback to the very first lesson of the first module.
           if (!initialLesson) {
             const defaultId = courseData.currentLesson?.id || courseData.modules?.[0]?.lessons?.[0]?.id;
             initialLesson = findFullLesson(defaultId);
@@ -196,36 +208,32 @@ export default function Learning() {
 
           setLearningData(courseData);
 
-          if (userProgress) {
-            // Do NOT setExpandedModule here; dropdown should be closed by default
-            // Set current lesson based on progress
-            const currentLesson = userProgress.currentLesson;
-            if (currentLesson && !hasRestoredProgressRef.current) {
-              // Find and set the current lesson
-              const lesson = courseData.modules
-                .flatMap((module) => module.lessons)
-                .find((l) => l.id === currentLesson.lessonId);
-
-              if (lesson) {
-                hasRestoredProgressRef.current = true;
-                // Restore saved AI content if it exists
-                const savedData = userProgress.lessonData?.[lesson.id];
-                if (savedData?.generatedTextContent) {
-                  setGeneratedTextContent(savedData.generatedTextContent);
-                  if (savedData.aiVideoUrl) {
-                    setAiVideoUrl(savedData.aiVideoUrl);
-                  }
-                  if (savedData.celebrity) {
-                    setSelectedCelebrity(savedData.celebrity);
-                    lastCelebrityRef.current = savedData.celebrity;
-                  }
+          if (userProgress && initialLesson) {
+            if (!hasRestoredProgressRef.current) {
+              hasRestoredProgressRef.current = true;
+              
+              // Restore saved AI content if it exists
+              const savedData = userProgress.lessonData?.[initialLesson.id];
+              if (savedData?.generatedTextContent) {
+                setGeneratedTextContent(savedData.generatedTextContent);
+                if (savedData.aiVideoUrl) {
+                  setAiVideoUrl(savedData.aiVideoUrl);
                 }
-
-                setLearningData((prev) => ({
-                  ...prev,
-                  currentLesson: lesson,
-                }));
+                if (savedData.celebrity) {
+                  setSelectedCelebrity(savedData.celebrity);
+                  lastCelebrityRef.current = savedData.celebrity;
+                }
               }
+              
+              if (savedData?.watchHistory?.currentTime) {
+                jumpToTimeRef.current = savedData.watchHistory.currentTime;
+              }
+
+              // Finally, trigger the state update to ensure UI re-renders with the exact lesson
+              setLearningData((prev) => ({
+                ...prev,
+                currentLesson: initialLesson,
+              }));
             }
           }
         } else {
@@ -481,6 +489,22 @@ export default function Learning() {
     if (video) {
       video.addEventListener('webkitbeginfullscreen', () => setIsFullscreen(true));
       video.addEventListener('webkitendfullscreen', () => setIsFullscreen(false));
+      
+      const handleLoadedMetadata = () => {
+        if (jumpToTimeRef.current !== null && jumpToTimeRef.current > 0) {
+          // If video is almost finished, don't jump to end, start over
+          const isAlmostFinished = jumpToTimeRef.current >= video.duration - 5;
+          if (!isAlmostFinished) {
+            video.currentTime = jumpToTimeRef.current;
+            setCurrentTime(jumpToTimeRef.current);
+          }
+          jumpToTimeRef.current = null;
+        }
+      };
+      video.addEventListener('loadedmetadata', handleLoadedMetadata);
+      return () => {
+        video.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      };
     }
 
     return () => {
@@ -636,6 +660,14 @@ export default function Learning() {
     setGeneratedTextContent(null);
     setAiVideoUrl(null);
     setLearningData((prev) => ({ ...prev, currentLesson: lesson }));
+    
+    // Set jump time if history exists
+    const savedData = user?.purchasedCourses?.find((c) => c.courseId === parseInt(courseId))?.progress?.lessonData?.[lesson.id];
+    if (savedData?.watchHistory?.currentTime) {
+      jumpToTimeRef.current = savedData.watchHistory.currentTime;
+    } else {
+      jumpToTimeRef.current = 0;
+    }
   };
 
   const handlePrevious = () => {
@@ -705,7 +737,43 @@ export default function Learning() {
       }
 
       setCurrentTime(vidCurrentTime);
-      setProgress(vidDuration > 0 ? (vidCurrentTime / vidDuration) * 100 : 0);
+      const currentProgressPercent = vidDuration > 0 ? (vidCurrentTime / vidDuration) * 100 : 0;
+      setProgress(currentProgressPercent);
+
+      // --- WATCH HISTORY THROTTLING FOR THE TEAM ---
+      // We save watch history to the backend every 5 seconds to prevent spamming the server.
+      // This ensures we only lose at most 5 seconds of progress if the user suddenly closes the tab.
+      if (Math.abs(vidCurrentTime - lastSavedTimeRef.current) >= 5) {
+        lastSavedTimeRef.current = vidCurrentTime;
+        
+        // --- WATCH HISTORY VALIDATION FOR THE TEAM ---
+        // During initial video load, browsers might briefly report duration as NaN or Infinity.
+        // We MUST validate isFinite() and > 0, otherwise we will corrupt the database with NaN:NaN.
+        if (learningData?.currentLesson && isFinite(vidDuration) && vidDuration > 0 && !isNaN(currentProgressPercent)) {
+           const formatDurationString = (secs) => {
+             const m = Math.floor(secs / 60);
+             const s = Math.floor(secs % 60);
+             return `${m}:${s < 10 ? '0' : ''}${s}`;
+           };
+           
+           // Ensure progress is bound between 0 and 100
+           const safeProgress = Math.max(0, Math.min(100, currentProgressPercent));
+           
+           // Use the current lesson details to generate history
+           saveLessonData(learningData.currentLesson.id, {
+             watchHistory: {
+               currentTime: vidCurrentTime,
+               duration: vidDuration,
+               progressPercent: safeProgress,
+               lastWatched: new Date().toISOString(),
+               title: learningData.currentLesson.title || "Lesson Video",
+               thumbnail: "https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=1000&auto=format&fit=crop",
+               formattedDuration: formatDurationString(vidDuration),
+               status: safeProgress >= 95 ? "completed" : "in-progress"
+             }
+           });
+        }
+      }
 
       // update visible caption overlay
       if (captions.length > 0) {

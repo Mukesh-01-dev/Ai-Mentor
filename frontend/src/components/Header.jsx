@@ -126,6 +126,33 @@ const Header = ({ searchQuery = "", onSearchChange }) => {
     }
   };
 
+  const handleNotificationClick = async (notification) => {
+    if (!notification) return;
+
+    await markAsRead(notification.id);
+    setNotifOpen(false);
+
+    let metadata = notification.metadata || {};
+    if (typeof metadata === "string") {
+      try {
+        metadata = JSON.parse(metadata || "{}");
+      } catch {
+        metadata = {};
+      }
+    }
+    if (!metadata.postId) return;
+
+    const params = new URLSearchParams();
+    params.set("focusPost", String(metadata.postId));
+
+    if (metadata.replyId) params.set("focusReply", String(metadata.replyId));
+    if (metadata.postType) params.set("postType", String(metadata.postType));
+    if (metadata.courseId) params.set("courseId", String(metadata.courseId));
+    if (metadata.courseName) params.set("courseName", String(metadata.courseName));
+
+    navigate(`/discussions?${params.toString()}`);
+  };
+
   const clearAll = async () => {
     try {
       await clearAllNotificationsApi();
@@ -138,8 +165,8 @@ const Header = ({ searchQuery = "", onSearchChange }) => {
 
   return (
     <>
-    <header className="bg-card/80 backdrop-blur-xl border-b border-border/50 px-6 py-4 fixed top-0 left-0 right-0 z-[100]">
-      <div className="flex items-center justify-between max-w-[1600px] mx-auto">
+    <header className="bg-card/80 backdrop-blur-xl border-b border-border/50 px-6 py-4 fixed top-0 left-0 right-0 z-100">
+      <div className="flex items-center justify-between max-w-400 mx-auto">
 
         {/* Mobile Menu & Logo */}
         <div className="flex items-center space-x-4">
@@ -200,8 +227,8 @@ const Header = ({ searchQuery = "", onSearchChange }) => {
 
             {/* Notification Dropdown - Responsive Positioning */}
             {notifOpen && (
-              <div className="fixed md:absolute right-4 left-4 md:right-0 md:left-auto mt-4 md:w-96 bg-card border border-border/50 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.2)] z-[110] overflow-hidden animate-in fade-in zoom-in slide-in-from-top-4 duration-300">
-                <div className="p-6 bg-gradient-to-br from-teal-500/10 via-blue-500/5 to-transparent border-b border-border/50 flex items-center justify-between">
+              <div className="fixed md:absolute right-4 left-4 md:right-0 md:left-auto mt-4 md:w-96 bg-card border border-border/50 rounded-4xl shadow-[0_20px_50px_rgba(0,0,0,0.2)] z-110 overflow-hidden animate-in fade-in zoom-in slide-in-from-top-4 duration-300">
+                <div className="p-6 bg-linear-to-br from-teal-500/10 via-blue-500/5 to-transparent border-b border-border/50 flex items-center justify-between">
                   <div>
                     <h4 className="text-sm font-black text-main uppercase">Notifications</h4>
                     <p className="text-[10px] text-muted font-bold uppercase tracking-widest mt-0.5">
@@ -238,7 +265,7 @@ const Header = ({ searchQuery = "", onSearchChange }) => {
                       <NotificationItem 
                         key={notif.id} 
                         notification={notif} 
-                        onClick={(n) => markAsRead(n.id)} 
+                        onClick={handleNotificationClick}
                       />
                     ))
                   ) : (
@@ -263,8 +290,8 @@ const Header = ({ searchQuery = "", onSearchChange }) => {
             >
               <div className="relative">
                 <img
-                  src={`https://api.dicebear.com/8.x/initials/svg?seed=${encodeURIComponent(displayName)}`}
-                  className="w-9 h-9 rounded-xl shadow-md border border-border/50 group-hover:border-teal-500 transition-all"
+                  src={user?.avatar_url || `https://api.dicebear.com/8.x/initials/svg?seed=${encodeURIComponent(displayName)}`}
+                  className="w-9 h-9 rounded-xl shadow-md border border-border/50 group-hover:border-teal-500 transition-all object-cover"
                   alt="Avatar"
                 />
                 <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 border-2 border-card rounded-full" />
@@ -274,12 +301,12 @@ const Header = ({ searchQuery = "", onSearchChange }) => {
 
             {/* Impressive Floating Menu */}
             {dropdownOpen && (
-              <div className="absolute right-0 mt-4 w-72 bg-card/95 backdrop-blur-2xl border border-border/50 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.2)] z-[110] overflow-hidden animate-in fade-in zoom-in slide-in-from-top-4 duration-300">
-                <div className="p-6 bg-gradient-to-br from-teal-500/10 via-blue-500/5 to-transparent border-b border-border/50">
+              <div className="absolute right-0 mt-4 w-72 bg-card/95 backdrop-blur-2xl border border-border/50 rounded-4xl shadow-[0_20px_50px_rgba(0,0,0,0.2)] z-110 overflow-hidden animate-in fade-in zoom-in slide-in-from-top-4 duration-300">
+                <div className="p-6 bg-linear-to-br from-teal-500/10 via-blue-500/5 to-transparent border-b border-border/50">
                   <div className="flex items-center space-x-4 mb-4">
                     <img
-                      src={`https://api.dicebear.com/8.x/initials/svg?seed=${encodeURIComponent(displayName)}`}
-                      className="w-14 h-14 rounded-2xl shadow-xl border-2 border-white dark:border-slate-800"
+                      src={user?.avatar_url || `https://api.dicebear.com/8.x/initials/svg?seed=${encodeURIComponent(displayName)}`}
+                      className="w-14 h-14 rounded-2xl shadow-xl border-2 border-white dark:border-slate-800 object-cover"
                       alt="User"
                     />
                     <div className="min-w-0">
@@ -313,8 +340,8 @@ const Header = ({ searchQuery = "", onSearchChange }) => {
       </div>
     </header>
       {showLogoutConfirm && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="bg-card border border-border/50 rounded-[2rem] shadow-2xl p-8 w-80 text-center">
+        <div className="fixed inset-0 z-200 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-card border border-border/50 rounded-4xl shadow-2xl p-8 w-80 text-center">
             <LogOut className="w-10 h-10 text-red-500 mx-auto mb-4" />
             <h3 className="text-sm font-black uppercase tracking-tight text-main mb-2">Logout</h3>
             <p className="text-xs text-muted mb-6">Are you sure you want to logout?</p>

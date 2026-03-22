@@ -77,15 +77,13 @@ backend/
 
 ## ⚙️ Environment Variables
 
-Copy `.env.example` to `.env` and fill in the values:
+Copy `.env.example` to `.env` and fill in the values. This project expects a single Postgres connection string from Neon (or any hosted Postgres) in `DATABASE_URL`.
 
 ```env
-# PostgreSQL credentials
-DB_NAME=your_db_name
-DB_USER=your_db_user
-DB_PASSWORD=your_db_password
-DB_HOST=localhost
-DB_PORT=5432
+# Complete Postgres connection string from Neon or your cloud provider
+# Example (replace with your actual Neon connection string):
+# NEON_DATABASE_URL=postgres://neondb_owner:password@ep-postgres-host.neon.tech:5432/neondb?sslmode=require
+NEON_DATABASE_URL=your_neon_database_url
 
 # Express server port
 PORT=5000
@@ -93,7 +91,7 @@ PORT=5000
 # JWT secret key
 JWT_SECRET=your_jwt_secret_key
 
-# Python AI service URL
+# Python AI service URL (use deployed AI service URL or local URL during development)
 AI_SERVICE_URL=http://127.0.0.1:8000
 
 # Frontend URL (for CORS and password reset emails)
@@ -111,10 +109,10 @@ CLOUDINARY_API_SECRET=your_api_secret
 
 ### Prerequisites
 - Node.js v18+
-- PostgreSQL v14+ running locally
+- An active Neon (or other hosted Postgres) project and its connection string
 - npm
 
-### Installation
+### Installation (Neon)
 
 ```bash
 # From the project root
@@ -125,7 +123,7 @@ npm install
 
 # Copy and configure environment
 cp .env.example .env
-# Edit .env with your database credentials and secrets
+# Edit .env and set DATABASE_URL to the Neon connection string
 
 # Start in development mode (with auto-reload)
 npm run dev
@@ -142,12 +140,18 @@ The API will be available at **http://localhost:5000**.
 
 ---
 
-## 🗄️ Database Setup
+## 🗄️ Database Setup (Neon)
 
-The backend uses **Sequelize** with PostgreSQL.
+The backend uses **Sequelize** with PostgreSQL and expects a full connection string in `DATABASE_URL`.
 
-1. **Create a PostgreSQL database** matching the name in your `.env`.
-2. On server startup, Sequelize automatically **syncs all models** (`sequelize.sync({ alter: true })`), creating or altering tables as needed. No manual migrations are required for development.
+1. Create a Neon project at https://neon.tech and create or use the default branch.
+2. From the Neon dashboard, copy the Postgres connection string (the `postgres://...` URL). Make sure the string includes SSL (Neon requires SSL / `sslmode=require`).
+3. Paste the Neon connection string into `DATABASE_URL` inside your `.env`.
+4. On server startup, Sequelize will **sync all models** (`sequelize.sync({ alter: true })`), creating or altering tables as needed.
+
+Notes:
+- If you need a separate read-only or replica connection, obtain the appropriate URL from Neon and set additional env vars as needed.
+- For production, follow Neon best practices: restrict branch access, use the recommended role, and rotate credentials as required.
 
 ---
 

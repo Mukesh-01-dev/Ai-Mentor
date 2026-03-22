@@ -1,10 +1,9 @@
 // backend/controller/userController.js
 import User from "../models/User.js";
+import CommunityPost from "../models/CommunityPost.js";
 import jwt from "jsonwebtoken";
 import cloudinary from "../config/cloudinary.js";
 import fs from "fs";
-import path from "path";
-import { createNotification } from "./notificationController.js";
 
 // Generate JWT Token
 const generateToken = (id) => {
@@ -99,8 +98,11 @@ const changePassword = async (req, res) => {
       return res.status(401).json({ message: "Not authorized" });
     }
 
+    // validate required fields before proceeding
     if (!currentPassword || !newPassword) {
-      return res.status(400).json({ message: "All fields required" });
+      return res
+        .status(400)
+        .json({ message: "Current password and new password are required" });
     }
 
     const user = await User.findByPk(req.user.id);
@@ -109,24 +111,24 @@ const changePassword = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Users authenticated via OAuth may not have a local password set
+    // ensure user has a local password set (e.g., not an OAuth-only account)
     if (!user.password) {
-      return res.status(400).json({
-        message:
-          "No local password is set for this account. Please set a password via the password reset flow.",
-      });
+      return res
+        .status(400)
+        .json({ message: "Password is not set for this account" });
     }
-    // Check current password
+
+    // verify current password
     const isMatch = await user.matchPassword(currentPassword);
 
     if (!isMatch) {
       return res.status(400).json({ message: "Current password incorrect" });
     }
 
-    // Update password
+    // update password
     user.password = newPassword;
 
-    await user.save(); // hook will hash it automatically
+    await user.save(); // bcrypt hashing happens in beforeSave hook
 
     res.json({ message: "Password updated successfully" });
 
@@ -194,13 +196,6 @@ const purchaseCourse = async (req, res) => {
     user.purchasedCourses = updatedCourses;
     await user.save();
 
-    // ✅ Add Notification Trigger
-    createNotification(user.id, {
-      title: "Course Purchased!",
-      message: `You have successfully enrolled in "${courseTitle}". Start learning now!`,
-      type: "success",
-    });
-
     res.json({ message: "Course purchased successfully" });
   } catch (error) {
     console.error("PURCHASE ERROR:", error);
@@ -213,97 +208,44 @@ const updateCourseProgress = async (req, res) => {
   try {
     if (!req.user) return res.status(401).json({ message: "Not authorized" });
 
-    const { courseId, completedLesson, currentLesson, lessonData } = req.body;
-    if (!courseId) return res.status(400).json({ message: "Course ID is required" });
-
     const user = await User.findByPk(req.user.id);
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    // Find the course in purchasedCourses
-    let purchasedCourses = [...(user.purchasedCourses || [])];
-    const courseIndex = purchasedCourses.findIndex(c => Number(c.courseId) === Number(courseId));
+    const { courseId, lessonData, currentLesson, completedLesson } = req.body;
 
-    if (courseIndex === -1) {
-      return res.status(404).json({ message: "Course not found in your collection" });
-    }
+    let courses = [...(user.purchasedCourses || [])];
+    let courseIndex = courses.findIndex(c => Number(c.courseId) === Number(courseId));
 
-    const course = purchasedCourses[courseIndex];
-    course.progress = course.progress || { completedLessons: [], currentLesson: null, lessonData: {} };
+    if (courseIndex !== -1) {
+      let progress = courses[courseIndex].progress || { completedLessons: [], currentLesson: null, lessonData: {} };
+      if (!progress.lessonData) progress.lessonData = {};
 
-    // Update current lesson
-    if (currentLesson) {
-      course.progress.currentLesson = currentLesson;
-    }
-
-    // Update lesson data (AI content, etc.)
-    if (lessonData) {
-      course.progress.lessonData = {
-        ...(course.progress.lessonData || {}),
-        [lessonData.lessonId]: lessonData.data
-      };
-    }
-
-    // Add completed lesson if provided
-    if (completedLesson && completedLesson.lessonId) {
-      const alreadyCompleted = course.progress.completedLessons.some(
-        l => l.lessonId === completedLesson.lessonId
-      );
-      if (!alreadyCompleted) {
-        course.progress.completedLessons.push({
-          lessonId: completedLesson.lessonId,
-          completedAt: new Date()
-        });
-
-        // ✅ CHECK FOR MILESTONES & COMPLETION
-        // We need total lesson count. For now, we'll try to get it from learning.json
-        try {
-          const { getCourseAndLessonTitles } = await import("./courseController.js");
-          const learningPath = path.join(process.cwd(), "frontend/public/data/learning.json");
-          const learningData = JSON.parse(fs.readFileSync(learningPath, "utf-8"));
-          const courseLearning = learningData[String(courseId)];
-
-          if (courseLearning) {
-            const allLessons = (courseLearning.modules || []).flatMap(m => m.lessons || []);
-            const totalLessons = allLessons.length;
-            const completedCount = course.progress.completedLessons.length;
-            const progressPercent = (completedCount / totalLessons) * 100;
-
-            const courseTitle = courseLearning.course?.title || "your course";
-
-            // Milestone: 50%
-            if (completedCount === Math.ceil(totalLessons / 2) && totalLessons > 1) {
-              createNotification(user.id, {
-                title: "Halfway There! 🚀",
-                message: `You've completed 50% of "${courseTitle}". Keep going!`,
-                type: "achievement"
-              });
-            }
-
-            // Completion: 100%
-            if (completedCount === totalLessons) {
-              createNotification(user.id, {
-                title: "Course Completed! 🎓",
-                message: `Congratulations! You've successfully finished "${courseTitle}".`,
-                type: "success"
-              });
-              
-              // Update analytics
-              user.analytics = {
-                ...(user.analytics || {}),
-                completedCourses: (user.analytics?.completedCourses || 0) + 1
-              };
-            }
-          }
-        } catch (err) {
-          console.error("Error calculating milestone:", err);
-        }
+      if (lessonData && lessonData.lessonId) {
+        progress.lessonData[lessonData.lessonId] = {
+           ...progress.lessonData[lessonData.lessonId],
+           ...lessonData.data
+        };
       }
+
+      if (currentLesson) {
+        progress.currentLesson = currentLesson;
+      }
+
+      if (completedLesson && !progress.completedLessons.some(l => l.lessonId === completedLesson.lessonId)) {
+        progress.completedLessons.push(completedLesson);
+      }
+
+      courses[courseIndex].progress = progress;
+      user.set('purchasedCourses', courses);
+      
+      // --- DATABASE JSON FIX FOR THE TEAM ---
+      // Sequelize does not automatically detect mutations inside deeply nested JSONB fields.
+      // We MUST explicitly call user.changed('fieldName', true) to force it to execute an UPDATE query.
+      // Without this line, the watch history will silently fail to save to the database.
+      user.changed('purchasedCourses', true);
+      console.log("Saved lesson data for course:", courseId, "lesson:", lessonData?.lessonId);
     }
 
-    purchasedCourses[courseIndex] = course;
-    user.purchasedCourses = purchasedCourses;
-
-    // Basic analytics update
     user.analytics = user.analytics || {
       totalHours: 0,
       daysStudied: 0,
@@ -321,9 +263,72 @@ const updateCourseProgress = async (req, res) => {
   }
 };
 
-// STUB FUNCTIONS (to prevent module crashes)
 const getWatchedVideos = async (req, res) => {
-  res.status(501).json({ message: "getWatchedVideos not implemented yet" });
+  try {
+    const user = await User.findByPk(req.user.id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const courses = user.purchasedCourses || [];
+    console.log("getWatchedVideos - courses loaded:", JSON.stringify(courses, null, 2));
+
+    let videoData = [];
+    let totalSeconds = 0;
+    let completedCount = 0;
+    const uniqueCourses = [];
+
+    courses.forEach(course => {
+      if (course.courseTitle) {
+        uniqueCourses.push({ id: course.courseId, title: course.courseTitle });
+      }
+
+      const lessonData = course.progress?.lessonData || {};
+      Object.keys(lessonData).forEach(lessonId => {
+        const watchHistory = lessonData[lessonId]?.watchHistory;
+        if (watchHistory) {
+          // --- WATCH HISTORY SANITIZATION FOR THE TEAM ---
+          // Prevent UI crashes from previously corrupted data by bounding progress between 0 and 100%.
+          const safeProgress = Math.max(0, Math.min(100, Math.round(watchHistory.progressPercent || 0)));
+          
+          // Fallback to --:-- if the database stored "NaN:NaN" due to browser loading race conditions.
+          const rawDuration = watchHistory.formattedDuration;
+          const displayDuration = (rawDuration === "NaN:NaN" || !rawDuration) ? "--:--" : rawDuration;
+
+          videoData.push({
+            id: `${course.courseId}-${lessonId}`,
+            lessonId: lessonId,
+            courseId: course.courseId,
+            course: course.courseTitle || `Course ${course.courseId}`,
+            title: watchHistory.title || `Lesson ${lessonId}`,
+            thumbnail: watchHistory.thumbnail || "https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=1000&auto=format&fit=crop",
+            duration: displayDuration,
+            progress: safeProgress,
+            status: watchHistory.status || "in-progress",
+            lastWatched: watchHistory.lastWatched || new Date().toISOString(),
+            currentTime: watchHistory.currentTime || 0
+          });
+
+          if (watchHistory.currentTime > 0) {
+            totalSeconds += watchHistory.currentTime;
+          }
+          if (watchHistory.status === "completed" || safeProgress >= 95) {
+             completedCount++;
+          }
+        }
+      });
+    });
+
+    const metrics = {
+      totalHours: (totalSeconds / 3600).toFixed(1),
+      videosCompleted: completedCount,
+      avgSession: "15min", // Mocked for now, can be computed from analytics
+      learningStreak: "3 days", // Mocked for now
+    };
+
+    res.json({ videos: videoData, metrics, courses: uniqueCourses });
+  } catch (error) {
+    console.error("Failed to fetch watched videos:", error);
+    res.status(500).json({ message: "Server error" });
+  }
 };
 
 const getUserSettings = async (req, res) => {
@@ -402,7 +407,6 @@ const updateUserProfile = async (req, res) => {
       });
 
       user.avatar_url = result.secure_url;
-      user.avatar = `/uploads/${req.file.filename}`;
 
       // delete temp file
       fs.unlinkSync(req.file.path);
@@ -416,13 +420,6 @@ const updateUserProfile = async (req, res) => {
     user.bio = req.body.bio ?? user.bio;
 
     await user.save();
-
-    // ✅ Add Notification Trigger
-    createNotification(user.id, {
-      title: "Profile Updated",
-      message: "Your profile information has been successfully updated.",
-      type: "account",
-    });
 
     res.status(200).json({
       id: user.id,
@@ -463,6 +460,39 @@ const removePurchasedCourse = async (req, res) => {
   }
 };
 
+ // Delete User-Account 
+ const deleteAccount= async (req,res) => {
+   try {
+
+    const userId= req.user.id;
+
+    // delete user's profile avatar from Cloudinary (if it exists)
+    try {
+      const avatarPublicId = `user_avatars/user_${userId}`;
+      await cloudinary.uploader.destroy(avatarPublicId);
+    } catch (cloudinaryError) {
+      console.error("Cloudinary avatar deletion error:", cloudinaryError);
+      // continue with account deletion even if avatar deletion fails
+    }
+
+     // delete user's community posts
+     await CommunityPost.destroy({
+      where: {  userId }
+    });
+    
+    //delete user
+    await User.destroy({
+      where: {id: userId}
+    });
+
+    res.status(200).json({
+      message: "Account Deleted Successfully"  
+    });
+   } catch (error) {
+    console.error("Delete Account Error", error);
+    res.status(500).json({message: "Failed to delete account"}); 
+  } 
+}
 // EXPORTS
 export {
   registerUser,
@@ -475,5 +505,6 @@ export {
   updateUserSettings, // stub
   updateUserProfile, // stub
   removePurchasedCourse,
+  deleteAccount,
   changePassword
 };
