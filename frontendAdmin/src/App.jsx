@@ -1,4 +1,5 @@
 ﻿import { useMemo, useState } from "react";
+import ThemeToggle from "./components/common/ThemeToggle";
 
 const courses = [
   ["UI/UX Masterclass", "Design", "Rs 89.00", "1,204", "Published"],
@@ -71,6 +72,7 @@ function App() {
               <p className="font-semibold text-xl leading-5">UptoSkills</p>
               <p className="text-xs text-white/70">Admin Portal</p>
             </div>
+            <ThemeToggle />
           </div>
         </div>
 
@@ -104,11 +106,18 @@ function App() {
       </aside>
 
       <main className="flex flex-col min-h-screen">
-        <header className="h-20 bg-white border-b px-4 md:px-8 flex items-center justify-between gap-3" style={{ borderColor: "var(--neutral-100)" }}>
+        <header
+          className="h-20 border-b px-4 md:px-8 flex items-center justify-between gap-3"
+          style={{
+            backgroundColor: "var(--color-card)",
+            borderColor: "var(--color-border)",
+            color: "var(--color-text-main)",
+          }}
+        >
           <h1 className="text-2xl font-semibold">{title}</h1>
           <div className="flex items-center gap-3">
             <div className="hidden md:flex items-center gap-2 rounded-full px-4 py-2 min-w-64" style={{ backgroundColor: "var(--neutral-50)" }}>
-              <span className="text-sm" style={{ color: "rgba(51,51,51,0.6)" }}>Search courses...</span>
+              <span className="text-sm" style={{ color: "var(--color-text-muted)" }}>Search courses...</span>
             </div>
             <button type="button" className="relative h-10 w-10 rounded-xl" style={{ backgroundColor: "var(--neutral-50)", color: "var(--neutral-800)" }}>
               B
@@ -121,7 +130,12 @@ function App() {
         </header>
 
         <section className="p-4 md:p-8">
-          <div className="rounded-2xl bg-white border overflow-hidden" style={{ borderColor: "var(--neutral-100)", boxShadow: "0 2px 8px rgba(26,26,26,0.06)" }}>
+          <div
+            className="rounded-2xl border overflow-hidden"
+            style={{
+              backgroundColor: "var(--color-card)",
+              borderColor: "var(--color-border)",
+            }}>
             {page === "dashboard" && <DashboardPage />}
             {page === "courses" && <CoursesPage />}
             {page === "users" && <UsersPage />}
@@ -138,7 +152,7 @@ function DashboardPage() {
   return (
     <div className="p-6 md:p-8">
       <h2 className="text-2xl font-semibold mb-3">Admin Dashboard</h2>
-      <p style={{ color: "rgba(51,51,51,0.7)" }}>
+      <p style={{ color: "var(--color-text-muted)" }}>
         Use sidebar navigation to manage courses, users, enrollments, and payments.
       </p>
     </div>
@@ -157,8 +171,8 @@ function CoursesPage() {
       </div>
       <div className="overflow-x-auto">
         <table className="w-full min-w-225">
-          <thead className="text-left text-xs uppercase tracking-wider" style={{ color: "rgba(51,51,51,0.6)" }}>
-            <tr className="border-b" style={{ borderColor: "var(--neutral-100)" }}>
+          <thead className="text-left text-xs uppercase tracking-wider" style={{ color: "var(--color-text-muted)" }}>
+          <tr className="border-b" style={{ borderColor: "var(--neutral-100)" }}>
               <th className="p-5">Course Detail</th>
               <th>Category</th>
               <th>Pricing</th>
@@ -172,11 +186,11 @@ function CoursesPage() {
               <tr key={name} className="border-b" style={{ borderColor: "var(--neutral-100)" }}>
                 <td className="p-5">
                   <div className="font-semibold">{name}</div>
-                  <div style={{ color: "rgba(51,51,51,0.6)" }}>Last updated recently</div>
+                  <div style={{ color: "var(--color-text-muted" }}>Last updated recently</div>
                 </td>
                 <td><span className="px-3 py-1 rounded-full" style={{ backgroundColor: "var(--neutral-50)" }}>{category}</span></td>
                 <td className="font-semibold">{price}</td>
-                <td>{enrolled}</td>
+                <td><span className="px-3 py-1 rounded-full" style={{ backgroundColor: "var(--neutral-50)" }}>{enrolled}</span></td>
                 <td className={status === "Published" ? "text-green-600" : "text-orange-500"}>{status}</td>
                 <td className="text-lg">...</td>
               </tr>
@@ -200,7 +214,7 @@ function UsersPage() {
       </div>
       <div className="overflow-x-auto">
         <table className="w-full min-w-225">
-          <thead className="text-left text-xs uppercase tracking-wider" style={{ color: "rgba(51,51,51,0.6)" }}>
+          <thead className="text-left text-xs uppercase tracking-wider" style={{ color: "var(--color-text-muted)" }}>
             <tr className="border-b" style={{ borderColor: "var(--neutral-100)" }}>
               <th className="p-5">User</th>
               <th>Email</th>
@@ -237,7 +251,7 @@ function EnrollmentsPage() {
       </div>
       <div className="overflow-x-auto">
         <table className="w-full min-w-215">
-          <thead className="text-left text-xs uppercase tracking-wider" style={{ color: "rgba(51,51,51,0.6)" }}>
+          <thead className="text-left text-xs uppercase tracking-wider" style={{ color: "var(--color-text-muted" }}>
             <tr className="border-b" style={{ borderColor: "var(--neutral-100)" }}>
               <th className="p-5">Student</th>
               <th>Course</th>
@@ -281,11 +295,11 @@ function PaymentsPage() {
           <div key={`${name}-${date}-${amount}`} className="p-5 border-b flex items-center justify-between gap-4" style={{ borderColor: "var(--neutral-100)" }}>
             <div>
               <p className="font-medium">{name}</p>
-              <p style={{ color: "rgba(51,51,51,0.6)" }}>{course}</p>
+              <p style={{ color: "var(--color-text-muted" }}>{course}</p>
             </div>
             <div className="text-right">
               <p className={`font-semibold ${amountColor}`}>{amount}</p>
-              <p className="text-sm" style={{ color: "rgba(51,51,51,0.6)" }}>{date}</p>
+              <p className="text-sm" style={{ color: "var(--color-text-muted" }}>{date}</p>
             </div>
           </div>
         ))}
