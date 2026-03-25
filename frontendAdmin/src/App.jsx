@@ -72,7 +72,6 @@ function App() {
               <p className="font-semibold text-xl leading-5">UptoSkills</p>
               <p className="text-xs text-white/70">Admin Portal</p>
             </div>
-            <ThemeToggle />
           </div>
         </div>
 
@@ -119,6 +118,8 @@ function App() {
             <div className="hidden md:flex items-center gap-2 rounded-full px-4 py-2 min-w-64" style={{ backgroundColor: "var(--neutral-50)" }}>
               <span className="text-sm" style={{ color: "var(--color-text-muted)" }}>Search courses...</span>
             </div>
+            <ThemeToggle />
+
             <button type="button" className="relative h-10 w-10 rounded-xl" style={{ backgroundColor: "var(--neutral-50)", color: "var(--neutral-800)" }}>
               B
               <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-red-500" />
