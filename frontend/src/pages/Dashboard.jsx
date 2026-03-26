@@ -407,8 +407,14 @@ const Dashboard = () => {
                   {t("dashboard.popular_courses")}
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {coursesData.allCourses.slice(0, 13).map((course, index) => (
-                    <Link to={`/learning/${course.id}`} key={index}>
+                  {coursesData.allCourses.slice(0, 13).map((course, index) => {
+                    const isEnrolled = user?.purchasedCourses?.some(
+                      (purchased) => purchased.courseId == course.id
+                    );
+                    const linkTo = isEnrolled ? `/learning/${course.id}` : `/course-preview/${course.id}`;
+
+                    return (
+                    <Link to={linkTo} key={index}>
                       <div className="bg-card rounded-xl border border-border overflow-hidden shadow-sm h-full hover:shadow-lg hover:-translate-y-1 hover:border-teal-500/40 transition-all duration-300">
                         <div className="relative">
                           <img
@@ -449,7 +455,8 @@ const Dashboard = () => {
                         </div>
                       </div>
                     </Link>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 
