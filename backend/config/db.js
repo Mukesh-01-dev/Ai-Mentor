@@ -9,7 +9,7 @@ const connectionString = process.env.NEON_DATABASE_URL;
 let sequelize;
 
 if (connectionString) {
-  // Production: Use Neon connection string
+  const isLocal = connectionString.includes("localhost");
   sequelize = new Sequelize(connectionString, {
     dialect: "postgres",
     logging: false,
@@ -19,12 +19,14 @@ if (connectionString) {
       acquire: parseInt(process.env.DB_POOL_ACQUIRE, 10) || 30000,
       idle: parseInt(process.env.DB_POOL_IDLE, 10) || 10000,
     },
-    dialectOptions: {
-      ssl: {
-        require: true,
-        rejectUnauthorized: true,
+   dialectOptions: isLocal
+    ? {} // ✅ NO SSL for localhost
+    : {
+        ssl: {
+          require: true,
+          rejectUnauthorized: false,
+        },
       },
-    },
   });
 } else {
   // Development: Use local PostgreSQL credentials
