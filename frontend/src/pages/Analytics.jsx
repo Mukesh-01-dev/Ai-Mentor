@@ -877,7 +877,7 @@ const Analytics = () => {
           border-radius: 4px;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          backgrou: #94a3b8;
+          background: #94a3b8;
         }
         
         @keyframes shimmer {
