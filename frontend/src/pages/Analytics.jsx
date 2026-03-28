@@ -408,7 +408,7 @@ const Analytics = () => {
                 </Link>
               </div>
               
-              <div className="bg-white dark:bg-[#1A1A1A] rounded-2xl shadow-lg overflow-hidden border border-[#CCCCCC]/30 dark:border-gray-700">
+              <div className="bg-teal-50 dark:bg-teal-900/30 rounded-2xl shadow-lg overflow-hidden border border-teal-200/50 dark:border-gray-700">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left">
                     <thead className="bg-[#F5F5F5] dark:bg-gray-700/50">
