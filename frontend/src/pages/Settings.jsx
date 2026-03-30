@@ -11,6 +11,7 @@ import {
   Camera,
   Eye,
   EyeOff,
+  UserX
 } from "lucide-react";
 import axios from "axios";
 import { useTheme } from "../context/ThemeContext";
@@ -24,6 +25,7 @@ const NAV_KEYS = [
   { icon: Shield, key: "password_security", labelKey: "settings.nav.password_security" },
   { icon: Palette, key: "appearance", labelKey: "settings.nav.appearance" },
   { icon: Globe, key: "language", labelKey: "settings.nav.language" },
+   { icon:UserX , key: "delete_account", labelKey: "settings.nav.delete_account" },
 ];
 
 export default function Settings() {
@@ -183,7 +185,13 @@ export default function Settings() {
                   const IconComponent = item.icon;
                   return (
                     <button
-                      onClick={() => setActiveSetting(item.key)}
+                        onClick={() => {
+                          if (item.key === "delete_account") {
+                            setshowDeletePopup(true);
+                          } else {
+                            setActiveSetting(item.key);
+                          }
+                        }}
                       key={item.key}
                       className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-left transition-colors ${activeSetting === item.key
                         ? "bg-teal-50 dark:bg-teal-900/20 text-main"
@@ -337,12 +345,6 @@ export default function Settings() {
                           className="w-full min-h-[122px] px-4 py-3 rounded-xl border border-border text-[16px] font-[Inter] resize-none focus:ring-2 focus:ring-primary focus:border-primary bg-input text-main"
                         />
 
-                      </div>
-                      <div className="flex justify-end ">
-                        <button className="px-4 py-1 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium font-[Inter] transition"
-                          onClick={() => setshowDeletePopup(true)}>
-                          Delete My Account
-                        </button>
                       </div>
                     </div>
                   </div>

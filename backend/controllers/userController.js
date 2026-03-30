@@ -2,6 +2,8 @@
 import User from "../models/User.js";
 import CommunityPost from "../models/CommunityPost.js";
 import Notifications from"../models/Notification.js";
+import courses from "../models/Course.js";
+import report from "../models/Report.js";
 import jwt from "jsonwebtoken";
 import cloudinary from "../config/cloudinary.js";
 import fs from "fs";
@@ -481,9 +483,20 @@ const removePurchasedCourse = async (req, res) => {
       where: {  userId }
     });
     
+    //delete notifications
      await Notifications.destroy({
       where: {  userId }
     });
+
+    // //delete courses
+    //  await courses.destroy({
+    //   where: {  userId }
+    // });
+
+    // //delete reports
+    //  await report.destroy({
+    //   where: {  userId }
+    // });
 
     //delete user
     await User.destroy({
