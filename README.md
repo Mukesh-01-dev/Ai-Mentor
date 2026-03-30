@@ -107,3 +107,5 @@ AI-Mentor-Updated/
 ## About
 
 This project was developed as part of an internship. All rights reserved by the respective authors and organisation.
+
+Project 
