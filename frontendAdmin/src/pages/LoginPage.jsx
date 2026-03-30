@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import API_BASE_URL from "../lib/api";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -14,7 +13,7 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+      const response = await fetch(`/api/admin/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -25,7 +24,7 @@ export default function LoginPage() {
         throw new Error(data?.message || "Login failed");
       }
 
-      if (!data?.token || data?.role !== "admin") {
+      if (!data?.token || data?.role !== "admin" && data?.role !== "superAdmin") {
         throw new Error("This account is not an admin account");
       }
 

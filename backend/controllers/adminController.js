@@ -1,101 +1,115 @@
-import User from "../models/User.js";
+import Admin from "../models/Admin.js";
+import jwt from "jsonwebtoken";
 
-const getAdminUsers = async (req, res) => {
+const generateToken = (id) => {
+  return jwt.sign({ id }, process.env.JWT_SECRET, {
+    expiresIn: "30d",
+  });
+};
+
+// @desc    Register a new Admin (restricted to superAdmin)
+// @route   POST /api/admin/register
+// @access  Private/SuperAdmin
+const registerAdmin = async (req, res) => {
+  const { name, email, password, role } = req.body;
+
   try {
-    const { q = "" } = req.query;
-    const query = String(q).trim().toLowerCase();
+    const adminExists = await Admin.findOne({ where: { email } });
+    if (adminExists) {
+      return res.status(400).json({ message: "Admin already exists" });
+    }
 
-    const users = await User.findAll({
-      attributes: [
-        "id",
-        "name",
-        "email",
-        "role",
-        "avatar_url",
-        "purchasedCourses",
-        "createdAt",
-      ],
-      order: [["createdAt", "DESC"]],
+    const admin = await Admin.create({
+      name,
+      email,
+      password,
+      role: role || "admin",
     });
 
-    const normalized = users
-      .map((user) => ({
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        avatar_url: user.avatar_url,
-        joinedAt: user.createdAt,
-        purchasedCourses: Array.isArray(user.purchasedCourses) ? user.purchasedCourses : [],
-        purchasedCoursesCount: Array.isArray(user.purchasedCourses) ? user.purchasedCourses.length : 0,
-      }))
-      .filter((user) => {
-        if (!query) return true;
-        return (
-          user.name?.toLowerCase().includes(query) ||
-          user.email?.toLowerCase().includes(query) ||
-          user.role?.toLowerCase().includes(query)
-        );
+    res.status(201).json({
+      id: admin.id,
+      name: admin.name,
+      email: admin.email,
+      role: admin.role,
+    });
+  } catch (error) {
+    console.error("REGISTER ADMIN ERROR:", error.message);
+    res.status(500).json({ message: "Server Error" });
+  }
+};
+
+// @desc    Login Admin
+// @route   POST /api/admin/login
+// @access  Public
+const loginAdmin = async (req, res) => {
+  const { email, password } = req.body;
+
+  try {
+    const admin = await Admin.findOne({ where: { email } });
+
+    if (admin && (await admin.matchPassword(password))) {
+      res.json({
+        id: admin.id,
+        name: admin.name,
+        email: admin.email,
+        role: admin.role,
+        token: generateToken(admin.id),
       });
-
-    res.json(normalized);
+    } else {
+      res.status(401).json({ message: "Invalid email or password" });
+    }
   } catch (error) {
-    console.error("GET ADMIN USERS ERROR:", error);
-    res.status(500).json({ message: "Failed to fetch users" });
+    console.error("LOGIN ADMIN ERROR:", error.message);
+    res.status(500).json({ message: "Server Error" });
   }
 };
 
-const updateUserRole = async (req, res) => {
-  try {
-    const { role } = req.body;
-    if (!["user", "admin"].includes(role)) {
-      return res.status(400).json({ message: "role must be either user or admin" });
-    }
-
-    const user = await User.findByPk(req.params.userId);
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    user.role = role;
-    await user.save();
-
+// @desc    Get Current Admin Profile
+// @route   GET /api/admin/profile
+// @access  Private
+const getAdminProfile = async (req, res) => {
+  if (req.admin) {
     res.json({
-      message: "User role updated successfully",
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      },
+      id: req.admin.id,
+      name: req.admin.name,
+      email: req.admin.email,
+      role: req.admin.role,
     });
-  } catch (error) {
-    console.error("UPDATE USER ROLE ERROR:", error);
-    res.status(500).json({ message: "Failed to update user role" });
+  } else {
+    res.status(404).json({ message: "Admin not found" });
   }
 };
 
-const deleteUserByAdmin = async (req, res) => {
+// @desc    Delete an Admin (restricted to superAdmin)
+// @route   DELETE /api/admin/:id
+// @access  Private/SuperAdmin
+const deleteAdmin = async (req, res) => {
+  const { id } = req.params;
+
   try {
-    const targetUserId = req.params.userId;
-    if (String(req.user.id) === String(targetUserId)) {
-      return res.status(400).json({ message: "Admin cannot delete their own account from admin panel" });
+    const adminToDelete = await Admin.findByPk(id);
+    if (!adminToDelete) {
+      return res.status(404).json({ message: "Admin not found" });
     }
 
-    const deletedCount = await User.destroy({ where: { id: targetUserId } });
-    if (!deletedCount) {
-      return res.status(404).json({ message: "User not found" });
+    // prevent superAdmin from deleting themselves
+    if (adminToDelete.id === req.admin.id) {
+        return res.status(400).json({ message: "You cannot delete yourself" });
     }
 
-    res.json({ message: "User deleted successfully" });
+    await adminToDelete.destroy();
+    res.json({ message: "Admin removed" });
   } catch (error) {
-    console.error("DELETE USER BY ADMIN ERROR:", error);
-    res.status(500).json({ message: "Failed to delete user" });
+    console.error("DELETE ADMIN ERROR:", error.message);
+    res.status(500).json({ message: "Server Error" });
   }
 };
 
-export {
-  getAdminUsers,
-  updateUserRole,
-  deleteUserByAdmin,
+// @desc    Logout Admin / Clear Cookie (if using cookies)
+// @route   POST /api/admin/logout
+// @access  Private
+const logoutAdmin = async (req, res) => {
+  res.json({ message: "Logged out successfully. Please remove your token on the client side." });
 };
+
+export { registerAdmin, loginAdmin, getAdminProfile, deleteAdmin, logoutAdmin };

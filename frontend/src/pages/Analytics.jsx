@@ -23,8 +23,6 @@ import {
   Sun,
   Menu
 } from "lucide-react";
-import Header from "../components/Header";
-import Sidebar from "../components/Sidebar";
 import { useAuth } from "../context/AuthContext";
 import { useSidebar } from "../context/SidebarContext";
 
@@ -245,16 +243,7 @@ const Analytics = () => {
   const ongoingCourses = myCourses.filter(c => c.progress > 0).length;
 
   return (
-    <div className="min-h-screen bg-[#F5F5F5] dark:bg-[#0A0A0A] flex flex-col">
-      <Header />
-
-      <Sidebar activePage="analytics" />
-
-      <div
-        className={`flex-1 transition-all duration-300 mt-16 ${
-          sidebarCollapsed ? "lg:ml-20" : "lg:ml-80"
-        }`}
-      >
+    <>
         <main className="p-4 md:p-6 lg:p-8">
           {/* Dark Mode Toggle Button */}
           <div className="fixed bottom-6 right-6 z-50">
@@ -314,7 +303,7 @@ const Analytics = () => {
             ].map((metric, idx) => (
               <div
                 key={idx}
-                className="group relative bg-white dark:bg-[#1A1A1A] rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300"
+                className="group relative bg-white dark:bg-[#27272A] rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300"
               >
                 <div className="flex items-start justify-between">
                   <div>
@@ -337,7 +326,7 @@ const Analytics = () => {
 
           {/* Quick Stats Row */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            <div className="bg-white dark:bg-[#1A1A1A] rounded-xl p-4 shadow-sm">
+            <div className="bg-white dark:bg-[#27272A] rounded-xl p-4 shadow-sm">
               <div className="text-sm text-[#2D3436]/60 dark:text-gray-400">Average Progress</div>
               <div className="text-xl font-bold text-[#00bea3]">{averageProgress}%</div>
               <div className="w-full bg-[#F5F5F5] dark:bg-gray-700 rounded-full h-1.5 mt-2">
@@ -347,21 +336,21 @@ const Analytics = () => {
                 ></div>
               </div>
             </div>
-            <div className="bg-white dark:bg-[#1A1A1A] rounded-xl p-4 shadow-sm">
+            <div className="bg-white dark:bg-[#27272A] rounded-xl p-4 shadow-sm">
               <div className="text-sm text-[#2D3436]/60 dark:text-gray-400">Completed Lessons</div>
               <div className="text-xl font-bold text-[#28A745]">
                 {myCourses.reduce((acc, c) => acc + c.completedLessons, 0)}
               </div>
               <div className="text-xs text-[#2D3436]/50 dark:text-gray-500 mt-2">Across all courses</div>
             </div>
-            <div className="bg-white dark:bg-[#1A1A1A] rounded-xl p-4 shadow-sm">
+            <div className="bg-white dark:bg-[#27272A] rounded-xl p-4 shadow-sm">
               <div className="text-sm text-[#2D3436]/60 dark:text-gray-400">Total Study Time</div>
               <div className="text-xl font-bold text-[#ff6d34]">
                 {Math.round(totalStudyTime / 60)} hrs
               </div>
               <div className="text-xs text-[#2D3436]/50 dark:text-gray-500 mt-2">This month</div>
             </div>
-            <div className="bg-white dark:bg-[#1A1A1A] rounded-xl p-4 shadow-sm">
+            <div className="bg-white dark:bg-[#27272A] rounded-xl p-4 shadow-sm">
               <div className="text-sm text-[#2D3436]/60 dark:text-gray-400">Upcoming Tasks</div>
               <div className="text-xl font-bold text-[#FFC107]">
                 {Object.values(tasks).flat().filter(t => t.status === "Upcoming").length}
@@ -874,7 +863,6 @@ const Analytics = () => {
             </div>
           )}
         </main>
-      </div>
 
       <style jsx>{`
         .custom-scrollbar::-webkit-scrollbar {
@@ -904,7 +892,7 @@ const Analytics = () => {
           animation: shimmer 2s infinite;
         }
       `}</style>
-    </div>
+    </>
   );
 };
 

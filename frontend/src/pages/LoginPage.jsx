@@ -5,6 +5,12 @@ import AuthLayout from "../components/auth/AuthLayout.jsx";
 import SocialLogin from "../components/auth/SocialLogin";
 import axios from "axios"; // ✅ Yeh line add karna compulsory hai
 import toast from "react-hot-toast";
+import { z } from "zod";
+
+const loginSchema = z.object({
+  email: z.string().email("Please enter a valid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters long"),
+});
 
 const FormInput = ({ label, type, placeholder, value, onChange }) => {
   return (
@@ -42,9 +48,10 @@ const LoginPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      const validationResult = loginSchema.parse({ email, password });
       const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/auth/login`, {
-        email,
-        password
+        email: validationResult.email,
+        password: validationResult.password
       });
 
       if (response.data.token) {
@@ -53,7 +60,11 @@ const LoginPage = () => {
         navigate('/dashboard');
       }
     } catch (err) {
-      toast.error(err.response?.data?.message || "Invalid Credentials!");
+      if (err instanceof z.ZodError) {
+        toast.error(err.errors[0].message);
+      } else {
+        toast.error(err.response?.data?.message || "Invalid Credentials!");
+      }
     }
   };
 

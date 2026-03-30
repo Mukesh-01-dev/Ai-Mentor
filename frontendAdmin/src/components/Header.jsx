@@ -107,7 +107,6 @@ const Header = ({ title, onMenuClick, searchQuery = "", onSearchChange }) => {
                 className="w-full pl-12 pr-4 py-2.5 bg-canvas border border-border rounded-2xl text-sm focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all outline-none"
               />
             </div>
-            <Themetoggle/> 
           </div>
 
           <div className="flex items-center space-x-5">
@@ -179,7 +178,7 @@ const Header = ({ title, onMenuClick, searchQuery = "", onSearchChange }) => {
                 </div>
               )}
             </div>
-
+            <Themetoggle/> 
             <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => setDropdownOpen((prev) => !prev)}

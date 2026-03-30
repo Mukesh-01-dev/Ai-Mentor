@@ -18,7 +18,7 @@ import adminRoutes from "./routes/adminRoutes.js";
 import "./models/CommunityPost.js";
 import "./models/Notification.js";
 import "./models/Report.js";
-
+import "./models/modelAssociations.js";
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
@@ -44,7 +44,7 @@ app.get("/", (req, res) => {
   res.send("API is running...");
 });
 
-app.use("/uploads", express.static("uploads"));
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 // ✅ REGISTER ROUTES (CORRECT PLACE)
 app.use("/api/auth", authRoutes);

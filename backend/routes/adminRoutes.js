@@ -1,15 +1,19 @@
 import express from "express";
-import { protect, admin } from "../middleware/authMiddleware.js";
 import {
-  getAdminUsers,
-  updateUserRole,
-  deleteUserByAdmin,
+  registerAdmin,
+  loginAdmin,
+  getAdminProfile,
+  deleteAdmin,
+  logoutAdmin,
 } from "../controllers/adminController.js";
+import { protectAdmin, superAdminOnly } from "../middleware/adminAuthMiddleware.js";
 
 const router = express.Router();
 
-router.get("/users", protect, admin, getAdminUsers);
-router.put("/users/:userId/role", protect, admin, updateUserRole);
-router.delete("/users/:userId", protect, admin, deleteUserByAdmin);
+router.post("/login", loginAdmin);
+router.post("/register", protectAdmin, superAdminOnly, registerAdmin);
+router.get("/profile", protectAdmin, getAdminProfile);
+router.post("/logout", protectAdmin, logoutAdmin);
+router.delete("/:id", protectAdmin, superAdminOnly, deleteAdmin);
 
 export default router;

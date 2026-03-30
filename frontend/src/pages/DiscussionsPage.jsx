@@ -1,7 +1,5 @@
-﻿import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import Header from "../components/Header";
-import Sidebar from "../components/Sidebar";
 import { useAuth } from "../context/AuthContext";
 import { useSidebar } from "../context/SidebarContext";
 import { useTranslation } from "react-i18next";
@@ -764,17 +762,8 @@ const DiscussionsPage = () => {
   const courseNameForPost = (post) =>
     post.courseName || `Course #${post.courseId}`;
 
-  //Render
   return (
-    <div className="min-h-screen bg-canvas-alt flex flex-col">
-      <Header />
-      <Sidebar activePage="discussions" />
-
-      <div
-        className={`flex-1 flex flex-col transition-all duration-300 mt-10 ${
-          sidebarCollapsed ? "lg:ml-20" : "lg:ml-80"
-        }`}
-      >
+    <>
         <div className="relative overflow-hidden bg-linear-to-br from-teal-700 via-teal-600 to-teal-800 pt-16 pb-12 px-4 sm:px-8">
           {/* grid pattern overlay */}
           <div
@@ -2164,7 +2153,6 @@ const DiscussionsPage = () => {
             </main>
           )}
         </div>
-      </div>
 
       {/* Popup Modal */}
       {popupModal.open && (
@@ -2348,7 +2336,7 @@ const DiscussionsPage = () => {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
 

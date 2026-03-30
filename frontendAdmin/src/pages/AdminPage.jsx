@@ -1,7 +1,6 @@
 ﻿import { useEffect, useMemo, useRef, useState } from "react";
 import { BookOpen, ChevronRight, CreditCard, GraduationCap, LayoutDashboard, LogOut, Settings, ShieldAlert, Users, X } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
-import API_BASE_URL from "../lib/api";
 import Header from "../components/Header";
 
 const NAV = [
@@ -75,7 +74,7 @@ export default function AdminPage() {
   const [moduleId, setModuleId] = useState("");
 
   const callApi = async (path, options = {}) => {
-    const res = await fetch(`${API_BASE_URL}${path}`, {
+    const res = await fetch(`/api${path}`, {
       ...options,
       headers: {
         "Content-Type": "application/json",
@@ -95,9 +94,9 @@ export default function AdminPage() {
     setBusy(true); setError("");
     try {
       const [c, u, r] = await Promise.all([
-        callApi("/api/courses"),
-        callApi("/api/admin/users"),
-        callApi("/api/community/reports"),
+        callApi("/courses"),
+        callApi("/admin/users"),
+        callApi("/community/reports"),
       ]);
       setCourses(c || []);
       setUsers(u || []);
@@ -110,12 +109,12 @@ export default function AdminPage() {
   };
 
   useEffect(() => {
-    if (token && user?.role === "admin") fetchAll();
+    if (token && user?.role === "admin" || user?.role === "superAdmin") fetchAll();
   }, []);
 
   useEffect(() => {
     if (!manageCourse) return;
-    callApi(`/api/courses/${manageCourse.id}/learning`)
+    callApi(`/courses/${manageCourse.id}/learning`)
       .then((data) => setLearning((prev) => ({ ...prev, [manageCourse.id]: data })))
       .catch(() => setLearning((prev) => ({ ...prev, [manageCourse.id]: { modules: [] } })));
   }, [manageCourse?.id]);
@@ -131,7 +130,7 @@ export default function AdminPage() {
   }, []);
 
   if (!token) return <GateCard title="Admin login required" body="Please login first." />;
-  if (user?.role !== "admin") return <GateCard title="Access denied" body="Admin role is required for this panel." />;
+  if (user?.role !== "admin" && user?.role !== "superAdmin") return <GateCard title="Access denied" body="Admin role is required for this panel." />;
 
   const enrollmentRows = users.flatMap((u) => (u.purchasedCourses || []).map((p) => {
     const course = courses.find((c) => Number(c.id) === Number(p.courseId));
@@ -168,7 +167,7 @@ export default function AdminPage() {
     e.preventDefault();
     try {
       setBusy(true);
-      await callApi("/api/courses", {
+      await callApi("/courses", {
         method: "POST",
         body: JSON.stringify({
           title: courseForm.title,
@@ -189,12 +188,12 @@ export default function AdminPage() {
 
   const removeCourse = async (id) => {
     if (!window.confirm("Delete this course?")) return;
-    try { setBusy(true); await callApi(`/api/courses/${id}`, { method: "DELETE" }); notify("Course deleted"); await fetchAll(); }
+    try { setBusy(true); await callApi(`/courses/${id}`, { method: "DELETE" }); notify("Course deleted"); await fetchAll(); }
     catch (e) { setError(e.message); } finally { setBusy(false); }
   };
 
   const updateRole = async (userId, role) => {
-    try { setBusy(true); await callApi(`/api/admin/users/${userId}/role`, { method: "PUT", body: JSON.stringify({ role }) }); await fetchAll(); }
+    try { setBusy(true); await callApi(`/admin/users/${userId}/role`, { method: "PUT", body: JSON.stringify({ role }) }); await fetchAll(); }
     catch (e) { setError(e.message); } finally { setBusy(false); }
   };
 
@@ -205,7 +204,7 @@ export default function AdminPage() {
   };
 
   const reportAction = async (id, action) => {
-    try { setBusy(true); await callApi(`/api/community/reports/${id}`, { method: "PUT", body: JSON.stringify({ action }) }); notify(`Report ${action}`); await fetchAll(); }
+    try { setBusy(true); await callApi(`/community/reports/${id}`, { method: "PUT", body: JSON.stringify({ action }) }); notify(`Report ${action}`); await fetchAll(); }
     catch (e) { setError(e.message); } finally { setBusy(false); }
   };
 
@@ -407,26 +406,26 @@ export default function AdminPage() {
           <div className="max-h-[90vh] w-full max-w-4xl overflow-auto rounded-xl border border-border bg-card p-4">
             <div className="mb-3 flex items-center justify-between"><h2 className="font-bold">Manage: {manageCourse.title}</h2><button className="rounded border border-border p-1" onClick={() => setManageCourse(null)}><X size={14} /></button></div>
             <div className="grid gap-3 md:grid-cols-2">
-              <form onSubmit={async (e) => { e.preventDefault(); try { setBusy(true); await callApi(`/api/courses/${manageCourse.id}/modules`, { method: "POST", body: JSON.stringify({ modules: [moduleForm] }) }); setModuleForm({ id: "", title: "" }); notify("Module added"); const data = await callApi(`/api/courses/${manageCourse.id}/learning`); setLearning((p) => ({ ...p, [manageCourse.id]: data })); await fetchAll(); } catch (e2) { setError(e2.message); } finally { setBusy(false); } }} className="space-y-2 rounded border border-border p-3">
+              <form onSubmit={async (e) => { e.preventDefault(); try { setBusy(true); await callApi(`/courses/${manageCourse.id}/modules`, { method: "POST", body: JSON.stringify({ modules: [moduleForm] }) }); setModuleForm({ id: "", title: "" }); notify("Module added"); const data = await callApi(`/courses/${manageCourse.id}/learning`); setLearning((p) => ({ ...p, [manageCourse.id]: data })); await fetchAll(); } catch (e2) { setError(e2.message); } finally { setBusy(false); } }} className="space-y-2 rounded border border-border p-3">
                 <p className="text-sm font-semibold">Add module</p>
                 <input className="w-full rounded border border-border bg-input px-2 py-1 text-sm" placeholder="Module id" value={moduleForm.id} onChange={(e) => setModuleForm((p) => ({ ...p, id: e.target.value }))} />
                 <input className="w-full rounded border border-border bg-input px-2 py-1 text-sm" placeholder="Module title" required value={moduleForm.title} onChange={(e) => setModuleForm((p) => ({ ...p, title: e.target.value }))} />
                 <button className="rounded bg-primary px-2 py-1 text-xs text-white">Save</button>
               </form>
-              <form onSubmit={async (e) => { e.preventDefault(); if (!moduleId) return; try { setBusy(true); await callApi(`/api/courses/${manageCourse.id}/modules/${moduleId}/lessons`, { method: "POST", body: JSON.stringify({ lessons: [lessonForm] }) }); setLessonForm({ id: "", title: "", duration: "10 min", type: "video", youtubeUrl: "" }); notify("Lesson added"); const data = await callApi(`/api/courses/${manageCourse.id}/learning`); setLearning((p) => ({ ...p, [manageCourse.id]: data })); await fetchAll(); } catch (e2) { setError(e2.message); } finally { setBusy(false); } }} className="space-y-2 rounded border border-border p-3">
+              <form onSubmit={async (e) => { e.preventDefault(); if (!moduleId) return; try { setBusy(true); await callApi(`/courses/${manageCourse.id}/modules/${moduleId}/lessons`, { method: "POST", body: JSON.stringify({ lessons: [lessonForm] }) }); setLessonForm({ id: "", title: "", duration: "10 min", type: "video", youtubeUrl: "" }); notify("Lesson added"); const data = await callApi(`/courses/${manageCourse.id}/learning`); setLearning((p) => ({ ...p, [manageCourse.id]: data })); await fetchAll(); } catch (e2) { setError(e2.message); } finally { setBusy(false); } }} className="space-y-2 rounded border border-border p-3">
                 <p className="text-sm font-semibold">Add lesson</p>
                 <select className="w-full rounded border border-border bg-input px-2 py-1 text-sm" value={moduleId} onChange={(e) => setModuleId(e.target.value)}><option value="">Select module</option>{modules.map((m) => <option key={m.id} value={m.id}>{m.title}</option>)}</select>
                 <input className="w-full rounded border border-border bg-input px-2 py-1 text-sm" placeholder="Lesson title" required value={lessonForm.title} onChange={(e) => setLessonForm((p) => ({ ...p, title: e.target.value }))} />
                 <input className="w-full rounded border border-border bg-input px-2 py-1 text-sm" placeholder="Duration" value={lessonForm.duration} onChange={(e) => setLessonForm((p) => ({ ...p, duration: e.target.value }))} />
                 <button className="rounded bg-primary px-2 py-1 text-xs text-white">Save</button>
               </form>
-              <form onSubmit={async (e) => { e.preventDefault(); try { setBusy(true); await callApi(`/api/courses/${manageCourse.id}/lessons/${videoForm.lessonId}/video`, { method: "PUT", body: JSON.stringify({ youtubeUrl: videoForm.youtubeUrl }) }); setVideoForm({ lessonId: "", youtubeUrl: "" }); notify("Video updated"); } catch (e2) { setError(e2.message); } finally { setBusy(false); } }} className="space-y-2 rounded border border-border p-3">
+              <form onSubmit={async (e) => { e.preventDefault(); try { setBusy(true); await callApi(`/courses/${manageCourse.id}/lessons/${videoForm.lessonId}/video`, { method: "PUT", body: JSON.stringify({ youtubeUrl: videoForm.youtubeUrl }) }); setVideoForm({ lessonId: "", youtubeUrl: "" }); notify("Video updated"); } catch (e2) { setError(e2.message); } finally { setBusy(false); } }} className="space-y-2 rounded border border-border p-3">
                 <p className="text-sm font-semibold">Update lesson video</p>
                 <select className="w-full rounded border border-border bg-input px-2 py-1 text-sm" value={videoForm.lessonId} onChange={(e) => setVideoForm((p) => ({ ...p, lessonId: e.target.value }))}><option value="">Select lesson</option>{lessons.map((l) => <option key={l.id} value={l.id}>{l.title}</option>)}</select>
                 <input className="w-full rounded border border-border bg-input px-2 py-1 text-sm" placeholder="YouTube URL" value={videoForm.youtubeUrl} onChange={(e) => setVideoForm((p) => ({ ...p, youtubeUrl: e.target.value }))} />
                 <button className="rounded bg-primary px-2 py-1 text-xs text-white">Update</button>
               </form>
-              <form onSubmit={async (e) => { e.preventDefault(); try { setBusy(true); await callApi(`/api/courses/${manageCourse.id}/subtopics`, { method: "POST", body: JSON.stringify({ subtopics: [{ title: subtopicForm.title, goal: subtopicForm.goal, topics: subtopicForm.topics.split(",").map((s) => s.trim()).filter(Boolean), tools: subtopicForm.tools.split(",").map((s) => s.trim()).filter(Boolean), activities: subtopicForm.activities.split(",").map((s) => s.trim()).filter(Boolean) }] }) }); setSubtopicForm({ title: "", goal: "", topics: "", tools: "", activities: "" }); notify("Subtopic added"); await fetchAll(); } catch (e2) { setError(e2.message); } finally { setBusy(false); } }} className="space-y-2 rounded border border-border p-3">
+              <form onSubmit={async (e) => { e.preventDefault(); try { setBusy(true); await callApi(`/courses/${manageCourse.id}/subtopics`, { method: "POST", body: JSON.stringify({ subtopics: [{ title: subtopicForm.title, goal: subtopicForm.goal, topics: subtopicForm.topics.split(",").map((s) => s.trim()).filter(Boolean), tools: subtopicForm.tools.split(",").map((s) => s.trim()).filter(Boolean), activities: subtopicForm.activities.split(",").map((s) => s.trim()).filter(Boolean) }] }) }); setSubtopicForm({ title: "", goal: "", topics: "", tools: "", activities: "" }); notify("Subtopic added"); await fetchAll(); } catch (e2) { setError(e2.message); } finally { setBusy(false); } }} className="space-y-2 rounded border border-border p-3">
                 <p className="text-sm font-semibold">Add subtopic</p>
                 <input className="w-full rounded border border-border bg-input px-2 py-1 text-sm" placeholder="Title" required value={subtopicForm.title} onChange={(e) => setSubtopicForm((p) => ({ ...p, title: e.target.value }))} />
                 <input className="w-full rounded border border-border bg-input px-2 py-1 text-sm" placeholder="Goal" value={subtopicForm.goal} onChange={(e) => setSubtopicForm((p) => ({ ...p, goal: e.target.value }))} />
