@@ -35,7 +35,8 @@
       "notifications": "Notifications",
       "password_security": "Password & Security",
       "appearance": "Appearance",
-      "language": "Language"
+      "language": "Language",
+      "delete_account":"Delete My Account"
     },
     "profile": {
       "title": "Profile Settings",
