@@ -2,7 +2,6 @@ import React from "react";
 import { Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
-import AdminRoute from "./components/AdminRoute";
 import DashboardLayout from "./components/DashboardLayout";
 import LoginPage from "./pages/LoginPage";
 import SignUpPage from "./pages/SignUpPage";
@@ -14,7 +13,6 @@ import Settings from "./pages/Settings";
 import WatchedVideos from "./pages/WatchedVideos";
 import CoursePreview from "./pages/CoursePreview";
 import LearningPage from "./pages/LearningPage";
-import AdminPage from "./pages/AdminPage";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import "./App.css";
@@ -56,11 +54,6 @@ const App = () => {
           <Route path="/watchedvideos" element={<WatchedVideos />} />
           <Route path="/learning/:id" element={<LearningPage />} />
         </Route>
-      </Route>
-
-      {/* Admin Routes */}
-      <Route element={<AdminRoute />}>
-        <Route path="/admin" element={<AdminPage />} />
       </Route>
 
       {/* Other public routes */}

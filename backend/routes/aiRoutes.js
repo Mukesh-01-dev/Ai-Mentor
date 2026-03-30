@@ -39,7 +39,7 @@ router.post("/generate-video", protect, async (req, res) => {
       },
     });
 
-   if (cachedVideo) {
+    if (cachedVideo) {
       console.log("🎯 Cache found. Verifying file exists...");
       // If already a trusted Cloudinary URL, return it directly — no local check needed
       let parsedUrl;
@@ -85,10 +85,10 @@ router.post("/generate-video", protect, async (req, res) => {
         });
       }
     }
-    
+
 
     // Get titles from JSON
-    const titles = getCourseAndLessonTitles(courseId, lessonId);
+    const titles = await getCourseAndLessonTitles(courseId, lessonId);
 
     if (!titles) {
       return res.status(404).json({ message: "Invalid course or lesson" });
