@@ -25,8 +25,10 @@ import {
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useSidebar } from "../context/SidebarContext";
+import { useTranslation } from "react-i18next";
 
 const Analytics = () => {
+  const { t, i18n } = useTranslation();
   const { sidebarCollapsed } = useSidebar();
   const { user } = useAuth();
 
@@ -262,10 +264,10 @@ const Analytics = () => {
           {/* Welcome Section */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-[#2D3436] dark:text-white">
-              Welcome back, {user?.name || 'Learner'}!
+              {t('analytics.welcome_back_user', { name: user?.name || 'Learner' })}
             </h1>
             <p className="text-[#2D3436]/70 dark:text-gray-400 mt-2 text-lg">
-              Here's your learning progress and upcoming tasks
+              {t('analytics.analytics_subtitle')}
             </p>
           </div>
 
@@ -273,32 +275,32 @@ const Analytics = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             {[
               {
-                label: "Enrolled Courses",
+                label: t('analytics.enrolled_courses'),
                 value: totalCourses,
                 icon: <BookOpen className="w-6 h-6 text-[#00bea3]" />,
                 bgColor: "bg-[#00bea3]/10 dark:bg-[#00bea3]/20",
-                trend: `${ongoingCourses} in progress`
+                trend: t('dashboard.ongoing_courses_progress', { count: ongoingCourses, defaultValue: `${ongoingCourses} in progress` })
               },
               {
-                label: "Attendance Rate",
+                label: t('analytics.attendance_rate'),
                 value: `${attendance}%`,
                 icon: <BarChart3 className="w-6 h-6 text-[#28A745]" />,
                 bgColor: "bg-[#28A745]/10 dark:bg-[#28A745]/20",
-                trend: attendance > 70 ? '👍 Great consistency' : '👀 Needs improvement'
+                trend: attendance > 70 ? t('analytics.great_consistency', { defaultValue: '👍 Great consistency' }) : t('analytics.needs_improvement', { defaultValue: '👀 Needs improvement' })
               },
               {
-                label: "Current Streak",
+                label: t('analytics.current_streak_label'),
                 value: streak,
                 icon: <Zap className="w-6 h-6 text-[#FFC107]" />,
                 bgColor: "bg-[#FFC107]/10 dark:bg-[#FFC107]/20",
-                trend: `${streak} day${streak !== 1 ? 's' : ''} streak!`
+                trend: t('analytics.streak_days', { count: streak })
               },
               {
-                label: "Certificates",
+                label: t('analytics.certificates'),
                 value: certificates,
                 icon: <Award className="w-6 h-6 text-[#ff6d34]" />,
                 bgColor: "bg-[#ff6d34]/10 dark:bg-[#ff6d34]/20",
-                trend: certificates > 0 ? '🎉 Achievements unlocked' : 'Complete courses to earn'
+                trend: certificates > 0 ? t('analytics.achievements_unlocked') : t('analytics.complete_to_earn')
               },
             ].map((metric, idx) => (
               <div
@@ -327,7 +329,7 @@ const Analytics = () => {
           {/* Quick Stats Row */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             <div className="bg-white dark:bg-[#27272A] rounded-xl p-4 shadow-sm">
-              <div className="text-sm text-[#2D3436]/60 dark:text-gray-400">Average Progress</div>
+              <div className="text-sm text-[#2D3436]/60 dark:text-gray-400">{t('analytics.average_progress')}</div>
               <div className="text-xl font-bold text-[#00bea3]">{averageProgress}%</div>
               <div className="w-full bg-[#F5F5F5] dark:bg-gray-700 rounded-full h-1.5 mt-2">
                 <div 
@@ -337,25 +339,25 @@ const Analytics = () => {
               </div>
             </div>
             <div className="bg-white dark:bg-[#27272A] rounded-xl p-4 shadow-sm">
-              <div className="text-sm text-[#2D3436]/60 dark:text-gray-400">Completed Lessons</div>
+              <div className="text-sm text-[#2D3436]/60 dark:text-gray-400">{t('analytics.completed_lessons_count')}</div>
               <div className="text-xl font-bold text-[#28A745]">
                 {myCourses.reduce((acc, c) => acc + c.completedLessons, 0)}
               </div>
-              <div className="text-xs text-[#2D3436]/50 dark:text-gray-500 mt-2">Across all courses</div>
+              <div className="text-xs text-[#2D3436]/50 dark:text-gray-500 mt-2">{t('analytics.across_all_courses')}</div>
             </div>
             <div className="bg-white dark:bg-[#27272A] rounded-xl p-4 shadow-sm">
-              <div className="text-sm text-[#2D3436]/60 dark:text-gray-400">Total Study Time</div>
+              <div className="text-sm text-[#2D3436]/60 dark:text-gray-400">{t('analytics.total_study_time_label')}</div>
               <div className="text-xl font-bold text-[#ff6d34]">
-                {Math.round(totalStudyTime / 60)} hrs
+                {Math.round(totalStudyTime / 60)} {t('analytics.hours_unit', { defaultValue: 'hrs' })}
               </div>
-              <div className="text-xs text-[#2D3436]/50 dark:text-gray-500 mt-2">This month</div>
+              <div className="text-xs text-[#2D3436]/50 dark:text-gray-500 mt-2">{t('analytics.this_month')}</div>
             </div>
             <div className="bg-white dark:bg-[#27272A] rounded-xl p-4 shadow-sm">
-              <div className="text-sm text-[#2D3436]/60 dark:text-gray-400">Upcoming Tasks</div>
+              <div className="text-sm text-[#2D3436]/60 dark:text-gray-400">{t('analytics.upcoming_tasks_count')}</div>
               <div className="text-xl font-bold text-[#FFC107]">
                 {Object.values(tasks).flat().filter(t => t.status === "Upcoming").length}
               </div>
-              <div className="text-xs text-[#2D3436]/50 dark:text-gray-500 mt-2">Need attention</div>
+              <div className="text-xs text-[#2D3436]/50 dark:text-gray-500 mt-2">{t('analytics.need_attention')}</div>
             </div>
           </div>
 
@@ -369,7 +371,7 @@ const Analytics = () => {
                   : "text-[#2D3436]/60 hover:text-[#2D3436] dark:text-gray-400"
               }`}
             >
-              My Courses
+              {t('analytics.my_courses_tab')}
               {activeTab === "courses" && (
                 <span className="absolute bottom-0 left-0 w-full h-0.5 bg-[#ff6d34]"></span>
               )}
@@ -382,7 +384,7 @@ const Analytics = () => {
                   : "text-[#2D3436]/60 hover:text-[#2D3436] dark:text-gray-400"
               }`}
             >
-              Calendar & Tasks
+              {t('analytics.calendar_tasks_tab')}
               {activeTab === "calendar" && (
                 <span className="absolute bottom-0 left-0 w-full h-0.5 bg-[#ff6d34]"></span>
               )}
@@ -394,7 +396,7 @@ const Analytics = () => {
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-bold text-[#2D3436] dark:text-white flex items-center gap-2">
                   <BookOpen className="w-6 h-6 text-[#00bea3]" />
-                  My Courses
+                  {t('analytics.my_courses_tab')}
                   <span className="text-sm font-normal text-[#2D3436]/60 dark:text-gray-400 bg-[#F5F5F5] dark:bg-gray-700 px-2 py-1 rounded-full">
                     {filteredCourses.length}
                   </span>
@@ -403,7 +405,7 @@ const Analytics = () => {
                   to="/courses"
                   className="text-[#ff6d34] hover:text-[#ff6d34]/80 text-sm font-medium flex items-center gap-1"
                 >
-                  Browse All Courses
+                  {t('analytics.browse_all_courses')}
                   <ChevronRight className="w-4 h-4" />
                 </Link>
               </div>
@@ -413,11 +415,11 @@ const Analytics = () => {
                   <table className="w-full text-left">
                     <thead className="bg-[#F5F5F5] dark:bg-gray-700/50">
                       <tr>
-                        <th className="px-6 py-4 text-xs font-semibold text-[#2D3436]/70 dark:text-gray-300 uppercase tracking-wider">Course</th>
-                        <th className="px-6 py-4 text-xs font-semibold text-[#2D3436]/70 dark:text-gray-300 uppercase tracking-wider">Progress</th>
-                        <th className="px-6 py-4 text-xs font-semibold text-[#2D3436]/70 dark:text-gray-300 uppercase tracking-wider">Lessons</th>
-                        <th className="px-6 py-4 text-xs font-semibold text-[#2D3436]/70 dark:text-gray-300 uppercase tracking-wider">Level</th>
-                        <th className="px-6 py-4 text-xs font-semibold text-[#2D3436]/70 dark:text-gray-300 uppercase tracking-wider">Action</th>
+                        <th className="px-6 py-4 text-xs font-semibold text-[#2D3436]/70 dark:text-gray-300 uppercase tracking-wider">{t('analytics.table_course')}</th>
+                        <th className="px-6 py-4 text-xs font-semibold text-[#2D3436]/70 dark:text-gray-300 uppercase tracking-wider">{t('analytics.table_progress')}</th>
+                        <th className="px-6 py-4 text-xs font-semibold text-[#2D3436]/70 dark:text-gray-300 uppercase tracking-wider">{t('analytics.table_lessons')}</th>
+                        <th className="px-6 py-4 text-xs font-semibold text-[#2D3436]/70 dark:text-gray-300 uppercase tracking-wider">{t('analytics.table_level')}</th>
+                        <th className="px-6 py-4 text-xs font-semibold text-[#2D3436]/70 dark:text-gray-300 uppercase tracking-wider">{t('analytics.table_action')}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[#CCCCCC]/50 dark:divide-gray-700">
@@ -492,7 +494,7 @@ const Analytics = () => {
                                 to={`/learning/${course.id}`}
                                 className="inline-flex items-center gap-1 text-[#ff6d34] hover:text-[#ff6d34]/80 text-sm font-medium"
                               >
-                                Continue
+                                {t('analytics.continue_btn')}
                                 <ChevronRight className="w-4 h-4" />
                               </Link>
                             </td>
@@ -504,14 +506,14 @@ const Analytics = () => {
                             <div className="flex flex-col items-center gap-3">
                               <BookOpen className="w-12 h-12 text-gray-300 dark:text-gray-600" />
                               <p className="text-[#2D3436]/60 dark:text-gray-400">
-                                {searchQuery ? 'No courses match your search' : 'No courses enrolled yet.'}
+                                {searchQuery ? t('analytics.no_courses_match') : t('analytics.no_courses_enrolled')}
                               </p>
                               {!searchQuery && (
                                 <Link 
                                   to="/courses" 
                                   className="px-4 py-2 bg-[#ff6d34] text-white rounded-lg hover:bg-[#ff6d34]/90 transition"
                                 >
-                                  Browse Courses
+                                  {t('analytics.browse_courses_btn')}
                                 </Link>
                               )}
                             </div>
@@ -538,7 +540,7 @@ const Analytics = () => {
                     <ChevronLeft className="w-5 h-5 text-[#2D3436]/60 dark:text-gray-400 group-hover:text-[#ff6d34]" />
                   </button>
                   <span className="text-xl font-bold text-[#2D3436] dark:text-white">
-                    {currentDate.toLocaleString("default", {
+                    {currentDate.toLocaleString(i18n.language, {
                       month: "long",
                       year: "numeric",
                     })}
@@ -553,11 +555,14 @@ const Analytics = () => {
 
                 {/* Weekdays */}
                 <div className="grid grid-cols-7 gap-2 mb-2">
-                  {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
-                    <div key={d} className="text-center text-sm font-medium text-[#2D3436]/60 dark:text-gray-400">
-                      {d}
-                    </div>
-                  ))}
+                  {[0, 1, 2, 3, 4, 5, 6].map((d) => {
+                    const date = new Date(2021, 0, 3 + d); // 2021-01-03 was a Sunday
+                    return (
+                      <div key={d} className="text-center text-sm font-medium text-[#2D3436]/60 dark:text-gray-400">
+                        {date.toLocaleString(i18n.language, { weekday: 'short' })}
+                      </div>
+                    );
+                  })}
                 </div>
 
                 {/* Calendar Grid */}
@@ -630,7 +635,7 @@ const Analytics = () => {
                       const hasIncompleteTasks = hasAnyTask && !allTasksCompleted;
                       
                       const monthName = dayInfo.showMonthName 
-                        ? new Date(dayInfo.year, dayInfo.month, 1).toLocaleString('default', { month: 'short' })
+                        ? new Date(dayInfo.year, dayInfo.month, 1).toLocaleString(i18n.language, { month: 'short' })
                         : '';
                       
                       return (
@@ -700,7 +705,7 @@ const Analytics = () => {
                                 ))}
                                 {remainingCount > 0 && (
                                   <div className="text-[9px] text-[#2D3436]/50 dark:text-gray-500">
-                                    +{remainingCount} more
+                                    +{remainingCount} {t('common.more', { defaultValue: 'more' })}
                                   </div>
                                 )}
                               </div>
@@ -731,31 +736,31 @@ const Analytics = () => {
                 <div className="flex flex-wrap items-center gap-4 mt-6 pt-4 border-t border-[#CCCCCC] dark:border-gray-700">
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded-full bg-gradient-to-br from-orange-50 to-yellow-50 border-2 border-[#ff6d34]"></div>
-                    <span className="text-xs text-[#2D3436]/70 dark:text-gray-400">Today</span>
+                    <span className="text-xs text-[#2D3436]/70 dark:text-gray-400">{t('analytics.legend_today')}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded-full bg-gradient-to-br from-green-50 to-emerald-50 border border-[#28A745]"></div>
-                    <span className="text-xs text-[#2D3436]/70 dark:text-gray-400">All Tasks Completed</span>
+                    <span className="text-xs text-[#2D3436]/70 dark:text-gray-400">{t('analytics.legend_all_completed')}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded-full bg-white dark:bg-[#0F0F0F] border-l-4 border-l-[#FFC107]"></div>
-                    <span className="text-xs text-[#2D3436]/70 dark:text-gray-400">Tasks Pending</span>
+                    <span className="text-xs text-[#2D3436]/70 dark:text-gray-400">{t('analytics.legend_tasks_pending')}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded-full bg-[#F5F5F5] dark:bg-[#0F0F0F]/50 border border-[#CCCCCC] dark:border-gray-600"></div>
-                    <span className="text-xs text-[#2D3436]/70 dark:text-gray-400">Other Month</span>
+                    <span className="text-xs text-[#2D3436]/70 dark:text-gray-400">{t('analytics.legend_other_month')}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <span>✅</span>
-                    <span className="text-xs text-[#2D3436]/70 dark:text-gray-400">Completed</span>
+                    <span className="text-xs text-[#2D3436]/70 dark:text-gray-400">{t('analytics.status_completed')}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <span>🔄</span>
-                    <span className="text-xs text-[#2D3436]/70 dark:text-gray-400">Ongoing</span>
+                    <span className="text-xs text-[#2D3436]/70 dark:text-gray-400">{t('analytics.status_ongoing')}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <span>📅</span>
-                    <span className="text-xs text-[#2D3436]/70 dark:text-gray-400">Upcoming</span>
+                    <span className="text-xs text-[#2D3436]/70 dark:text-gray-400">{t('analytics.status_upcoming')}</span>
                   </div>
                 </div>
               </div>
@@ -765,7 +770,7 @@ const Analytics = () => {
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-bold text-[#2D3436] dark:text-white flex items-center gap-2">
                     <Target className="w-5 h-5 text-[#ff6d34]" />
-                    Tasks for {selectedDate}
+                    {t('analytics.tasks_for_date', { date: selectedDate })}
                   </h3>
                 </div>
 
@@ -775,7 +780,7 @@ const Analytics = () => {
                     onChange={(e) => setNewTask(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && addTask()}
                     className="flex-1 border border-[#CCCCCC] dark:border-gray-700 dark:bg-gray-900 dark:text-white p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#ff6d34] transition placeholder:text-gray-400 dark:placeholder:text-gray-500"
-                    placeholder="Add a new task..."
+                    placeholder={t('analytics.add_task_placeholder')}
                   />
 
                   <button
@@ -783,7 +788,7 @@ const Analytics = () => {
                     className="bg-[#ff6d34] hover:bg-[#ff6d34]/90 text-white px-4 rounded-xl transition flex items-center justify-center gap-1"
                   >
                     <Plus className="w-4 h-4" />
-                    Add
+                    {t('analytics.add_btn')}
                   </button>
                 </div>
 
