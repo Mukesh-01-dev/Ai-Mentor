@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Bell, LogOut, Menu, Search, Settings, ShieldCheck, User, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import Themetoggle from "../components/common/ThemeToggle";
 
 const seedNotifications = [
   { id: "n1", title: "New report submitted", message: "A comment was reported in community.", unread: true, time: "5m ago" },
@@ -177,7 +178,7 @@ const Header = ({ title, onMenuClick, searchQuery = "", onSearchChange }) => {
                 </div>
               )}
             </div>
-
+            <Themetoggle/> 
             <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => setDropdownOpen((prev) => !prev)}

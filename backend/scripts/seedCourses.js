@@ -4,8 +4,6 @@ dotenv.config();
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-
-
 import cloudinary from "../config/cloudinary.js";
 import { sequelize } from "../config/db.js";
 import {
