@@ -1,6 +1,9 @@
 // backend/controller/userController.js
 import User from "../models/User.js";
 import CommunityPost from "../models/CommunityPost.js";
+import Notifications from"../models/Notification.js";
+import courses from "../models/Course.js";
+import report from "../models/Report.js";
 import jwt from "jsonwebtoken";
 import cloudinary from "../config/cloudinary.js";
 import fs from "fs";
@@ -407,7 +410,6 @@ const updateUserProfile = async (req, res) => {
       });
 
       user.avatar_url = result.secure_url;
-      user.avatar = `/uploads/${req.file.filename}`;
 
       // delete temp file
       fs.unlinkSync(req.file.path);
@@ -481,6 +483,21 @@ const removePurchasedCourse = async (req, res) => {
       where: {  userId }
     });
     
+    //delete notifications
+     await Notifications.destroy({
+      where: {  userId }
+    });
+
+    // //delete courses
+    //  await courses.destroy({
+    //   where: {  userId }
+    // });
+
+    // //delete reports
+    //  await report.destroy({
+    //   where: {  userId }
+    // });
+
     //delete user
     await User.destroy({
       where: {id: userId}

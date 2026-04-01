@@ -58,4 +58,6 @@ logs/
 coverage/
 .cache/
 
+*/.agents
 
+outputfolder/

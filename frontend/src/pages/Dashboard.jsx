@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
-import Header from "../components/Header";
-import Sidebar from "../components/Sidebar";
 import { useAuth } from "../context/AuthContext";
 import { useSidebar } from "../context/SidebarContext";
 import { useTranslation } from "react-i18next";
+import API_BASE_URL from "../lib/api";
 import {
   Search,
   Bell,
@@ -290,6 +289,14 @@ const Dashboard = () => {
       return continueData;
     });
 
+  const isCoursePurchased = (courseId) =>
+    user?.purchasedCourses?.some((purchased) => purchased.courseId == courseId);
+
+  const getCourseDestination = (courseId) =>
+    isCoursePurchased(courseId)
+      ? `/learning/${courseId}`
+      : `/course-preview/${courseId}`;
+
   const normalizedSearchQuery = searchQuery.trim().toLowerCase();
   const filteredMyCourses = myCourses.filter((course) => {
     if (!normalizedSearchQuery) return true;
@@ -339,315 +346,277 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-canvas-alt flex flex-col">
-        <Header searchQuery={searchQuery} onSearchChange={setSearchQuery} />
-        <Sidebar activePage="dashboard" />
-        <div
-          className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ${
-            sidebarCollapsed ? "lg:ml-20" : "lg:ml-80"
-          }`}
-        >
-          <main className="flex-1 mt-10 overflow-x-hidden overflow-y-auto bg-canvas-alt p-6">
-            <div className="flex items-center justify-center h-64">
-              <div className="text-muted">{t("dashboard.loading")}</div>
-            </div>
-          </main>
+      <main className="flex-1 overflow-x-hidden overflow-y-auto bg-canvas-alt p-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-muted">{t("dashboard.loading")}</div>
         </div>
-      </div>
+      </main>
     );
   }
 
   return (
-    <div className="min-h-screen bg-canvas-alt flex flex-col">
-      <Header searchQuery={searchQuery} onSearchChange={setSearchQuery} />
-
-      <Sidebar activePage="dashboard" />
-
-      {/* Main Content */}
-      <div
-        className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ${
-          sidebarCollapsed ? "lg:ml-20" : "lg:ml-80"
-        }`}
-      >
-        {/* Header */}
-
-        {/* Dashboard Content */}
-        <main className="flex-1 mt-3 overflow-x-hidden overflow-y-auto bg-canvas-alt p-6">
-          <div className="max-w-7xl pt-16 mx-auto space-y-8">
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1  sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {dynamicStatsCards.map((card, index) => {
-                const statLabelKeys = ["ongoing_courses", "completed", "certificates", "hours_spent"];
-                return (
-                <div
-                  key={index}
-                  className="bg-card rounded-2xl p-6 shadow-sm border border-border hover:shadow-lg hover:-translate-y-1 hover:border-teal-500/40 transition-all duration-300 cursor-pointer"
-                >
-                  <div className="flex items-center justify-between mb-4">
-                    <div className={`p-3 rounded-xl ${card.iconBg}`}>
-                      {card.icon}
-                    </div>
-                    <span className="text-sm font-medium text-green-600">
-                      {card.change}
-                    </span>
+    <main className="flex-1 overflow-x-hidden overflow-y-auto bg-canvas-alt p-6">
+      <div className="max-w-7xl mx-auto space-y-8">
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1  sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {dynamicStatsCards.map((card, index) => {
+            const statLabelKeys = ["ongoing_courses", "completed", "certificates", "hours_spent"];
+            return (
+              <div
+                key={index}
+                className="bg-card rounded-2xl p-6 shadow-sm border border-border hover:shadow-lg hover:-translate-y-1 hover:border-teal-500/40 transition-all duration-300 cursor-pointer"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <div className={`p-3 rounded-xl ${card.iconBg}`}>
+                    {card.icon}
                   </div>
-                  <div className="text-2xl font-bold text-main mb-1">
-                    {card.value}
-                  </div>
-                  <div className="text-sm text-muted">{t(`dashboard.${statLabelKeys[index]}`)}</div>
+                  <span className="text-sm font-medium text-green-600">
+                    {card.change}
+                  </span>
                 </div>
-              );
-              })}
-            </div>
-
-            <div className="grid grid-cols-1 gap-8">
-              {/* Popular Courses */}
-              <div>
-                <h2 className="text-xl font-bold text-main mb-6">
-                  {t("dashboard.popular_courses")}
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {coursesData.allCourses.slice(0, 13).map((course, index) => (
-                    <Link to={`/learning/${course.id}`} key={index}>
-                      <div className="bg-card rounded-xl border border-border overflow-hidden shadow-sm h-full hover:shadow-lg hover:-translate-y-1 hover:border-teal-500/40 transition-all duration-300">
-                        <div className="relative">
-                          <img
-                            src={course.image}
-                            alt={course.title}
-                            className="w-full h-40 object-cover"
-                          />
-                          <div className="absolute top-3 right-3 bg-card rounded-full p-2">
-                            <Bookmark className="w-4 h-4 text-teal-600" />
-                          </div>
-                          <div className="absolute bottom-3 right-3 bg-card rounded-full px-2 py-1 flex items-center space-x-1">
-                            <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                            <span className="text-xs font-medium">
-                              {course.rating}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="p-4">
-                          <div
-                            className={`inline-block px-2 py-1 rounded-full text-xs font-medium mb-3 ${course.categoryColor}`}
-                          >
-                            {course.category}
-                          </div>
-                          <h3 className="font-semibold text-main mb-2 line-clamp-2">
-                            {course.title}
-                          </h3>
-                          <p className="text-sm text-muted mb-4">
-                            {course.lessons}
-                          </p>
-                          <div className="flex items-center justify-between">
-                            <span className="text-lg font-bold text-main">
-                              {course.price}
-                            </span>
-                            <span className="text-xs text-muted">
-                              {course.students}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
+                <div className="text-2xl font-bold text-main mb-1">
+                  {card.value}
                 </div>
+                <div className="text-sm text-muted">{t(`dashboard.${statLabelKeys[index]}`)}</div>
               </div>
+            );
+          })}
+        </div>
 
-              {/* My Courses Table */}
-              <div className="xl:col-span-2 flex flex-col">
-                <h2 className="text-xl font-bold text-main mb-6">My Courses</h2>
-                <div className="bg-card rounded-xl border border-border overflow-hidden">
-                  <div className="overflow-x-auto">
-                    {filteredMyCourses.length !== 0 ? (
-                      <table className="w-full">
-                        <thead className="bg-canvas-alt">
-                          <tr>
-                            <th className="px-4 py-4 text-left text-sm font-medium text-muted">
-                              Course
-                            </th>
-                            <th className="px-4 py-4 text-left text-sm font-medium text-muted">
-                              Progress
-                            </th>
-                            <th className="px-4 py-4 text-left text-sm font-medium text-muted">
-                              Lessons
-                            </th>
-                            <th className="px-4 py-4 text-left text-sm font-medium text-muted">
-                              Level
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200">
-                          {filteredMyCourses.map((course, index) => (
-                            <tr key={index} className="hover:bg-canvas-alt">
-                              <td className="px-4 py-4">
-                                <Link
-                                  to={`/learning/${course.id}`}
-                                  className="flex items-center"
-                                >
-                                  <img
-                                    src={course.image}
-                                    alt={course.title}
-                                    className="w-12 h-12 rounded-lg mr-4"
-                                  />
-                                  <div>
-                                    <div className="font-medium text-main hover:text-indigo-600">
-                                      {course.title}
-                                    </div>
-                                    <div className="text-sm text-muted">
-                                      {course.subtitle}
-                                    </div>
-                                  </div>
-                                </Link>
-                              </td>
-                              <td className="px-4 py-4">
-                                <div className="w-20 bg-border rounded-full h-2 mb-1">
-                                  <div
-                                    className={`h-2 rounded-full ${course.progressColor}`}
-                                    style={{ width: `${course.progress}%` }}
-                                  ></div>
-                                </div>
-                                <div className="text-sm text-muted">
-                                  {course.progress}%
-                                </div>
-                              </td>
-                              <td className="px-4 py-4 text-muted">
-                                {course.lessons}
-                              </td>
-                              <td className="px-4 py-4">
-                                <span
-                                  className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${course.levelColor}`}
-                                >
-                                  {course.level}
-                                </span>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    ) : normalizedSearchQuery && filteredAllCourses.length > 0 ? (
-                      <div className="p-6">
-                        <p className="text-center text-muted mb-4">
-                          {t("dashboard.fallbackMatchingCourses")}
-                        </p>
-                        <div className="space-y-3">
-                          {filteredAllCourses.slice(0, 6).map((course) => (
-                            <div
-                              key={course.id}
-                              className="flex items-center justify-between p-3 rounded-lg border border-border bg-canvas-alt"
-                            >
-                              <div className="flex items-center min-w-0">
-                                <img
-                                  src={course.image}
-                                  alt={course.title}
-                                  className="w-12 h-12 rounded-lg mr-4"
-                                />
-                                <div className="min-w-0">
-                                  <div className="font-medium text-main truncate">
-                                    {course.title}
-                                  </div>
-                                  <div className="text-sm text-muted truncate">
-                                    {course.category} • {course.level}
-                                  </div>
-                                </div>
-                              </div>
-                              <button
-                                onClick={() => navigate(`/course-preview/${course.id}`)}
-                                className="ml-3 px-3 py-2 bg-teal-500 text-white text-xs font-medium rounded-lg hover:bg-teal-600"
-                              >
-                                View
-                              </button>
-                            </div>
-                          ))}
-                        </div>
+        <div className="grid grid-cols-1 gap-8">
+          {/* Popular Courses */}
+          <div>
+            <h2 className="text-xl font-bold text-main mb-6">
+              {t("dashboard.popular_courses")}
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {coursesData.allCourses.slice(0, 13).map((course, index) => (
+                <Link to={getCourseDestination(course.id)} key={index}>
+                  <div className="bg-card rounded-xl border border-border overflow-hidden shadow-sm h-full hover:shadow-lg hover:-translate-y-1 hover:border-teal-500/40 transition-all duration-300">
+                    <div className="relative">
+                      <img
+                        src={course.image}
+                        alt={course.title}
+                        className="w-full h-40 object-cover"
+                      />
+                      <div className="absolute top-3 right-3 bg-card rounded-full p-2">
+                        <Bookmark className="w-4 h-4 text-teal-600" />
                       </div>
-                    ) : (
-                      <div className="p-6 text-center text-muted">
-                        <p>
-                          {normalizedSearchQuery
-                            ? "No courses match your search."
-                            : "You haven't enrolled in any courses yet."}
-                        </p>
-                        <button
-                          className="mt-4 px-4 py-2 bg-teal-500 text-white text-sm font-medium rounded-lg hover:bg-teal-600"
-                          onClick={handleBrowseCourses}
-                        >
-                          Browse Courses
-                        </button>
+                      <div className="absolute bottom-3 right-3 bg-card rounded-full px-2 py-1 flex items-center space-x-1">
+                        <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                        <span className="text-xs font-medium">
+                          {course.rating}
+                        </span>
                       </div>
-                    )}
+                    </div>
+                    <div className="p-4">
+                      <div
+                        className={`inline-block px-2 py-1 rounded-full text-xs font-medium mb-3 ${course.categoryColor}`}
+                      >
+                        {course.category}
+                      </div>
+                      <h3 className="font-semibold text-main mb-2 line-clamp-2">
+                        {course.title}
+                      </h3>
+                      <p className="text-sm text-muted mb-4">
+                        {course.lessons}
+                      </p>
+                      <div className="flex items-center justify-between">
+                        <span className="text-lg font-bold text-main">
+                          {course.price}
+                        </span>
+                        <span className="text-xs text-muted">
+                          {course.students}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                </Link>
+              ))}
+            </div>
+          </div>
 
-                {/* Continue Learning */}
-                {filteredContinueLearning.length !== 0 ? (
-                  <div>
-                    <h2 className="text-xl font-bold text-main mt-6 mb-6">
-                      Continue Learning
-                    </h2>
-                    <div className="space-y-4">
-                      {filteredContinueLearning.map((item, index) => (
-                        <div
-                          key={index}
-                          className="bg-card rounded-xl p-4 border border-border shadow-sm hover:shadow-md transition-shadow"
-                        >
-                          <div className="flex items-center">
+          {/* My Courses Table */}
+          <div className="xl:col-span-2 flex flex-col">
+            <h2 className="text-xl font-bold text-main mb-6">My Courses</h2>
+            <div className="bg-card rounded-xl border border-border overflow-hidden">
+              <div className="overflow-x-auto">
+                {filteredMyCourses.length !== 0 ? (
+                  <table className="w-full">
+                    <thead className="bg-canvas-alt">
+                      <tr>
+                        <th className="px-4 py-4 text-left text-sm font-medium text-muted">
+                          Course
+                        </th>
+                        <th className="px-4 py-4 text-left text-sm font-medium text-muted">
+                          Progress
+                        </th>
+                        <th className="px-4 py-4 text-left text-sm font-medium text-muted">
+                          Lessons
+                        </th>
+                        <th className="px-4 py-4 text-left text-sm font-medium text-muted">
+                          Level
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {filteredMyCourses.map((course, index) => (
+                        <tr key={index} className="hover:bg-canvas-alt">
+                          <td className="px-4 py-4">
                             <Link
-                              to={`/course-preview/${item.id}`}
-                              className="flex items-center flex-1"
+                              to={`/learning/${course.id}`}
+                              className="flex items-center"
                             >
                               <img
-                                src={item.image}
-                                alt={item.title}
+                                src={course.image}
+                                alt={course.title}
                                 className="w-12 h-12 rounded-lg mr-4"
                               />
-                              <div className="flex-1">
-                                <h3 className="font-medium text-main mb-1 hover:text-teal-600">
-                                  {item.title}
-                                </h3>
-                                <p className="text-sm text-muted mb-2">
-                                  {item.lesson}
-                                </p>
-                                <div className="w-full bg-border rounded-full h-2 mb-2">
-                                  <div
-                                    className={`h-2 rounded-full ${item.progressColor}`}
-                                    style={{ width: `${item.progress}%` }}
-                                  ></div>
+                              <div>
+                                <div className="font-medium text-main hover:text-indigo-600">
+                                  {course.title}
+                                </div>
+                                <div className="text-sm text-muted">
+                                  {course.subtitle}
                                 </div>
                               </div>
                             </Link>
-                            <Link
-                              to={`/learning/${item.id}`}
-                              className="ml-4 px-4 py-2 bg-teal-500 text-white text-sm font-medium rounded-lg hover:bg-teal-600"
+                          </td>
+                          <td className="px-4 py-4">
+                            <div className="w-20 bg-border rounded-full h-2 mb-1">
+                              <div
+                                className={`h-2 rounded-full ${course.progressColor}`}
+                                style={{ width: `${course.progress}%` }}
+                              ></div>
+                            </div>
+                            <div className="text-sm text-muted">
+                              {course.progress}%
+                            </div>
+                          </td>
+                          <td className="px-4 py-4 text-muted">
+                            {course.lessons}
+                          </td>
+                          <td className="px-4 py-4">
+                            <span
+                              className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${course.levelColor}`}
                             >
-                              Continue
-                            </Link>
+                              {course.level}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : normalizedSearchQuery && filteredAllCourses.length > 0 ? (
+                  <div className="p-6">
+                    <p className="text-center text-muted mb-4">
+                      {t("dashboard.fallbackMatchingCourses")}
+                    </p>
+                    <div className="space-y-3">
+                      {filteredAllCourses.slice(0, 6).map((course) => (
+                        <div
+                          key={course.id}
+                          className="flex items-center justify-between p-3 rounded-lg border border-border bg-canvas-alt"
+                        >
+                          <div className="flex items-center min-w-0">
+                            <img
+                              src={course.image}
+                              alt={course.title}
+                              className="w-12 h-12 rounded-lg mr-4"
+                            />
+                            <div className="min-w-0">
+                              <div className="font-medium text-main truncate">
+                                {course.title}
+                              </div>
+                              <div className="text-sm text-muted truncate">
+                                {course.category} • {course.level}
+                              </div>
+                            </div>
                           </div>
+                          <button
+                            onClick={() => navigate(`/course-preview/${course.id}`)}
+                            className="ml-3 px-3 py-2 bg-teal-500 text-white text-xs font-medium rounded-lg hover:bg-teal-600"
+                          >
+                            View
+                          </button>
                         </div>
                       ))}
                     </div>
                   </div>
                 ) : (
-                  <div className="p-6  text-muted">
+                  <div className="p-6 text-center text-muted">
                     <p>
                       {normalizedSearchQuery
-                        ? "No in-progress courses match your search."
-                        : "Start Learning to get your progress tracked!"}
+                        ? "No courses match your search."
+                        : "You haven't enrolled in any courses yet."}
                     </p>
-                    <button                      className="mt-4 px-4 py-2 bg-teal-500 text-white text-sm font-medium rounded-lg hover:bg-teal-600"
-                      onClick={() => navigate("/courses")}
+                    <button
+                      className="mt-4 px-4 py-2 bg-teal-500 text-white text-sm font-medium rounded-lg hover:bg-teal-600"
+                      onClick={handleBrowseCourses}
                     >
-                      My Courses
-                    </button> 
+                      Browse Courses
+                    </button>
                   </div>
-              )}
+                )}
               </div>
-
             </div>
 
+            {/* Continue Learning */}
+            {filteredContinueLearning.length !== 0 ? (
+              <div>
+                <h2 className="text-xl font-bold text-main mt-6 mb-6">
+                  Continue Learning
+                </h2>
+                <div className="space-y-4">
+                  {filteredContinueLearning.map((item, index) => (
+                    <div
+                      key={index}
+                      className="bg-card rounded-xl p-4 border border-border shadow-sm hover:shadow-md transition-shadow"
+                    >
+                      <div className="flex items-center">
+                        <Link
+                          to={`/course-preview/${item.id}`}
+                          className="flex items-center flex-1"
+                        >
+                          <img
+                            src={item.image}
+                            alt={item.title}
+                            className="w-12 h-12 rounded-lg mr-4"
+                          />
+                          <div className="flex-1">
+                            <h3 className="font-medium text-main mb-1 hover:text-teal-600">
+                              {item.title}
+                            </h3>
+                            <p className="text-sm text-muted mb-2">
+                              {item.lesson}
+                            </p>
+                            <div className="w-full bg-border rounded-full h-2 mb-2">
+                              <div
+                                className={`h-2 rounded-full ${item.progressColor}`}
+                                style={{ width: `${item.progress}%` }}
+                              ></div>
+                            </div>
+                          </div>
+                        </Link>
+                        <Link
+                          to={`/learning/${item.id}`}
+                          className="ml-4 px-4 py-2 bg-teal-500 text-white text-sm font-medium rounded-lg hover:bg-teal-600"
+                        >
+                          Continue
+                        </Link>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null
+            }
           </div>
-        </main>
+
+        </div>
+
       </div>
-    </div>
+    </main>
   );
 };
 
