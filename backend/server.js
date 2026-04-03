@@ -66,7 +66,7 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/certificate", certificateRoutes);
 
 /* ================= GLOBAL ERROR ================= */
-app.use((err, req, res, next) => {
+app.use((err, req, res, _next) => {
   console.error("🔥 Global Error:", err.stack);
   res.status(err.statusCode || 500).json({
     message: err.message || "Internal Server Error",
