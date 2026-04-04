@@ -40,5 +40,11 @@
     "icon": "/AI_Tutor_New_UI/Icons/watched_vids.svg",
     "label": "Watched Videos",
     "path": "/watchedvideos"
+  },
+  {
+    "id": "certificates",
+    "icon": "/AI_Tutor_New_UI/Icons/certificates.svg",
+    "label": "Certificates",
+    "path": "/certificates"
   }
 ]

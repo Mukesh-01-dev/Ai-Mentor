@@ -15,8 +15,9 @@ import CoursePreview from "./pages/CoursePreview";
 import LearningPage from "./pages/LearningPage";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import CertificatesPage from "./pages/CertificatesPage";
 import "./App.css";
-
+import Success from "./pages/Success";
 // Redirects from the root path based on authentication status.
 const RootRedirect = () => {
   const { isAuthenticated } = useAuth();
@@ -51,8 +52,10 @@ const App = () => {
           <Route path="/courses" element={<CoursesPage />} />
           <Route path="/discussions" element={<DiscussionsPage />} />
           <Route path="/settings" element={<Settings />} />
+           <Route path="/certificates" element={<CertificatesPage />} />
           <Route path="/watchedvideos" element={<WatchedVideos />} />
           <Route path="/learning/:id" element={<LearningPage />} />
+          <Route path="/success" element={<Success />} />
         </Route>
       </Route>
 

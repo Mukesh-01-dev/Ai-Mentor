@@ -250,82 +250,74 @@ export default function CoursePreview() {
       navigate("/login");
       return;
     }
-    const title = safeGet(
-      courseMeta,
-      "title",
-      safeGet(learningData, "course.title", "Course"),
-    );
+    const title = safeGet(courseMeta, "title", safeGet(learningData, "course.title", "Course"));
+    
     const img = heroSrc;
     const category = safeGet(courseMeta, "category", "");
     const level = safeGet(courseMeta, "level", "");
-    const price = safeGet(
-      courseMeta,
-      "price",
-      safeGet(courseMeta, "priceValue", null)
-        ? `₹${safeGet(courseMeta, "priceValue")}`
-        : "₹0",
-    );
-
-    setSelectedCourse({
-      id: Number(courseId),
-      title,
-      image: img,
-      category,
-      level,
-      price,
-    });
+const priceValue = safeGet(courseMeta, "priceValue", 0);
+   setSelectedCourse({
+  id: Number(courseId),
+  title,
+  image: img,
+  category,
+  level,
+  priceValue, // ✅ store numeric
+});
     setShowEnrollPopup(true);
   };
 
   // confirm enrollment from modal -> purchase and redirect to /courses
-  const confirmEnroll = async () => {
-    if (!selectedCourse) return;
+const handlePayment = async () => {
+  if (!selectedCourse || isPurchasing) return;
 
-    if (purchaseLock.current) return;
-    purchaseLock.current = true;
-    setIsPurchasing(true);
+  const priceValue = selectedCourse.priceValue;
 
-    try {
-      const token = localStorage.getItem("token");
-      const purchaseUrl = `${API_BASE_URL}/api/users/purchase-course`;
-      const response = await fetch(purchaseUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+  if (!priceValue || priceValue <= 0) {
+    toast.error("This course is free or invalid");
+    return;
+  }
+
+  setIsPurchasing(true);
+
+  try {
+    const token = localStorage.getItem("token");
+
+    console.log("Sending to Stripe:", {
+      id: selectedCourse.id,
+      title: selectedCourse.title,
+      priceValue,
+    });
+
+    const res = await fetch(`${API_BASE_URL}/api/payment/create-checkout-session`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        course: {
+          id: selectedCourse.id,
+          title: selectedCourse.title,
+          priceValue,
         },
-        body: JSON.stringify({
-          courseId: Number(selectedCourse.id),
-          courseTitle: selectedCourse.title,
-        }),
-      });
+      }),
+    });
 
-      const data = await response.json();
+    const data = await res.json();
 
-      if (response.ok) {
-        if (updateUser) {
-          updateUser({
-            ...user,
-            purchasedCourses: data.purchasedCourses,
-          });
-        }
-
-        // close modal and redirect to Courses page (My Courses)
-        setShowEnrollPopup(false);
-        setSelectedCourse(null);
-        navigate("/courses", { replace: true });
-      } else {
-        toast.error(data.message || "Failed to purchase course");
-      }
-    } catch (err) {
-      console.error("Purchase error:", err);
-      toast.error("Failed to purchase course. Please try again.");
-    } finally {
+    if (data.url) {
+      window.location.href = data.url;
+    } else {
+      toast.error("Payment failed");
       setIsPurchasing(false);
-      purchaseLock.current = false;
     }
-  };
-
+  } catch (err) {
+    console.error(err);
+    toast.error("Payment error");
+    setIsPurchasing(false);
+  }
+};
   if (loading) {
     return (
       <div className="min-h-screen bg-canvas flex items-center justify-center">
@@ -353,16 +345,14 @@ export default function CoursePreview() {
   }
 
   // derive fields safely
-  const title = safeGet(
-    courseMeta,
-    "title",
-    safeGet(learningData, "course.title", "Course Title"),
-  );
-  const subtitle = safeGet(
-    learningData,
-    "course.subtitle",
-    safeGet(courseMeta, "subtitle", ""),
-  );
+const title =
+  safeGet(courseMeta, "title") ||
+  safeGet(learningData, "course.title") ||
+  "";
+  if (!title) {
+  console.error("❌ Course title missing!");
+}
+  const subtitle = safeGet(learningData, "course.subtitle", safeGet(courseMeta, "subtitle", ""));
   const instructorName = safeGet(courseMeta, "instructor", "Instructor");
   const rating = safeGet(courseMeta, "rating", 4.8);
   const students = safeGet(
@@ -814,18 +804,19 @@ export default function CoursePreview() {
             </p>
 
             <div className="flex justify-between items-center mt-4">
-              <span className="line-through text-muted">
-                {selectedCourse.price}
-              </span>
-              <span className="text-lg font-bold text-green-600">₹0</span>
+              <span className="line-through text-muted">{selectedCourse.price}</span>
+            <span className="text-lg font-bold text-green-600">
+  {selectedCourse.price}
+</span>
             </div>
 
-            <button
-              onClick={confirmEnroll}
-              className="w-full mt-6 py-3 rounded-xl bg-primary text-white font-semibold"
-            >
-              {isPurchasing ? "Processing..." : "Confirm Enrollment"}
-            </button>
+          <button
+  onClick={handlePayment}
+  disabled={isPurchasing}
+  className="w-full mt-6 py-3 rounded-xl bg-primary text-white font-semibold disabled:opacity-50"
+>
+  {isPurchasing ? "Processing..." : "Confirm Enrollment"}
+</button>
           </div>
         </div>
       )}

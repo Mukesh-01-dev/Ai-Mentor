@@ -4,16 +4,22 @@ import dotenv from "dotenv";
 import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
+
 import { connectDB, sequelize } from "./config/db.js";
+
+// ROUTES
 import authRoutes from "./routes/auth.js";
 import userRoutes from "./routes/userRoutes.js";
 import courseRoutes from "./routes/courseRoutes.js";
-//import discussionRoutes from "./routes/discussionRoutes.js"; // Replaced by communityRoutes.js
 import analyticsRoutes from "./routes/analyticsRoutes.js";
 import sidebarRoutes from "./routes/sidebarRoutes.js";
 import aiRoutes from "./routes/aiRoutes.js";
 import communityRoutes from "./routes/communityRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
+import certificateRoutes from "./routes/certificateRoutes.js";
+import paymentRoutes from "./routes/payment.js";
+
+// MODELS
 import "./models/CommunityPost.js";
 import "./models/Notification.js";
 import "./models/Report.js";
@@ -25,60 +31,63 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
+/* ================= MIDDLEWARE ================= */
 app.use(express.json());
 
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: process.env.FRONTEND_URL || "http://localhost:5173",
     credentials: true,
   })
 );
 
-app.use(
-  "/videos",
-  express.static(path.join(__dirname, "videos"))
-);
+/* ================= STATIC ================= */
+app.use("/videos", express.static(path.join(__dirname, "videos")));
+app.use("/uploads", express.static("uploads"));
 
+/* ================= HEALTH CHECK ================= */
 app.get("/", (req, res) => {
-  res.send("API is running...");
+  res.send("✅ API is running...");
 });
 
+/* ================= ROUTES ================= */
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 // ✅ REGISTER ROUTES (CORRECT PLACE)
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/courses", courseRoutes);
-//app.use("/api/discussions", discussionRoutes);   // Replaced by communityRoutes
+app.use("/api/payment", paymentRoutes); // ✅ STRIPE ROUTE ADDED
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/sidebar", sidebarRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/community", communityRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/certificate", certificateRoutes);
 
-// Global error handler
-app.use((err, req, res, next) => {
+/* ================= GLOBAL ERROR ================= */
+app.use((err, req, res, _next) => {
   console.error("🔥 Global Error:", err.stack);
   res.status(err.statusCode || 500).json({
     message: err.message || "Internal Server Error",
   });
 });
 
+/* ================= SERVER START ================= */
 const PORT = process.env.PORT || 5000;
 
-// Initialize database and start server
 const startServer = async () => {
   try {
     await connectDB();
-    // Sync database models
+
     await sequelize.sync({ alter: true });
-    console.log("✅ Database models synced successfully");
+    console.log("✅ Database models synced");
 
     app.listen(PORT, () => {
-      console.log(`✅ Server running on port ${PORT}`);
+      console.log(`🚀 Server running on http://localhost:${PORT}`);
     });
   } catch (error) {
-    console.error("❌ Failed to start server:", error);
+    console.error("❌ Server failed:", error);
     process.exit(1);
   }
 };

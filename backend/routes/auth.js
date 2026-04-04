@@ -1,7 +1,6 @@
 import crypto from "crypto";
 import User from "../models/User.js";
 import jwt from "jsonwebtoken";
-import bcrypt from "bcryptjs";
 import express from "express";
 import { Op } from "sequelize";
 import validate from "../middleware/validate.js";

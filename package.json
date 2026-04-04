@@ -1,0 +1,12 @@
+{
+  "name": "ai-mentor-updated",
+  "version": "1.0.0",
+  "description": "An AI-powered learning management system.",
+  "scripts": {
+    "lint": "npm run lint --prefix backend && npm run lint --prefix frontend && npm run lint --prefix frontendAdmin",
+    "lint:backend": "npm run lint --prefix backend",
+    "lint:frontend": "npm run lint --prefix frontend",
+    "lint:admin": "npm run lint --prefix frontendAdmin"
+  },
+  "type": "commonjs"
+}
