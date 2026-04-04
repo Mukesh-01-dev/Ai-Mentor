@@ -1,7 +1,7 @@
 // backend/controller/userController.js
 import User from "../models/User.js";
 import CommunityPost from "../models/CommunityPost.js";
-import Notifications from"../models/Notification.js";
+import Notifications from "../models/Notification.js";
 import jwt from "jsonwebtoken";
 import cloudinary from "../config/cloudinary.js";
 import fs from "fs";
@@ -72,7 +72,7 @@ const loginUser = async (req, res) => {
       email: user.email,
       role: user.role,
       bio: user.bio,
-      avatar_url: user.avatar_url, // 🔥 ADD THIS
+      avatar_url: user.avatar_url,
       purchasedCourses: user.purchasedCourses,
       token: generateToken(user.id),
     });
@@ -97,27 +97,23 @@ const changePassword = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // ensure user has a local password set (e.g., not an OAuth-only account)
     if (!user.password) {
       return res
         .status(400)
         .json({ message: "Password is not set for this account" });
     }
 
-    // verify current password
     const isMatch = await user.matchPassword(currentPassword);
 
     if (!isMatch) {
       return res.status(400).json({ message: "Current password incorrect" });
     }
 
-    // update password
     user.password = newPassword;
 
-    await user.save(); // bcrypt hashing happens in beforeSave hook
+    await user.save();
 
     res.json({ message: "Password updated successfully" });
-
   } catch (error) {
     console.error("CHANGE PASSWORD ERROR:", error);
     res.status(500).json({ message: "Server error" });
@@ -142,7 +138,7 @@ const getUserProfile = async (req, res) => {
       email: user.email,
       role: user.role,
       bio: user.bio,
-      avatar_url: user.avatar_url,  // 👈 ADD THIS LINE
+      avatar_url: user.avatar_url,
       purchasedCourses: user.purchasedCourses,
     });
   } catch (error) {
@@ -151,38 +147,53 @@ const getUserProfile = async (req, res) => {
   }
 };
 
-// @desc Purchase course
+// @desc Purchase course / Enroll free course
 const purchaseCourse = async (req, res) => {
   try {
     if (!req.user) return res.status(401).json({ message: "Not authorized" });
 
     const { courseId, courseTitle } = req.body;
-    const user = await User.findByPk(req.user.id);
 
+    if (!courseId) {
+      return res.status(400).json({ message: "Course ID is required" });
+    }
+
+    const user = await User.findByPk(req.user.id);
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    const alreadyPurchased = user.purchasedCourses.some(
-      (c) => c.courseId == courseId
+    const purchasedCourses = user.purchasedCourses || [];
+
+    // Prevent duplicate enrollment
+    const alreadyPurchased = purchasedCourses.some(
+      (c) => Number(c.courseId) === Number(courseId)
     );
 
     if (alreadyPurchased) {
-      return res.status(400).json({ message: "Course already purchased" });
+      return res.status(400).json({ message: "Already enrolled" });
     }
 
-    const updatedCourses = [
-      ...user.purchasedCourses,
-      {
-        courseId: Number(courseId),
-        courseTitle,
-        purchaseDate: new Date(),
-        progress: { completedLessons: [], currentLesson: null },
+    // Add course
+    purchasedCourses.push({
+      courseId: Number(courseId),
+      courseTitle: courseTitle || "Course",
+      purchaseDate: new Date(),
+      progress: {
+        completedLessons: [],
+        currentLesson: null,
       },
-    ];
+    });
 
-    user.purchasedCourses = updatedCourses;
+    user.purchasedCourses = purchasedCourses;
+
+    // Important for Sequelize JSON/JSONB update
+    user.changed("purchasedCourses", true);
+
     await user.save();
 
-    res.json({ message: "Course purchased successfully" });
+    res.status(200).json({
+      message: "Course enrolled successfully",
+      purchasedCourses: user.purchasedCourses,
+    });
   } catch (error) {
     console.error("PURCHASE ERROR:", error);
     res.status(500).json({ message: "Server error" });
@@ -200,16 +211,23 @@ const updateCourseProgress = async (req, res) => {
     const { courseId, lessonData, currentLesson, completedLesson } = req.body;
 
     let courses = [...(user.purchasedCourses || [])];
-    let courseIndex = courses.findIndex(c => Number(c.courseId) === Number(courseId));
+    let courseIndex = courses.findIndex(
+      (c) => Number(c.courseId) === Number(courseId)
+    );
 
     if (courseIndex !== -1) {
-      let progress = courses[courseIndex].progress || { completedLessons: [], currentLesson: null, lessonData: {} };
+      let progress = courses[courseIndex].progress || {
+        completedLessons: [],
+        currentLesson: null,
+        lessonData: {},
+      };
+
       if (!progress.lessonData) progress.lessonData = {};
 
       if (lessonData && lessonData.lessonId) {
         progress.lessonData[lessonData.lessonId] = {
-           ...progress.lessonData[lessonData.lessonId],
-           ...lessonData.data
+          ...progress.lessonData[lessonData.lessonId],
+          ...lessonData.data,
         };
       }
 
@@ -217,19 +235,25 @@ const updateCourseProgress = async (req, res) => {
         progress.currentLesson = currentLesson;
       }
 
-      if (completedLesson && !progress.completedLessons.some(l => l.lessonId === completedLesson.lessonId)) {
+      if (
+        completedLesson &&
+        !progress.completedLessons.some(
+          (l) => l.lessonId === completedLesson.lessonId
+        )
+      ) {
         progress.completedLessons.push(completedLesson);
       }
 
       courses[courseIndex].progress = progress;
-      user.set('purchasedCourses', courses);
-      
-      // --- DATABASE JSON FIX FOR THE TEAM ---
-      // Sequelize does not automatically detect mutations inside deeply nested JSONB fields.
-      // We MUST explicitly call user.changed('fieldName', true) to force it to execute an UPDATE query.
-      // Without this line, the watch history will silently fail to save to the database.
-      user.changed('purchasedCourses', true);
-      console.log("Saved lesson data for course:", courseId, "lesson:", lessonData?.lessonId);
+      user.set("purchasedCourses", courses);
+
+      user.changed("purchasedCourses", true);
+      console.log(
+        "Saved lesson data for course:",
+        courseId,
+        "lesson:",
+        lessonData?.lessonId
+      );
     }
 
     user.analytics = user.analytics || {
@@ -242,7 +266,10 @@ const updateCourseProgress = async (req, res) => {
     };
 
     await user.save();
-    res.json({ message: "Progress updated successfully", purchasedCourses: user.purchasedCourses });
+    res.json({
+      message: "Progress updated successfully",
+      purchasedCourses: user.purchasedCourses,
+    });
   } catch (error) {
     console.error("PROGRESS ERROR:", error);
     res.status(500).json({ message: "Server error" });
@@ -262,22 +289,23 @@ const getWatchedVideos = async (req, res) => {
     let completedCount = 0;
     const uniqueCourses = [];
 
-    courses.forEach(course => {
+    courses.forEach((course) => {
       if (course.courseTitle) {
         uniqueCourses.push({ id: course.courseId, title: course.courseTitle });
       }
 
       const lessonData = course.progress?.lessonData || {};
-      Object.keys(lessonData).forEach(lessonId => {
+      Object.keys(lessonData).forEach((lessonId) => {
         const watchHistory = lessonData[lessonId]?.watchHistory;
         if (watchHistory) {
-          // --- WATCH HISTORY SANITIZATION FOR THE TEAM ---
-          // Prevent UI crashes from previously corrupted data by bounding progress between 0 and 100%.
-          const safeProgress = Math.max(0, Math.min(100, Math.round(watchHistory.progressPercent || 0)));
-          
-          // Fallback to --:-- if the database stored "NaN:NaN" due to browser loading race conditions.
+          const safeProgress = Math.max(
+            0,
+            Math.min(100, Math.round(watchHistory.progressPercent || 0))
+          );
+
           const rawDuration = watchHistory.formattedDuration;
-          const displayDuration = (rawDuration === "NaN:NaN" || !rawDuration) ? "--:--" : rawDuration;
+          const displayDuration =
+            rawDuration === "NaN:NaN" || !rawDuration ? "--:--" : rawDuration;
 
           videoData.push({
             id: `${course.courseId}-${lessonId}`,
@@ -285,19 +313,21 @@ const getWatchedVideos = async (req, res) => {
             courseId: course.courseId,
             course: course.courseTitle || `Course ${course.courseId}`,
             title: watchHistory.title || `Lesson ${lessonId}`,
-            thumbnail: watchHistory.thumbnail || "https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=1000&auto=format&fit=crop",
+            thumbnail:
+              watchHistory.thumbnail ||
+              "https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=1000&auto=format&fit=crop",
             duration: displayDuration,
             progress: safeProgress,
             status: watchHistory.status || "in-progress",
             lastWatched: watchHistory.lastWatched || new Date().toISOString(),
-            currentTime: watchHistory.currentTime || 0
+            currentTime: watchHistory.currentTime || 0,
           });
 
           if (watchHistory.currentTime > 0) {
             totalSeconds += watchHistory.currentTime;
           }
           if (watchHistory.status === "completed" || safeProgress >= 95) {
-             completedCount++;
+            completedCount++;
           }
         }
       });
@@ -306,8 +336,8 @@ const getWatchedVideos = async (req, res) => {
     const metrics = {
       totalHours: (totalSeconds / 3600).toFixed(1),
       videosCompleted: completedCount,
-      avgSession: "15min", // Mocked for now, can be computed from analytics
-      learningStreak: "3 days", // Mocked for now
+      avgSession: "15min",
+      learningStreak: "3 days",
     };
 
     res.json({ videos: videoData, metrics, courses: uniqueCourses });
@@ -327,9 +357,7 @@ const getUserSettings = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Return only settings JSON
     res.json(user.settings);
-
   } catch (error) {
     console.error("Failed to fetch settings:", error);
     res.status(500).json({ message: "Failed to fetch settings" });
@@ -365,7 +393,6 @@ const updateUserSettings = async (req, res) => {
       message: "Settings updated successfully",
       settings: user.settings,
     });
-
   } catch (error) {
     console.error("Failed to update settings:", error);
     res.status(500).json({ message: "Failed to update settings" });
@@ -373,7 +400,6 @@ const updateUserSettings = async (req, res) => {
 };
 
 const updateUserProfile = async (req, res) => {
-
   try {
     if (!req.user) {
       return res.status(401).json({ message: "Not authorized" });
@@ -394,7 +420,6 @@ const updateUserProfile = async (req, res) => {
 
       user.avatar_url = result.secure_url;
 
-      // delete temp file
       fs.unlinkSync(req.file.path);
     }
 
@@ -415,17 +440,16 @@ const updateUserProfile = async (req, res) => {
       email: user.email,
       role: user.role,
       bio: user.bio,
-      avatar_url: user.avatar_url,  // 👈 added
+      avatar_url: user.avatar_url,
       purchasedCourses: user.purchasedCourses,
     });
-
   } catch (error) {
     console.error("UPDATE PROFILE ERROR:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
 
-// ❗ DEV / ADMIN ONLY
+// DEV / ADMIN ONLY
 const removePurchasedCourse = async (req, res) => {
   try {
     const { courseId } = req.body;
@@ -446,54 +470,39 @@ const removePurchasedCourse = async (req, res) => {
   }
 };
 
- // Delete User-Account 
- const deleteAccount= async (req,res) => {
-   try {
+// Delete User Account
+const deleteAccount = async (req, res) => {
+  try {
+    const userId = req.user.id;
 
-    const userId= req.user.id;
-
-    // delete user's profile avatar from Cloudinary (if it exists)
     try {
       const avatarPublicId = `user_avatars/user_${userId}`;
       await cloudinary.uploader.destroy(avatarPublicId);
     } catch (cloudinaryError) {
       console.error("Cloudinary avatar deletion error:", cloudinaryError);
-      // continue with account deletion even if avatar deletion fails
     }
 
-     // delete user's community posts
-     await CommunityPost.destroy({
-      where: {  userId }
-    });
-    
-    //delete notifications
-     await Notifications.destroy({
-      where: {  userId }
+    await CommunityPost.destroy({
+      where: { userId },
     });
 
-    // //delete courses
-    //  await courses.destroy({
-    //   where: {  userId }
-    // });
+    await Notifications.destroy({
+      where: { userId },
+    });
 
-    // //delete reports
-    //  await report.destroy({
-    //   where: {  userId }
-    // });
-
-    //delete user
     await User.destroy({
-      where: {id: userId}
+      where: { id: userId },
     });
 
     res.status(200).json({
-      message: "Account Deleted Successfully"  
+      message: "Account Deleted Successfully",
     });
-   } catch (error) {
+  } catch (error) {
     console.error("Delete Account Error", error);
-    res.status(500).json({message: "Failed to delete account"}); 
-  } 
-}
+    res.status(500).json({ message: "Failed to delete account" });
+  }
+};
+
 // EXPORTS
 export {
   registerUser,
@@ -502,10 +511,10 @@ export {
   purchaseCourse,
   updateCourseProgress,
   getUserSettings,
-  getWatchedVideos, // stub
-  updateUserSettings, // stub
-  updateUserProfile, // stub
+  getWatchedVideos,
+  updateUserSettings,
+  updateUserProfile,
   removePurchasedCourse,
   deleteAccount,
-  changePassword
+  changePassword,
 };

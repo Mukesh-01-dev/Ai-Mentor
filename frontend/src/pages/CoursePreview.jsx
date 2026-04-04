@@ -53,7 +53,7 @@ function buildImageCandidates(imagePath) {
 export default function CoursePreview() {
   const { courseId } = useParams();
   const navigate = useNavigate();
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, fetchUserProfile } = useAuth();
 
   const [courseMeta, setCourseMeta] = useState(null);
   const [learningData, setLearningData] = useState(null);
@@ -271,23 +271,62 @@ const priceValue = safeGet(courseMeta, "priceValue", 0);
 const handlePayment = async () => {
   if (!selectedCourse || isPurchasing) return;
 
-  const priceValue = selectedCourse.priceValue;
+  const token = localStorage.getItem("token");
 
-  if (!priceValue || priceValue <= 0) {
-    toast.error("This course is free or invalid");
+  // safely extract price
+  const priceValue = Number(
+    selectedCourse.priceValue ??
+    selectedCourse.price?.replace("₹", "") ??
+    0
+  );
+
+  // FREE COURSE FLOW
+  if (priceValue === 0) {
+    try {
+      setIsPurchasing(true);
+
+      const res = await fetch(`${API_BASE_URL}/api/users/purchase-course`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          courseId: selectedCourse.id,
+          courseTitle: selectedCourse.title,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        if (data.message === "Already enrolled") {
+          toast.success("Already enrolled!");
+        } else {
+          throw new Error(data.message || "Enrollment failed");
+        }
+      } else {
+        toast.success("Course enrolled successfully!");
+      }
+
+      await fetchUserProfile();
+
+      navigate("/courses", {
+        state: { activeTab: "my-courses" },
+      });
+    } catch (err) {
+      console.error(err);
+      toast.error(err.message || "Enrollment failed");
+    } finally {
+      setIsPurchasing(false);
+    }
+
     return;
   }
 
-  setIsPurchasing(true);
-
+  // PAID COURSE FLOW
   try {
-    const token = localStorage.getItem("token");
-
-    console.log("Sending to Stripe:", {
-      id: selectedCourse.id,
-      title: selectedCourse.title,
-      priceValue,
-    });
+    setIsPurchasing(true);
 
     const res = await fetch(`${API_BASE_URL}/api/payment/create-checkout-session`, {
       method: "POST",
@@ -309,8 +348,7 @@ const handlePayment = async () => {
     if (data.url) {
       window.location.href = data.url;
     } else {
-      toast.error("Payment failed");
-      setIsPurchasing(false);
+      throw new Error("Payment failed");
     }
   } catch (err) {
     console.error(err);
@@ -781,23 +819,24 @@ const title =
       {/* ENROLL CONFIRM POPUP (same style as CoursesPage) */}
       {showEnrollPopup && selectedCourse && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-card w-full max-w-md rounded-2xl p-6 relative border border-border">
-            <button
-              onClick={() => setShowEnrollPopup(false)}
-              className="absolute top-4 right-4"
-            >
-              <X />
-            </button>
+        <div className="bg-card w-full max-w-md rounded-2xl p-6 pt-10 relative border border-border">
+  <button
+    onClick={() => setShowEnrollPopup(false)}
+    className="absolute top-3 right-4 z-20 text-black text-lg font-bold"
+  >
+    <X size={20} />
+  </button>
 
-            <img
-              src={selectedCourse.image}
-              alt={selectedCourse.title}
-              className="w-full h-40 object-cover rounded-xl mb-4"
-            />
+  <img
+    src={selectedCourse.image}
+    alt={selectedCourse.title}
+    className="w-full h-40 object-cover rounded-xl mb-4"
+  />
 
-            <h2 className="text-xl font-bold text-main">
-              {selectedCourse.title}
-            </h2>
+  <h2 className="text-xl font-bold text-main">
+    {selectedCourse.title}
+  </h2>
+
 
             <p className="text-sm text-muted mt-1">
               {selectedCourse.category} • {selectedCourse.level}
