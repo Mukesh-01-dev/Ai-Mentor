@@ -1,25 +1,17 @@
 import AIVideo from "../models/AIVideo.js";
 import express from "express";
-import fs from "fs";
-import path from "path";
 import { protect } from "../middleware/authMiddleware.js";
+import validate from "../middleware/validate.js";
+import { generateVideoSchema } from "../schemas/aiSchema.js";
 import { getCourseAndLessonTitles } from "../controllers/courseController.js";
 import dotenv from "dotenv";
 dotenv.config();
-import { fileURLToPath } from "url";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const router = express.Router();
 
-router.post("/generate-video", protect, async (req, res) => {
+router.post("/generate-video", protect, validate(generateVideoSchema), async (req, res) => {
   try {
     const { courseId, lessonId, celebrity } = req.body;
-
-    if (!courseId || !lessonId || !celebrity) {
-      return res.status(400).json({ message: "Missing required fields" });
-    }
 
     // 🔐 Check purchase
     const purchasedCourse = req.user.purchasedCourses.find(
@@ -41,25 +33,54 @@ router.post("/generate-video", protect, async (req, res) => {
 
     if (cachedVideo) {
       console.log("🎯 Cache found. Verifying file exists...");
-      const filename = cachedVideo.videoUrl.split("/").pop();
-      const videoCheck = await fetch(`${process.env.AI_SERVICE_URL}/video-stream/${filename}`,
-        {method: "HEAD"} // lightwight check
-      );
-      if (!videoCheck.ok) {
-        console.log("⚠️ Cached video missing.Removing from DB...");
-        await cachedVideo.destroy(); // delete bad cache
-      } else {
-        console.log("✅ Cached video verified.");
-        return res.json({videoUrl: cachedVideo.videoUrl,
+      // If already a trusted Cloudinary URL, return it directly — no local check needed
+      let parsedUrl;
+      try {
+        parsedUrl = new URL(cachedVideo.videoUrl);
+      } catch {
+        parsedUrl = null;
+      }
+      if (
+        parsedUrl &&
+        parsedUrl.protocol === "https:" &&
+        parsedUrl.hostname.endsWith("res.cloudinary.com")
+      ) {
+        console.log("✅ Trusted Cloudinary URL found. Serving directly.");
+        return res.json({
+          videoUrl: cachedVideo.videoUrl,
           transcriptName: cachedVideo.transcriptName,
           jobId: cachedVideo.jobId,
           cached: true,
-        })
+        });
+      }
+
+      const filename = cachedVideo.videoUrl.split("/").pop();
+
+      const videoCheck = await fetch(
+        `${process.env.AI_SERVICE_URL}/video-stream/${filename}`,
+        { method: "HEAD" }   // lightweight check
+      );
+
+      if (!videoCheck.ok) {
+        console.log("⚠️ Cached video missing. Removing from DB...");
+
+        await cachedVideo.destroy();  // delete bad cache
+
+      } else {
+        console.log("✅ Cached video verified.");
+
+        return res.json({
+          videoUrl: cachedVideo.videoUrl,
+          transcriptName: cachedVideo.transcriptName,
+          jobId: cachedVideo.jobId,
+          cached: true,
+        });
       }
     }
 
-    // 📘 Get titles from JSON
-    const titles = getCourseAndLessonTitles(courseId, lessonId);
+
+    // Get titles from JSON
+    const titles = await getCourseAndLessonTitles(courseId, lessonId);
 
     if (!titles) {
       return res.status(404).json({ message: "Invalid course or lesson" });
@@ -67,7 +88,7 @@ router.post("/generate-video", protect, async (req, res) => {
 
     const { courseTitle, lessonTitle } = titles;
 
-    // 🚀 Call AI service
+    // Call AI service
     console.log("🤖 Cache miss. Calling AI service for:", celebrity);
     const aiResponse = await fetch(
       `${process.env.AI_SERVICE_URL}/generate`,
@@ -89,9 +110,8 @@ router.post("/generate-video", protect, async (req, res) => {
     const { filename, text_file, jobId } = await aiResponse.json();
 
     const videoUrl = `/api/ai/video/${courseId}/${filename}`;
-    const textUrl = `/api/ai/transcript/${text_file}`;
 
-    // 💾 Save to Cache
+    // Save to Cache
     await AIVideo.create({
       courseId: Number(courseId),
       lessonId: String(lessonId),
@@ -193,7 +213,7 @@ router.get("/status/:jobId", protect, async (req, res) => {
 // ----------------------------------------------------
 router.get("/video/:courseId/:filename", async (req, res) => {
   try {
-    const { courseId, filename } = req.params;
+    const { filename } = req.params;
 
     const pythonVideoUrl =
       `${process.env.AI_SERVICE_URL}/video-stream/${filename}`;

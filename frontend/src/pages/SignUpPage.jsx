@@ -5,6 +5,7 @@ import { useTheme } from "../context/ThemeContext";
 import { useAuth } from "../context/AuthContext";
 import AuthLayout from "../components/auth/AuthLayout";
 import SocialLogin from "../components/auth/SocialLogin";
+import toast from "react-hot-toast";
 
 /* FormInput stays UI-only */
 const FormInput = ({ label, type, placeholder, value, onChange }) => {
@@ -65,13 +66,13 @@ const SignUpPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!isPasswordValid) {
-      alert("Please meet all password requirements.");
+      toast.error("Please meet all password requirements.");
       return;
     }
 
     setLoading(true);
     try {
-      const response = await fetch(`/api/auth/register`, {
+      const response = await fetch(`/api/users/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -92,9 +93,10 @@ const SignUpPage = () => {
       }
 
       login(data, false);
+      toast.success("Account created successfully!");
       navigate("/dashboard");
     } catch (error) {
-      alert(error.message);
+      toast.error(error.message);
     } finally {
       setLoading(false);
     }

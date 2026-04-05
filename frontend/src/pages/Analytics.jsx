@@ -1,462 +1,904 @@
-import React, { useState, useEffect } from 'react'
-import Header from '../components/Header' // Assuming Header is correctly imported
-import Sidebar from '../components/Sidebar'
-import { useAuth } from '../context/AuthContext'
-import { useSidebar } from '../context/SidebarContext'
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { 
+  BookOpen, 
+  Calendar, 
+  TrendingUp, 
+  Award,
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+  CheckCircle,
+  Clock,
+  AlertCircle,
+  Target,
+  Zap,
+  BarChart3,
+  User,
+  Settings,
+  LogOut,
+  Bell,
+  Search,
+  Moon,
+  Sun,
+  Menu
+} from "lucide-react";
+import { useAuth } from "../context/AuthContext";
+import { useSidebar } from "../context/SidebarContext";
+import { useTranslation } from "react-i18next";
 
 const Analytics = () => {
-  const { sidebarOpen, setSidebarOpen, sidebarCollapsed, setSidebarCollapsed } = useSidebar();
-  const [analyticsData, setAnalyticsData] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-  const { user } = useAuth()
+  const { t, i18n } = useTranslation();
+  const { sidebarCollapsed } = useSidebar();
+  const { user } = useAuth();
+
+  const [courses, setCourses] = useState([]);
+  const [studySessions, setStudySessions] = useState([]);
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [allCourses, setAllCourses] = useState([])
-
-  // Calendar generation logic
-  const generateCalendarGrid = (date, studyDays) => {
-    const year = date.getFullYear();
-    const month = date.getMonth();
-    const firstDayOfMonth = new Date(year, month, 1).getDay();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-    const grid = [];
-    let dayCounter = 1;
-
-    for (let i = 0; i < 6; i++) {
-      const week = [];
-      for (let j = 0; j < 7; j++) {
-        if (i === 0 && j < firstDayOfMonth) {
-          week.push({ day: null });
-        } else if (dayCounter > daysInMonth) {
-          week.push({ day: null });
-        } else {
-          const isStudyDay = studyDays.includes(dayCounter);
-          week.push({ day: dayCounter, isStudyDay });
-          dayCounter++;
-        }
-      }
-      grid.push(week);
-      if (dayCounter > daysInMonth) break;
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [tasks, setTasks] = useState({});
+  const [newTask, setNewTask] = useState("");
+  const [streak, setStreak] = useState(0);
+  const [activeTab, setActiveTab] = useState("courses");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  
+  // Initialize dark mode from localStorage
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const savedTheme = localStorage.getItem("theme");
+    if (savedTheme) {
+      return savedTheme === "dark";
     }
-    return grid;
+    return window.matchMedia("(prefers-color-scheme: dark)").matches;
+  });
+
+  const statusEmojis = {
+    Completed: "✅",
+    Ongoing: "🔄",
+    Upcoming: "📅",
+  };
+
+  const statusIcons = {
+    Completed: <CheckCircle className="w-4 h-4 text-[#28A745]" />,
+    Ongoing: <Clock className="w-4 h-4 text-[#FFC107]" />,
+    Upcoming: <AlertCircle className="w-4 h-4 text-[#CCCCCC]" />,
+  };
+
+  const formatDateKey = (date) =>
+    `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+
+  // Fetch courses and analytics
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const headers = { Authorization: `Bearer ${token}` };
+
+        const coursesRes = await fetch("/api/courses", { headers });
+        const analyticsRes = await fetch("/api/analytics", { headers });
+
+        const coursesData = await coursesRes.json();
+        const analyticsData = await analyticsRes.json();
+
+        setCourses(coursesData);
+        setStudySessions(analyticsData.studySessions || []);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    if (user) fetchData();
+  }, [user]);
+
+  // Streak calculation
+  useEffect(() => {
+    const todayStr = new Date().toDateString();
+    const lastLoginStr = localStorage.getItem("lastLogin");
+    let currentStreak = parseInt(localStorage.getItem("streak")) || 0;
+
+    if (lastLoginStr !== todayStr) {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      if (lastLoginStr === yesterday.toDateString()) currentStreak += 1;
+      else currentStreak = 1;
+
+      localStorage.setItem("streak", currentStreak);
+      localStorage.setItem("lastLogin", todayStr);
+      setStreak(currentStreak);
+    } else setStreak(currentStreak);
+  }, []);
+
+  // Load tasks
+  useEffect(() => {
+    const saved = localStorage.getItem("calendarTasks");
+    if (saved) setTasks(JSON.parse(saved));
+    setSelectedDate(formatDateKey(new Date()));
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("calendarTasks", JSON.stringify(tasks));
+  }, [tasks]);
+
+  // Dark mode effect with localStorage persistence
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem("theme", "dark");
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem("theme", "light");
+    }
+  }, [isDarkMode]);
+
+  const totalCourses = user?.purchasedCourses?.length || 0;
+
+  const certificates =
+    user?.purchasedCourses?.filter((course) => {
+      const courseInfo = courses.find((c) => c.id == course.courseId);
+      const totalLessons = courseInfo?.lessonsCount || 0;
+      const completedLessons = course.progress?.completedLessons?.length || 0;
+      return totalLessons > 0 && completedLessons === totalLessons;
+    }).length || 0;
+
+  const calculateAttendance = () => {
+    const today = new Date();
+    const last30 = [];
+    for (let i = 0; i < 30; i++) {
+      const d = new Date();
+      d.setDate(today.getDate() - i);
+      last30.push(d.toDateString());
+    }
+    const studiedDays = studySessions.map((s) =>
+      new Date(s.date).toDateString(),
+    );
+    const uniqueDays = [...new Set(studiedDays)];
+    const attended = uniqueDays.filter((d) => last30.includes(d)).length;
+    return Math.round((attended / 30) * 100);
+  };
+
+  const attendance = calculateAttendance();
+
+  const addTask = () => {
+    if (!newTask.trim()) return;
+    const dateKey = selectedDate || formatDateKey(new Date());
+    setTasks((prev) => ({
+      ...prev,
+      [dateKey]: [
+        ...(prev[dateKey] || []),
+        { text: newTask.trim(), status: "Upcoming" },
+      ],
+    }));
+    setNewTask("");
+  };
+
+  const updateTaskStatus = (index, status) => {
+    if (!tasks[selectedDate]) return;
+    setTasks((prev) => {
+      const updated = [...prev[selectedDate]];
+      updated[index].status = status;
+      return { ...prev, [selectedDate]: updated };
+    });
+  };
+
+  const deleteTask = (index) => {
+    if (!tasks[selectedDate]) return;
+    const updated = [...tasks[selectedDate]];
+    updated.splice(index, 1);
+    setTasks({ ...tasks, [selectedDate]: updated });
   };
 
   const handlePrevMonth = () => {
-    setCurrentDate(prevDate => {
-      const newDate = new Date(prevDate);
-      newDate.setMonth(newDate.getMonth() - 1);
-      return newDate;
+    setCurrentDate((prev) => {
+      const d = new Date(prev);
+      d.setMonth(d.getMonth() - 1);
+      return d;
     });
   };
 
   const handleNextMonth = () => {
-    setCurrentDate(prevDate => new Date(prevDate.setMonth(prevDate.getMonth() + 1)));
+    setCurrentDate((prev) => {
+      const d = new Date(prev);
+      d.setMonth(d.getMonth() + 1);
+      return d;
+    });
   };
 
-  useEffect(() => {
-    const fetchAllData = async () => {
-      try {
-        const token = localStorage.getItem('token')
-        if (!token) {
-          setError('No authentication token found')
-          setLoading(false)
-          return
-        }
-
-        const headers = {
-          Authorization: `Bearer ${token}`,
-        }
-
-        const [analyticsRes, coursesRes] = await Promise.all([
-          fetch('/api/analytics', { headers }),
-          fetch('/api/courses', { headers })
-        ])
-
-        if (!analyticsRes.ok) throw new Error('Failed to fetch analytics data')
-        if (!coursesRes.ok) throw new Error('Failed to fetch courses')
-
-        const aData = await analyticsRes.json()
-        const cData = await coursesRes.json()
-
-        setAnalyticsData(aData)
-        setAllCourses(cData)
-        setLoading(false)
-      } catch (err) {
-        setError(err.message)
-        setLoading(false)
-      }
-    }
-
-    if (user) {
-      fetchAllData()
-    }
-  }, [user])
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex flex-col">
-        <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-        <Sidebar
-          sidebarOpen={sidebarOpen}
-          setSidebarOpen={setSidebarOpen}
-          sidebarCollapsed={sidebarCollapsed}
-          setSidebarCollapsed={setSidebarCollapsed}
-          activePage="analytics"
-        />
-        <div className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ${sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-80'
-          }`}>
-          <main className="flex-1 mt-16 overflow-x-hidden overflow-y-auto bg-gray-50 p-8">
-            <div className="max-w-7xl mx-auto space-y-8">
-              <div className="flex justify-center items-center h-64">
-                <div className="text-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FA946D] mx-auto"></div>
-                  <p className="mt-4 text-gray-600">Loading analytics...</p>
-                </div>
-              </div>
-            </div>
-          </main>
-        </div>
-      </div>
+  const getDateKey = (day) =>
+    formatDateKey(
+      new Date(currentDate.getFullYear(), currentDate.getMonth(), day),
     );
-  }
 
-  if (error) {
-    return (
-      <div className="min-h-screen bg-canvas-alt flex flex-col">
-        <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-        <Sidebar
-          sidebarOpen={sidebarOpen}
-          setSidebarOpen={setSidebarOpen}
-          sidebarCollapsed={sidebarCollapsed}
-          setSidebarCollapsed={setSidebarCollapsed}
-          activePage="analytics"
-        />
-        <div className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ${sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-80'
-          }`}>
-          <main className="flex-1 mt-16 overflow-x-hidden overflow-y-auto bg-canvas-alt p-8">
-            <div className="max-w-7xl mx-auto space-y-8">
-              <div className="flex justify-center items-center h-64">
-                <div className="text-center">
-                  <div className="text-red-500 text-lg">Error loading analytics</div>
-                  <p className="mt-2 text-muted">{error}</p>
-                </div>
-              </div>
-            </div>
-          </main>
-        </div>
-      </div>
-    );
-  }
+  const myCourses =
+    user?.purchasedCourses?.map((c) => {
+      const courseInfo = courses.find((course) => course.id == c.courseId);
+      const completedLessons = c.progress?.completedLessons?.length || 0;
+      const totalLessons = courseInfo?.lessonsCount || 0;
+      const progress = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
+      const remaining = totalLessons - completedLessons;
+      return {
+        id: c.courseId,
+        title: courseInfo?.title || "Course",
+        level: courseInfo?.level || "Beginner",
+        image: courseInfo?.image || "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80",
+        category: courseInfo?.category || "Education",
+        completedLessons,
+        totalLessons,
+        progress,
+        remaining,
+      };
+    }) || [];
 
-  const studyDaysInCurrentMonth = analyticsData?.studySessions
-    .map(s => new Date(s.date))
-    .filter(d => d.getFullYear() === currentDate.getFullYear() && d.getMonth() === currentDate.getMonth())
-    .map(d => d.getDate()) || [];
+  // Filter courses based on search
+  const filteredCourses = myCourses.filter(course =>
+    course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    course.category.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
-  const calendarGrid = generateCalendarGrid(currentDate, studyDaysInCurrentMonth);
+  // Calculate total study time
+  const totalStudyTime = studySessions.reduce((acc, session) => acc + (session.duration || 0), 0);
+  const averageProgress = myCourses.length > 0 
+    ? Math.round(myCourses.reduce((acc, c) => acc + c.progress, 0) / myCourses.length) 
+    : 0;
 
-  const learningHoursChartData = analyticsData?.learningHoursChart || [];
-  const maxLearningHour = Math.max(...learningHoursChartData.map(d => d.hours), 1); // Avoid division by zero
-
-  const coursePerformanceData = user?.purchasedCourses?.map(purchasedCourse => {
-    const courseInfo = allCourses.find(c => c.id == purchasedCourse.courseId);
-    const totalLessons = courseInfo?.lessonsCount ||
-      (courseInfo?.lessons ? (courseInfo.lessons.includes(" of ") ? parseInt(courseInfo.lessons.split(" of ")[1]) : parseInt(courseInfo.lessons.split(" ")[0])) : 0);
-    const completedLessons = purchasedCourse.progress?.completedLessons?.length || 0;
-    const progressPercent = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
-
-    return {
-      ...purchasedCourse,
-      totalLessons,
-      completedLessons,
-      progressPercent
-    };
-  }) || [];
+  // Calculate ongoing courses (courses with progress > 0)
+  const ongoingCourses = myCourses.filter(c => c.progress > 0).length;
 
   return (
-    <div className="min-h-screen bg-canvas-alt flex flex-col">
-      <Header />
+    <>
+        <main className="p-4 md:p-6 lg:p-8">
+          {/* Dark Mode Toggle Button */}
+          <div className="fixed bottom-6 right-6 z-50">
+            <button
+              onClick={() => setIsDarkMode(!isDarkMode)}
+              className="p-3 rounded-full bg-white dark:bg-[#1A1A1A] shadow-lg hover:shadow-xl transition-all duration-300 border border-[#CCCCCC] dark:border-gray-700"
+            >
+              {isDarkMode ? (
+                <Sun className="w-5 h-5 text-[#ff6d34]" />
+              ) : (
+                <Moon className="w-5 h-5 text-[#ff6d34]" />
+              )}
+            </button>
+          </div>
 
-      <Sidebar activePage="analytics" />
+          {/* Welcome Section */}
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-[#2D3436] dark:text-white">
+              {t('analytics.welcome_back_user', { name: user?.name || 'Learner' })}
+            </h1>
+            <p className="text-[#2D3436]/70 dark:text-gray-400 mt-2 text-lg">
+              {t('analytics.analytics_subtitle')}
+            </p>
+          </div>
 
-      {/* Main Content */}
-      <div className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ${sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-80'
-        }`}>
-        <main className="flex-1 mt-16 overflow-x-hidden overflow-y-auto bg-canvas-alt p-8">
-          <div className="max-w-7xl mx-auto space-y-8">
-            {/* Metrics Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-              {/* Attendance Card */}
-              <div className="bg-card rounded-xl border border-border p-6">
-                <div className="flex items-center justify-between">
+          {/* METRICS CARDS */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            {[
+              {
+                label: t('analytics.enrolled_courses'),
+                value: totalCourses,
+                icon: <BookOpen className="w-6 h-6 text-[#00bea3]" />,
+                bgColor: "bg-[#00bea3]/10 dark:bg-[#00bea3]/20",
+                trend: t('dashboard.ongoing_courses_progress', { count: ongoingCourses, defaultValue: `${ongoingCourses} in progress` })
+              },
+              {
+                label: t('analytics.attendance_rate'),
+                value: `${attendance}%`,
+                icon: <BarChart3 className="w-6 h-6 text-[#28A745]" />,
+                bgColor: "bg-[#28A745]/10 dark:bg-[#28A745]/20",
+                trend: attendance > 70 ? t('analytics.great_consistency', { defaultValue: '👍 Great consistency' }) : t('analytics.needs_improvement', { defaultValue: '👀 Needs improvement' })
+              },
+              {
+                label: t('analytics.current_streak_label'),
+                value: streak,
+                icon: <Zap className="w-6 h-6 text-[#FFC107]" />,
+                bgColor: "bg-[#FFC107]/10 dark:bg-[#FFC107]/20",
+                trend: t('analytics.streak_days', { count: streak })
+              },
+              {
+                label: t('analytics.certificates'),
+                value: certificates,
+                icon: <Award className="w-6 h-6 text-[#ff6d34]" />,
+                bgColor: "bg-[#ff6d34]/10 dark:bg-[#ff6d34]/20",
+                trend: certificates > 0 ? t('analytics.achievements_unlocked') : t('analytics.complete_to_earn')
+              },
+            ].map((metric, idx) => (
+              <div
+                key={idx}
+                className="group relative bg-white dark:bg-[#27272A] rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300"
+              >
+                <div className="flex items-start justify-between">
                   <div>
-                    <div className="text-muted text-sm mb-1">Attendance</div>
-                    <div className="text-green-600 dark:text-green-400 text-2xl font-bold">{analyticsData?.attendance || 0}%</div>
+                    <p className="text-sm text-[#2D3436]/60 dark:text-gray-400 mb-1">{metric.label}</p>
+                    <p className="text-3xl font-bold text-[#2D3436] dark:text-white">
+                      {metric.value}
+                    </p>
                   </div>
-                  <div className="w-12 h-12 bg-green-100 dark:bg-green-900/20 rounded-lg flex items-center justify-center">
-                    <svg className="w-[14px] h-4" viewBox="0 0 14 16" fill="none">
-                      <path d="M4 0C4.55312 0 5 0.446875 5 1V2H9V1C9 0.446875 9.44687 0 10 0C10.5531 0 11 0.446875 11 1V2H12.5C13.3281 2 14 2.67188 14 3.5V5H0V3.5C0 2.67188 0.671875 2 1.5 2H3V1C3 0.446875 3.44688 0 4 0ZM0 6H14V14.5C14 15.3281 13.3281 16 12.5 16H1.5C0.671875 16 0 15.3281 0 14.5V6ZM10.2812 9.53125C10.575 9.2375 10.575 8.7625 10.2812 8.47188C9.9875 8.18125 9.5125 8.17813 9.22188 8.47188L6.25313 11.4406L4.78438 9.97188C4.49063 9.67813 4.01562 9.67813 3.725 9.97188C3.43437 10.2656 3.43125 10.7406 3.725 11.0312L5.725 13.0312C6.01875 13.325 6.49375 13.325 6.78438 13.0312L10.2812 9.53125Z" fill="#16A34A" />
-                    </svg>
+                  <div className={`${metric.bgColor} p-3 rounded-xl group-hover:scale-110 transition-transform`}>
+                    {metric.icon}
                   </div>
                 </div>
-              </div>
-
-              {/* Avg Marks Card */}
-              <div className="bg-card rounded-xl border border-border p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-muted text-sm mb-1">Avg Marks</div>
-                    <div className="text-blue-600 dark:text-blue-400 text-2xl font-bold">{analyticsData?.avgMarks || 0}</div>
-                  </div>
-                  <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center">
-                    <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none">
-                      <path d="M2 2C2 1.44687 1.55313 1 1 1C0.446875 1 0 1.44687 0 2V12.5C0 13.8813 1.11875 15 2.5 15H15C15.5531 15 16 14.5531 16 14C16 13.4469 15.5531 13 15 13H2.5C2.225 13 2 12.775 2 12.5V2ZM14.7063 4.70625C15.0969 4.31563 15.0969 3.68125 14.7063 3.29063C14.3156 2.9 13.6812 2.9 13.2906 3.29063L10 6.58437L8.20625 4.79063C7.81563 4.4 7.18125 4.4 6.79063 4.79063L3.29063 8.29062C2.9 8.68125 2.9 9.31563 3.29063 9.70625C3.68125 10.0969 4.31563 10.0969 4.70625 9.70625L7.5 6.91563L9.29375 8.70938C9.68437 9.1 10.3188 9.1 10.7094 8.70938L14.7094 4.70937L14.7063 4.70625Z" fill="#2563EB" />
-                    </svg>
-                  </div>
+                <div className="mt-4 flex items-center gap-1 text-xs text-[#2D3436]/60 dark:text-gray-400">
+                  <TrendingUp className="w-3 h-3" />
+                  <span>{metric.trend}</span>
                 </div>
               </div>
+            ))}
+          </div>
 
-              {/* Daily Hours Card */}
-              <div className="bg-card rounded-xl border border-border p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-muted text-sm mb-1">Daily Hours</div>
-                    <div className="text-purple-600 dark:text-purple-400 text-2xl font-bold">{analyticsData?.dailyHours || 0}h</div>
-                  </div>
-                  <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/20 rounded-lg flex items-center justify-center">
-                    <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none">
-                      <path d="M8 0C10.1217 0 12.1566 0.842855 13.6569 2.34315C15.1571 3.84344 16 5.87827 16 8C16 10.1217 15.1571 12.1566 13.6569 13.6569C12.1566 15.1571 10.1217 16 8 16C5.87827 16 3.84344 15.1571 2.34315 13.6569C0.842855 12.1566 0 10.1217 0 8C0 5.87827 0.842855 3.84344 2.34315 2.34315C3.84344 0.842855 5.87827 0 8 0ZM7.25 3.75V8C7.25 8.25 7.375 8.48438 7.58437 8.625L10.5844 10.625C10.9281 10.8562 11.3938 10.7625 11.625 10.4156C11.8562 10.0687 11.7625 9.60625 11.4156 9.375L8.75 7.6V3.75C8.75 3.33437 8.41562 3 8 3C7.58437 3 7.25 3.33437 7.25 3.75Z" fill="#9333EA" />
-                    </svg>
-                  </div>
-                </div>
+          {/* Quick Stats Row */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <div className="bg-white dark:bg-[#27272A] rounded-xl p-4 shadow-sm">
+              <div className="text-sm text-[#2D3436]/60 dark:text-gray-400">{t('analytics.average_progress')}</div>
+              <div className="text-xl font-bold text-[#00bea3]">{averageProgress}%</div>
+              <div className="w-full bg-[#F5F5F5] dark:bg-gray-700 rounded-full h-1.5 mt-2">
+                <div 
+                  className="bg-gradient-to-r from-[#00bea3] to-[#ff6d34] h-1.5 rounded-full transition-all duration-500" 
+                  style={{ width: `${averageProgress}%` }}
+                ></div>
               </div>
-
-              {/* Courses Card */}
-              <div className="bg-card rounded-xl border border-border p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-muted text-sm mb-1">Courses</div>
-                    <div className="text-orange-600 dark:text-orange-400 text-2xl font-bold">{analyticsData?.totalCourses || 0}</div>
-                  </div>
-                  <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/20 rounded-lg flex items-center justify-center">
-                    <svg className="w-[14px] h-4" viewBox="0 0 14 16" fill="none">
-                      <path d="M3 0C1.34375 0 0 1.34375 0 3V13C0 14.6562 1.34375 16 3 16H12H13C13.5531 16 14 15.5531 14 15C14 14.4469 13.5531 14 13 14V12C13.5531 12 14 11.5531 14 11V1C14 0.446875 13.5531 0 13 0H12H3ZM3 12H11V14H3C2.44688 14 2 13.5531 2 13C2 12.4469 2.44688 12 3 12ZM4 4.5C4 4.225 4.225 4 4.5 4H10.5C10.775 4 11 4.225 11 4.5C11 4.775 10.775 5 10.5 5H4.5C4.225 5 4 4.775 4 4.5ZM4.5 6H10.5C10.775 6 11 6.225 11 6.5C11 6.775 10.775 7 10.5 7H4.5C4.225 7 4 6.775 4 6.5C4 6.225 4.225 6 4.5 6Z" fill="#EA580C" />
-                    </svg>
-                  </div>
-                </div>
+            </div>
+            <div className="bg-white dark:bg-[#27272A] rounded-xl p-4 shadow-sm">
+              <div className="text-sm text-[#2D3436]/60 dark:text-gray-400">{t('analytics.completed_lessons_count')}</div>
+              <div className="text-xl font-bold text-[#28A745]">
+                {myCourses.reduce((acc, c) => acc + c.completedLessons, 0)}
               </div>
+              <div className="text-xs text-[#2D3436]/50 dark:text-gray-500 mt-2">{t('analytics.across_all_courses')}</div>
+            </div>
+            <div className="bg-white dark:bg-[#27272A] rounded-xl p-4 shadow-sm">
+              <div className="text-sm text-[#2D3436]/60 dark:text-gray-400">{t('analytics.total_study_time_label')}</div>
+              <div className="text-xl font-bold text-[#ff6d34]">
+                {Math.round(totalStudyTime / 60)} {t('analytics.hours_unit', { defaultValue: 'hrs' })}
+              </div>
+              <div className="text-xs text-[#2D3436]/50 dark:text-gray-500 mt-2">{t('analytics.this_month')}</div>
+            </div>
+            <div className="bg-white dark:bg-[#27272A] rounded-xl p-4 shadow-sm">
+              <div className="text-sm text-[#2D3436]/60 dark:text-gray-400">{t('analytics.upcoming_tasks_count')}</div>
+              <div className="text-xl font-bold text-[#FFC107]">
+                {Object.values(tasks).flat().filter(t => t.status === "Upcoming").length}
+              </div>
+              <div className="text-xs text-[#2D3436]/50 dark:text-gray-500 mt-2">{t('analytics.need_attention')}</div>
+            </div>
+          </div>
 
-              {/* Certificates Card */}
-              <div className="bg-card rounded-xl border border-border p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-muted text-sm mb-1">Certificates</div>
-                    <div className="text-yellow-600 dark:text-yellow-400 text-2xl font-bold">{analyticsData?.certificates || 0}</div>
-                  </div>
-                  <div className="w-12 h-12 bg-yellow-100 dark:bg-yellow-900/20 rounded-lg flex items-center justify-center">
-                    <svg className="w-3 h-4" viewBox="0 0 12 16" fill="none">
-                      <path d="M6 0L8.5 2.5L11.5 1.5L10.5 4.5L13 7L10.5 9.5L11.5 12.5L8.5 11.5L6 14L3.5 11.5L0.5 12.5L1.5 9.5L-1 7L1.5 4.5L0.5 1.5L3.5 2.5L6 0Z" fill="#CA8A04" />
-                    </svg>
-                  </div>
+          {/* Tab Navigation */}
+          <div className="flex gap-2 mb-6 border-b border-[#CCCCCC] dark:border-gray-700">
+            <button
+              onClick={() => setActiveTab("courses")}
+              className={`px-4 py-2 font-medium transition-colors relative ${
+                activeTab === "courses"
+                  ? "text-[#ff6d34] dark:text-[#ff6d34]"
+                  : "text-[#2D3436]/60 hover:text-[#2D3436] dark:text-gray-400"
+              }`}
+            >
+              {t('analytics.my_courses_tab')}
+              {activeTab === "courses" && (
+                <span className="absolute bottom-0 left-0 w-full h-0.5 bg-[#ff6d34]"></span>
+              )}
+            </button>
+            <button
+              onClick={() => setActiveTab("calendar")}
+              className={`px-4 py-2 font-medium transition-colors relative ${
+                activeTab === "calendar"
+                  ? "text-[#ff6d34] dark:text-[#ff6d34]"
+                  : "text-[#2D3436]/60 hover:text-[#2D3436] dark:text-gray-400"
+              }`}
+            >
+              {t('analytics.calendar_tasks_tab')}
+              {activeTab === "calendar" && (
+                <span className="absolute bottom-0 left-0 w-full h-0.5 bg-[#ff6d34]"></span>
+              )}
+            </button>
+          </div>
+
+          {activeTab === "courses" && (
+            <div className="mb-8">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-[#2D3436] dark:text-white flex items-center gap-2">
+                  <BookOpen className="w-6 h-6 text-[#00bea3]" />
+                  {t('analytics.my_courses_tab')}
+                  <span className="text-sm font-normal text-[#2D3436]/60 dark:text-gray-400 bg-[#F5F5F5] dark:bg-gray-700 px-2 py-1 rounded-full">
+                    {filteredCourses.length}
+                  </span>
+                </h2>
+                <Link
+                  to="/courses"
+                  className="text-[#ff6d34] hover:text-[#ff6d34]/80 text-sm font-medium flex items-center gap-1"
+                >
+                  {t('analytics.browse_all_courses')}
+                  <ChevronRight className="w-4 h-4" />
+                </Link>
+              </div>
+              
+              <div className="bg-white dark:bg-[#1A1A1A] rounded-2xl shadow-lg overflow-hidden border border-[#CCCCCC]/30 dark:border-gray-700">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left">
+                    <thead className="bg-[#F5F5F5] dark:bg-gray-700/50">
+                      <tr>
+                        <th className="px-6 py-4 text-xs font-semibold text-[#2D3436]/70 dark:text-gray-300 uppercase tracking-wider">{t('analytics.table_course')}</th>
+                        <th className="px-6 py-4 text-xs font-semibold text-[#2D3436]/70 dark:text-gray-300 uppercase tracking-wider">{t('analytics.table_progress')}</th>
+                        <th className="px-6 py-4 text-xs font-semibold text-[#2D3436]/70 dark:text-gray-300 uppercase tracking-wider">{t('analytics.table_lessons')}</th>
+                        <th className="px-6 py-4 text-xs font-semibold text-[#2D3436]/70 dark:text-gray-300 uppercase tracking-wider">{t('analytics.table_level')}</th>
+                        <th className="px-6 py-4 text-xs font-semibold text-[#2D3436]/70 dark:text-gray-300 uppercase tracking-wider">{t('analytics.table_action')}</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#CCCCCC]/50 dark:divide-gray-700">
+                      {filteredCourses.length > 0 ? (
+                        filteredCourses.map((course) => (
+                          <tr 
+                            key={course.id} 
+                            className="hover:bg-[#F5F5F5] dark:hover:bg-gray-700/30 transition-colors group"
+                          >
+                            <td className="px-6 py-4">
+                              <Link to={`/learning/${course.id}`} className="flex items-center gap-4">
+                                <div className="relative">
+                                  <img 
+                                    src={course.image} 
+                                    alt="" 
+                                    className="w-12 h-12 rounded-xl object-cover group-hover:scale-105 transition-transform duration-300" 
+                                  />
+                                  <div className="absolute inset-0 rounded-xl bg-[#ff6d34] opacity-0 group-hover:opacity-10 transition-opacity"></div>
+                                </div>
+                                <div>
+                                  <div className="font-semibold text-[#2D3436] dark:text-white line-clamp-1">
+                                    {course.title}
+                                  </div>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <span className="text-xs px-2 py-0.5 bg-[#F5F5F5] dark:bg-gray-700 rounded-full text-[#2D3436]/70 dark:text-gray-300">
+                                      {course.category}
+                                    </span>
+                                  </div>
+                                </div>
+                              </Link>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="w-40">
+                                <div className="flex justify-between mb-1">
+                                  <span className="text-xs font-medium text-[#2D3436] dark:text-gray-300">
+                                    {course.progress}%
+                                  </span>
+                                </div>
+                                <div className="w-full bg-[#F5F5F5] dark:bg-gray-700 rounded-full h-2 overflow-hidden">
+                                  <div 
+                                    className="bg-gradient-to-r from-[#00bea3] to-[#ff6d34] h-2 rounded-full transition-all duration-500 relative"
+                                    style={{ width: `${course.progress}%` }}
+                                  >
+                                    <div className="absolute inset-0 bg-white/20 animate-shimmer"></div>
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-1">
+                                <CheckCircle className="w-4 h-4 text-[#28A745]" />
+                                <span className="text-sm text-[#2D3436]/70 dark:text-gray-300">
+                                  <span className="font-semibold text-[#00bea3]">{course.completedLessons}</span>
+                                  <span className="mx-1 text-gray-300">/</span>
+                                  <span>{course.totalLessons}</span>
+                                </span>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className={`px-3 py-1 text-xs rounded-full font-medium ${
+                                course.level === 'Beginner' 
+                                  ? 'bg-green-100 text-[#28A745] dark:bg-green-900/30 dark:text-[#28A745]' 
+                                  : course.level === 'Intermediate' 
+                                  ? 'bg-blue-100 text-[#00bea3] dark:bg-blue-900/30 dark:text-[#00bea3]' 
+                                  : 'bg-orange-100 text-[#ff6d34] dark:bg-orange-900/30 dark:text-[#ff6d34]'
+                              }`}>
+                                {course.level}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4">
+                              <Link
+                                to={`/learning/${course.id}`}
+                                className="inline-flex items-center gap-1 text-[#ff6d34] hover:text-[#ff6d34]/80 text-sm font-medium"
+                              >
+                                {t('analytics.continue_btn')}
+                                <ChevronRight className="w-4 h-4" />
+                              </Link>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan="5" className="px-6 py-16 text-center">
+                            <div className="flex flex-col items-center gap-3">
+                              <BookOpen className="w-12 h-12 text-gray-300 dark:text-gray-600" />
+                              <p className="text-[#2D3436]/60 dark:text-gray-400">
+                                {searchQuery ? t('analytics.no_courses_match') : t('analytics.no_courses_enrolled')}
+                              </p>
+                              {!searchQuery && (
+                                <Link 
+                                  to="/courses" 
+                                  className="px-4 py-2 bg-[#ff6d34] text-white rounded-lg hover:bg-[#ff6d34]/90 transition"
+                                >
+                                  {t('analytics.browse_courses_btn')}
+                                </Link>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             </div>
-          </div>
-          {/* Two Column Layout */}
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-            {/* Left Column - Calendar */}
-            <div className="xl:col-span-2">
-              <div className="bg-card rounded-xl border border-border p-6">
-                {/* Calendar Header */}
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-xl font-semibold text-main">Class Calendar</h3>
-                  <div className="flex items-center space-x-2">
-                    <button onClick={handlePrevMonth} className="w-[26px] h-10 bg-canvas dark:bg-zinc-800 rounded-lg flex items-center justify-center">
-                      <svg className="w-[10px] h-4" viewBox="0 0 11 16" fill="none">
-                        <path d="M1.21582 7.29365C0.825195 7.68428 0.825195 8.31865 1.21582 8.70928L7.21582 14.7093C7.60645 15.0999 8.24082 15.0999 8.63145 14.7093C9.02207 14.3187 9.02207 13.6843 8.63145 13.2937L3.3377 7.9999L8.62832 2.70615C9.01895 2.31553 9.01895 1.68115 8.62832 1.29053C8.2377 0.899902 7.60332 0.899902 7.2127 1.29053L1.2127 7.29053L1.21582 7.29365Z" fill="#4B5563" />
-                      </svg>
-                    </button>
-                    <span className="text-lg text-main font-medium px-2">{currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}</span>
-                    <button onClick={handleNextMonth} className="w-[26px] h-10 bg-canvas dark:bg-zinc-800 rounded-lg flex items-center justify-center">
-                      <svg className="w-[10px] h-4" viewBox="0 0 10 16" fill="none">
-                        <path d="M9.70615 7.29365C10.0968 7.68428 10.0968 8.31865 9.70615 8.70928L3.70615 14.7093C3.31553 15.0999 2.68115 15.0999 2.29053 14.7093C1.8999 14.3187 1.8999 13.6843 2.29053 13.2937L7.58428 7.9999L2.29365 2.70615C1.90303 2.31553 1.90303 1.68115 2.29365 1.29053C2.68428 0.899902 3.31865 0.899902 3.70928 1.29053L9.70928 7.29053L9.70615 7.29365Z" fill="#4B5563" />
-                      </svg>
-                    </button>
-                  </div>
+          )}
+
+          {activeTab === "calendar" && (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* CALENDAR */}
+              <div className="lg:col-span-2 bg-white dark:bg-[#1A1A1A] rounded-2xl p-6 shadow-lg">
+                {/* Month Navigation */}
+                <div className="flex justify-between items-center mb-6">
+                  <button
+                    onClick={handlePrevMonth}
+                    className="p-2 rounded-lg hover:bg-[#F5F5F5] dark:hover:bg-gray-700 transition group"
+                  >
+                    <ChevronLeft className="w-5 h-5 text-[#2D3436]/60 dark:text-gray-400 group-hover:text-[#ff6d34]" />
+                  </button>
+                  <span className="text-xl font-bold text-[#2D3436] dark:text-white">
+                    {currentDate.toLocaleString(i18n.language, {
+                      month: "long",
+                      year: "numeric",
+                    })}
+                  </span>
+                  <button
+                    onClick={handleNextMonth}
+                    className="p-2 rounded-lg hover:bg-[#F5F5F5] dark:hover:bg-gray-700 transition group"
+                  >
+                    <ChevronRight className="w-5 h-5 text-[#2D3436]/60 dark:text-gray-400 group-hover:text-[#ff6d34]" />
+                  </button>
                 </div>
 
-                {/* Calendar Days Header */}
-                <div className="grid grid-cols-7 gap-1 mb-2">
-                  {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-                    <div key={day} className="h-9 flex items-center justify-center">
-                      <span className="text-sm text-muted font-medium">{day}</span>
-                    </div>
-                  ))}
+                {/* Weekdays */}
+                <div className="grid grid-cols-7 gap-2 mb-2">
+                  {[0, 1, 2, 3, 4, 5, 6].map((d) => {
+                    const date = new Date(2021, 0, 3 + d); // 2021-01-03 was a Sunday
+                    return (
+                      <div key={d} className="text-center text-sm font-medium text-[#2D3436]/60 dark:text-gray-400">
+                        {date.toLocaleString(i18n.language, { weekday: 'short' })}
+                      </div>
+                    );
+                  })}
                 </div>
 
                 {/* Calendar Grid */}
-                <div className="grid grid-cols-7 gap-1">
-                  {calendarGrid.flat().map((dayInfo, index) => (
-                    <div
-                      key={index}
-                      className={`h-[104px] flex items-start justify-center pt-2 rounded-lg ${dayInfo.isStudyDay ? 'bg-blue-50 dark:bg-blue-900/20' : ''
-                        }`}
-                    >
-                      {dayInfo.day && (
-                        <span className={`text-sm ${dayInfo.isStudyDay ? 'text-blue-800 dark:text-blue-200 font-bold' : 'text-main'
-                          }`}>
-                          {dayInfo.day}
+                <div className="grid grid-cols-7 gap-2">
+                  {(() => {
+                    const year = currentDate.getFullYear();
+                    const month = currentDate.getMonth();
+                    const firstDay = new Date(year, month, 1).getDay();
+                    const daysInMonth = new Date(year, month + 1, 0).getDate();
+                    
+                    const prevMonthDays = new Date(year, month, 0).getDate();
+                    const prevMonth = new Date(year, month - 1);
+                    const nextMonth = new Date(year, month + 1);
+                    
+                    const allDays = [];
+                    
+                    // Track if we've already shown the month name for previous month
+                    let hasShownPrevMonthName = false;
+                    let hasShownNextMonthName = false;
+                    
+                    // Add previous month's days
+                    for (let i = firstDay - 1; i >= 0; i--) {
+                      const dayNum = prevMonthDays - i;
+                      allDays.push({
+                        day: dayNum,
+                        month: prevMonth.getMonth(),
+                        year: prevMonth.getFullYear(),
+                        isCurrentMonth: false,
+                        isClickable: false,
+                        showMonthName: !hasShownPrevMonthName && i === 0
+                      });
+                      if (i === 0) hasShownPrevMonthName = true;
+                    }
+                    
+                    // Add current month's days
+                    for (let i = 1; i <= daysInMonth; i++) {
+                      allDays.push({
+                        day: i,
+                        month: month,
+                        year: year,
+                        isCurrentMonth: true,
+                        isClickable: true,
+                        showMonthName: false
+                      });
+                    }
+                    
+                    // Add next month's days
+                    const remainingCells = 42 - allDays.length;
+                    for (let i = 1; i <= remainingCells; i++) {
+                      allDays.push({
+                        day: i,
+                        month: nextMonth.getMonth(),
+                        year: nextMonth.getFullYear(),
+                        isCurrentMonth: false,
+                        isClickable: false,
+                        showMonthName: !hasShownNextMonthName && i === 1
+                      });
+                      if (i === 1) hasShownNextMonthName = true;
+                    }
+                    
+                    return allDays.map((dayInfo, index) => {
+                      const key = formatDateKey(new Date(dayInfo.year, dayInfo.month, dayInfo.day));
+                      const isToday = key === formatDateKey(new Date());
+                      const taskList = tasks[key] || [];
+                      const displayTasks = taskList.slice(0, 2);
+                      const remainingCount = Math.max(taskList.length - displayTasks.length, 0);
+                      
+                      const allTasksCompleted = taskList.length > 0 && taskList.every(task => task.status === "Completed");
+                      const hasAnyTask = taskList.length > 0;
+                      const hasIncompleteTasks = hasAnyTask && !allTasksCompleted;
+                      
+                      const monthName = dayInfo.showMonthName 
+                        ? new Date(dayInfo.year, dayInfo.month, 1).toLocaleString(i18n.language, { month: 'short' })
+                        : '';
+                      
+                      return (
+                        <div
+                          key={index}
+                          onClick={() => {
+                            if (dayInfo.isClickable) {
+                              setSelectedDate(key);
+                            }
+                          }}
+                          className={`relative h-24 rounded-xl p-2 transition-all duration-300
+                            ${dayInfo.isClickable && selectedDate === key 
+                              ? 'ring-2 ring-[#ff6d34] shadow-lg scale-105 z-10' 
+                              : dayInfo.isClickable 
+                              ? 'hover:ring-1 hover:ring-[#CCCCCC] dark:hover:ring-gray-600 cursor-pointer'
+                              : 'cursor-default opacity-70'
+                            }
+                            ${isToday && dayInfo.isCurrentMonth
+                              ? 'bg-gradient-to-br from-orange-50 to-yellow-50 dark:from-[#ff6d34]/30 dark:to-[#FFC107]/30 border-2 border-[#ff6d34]' 
+                              : allTasksCompleted && dayInfo.isCurrentMonth
+                              ? 'bg-gradient-to-br from-green-50 to-emerald-50 dark:from-[#28A745]/40 dark:to-[#28A745]/40 border border-[#28A745] dark:border-[#28A745]'
+                              : hasIncompleteTasks && dayInfo.isCurrentMonth
+                              ? 'bg-white dark:bg-[#0F0F0F] border-l-4 border-l-[#FFC107]'
+                              : dayInfo.isCurrentMonth 
+                              ? 'bg-white dark:bg-[#0F0F0F]'
+                              : 'bg-[#F5F5F5] dark:bg-[#0F0F0F]/50'
+                            }`}
+                        >
+                          <div className="flex justify-between items-start">
+                            <div className="flex flex-col">
+                              <span className={`text-sm font-semibold ${
+                                isToday && dayInfo.isCurrentMonth 
+                                  ? 'text-[#ff6d34] dark:text-[#ff6d34]' 
+                                  : dayInfo.isCurrentMonth
+                                  ? 'text-[#2D3436] dark:text-gray-300'
+                                  : 'text-[#2D3436]/50 dark:text-gray-500'
+                              }`}>
+                                {dayInfo.day}
+                              </span>
+                              {monthName && (
+                                <span className="text-[10px] font-medium text-[#2D3436]/50 dark:text-gray-500 mt-0.5">
+                                  {monthName}
+                                </span>
+                              )}
+                            </div>
+                            {hasAnyTask && dayInfo.isCurrentMonth && (
+                              <div className="flex gap-1">
+                                {allTasksCompleted ? (
+                                  <CheckCircle className="w-4 h-4 text-[#28A745]" />
+                                ) : (
+                                  <span className="text-xs bg-[#ff6d34]/10 text-[#ff6d34] dark:bg-[#ff6d34]/30 dark:text-[#ff6d34] px-1.5 rounded-full">
+                                    {taskList.length}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                          
+                          {hasAnyTask && dayInfo.isCurrentMonth && (
+                            <>
+                              <div className="mt-1 space-y-0.5">
+                                {displayTasks.map((task, idx) => (
+                                  <div key={idx} className="flex items-center gap-1 text-[10px]">
+                                    <span>{statusEmojis[task.status]}</span>
+                                    <span className="truncate text-[#2D3436]/70 dark:text-gray-400">{task.text}</span>
+                                  </div>
+                                ))}
+                                {remainingCount > 0 && (
+                                  <div className="text-[9px] text-[#2D3436]/50 dark:text-gray-500">
+                                    +{remainingCount} {t('common.more', { defaultValue: 'more' })}
+                                  </div>
+                                )}
+                              </div>
+                              
+                              {hasIncompleteTasks && taskList.length > 1 && (
+                                <div className="absolute bottom-1 left-2 right-2 h-0.5 bg-[#F5F5F5] dark:bg-gray-700 rounded-full overflow-hidden">
+                                  <div 
+                                    className="h-full bg-[#28A745] rounded-full transition-all duration-300"
+                                    style={{ width: `${(taskList.filter(t => t.status === "Completed").length / taskList.length) * 100}%` }}
+                                  ></div>
+                                </div>
+                              )}
+                            </>
+                          )}
+                          
+                          {!dayInfo.isClickable && (
+                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                              <div className="w-full h-full bg-white/50 dark:bg-black/30 rounded-xl"></div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
+
+                {/* Legend */}
+                <div className="flex flex-wrap items-center gap-4 mt-6 pt-4 border-t border-[#CCCCCC] dark:border-gray-700">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-gradient-to-br from-orange-50 to-yellow-50 border-2 border-[#ff6d34]"></div>
+                    <span className="text-xs text-[#2D3436]/70 dark:text-gray-400">{t('analytics.legend_today')}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-gradient-to-br from-green-50 to-emerald-50 border border-[#28A745]"></div>
+                    <span className="text-xs text-[#2D3436]/70 dark:text-gray-400">{t('analytics.legend_all_completed')}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-white dark:bg-[#0F0F0F] border-l-4 border-l-[#FFC107]"></div>
+                    <span className="text-xs text-[#2D3436]/70 dark:text-gray-400">{t('analytics.legend_tasks_pending')}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-[#F5F5F5] dark:bg-[#0F0F0F]/50 border border-[#CCCCCC] dark:border-gray-600"></div>
+                    <span className="text-xs text-[#2D3436]/70 dark:text-gray-400">{t('analytics.legend_other_month')}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span>✅</span>
+                    <span className="text-xs text-[#2D3436]/70 dark:text-gray-400">{t('analytics.status_completed')}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span>🔄</span>
+                    <span className="text-xs text-[#2D3436]/70 dark:text-gray-400">{t('analytics.status_ongoing')}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span>📅</span>
+                    <span className="text-xs text-[#2D3436]/70 dark:text-gray-400">{t('analytics.status_upcoming')}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* TASK PANEL */}
+              <div className="bg-white dark:bg-[#1A1A1A] rounded-2xl p-6 shadow-lg">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-bold text-[#2D3436] dark:text-white flex items-center gap-2">
+                    <Target className="w-5 h-5 text-[#ff6d34]" />
+                    {t('analytics.tasks_for_date', { date: selectedDate })}
+                  </h3>
+                </div>
+
+                <div className="flex gap-2 mb-6">
+                  <input
+                    value={newTask}
+                    onChange={(e) => setNewTask(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && addTask()}
+                    className="flex-1 border border-[#CCCCCC] dark:border-gray-700 dark:bg-gray-900 dark:text-white p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#ff6d34] transition placeholder:text-gray-400 dark:placeholder:text-gray-500"
+                    placeholder={t('analytics.add_task_placeholder')}
+                  />
+
+                  <button
+                    onClick={addTask}
+                    className="bg-[#ff6d34] hover:bg-[#ff6d34]/90 text-white px-4 rounded-xl transition flex items-center justify-center gap-1"
+                  >
+                    <Plus className="w-4 h-4" />
+                    {t('analytics.add_btn')}
+                  </button>
+                </div>
+
+                <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                  {(tasks[selectedDate] || []).length > 0 ? (
+                    (tasks[selectedDate] || []).map((task, i) => (
+                      <div
+                        key={i}
+                        className={`group relative flex items-center gap-3 p-3 rounded-xl transition-all
+                          ${task.status === "Completed" 
+                            ? 'bg-[#28A745]/10 dark:bg-[#28A745]/20' 
+                            : 'bg-[#F5F5F5] dark:bg-gray-700/50 hover:bg-[#CCCCCC]/30 dark:hover:bg-gray-700'
+                          }`}
+                      >
+                        <div className="flex-shrink-0">
+                          {statusIcons[task.status]}
+                        </div>
+                        <span className={`flex-1 text-sm line-clamp-2 ${
+                          task.status === "Completed" 
+                            ? 'line-through text-gray-500 dark:text-gray-400' 
+                            : 'text-[#2D3436] dark:text-gray-300'
+                        }`}>
+                          {task.text}
                         </span>
-                      )}
+                        
+                        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <select
+                            value={task.status}
+                            onChange={(e) => updateTaskStatus(i, e.target.value)}
+                            className="bg-white dark:bg-gray-800 border border-[#CCCCCC] dark:border-gray-600 rounded-lg p-1 text-xs focus:outline-none focus:ring-1 focus:ring-[#ff6d34] text-[#2D3436] dark:text-gray-300"
+                          >
+                            <option value="Upcoming">📅 Upcoming</option>
+                            <option value="Ongoing">🔄 Ongoing</option>
+                            <option value="Completed">✅ Done</option>
+                          </select>
+                          <button
+                            onClick={() => deleteTask(i)}
+                            className="text-gray-400 hover:text-red-500 transition p-1"
+                          >
+                            ✕
+                          </button>
+                        </div>
+
+                        {task.status === "Completed" && (
+                          <div className="absolute bottom-0 left-0 h-0.5 bg-[#28A745] rounded-full w-full"></div>
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8">
+                      <div className="inline-flex items-center justify-center w-12 h-12 bg-[#F5F5F5] dark:bg-gray-800 rounded-full mb-3">
+                        <Target className="w-6 h-6 text-gray-400" />
+                      </div>
+                      <p className="text-[#2D3436]/60 dark:text-gray-400 text-sm">No tasks for this day</p>
+                      <p className="text-xs text-[#2D3436]/50 dark:text-gray-500 mt-1">Add a task to get started</p>
                     </div>
-                  ))}
+                  )}
                 </div>
 
-                {/* Calendar Legend */}
-                <div className="flex items-center space-x-4 mt-6 text-sm">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                    <span className="text-muted">Upcoming</span>
+                {tasks[selectedDate] && tasks[selectedDate].length > 0 && (
+                  <div className="mt-4 pt-4 border-t border-[#CCCCCC] dark:border-gray-700">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-[#2D3436]/60 dark:text-gray-400">Completed:</span>
+                      <span className="font-medium text-[#28A745]">
+                        {tasks[selectedDate].filter(t => t.status === "Completed").length}/{tasks[selectedDate].length}
+                      </span>
+                    </div>
+                    <div className="w-full bg-[#F5F5F5] rounded-full h-1.5 mt-2">
+                      <div 
+                        className="bg-[#28A745] h-1.5 rounded-full transition-all duration-300"
+                        style={{ width: `${(tasks[selectedDate].filter(t => t.status === "Completed").length / tasks[selectedDate].length) * 100}%` }}
+                      ></div>
+                    </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                    <span className="text-muted">Completed</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                    <span className="text-muted">Missed</span>
-                  </div>
-                </div>
+                )}
               </div>
             </div>
-
-            {/* Right Column - AI Insights & Schedule */}
-            <div className="space-y-6">
-              {/* AI Insights */}
-              <div className="bg-linear-to-r from-[#FFF4F0] to-[#E7FFFC] border border-[#FFDACC] rounded-xl p-6 shadow-[0_0_20px_rgba(102,126,234,0.3)]">
-                <div className="flex items-center space-x-3 mb-4">
-                  <div className="w-10 h-10 bg-[#FE6C34] rounded-lg flex items-center justify-center">
-                    <svg className="w-5 h-4" viewBox="0 0 20 16" fill="none">
-                      <path d="M10 0C10.5531 0 11 0.446875 11 1V3H14.75C15.9937 3 17 4.00625 17 5.25V13.75C17 14.9937 15.9937 16 14.75 16H5.25C4.00625 16 3 14.9937 3 13.75V5.25C3 4.00625 4.00625 3 5.25 3H9V1C9 0.446875 9.44687 0 10 0ZM6.5 12C6.225 12 6 12.225 6 12.5C6 12.775 6.225 13 6.5 13H7.5C7.775 13 8 12.775 8 12.5C8 12.225 7.775 12 7.5 12H6.5ZM9.5 12C9.225 12 9 12.225 9 12.5C9 12.775 9.225 13 9.5 13H10.5C10.775 13 11 12.775 11 12.5C11 12.225 10.775 12 10.5 12H9.5ZM12.5 12C12.225 12 12 12.225 12 12.5C12 12.775 12.225 13 12.5 13H13.5C13.775 13 14 12.775 14 12.5C14 12.225 13.775 12 13.5 12H12.5ZM8.25 8C8.25 7.66848 8.1183 7.35054 7.88388 7.11612C7.64946 6.8817 7.33152 6.75 7 6.75C6.66848 6.75 6.35054 6.8817 6.11612 7.11612C5.8817 7.35054 5.75 7.66848 5.75 8C5.75 8.33152 5.8817 8.64946 6.11612 8.88388C6.35054 9.1183 6.66848 9.25 7 9.25C7.33152 9.25 7.64946 9.1183 7.88388 8.88388C8.1183 8.64946 8.25 8.33152 8.25 8ZM13 9.25C13.3315 9.25 13.6495 9.1183 13.8839 8.88388C14.1183 8.64946 14.25 8.33152 14.25 8C14.25 7.66848 14.1183 7.35054 13.8839 7.11612C13.6495 6.8817 13.3315 6.75 13 6.75C12.6685 6.75 12.3505 6.8817 12.1161 7.11612C11.8817 7.35054 11.75 7.66848 11.75 8C11.75 8.33152 11.8817 8.64946 12.1161 8.88388C12.3505 9.1183 12.6685 9.25 13 9.25ZM1.5 7H2V13H1.5C0.671875 13 0 12.3281 0 11.5V8.5C0 7.67188 0.671875 7 1.5 7ZM18.5 7C19.3281 7 20 7.67188 20 8.5V11.5C20 12.3281 19.3281 13 18.5 13H18V7H18.5Z" fill="white" />
-                    </svg>
-                  </div>
-                  <h3 className="text-lg font-semibold text-black">AI Insights</h3>
-                </div>
-                <div className="space-y-3 text-sm text-gray-700">
-                  <p>Your performance in Machine Learning has improved by 15% this week!</p>
-                  <p>Consider reviewing Data Structures - your quiz scores suggest more practice needed.</p>
-                  <p>Great consistency! You've maintained 4+ hours daily for 2 weeks.</p>
-                </div>
-              </div>
-
-              {/* Today's Schedule */}
-              <div className="bg-card rounded-xl border border-border p-6">
-                <h3 className="text-lg font-semibold text-main mb-4">Today's Schedule</h3>
-                <div className="space-y-3">
-                  <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 flex items-center space-x-3">
-                    <div className="w-2 h-8 bg-blue-500 rounded-full"></div>
-                    <div>
-                      <div className="font-medium text-main">Machine Learning</div>
-                      <div className="text-sm text-muted">10:00 AM - 11:30 AM</div>
-                    </div>
-                  </div>
-                  <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3 flex items-center space-x-3">
-                    <div className="w-2 h-8 bg-green-500 rounded-full"></div>
-                    <div>
-                      <div className="font-medium text-main">React Development</div>
-                      <div className="text-sm text-muted">2:00 PM - 3:30 PM</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Bottom Section - Charts */}
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mt-8">
-            {/* Learning Hours Chart */}
-            <div className="bg-card rounded-xl border border-border p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold text-main">Learning Hours</h3>
-                <div className="flex space-x-2">
-                  <button className="px-4 py-1 bg-[#FA946D] text-white text-sm rounded-lg">Week</button>
-                  <button className="px-4 py-1 bg-canvas text-muted text-sm rounded-lg">Month</button>
-                </div>
-              </div>
-              <div className="h-64 flex items-end justify-between space-x-2">
-                {learningHoursChartData.map((dayData, index) => (
-                  <div key={index} className="flex-1 flex flex-col items-center">
-                    <div className="w-full bg-[#FA946D] opacity-80 rounded-t" style={{ height: `${(dayData.hours / maxLearningHour) * 100}%` }}></div>
-                    <div className="text-xs text-muted mt-2">
-                      {new Date(dayData.date).toLocaleDateString('en-US', { weekday: 'short' })}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Course Distribution Chart */}
-            <div className="bg-card rounded-xl border border-border p-6">
-              <h3 className="text-lg font-semibold text-main mb-6">Course Distribution</h3>
-              <div className="flex items-center justify-center h-64">
-                <div className="relative">
-                  {/* Simplified pie chart representation */}
-                  <div className="w-40 h-40 rounded-full bg-linear-to-r from-[#3CC3DF] to-[#FA946D] flex items-center justify-center">
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-gray-800">{analyticsData?.totalCourses || 0}</div>
-                      <div className="text-xs text-gray-600">Total course</div>
-                    </div>
-                  </div>
-                </div>
-                <div className="ml-8 space-y-4">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-4 h-4 bg-[#3CC3DF] rounded"></div>
-                    <span className="text-muted">Code</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-4 h-4 bg-[#FA946D] rounded"></div>
-                    <span className="text-muted">Data</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-4 h-4 bg-[#9333EA] rounded"></div>
-                    <span className="text-muted">Design</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Course Performance */}
-          <div className="bg-card rounded-xl border border-border p-6 mt-8">
-            <h3 className="text-lg font-semibold text-main mb-6">Course Performance</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {coursePerformanceData.length > 0 ? coursePerformanceData.map(course => {
-                const progressPercentStr = course.progressPercent > 0 ? `${course.progressPercent}%` : '0%';
-                return (
-                  <div key={course.courseId} className="bg-canvas-alt rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="font-medium text-main">{course.courseTitle}</span>
-                      <span className="text-green-600 dark:text-green-400 text-sm font-medium">{progressPercentStr}</span>
-                    </div>
-                    <div className="w-full bg-border rounded-full h-2 mb-3">
-                      <div className="bg-green-600 dark:bg-green-500 h-2 rounded-full" style={{ width: `${course.progressPercent}%` }}></div>
-                    </div>
-                    <div className="space-y-1 text-sm">
-                      <div className="text-muted">Progress: {course.completedLessons}/{course.totalLessons} lessons</div>
-                      {/* AI Tip can be added later */}
-                    </div>
-                  </div>
-                );
-              }) : (
-                <p className="text-muted col-span-3 text-center">No courses to display performance for.</p>
-              )}
-            </div>
-          </div>
+          )}
         </main>
-      </div>
-    </div>
-  );
-}
 
-export default Analytics
+      <style jsx>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: #f1f1f1;
+          border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #cbd5e0;
+          border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #94a3b8;
+        }
+        
+        @keyframes shimmer {
+          0% {
+            transform: translateX(-100%);
+          }
+          100% {
+            transform: translateX(100%);
+          }
+        }
+        .animate-shimmer {
+          animation: shimmer 2s infinite;
+        }
+      `}</style>
+    </>
+  );
+};
+
+export default Analytics;

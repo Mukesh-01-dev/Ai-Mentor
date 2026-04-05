@@ -4,7 +4,8 @@ import os
 import datetime
 import re
 import traceback
-import pyttsx3
+import asyncio
+import edge_tts
 import cloudinary
 import cloudinary.uploader
 from fastapi import FastAPI, BackgroundTasks
@@ -60,13 +61,14 @@ class LessonRequest(BaseModel):
 # --------------------------
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-def get_tts_engine():
-    engine = pyttsx3.init()
-    engine.setProperty("rate", 150)
-    voices = engine.getProperty("voices")
-    if voices:
-        engine.setProperty("voice", voices[0].id)
-    return engine
+async def generate_tts(text: str, output_file: str):
+    communicate = edge_tts.Communicate(
+        text=text,
+        voice="en-US-GuyNeural",
+        rate="+0%",
+        pitch="+0Hz"
+    )
+    await communicate.save(output_file)
 
 def get_celebrity_video(celebrity_name: str):
     input_video_dir = os.path.join(BASE_DIR, "backend", "input")
@@ -197,16 +199,13 @@ def process_lesson(data: LessonRequest, base_filename: str):
             f.write(script)
         print(f"💾 Saved text to: {text_path}")
 
-        # 4️⃣ Convert Text to Speech (pyttsx3)
+        # 4️⃣ Convert Text to Speech (edge-tts)
         print("🎵 Starting TTS generation...")
         try:
-            engine = get_tts_engine()
             if os.path.exists(audio_path):
                 os.remove(audio_path)
 
-            engine.save_to_file(script, audio_path)
-            engine.runAndWait()
-            engine.stop()
+            asyncio.run(generate_tts(script, audio_path))
             print(f"✅ Audio saved: {audio_path}")
         except Exception as e:
             print(f"❌ TTS Error: {e}")

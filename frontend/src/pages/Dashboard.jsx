@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import Header from "../components/Header";
-import Sidebar from "../components/Sidebar";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useSidebar } from "../context/SidebarContext";
+import { useTranslation } from "react-i18next";
+import API_BASE_URL from "../lib/api";
 import {
   Search,
   Bell,
@@ -25,13 +25,16 @@ import {
 } from "lucide-react";
 
 const Dashboard = () => {
+  const { t } = useTranslation();
   const { sidebarOpen, setSidebarOpen, sidebarCollapsed, setSidebarCollapsed } = useSidebar();
   const [coursesData, setCoursesData] = useState({
     statsCards: [],
     allCourses: [],
   });
+  const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const { user, fetchUserProfile } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchAllData = async () => {
@@ -44,8 +47,8 @@ const Dashboard = () => {
         };
 
         const [coursesRes, statsRes] = await Promise.all([
-          fetch("/api/courses", { headers }),
-          fetch("/api/courses/stats/cards", { headers }),
+          fetch(`${API_BASE_URL}/api/courses`, { headers }),
+          fetch(`${API_BASE_URL}/api/courses/stats/cards`, { headers }),
         ]);
 
         if (!coursesRes.ok) {
@@ -128,14 +131,15 @@ const Dashboard = () => {
     user.purchasedCourses.forEach((purchasedCourse) => {
       // Find the course in allCourses to get lesson count
       const courseInfo = coursesData.allCourses.find(
-        (c) => c.id == purchasedCourse.courseId,
+        (c) => c.id == purchasedCourse.courseId
       );
       if (courseInfo) {
-        const totalLessons = courseInfo.lessonsCount ||
-          (courseInfo.lessons ?
-            (courseInfo.lessons.includes(" of ")
+        const totalLessons =
+          courseInfo.lessonsCount ||
+          (courseInfo.lessons
+            ? courseInfo.lessons.includes(" of ")
               ? parseInt(courseInfo.lessons.split(" of ")[1])
-              : parseInt(courseInfo.lessons.split(" ")[0]))
+              : parseInt(courseInfo.lessons.split(" ")[0])
             : 0);
         const completedLessons =
           purchasedCourse.progress?.completedLessons?.length || 0;
@@ -180,18 +184,19 @@ const Dashboard = () => {
   const myCourses = coursesData.allCourses
     .filter((course) =>
       user?.purchasedCourses?.some(
-        (purchased) => purchased.courseId == course.id,
-      ),
+        (purchased) => purchased.courseId == course.id
+      )
     )
     .map((course) => {
       const purchasedCourse = user?.purchasedCourses?.find(
-        (p) => p.courseId == course.id,
+        (p) => p.courseId == course.id
       );
-      const totalLessons = course.lessonsCount ||
-        (course.lessons ?
-          (course.lessons.includes(" of ")
+      const totalLessons =
+        course.lessonsCount ||
+        (course.lessons
+          ? course.lessons.includes(" of ")
             ? parseInt(course.lessons.split(" of ")[1])
-            : parseInt(course.lessons.split(" ")[0]))
+            : parseInt(course.lessons.split(" ")[0])
           : 0);
       const completedLessons =
         purchasedCourse?.progress?.completedLessons?.length || 0;
@@ -228,18 +233,19 @@ const Dashboard = () => {
   const continueLearning = coursesData.allCourses
     .filter((course) =>
       user?.purchasedCourses?.some(
-        (purchased) => purchased.courseId == course.id,
-      ),
+        (purchased) => purchased.courseId == course.id
+      )
     )
     .filter((course) => {
       const purchasedCourse = user?.purchasedCourses?.find(
-        (p) => p.courseId == course.id,
+        (p) => p.courseId == course.id
       );
-      const totalLessons = course.lessonsCount ||
-        (course.lessons ?
-          (course.lessons.includes(" of ")
+      const totalLessons =
+        course.lessonsCount ||
+        (course.lessons
+          ? course.lessons.includes(" of ")
             ? parseInt(course.lessons.split(" of ")[1])
-            : parseInt(course.lessons.split(" ")[0]))
+            : parseInt(course.lessons.split(" ")[0])
           : 0);
       const completedLessons =
         purchasedCourse?.progress?.completedLessons?.length || 0;
@@ -248,13 +254,14 @@ const Dashboard = () => {
     .slice(0, 3) // Limit to 3 courses
     .map((course) => {
       const purchasedCourse = user?.purchasedCourses?.find(
-        (p) => p.courseId === course.id,
+        (p) => p.courseId === course.id
       );
-      const totalLessons = course.lessonsCount ||
-        (course.lessons ?
-          (course.lessons.includes(" of ")
+      const totalLessons =
+        course.lessonsCount ||
+        (course.lessons
+          ? course.lessons.includes(" of ")
             ? parseInt(course.lessons.split(" of ")[1])
-            : parseInt(course.lessons.split(" ")[0]))
+            : parseInt(course.lessons.split(" ")[0])
           : 0);
       const completedLessons =
         purchasedCourse?.progress?.completedLessons?.length || 0;
@@ -282,6 +289,41 @@ const Dashboard = () => {
       return continueData;
     });
 
+  const isCoursePurchased = (courseId) =>
+    user?.purchasedCourses?.some((purchased) => purchased.courseId == courseId);
+
+  const getCourseDestination = (courseId) =>
+    isCoursePurchased(courseId)
+      ? `/learning/${courseId}`
+      : `/course-preview/${courseId}`;
+
+  const normalizedSearchQuery = searchQuery.trim().toLowerCase();
+  const filteredMyCourses = myCourses.filter((course) => {
+    if (!normalizedSearchQuery) return true;
+    return (
+      course.title?.toLowerCase().includes(normalizedSearchQuery) ||
+      course.subtitle?.toLowerCase().includes(normalizedSearchQuery) ||
+      course.level?.toLowerCase().includes(normalizedSearchQuery)
+    );
+  });
+
+  const filteredContinueLearning = continueLearning.filter((course) => {
+    if (!normalizedSearchQuery) return true;
+    return (
+      course.title?.toLowerCase().includes(normalizedSearchQuery) ||
+      course.lesson?.toLowerCase().includes(normalizedSearchQuery)
+    );
+  });
+
+  const filteredAllCourses = coursesData.allCourses.filter((course) => {
+    if (!normalizedSearchQuery) return false;
+    return (
+      course.title?.toLowerCase().includes(normalizedSearchQuery) ||
+      course.category?.toLowerCase().includes(normalizedSearchQuery) ||
+      course.level?.toLowerCase().includes(normalizedSearchQuery)
+    );
+  });
+
   console.log("Final continueLearning:", continueLearning);
 
   const schedule = [
@@ -297,267 +339,236 @@ const Dashboard = () => {
     },
   ];
 
+  const handleBrowseCourses = () => {
+    // Navigate to courses page
+    navigate("/courses", { state: { activeTab: "explore" } });
+  };
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-canvas-alt flex flex-col">
-        <Header />
-        <Sidebar activePage="dashboard" />
-        <div
-          className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ${sidebarCollapsed ? "lg:ml-20" : "lg:ml-80"
-            }`}
-        >
-          <main className="flex-1 mt-10 overflow-x-hidden overflow-y-auto bg-canvas-alt p-6">
-            <div className="flex items-center justify-center h-64">
-              <div className="text-muted">Loading dashboard...</div>
-            </div>
-          </main>
+      <main className="flex-1 overflow-x-hidden overflow-y-auto bg-canvas-alt p-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-muted">{t("dashboard.loading")}</div>
         </div>
-      </div>
+      </main>
     );
   }
 
   return (
-    <div className="min-h-screen bg-canvas-alt flex flex-col">
-      <Header />
-
-      <Sidebar activePage="dashboard" />
-
-      {/* Main Content */}
-      <div
-        className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ${sidebarCollapsed ? "lg:ml-20" : "lg:ml-80"
-          }`}
-      >
-        {/* Header */}
-
-        {/* Dashboard Content */}
-        <main className="flex-1 mt-3 overflow-x-hidden overflow-y-auto bg-canvas-alt p-6">
-          <div className="max-w-7xl pt-16 mx-auto space-y-8">
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1  sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {dynamicStatsCards.map((card, index) => (
-                <div
-                  key={index}
-                  className="bg-card rounded-2xl p-6 shadow-sm border border-border"
-                >
-                  <div className="flex items-center justify-between mb-4">
-                    <div className={`p-3 rounded-xl ${card.iconBg}`}>
-                      {card.icon}
-                    </div>
-                    <span className="text-sm font-medium text-green-600">
-                      {card.change}
-                    </span>
+    <main className="flex-1 overflow-x-hidden overflow-y-auto bg-canvas-alt p-6">
+      <div className="max-w-7xl mx-auto space-y-8">
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1  sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {dynamicStatsCards.map((card, index) => {
+            const statLabelKeys = ["ongoing_courses", "completed", "certificates", "hours_spent"];
+            return (
+              <div
+                key={index}
+                className="bg-card rounded-2xl p-6 shadow-sm border border-border hover:shadow-lg hover:-translate-y-1 hover:border-teal-500/40 transition-all duration-300 cursor-pointer"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <div className={`p-3 rounded-xl ${card.iconBg}`}>
+                    {card.icon}
                   </div>
-                  <div className="text-2xl font-bold text-main mb-1">
-                    {card.value}
-                  </div>
-                  <div className="text-sm text-muted">{card.label}</div>
+                  <span className="text-sm font-medium text-green-600">
+                    {card.change}
+                  </span>
                 </div>
+                <div className="text-2xl font-bold text-main mb-1">
+                  {card.value}
+                </div>
+                <div className="text-sm text-muted">{t(`dashboard.${statLabelKeys[index]}`)}</div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="grid grid-cols-1 gap-8">
+          {/* Popular Courses */}
+          <div>
+            <h2 className="text-xl font-bold text-main mb-6">
+              {t("dashboard.popular_courses")}
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {coursesData.allCourses.slice(0, 13).map((course, index) => (
+                <Link to={getCourseDestination(course.id)} key={index}>
+                  <div className="bg-card rounded-xl border border-border overflow-hidden shadow-sm h-full hover:shadow-lg hover:-translate-y-1 hover:border-teal-500/40 transition-all duration-300">
+                    <div className="relative">
+                      <img
+                        src={course.image}
+                        alt={course.title}
+                        className="w-full h-40 object-cover"
+                      />
+                      <div className="absolute top-3 right-3 bg-card rounded-full p-2">
+                        <Bookmark className="w-4 h-4 text-teal-600" />
+                      </div>
+                      <div className="absolute bottom-3 right-3 bg-card rounded-full px-2 py-1 flex items-center space-x-1">
+                        <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                        <span className="text-xs font-medium">
+                          {course.rating}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="p-4">
+                      <div
+                        className={`inline-block px-2 py-1 rounded-full text-xs font-medium mb-3 ${course.categoryColor}`}
+                      >
+                        {course.category}
+                      </div>
+                      <h3 className="font-semibold text-main mb-2 line-clamp-2">
+                        {course.title}
+                      </h3>
+                      <p className="text-sm text-muted mb-4">
+                        {course.lessons}
+                      </p>
+                      <div className="flex items-center justify-between">
+                        <span className="text-lg font-bold text-main">
+                          {course.price}
+                        </span>
+                        <span className="text-xs text-muted">
+                          {course.students}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </Link>
               ))}
             </div>
+          </div>
 
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-              {/* Popular Courses */}
-              <div className="xl:col-span-2">
-                <h2 className="text-xl font-bold text-main mb-6">
-                  Popular Courses
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {coursesData.allCourses.slice(0, 3).map((course, index) => (
-                    <Link to={`/learning/${course.id}`} key={index}>
-                      <div className="bg-card rounded-xl border border-border overflow-hidden shadow-sm h-full">
-                        <div className="relative">
-                          <img
-                            src={course.image}
-                            alt={course.title}
-                            className="w-full h-40 object-cover"
-                          />
-                          <div className="absolute top-3 right-3 bg-card rounded-full p-2">
-                            <Bookmark className="w-4 h-4 text-teal-600" />
-                          </div>
-                          <div className="absolute bottom-3 right-3 bg-card rounded-full px-2 py-1 flex items-center space-x-1">
-                            <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                            <span className="text-xs font-medium">
-                              {course.rating}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="p-4">
-                          <div
-                            className={`inline-block px-2 py-1 rounded-full text-xs font-medium mb-3 ${course.categoryColor}`}
-                          >
-                            {course.category}
-                          </div>
-                          <h3 className="font-semibold text-main mb-2 line-clamp-2">
-                            {course.title}
-                          </h3>
-                          <p className="text-sm text-muted mb-4">
+          {/* My Courses Table */}
+          <div className="xl:col-span-2 flex flex-col">
+            <h2 className="text-xl font-bold text-main mb-6">My Courses</h2>
+            <div className="bg-card rounded-xl border border-border overflow-hidden">
+              <div className="overflow-x-auto">
+                {filteredMyCourses.length !== 0 ? (
+                  <table className="w-full">
+                    <thead className="bg-canvas-alt">
+                      <tr>
+                        <th className="px-4 py-4 text-left text-sm font-medium text-muted">
+                          Course
+                        </th>
+                        <th className="px-4 py-4 text-left text-sm font-medium text-muted">
+                          Progress
+                        </th>
+                        <th className="px-4 py-4 text-left text-sm font-medium text-muted">
+                          Lessons
+                        </th>
+                        <th className="px-4 py-4 text-left text-sm font-medium text-muted">
+                          Level
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {filteredMyCourses.map((course, index) => (
+                        <tr key={index} className="hover:bg-canvas-alt">
+                          <td className="px-4 py-4">
+                            <Link
+                              to={`/learning/${course.id}`}
+                              className="flex items-center"
+                            >
+                              <img
+                                src={course.image}
+                                alt={course.title}
+                                className="w-12 h-12 rounded-lg mr-4"
+                              />
+                              <div>
+                                <div className="font-medium text-main hover:text-indigo-600">
+                                  {course.title}
+                                </div>
+                                <div className="text-sm text-muted">
+                                  {course.subtitle}
+                                </div>
+                              </div>
+                            </Link>
+                          </td>
+                          <td className="px-4 py-4">
+                            <div className="w-20 bg-border rounded-full h-2 mb-1">
+                              <div
+                                className={`h-2 rounded-full ${course.progressColor}`}
+                                style={{ width: `${course.progress}%` }}
+                              ></div>
+                            </div>
+                            <div className="text-sm text-muted">
+                              {course.progress}%
+                            </div>
+                          </td>
+                          <td className="px-4 py-4 text-muted">
                             {course.lessons}
-                          </p>
-                          <div className="flex items-center justify-between">
-                            <span className="text-lg font-bold text-main">
-                              {course.price}
+                          </td>
+                          <td className="px-4 py-4">
+                            <span
+                              className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${course.levelColor}`}
+                            >
+                              {course.level}
                             </span>
-                            <span className="text-xs text-muted">
-                              {course.students}
-                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : normalizedSearchQuery && filteredAllCourses.length > 0 ? (
+                  <div className="p-6">
+                    <p className="text-center text-muted mb-4">
+                      {t("dashboard.fallbackMatchingCourses")}
+                    </p>
+                    <div className="space-y-3">
+                      {filteredAllCourses.slice(0, 6).map((course) => (
+                        <div
+                          key={course.id}
+                          className="flex items-center justify-between p-3 rounded-lg border border-border bg-canvas-alt"
+                        >
+                          <div className="flex items-center min-w-0">
+                            <img
+                              src={course.image}
+                              alt={course.title}
+                              className="w-12 h-12 rounded-lg mr-4"
+                            />
+                            <div className="min-w-0">
+                              <div className="font-medium text-main truncate">
+                                {course.title}
+                              </div>
+                              <div className="text-sm text-muted truncate">
+                                {course.category} • {course.level}
+                              </div>
+                            </div>
                           </div>
+                          <button
+                            onClick={() => navigate(`/course-preview/${course.id}`)}
+                            className="ml-3 px-3 py-2 bg-teal-500 text-white text-xs font-medium rounded-lg hover:bg-teal-600"
+                          >
+                            View
+                          </button>
                         </div>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-
-              {/* Course Topics Chart */}
-              <div className="bg-card rounded-2xl p-6 shadow-sm border border-border">
-                <h2 className="text-xl font-bold text-main mb-6">
-                  Course Topics
-                </h2>
-                <div className="relative flex items-center justify-center mb-6">
-                  <div className="w-48 h-48 relative">
-                    <svg className="w-full h-full" viewBox="0 0 200 200">
-                      {/* Pie chart segments */}
-                      <circle
-                        cx="100"
-                        cy="100"
-                        r="80"
-                        fill="none"
-                        stroke="#FF885A"
-                        strokeWidth="40"
-                        strokeDasharray="351.86 351.86"
-                        strokeDashoffset="87.97"
-                        transform="rotate(-90 100 100)"
-                      />
-                      <circle
-                        cx="100"
-                        cy="100"
-                        r="80"
-                        fill="none"
-                        stroke="#FFD0BD"
-                        strokeWidth="40"
-                        strokeDasharray="70.37 281.49"
-                        strokeDashoffset="263.89"
-                        transform="rotate(-90 100 100)"
-                      />
-                      <circle
-                        cx="100"
-                        cy="100"
-                        r="80"
-                        fill="none"
-                        stroke="#FFA988"
-                        strokeWidth="40"
-                        strokeDasharray="140.74 211.12"
-                        strokeDashoffset="193.52"
-                        transform="rotate(-90 100 100)"
-                      />
-                    </svg>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <div className="text-2xl font-bold">15</div>
-                      <div className="text-xs text-muted">Total course</div>
+                      ))}
                     </div>
                   </div>
-                </div>
-                <div className="space-y-3">
-                  <div className="flex items-center">
-                    <div className="w-3 h-3 rounded-full bg-orange-400 mr-3"></div>
-                    <span className="text-sm text-muted">Code (70%)</span>
+                ) : (
+                  <div className="p-6 text-center text-muted">
+                    <p>
+                      {normalizedSearchQuery
+                        ? "No courses match your search."
+                        : "You haven't enrolled in any courses yet."}
+                    </p>
+                    <button
+                      className="mt-4 px-4 py-2 bg-teal-500 text-white text-sm font-medium rounded-lg hover:bg-teal-600"
+                      onClick={handleBrowseCourses}
+                    >
+                      Browse Courses
+                    </button>
                   </div>
-                  <div className="flex items-center">
-                    <div className="w-3 h-3 rounded-full bg-orange-200 mr-3"></div>
-                    <span className="text-sm text-muted">Data (20%)</span>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="w-3 h-3 rounded-full bg-orange-300 mr-3"></div>
-                    <span className="text-sm text-muted">Design (10%)</span>
-                  </div>
-                </div>
+                )}
               </div>
             </div>
 
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-              {/* My Courses Table */}
-              <div className="xl:col-span-2">
-                <h2 className="text-xl font-bold text-main mb-6">
-                  My Courses
-                </h2>
-                <div className="bg-card rounded-xl border border-border overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead className="bg-canvas-alt">
-                        <tr>
-                          <th className="px-4 py-4 text-left text-sm font-medium text-muted">
-                            Course
-                          </th>
-                          <th className="px-4 py-4 text-left text-sm font-medium text-muted">
-                            Progress
-                          </th>
-                          <th className="px-4 py-4 text-left text-sm font-medium text-muted">
-                            Lessons
-                          </th>
-                          <th className="px-4 py-4 text-left text-sm font-medium text-muted">
-                            Level
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-200">
-                        {myCourses.map((course, index) => (
-                          <tr key={index} className="hover:bg-canvas-alt">
-                            <td className="px-4 py-4">
-                              <Link
-                                to={`/learning/${course.id}`}
-                                className="flex items-center"
-                              >
-                                <img
-                                  src={course.image}
-                                  alt={course.title}
-                                  className="w-12 h-12 rounded-lg mr-4"
-                                />
-                                <div>
-                                  <div className="font-medium text-main hover:text-indigo-600">
-                                    {course.title}
-                                  </div>
-                                  <div className="text-sm text-muted">
-                                    {course.subtitle}
-                                  </div>
-                                </div>
-                              </Link>
-                            </td>
-                            <td className="px-4 py-4">
-                              <div className="w-20 bg-border rounded-full h-2 mb-1">
-                                <div
-                                  className={`h-2 rounded-full ${course.progressColor}`}
-                                  style={{ width: `${course.progress}%` }}
-                                ></div>
-                              </div>
-                              <div className="text-sm text-muted">
-                                {course.progress}%
-                              </div>
-                            </td>
-                            <td className="px-4 py-4 text-muted">
-                              {course.lessons}
-                            </td>
-                            <td className="px-4 py-4">
-                              <span
-                                className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${course.levelColor}`}
-                              >
-                                {course.level}
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-
-              {/* Continue Learning */}
+            {/* Continue Learning */}
+            {filteredContinueLearning.length !== 0 ? (
               <div>
-                <h2 className="text-xl font-bold text-main mb-6">
+                <h2 className="text-xl font-bold text-main mt-6 mb-6">
                   Continue Learning
                 </h2>
                 <div className="space-y-4">
-                  {continueLearning.map((item, index) => (
+                  {filteredContinueLearning.map((item, index) => (
                     <div
                       key={index}
                       className="bg-card rounded-xl p-4 border border-border shadow-sm hover:shadow-md transition-shadow"
@@ -598,93 +609,14 @@ const Dashboard = () => {
                   ))}
                 </div>
               </div>
-            </div>
-
-            <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
-              {/* Calendar */}
-              <div className="xl:col-span-3 bg-card rounded-xl p-6 border border-border">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-bold text-main">
-                    Class Calendar
-                  </h2>
-                  <div className="flex items-center space-x-4">
-                    <button className="p-2 bg-gray-100 text-black rounded-lg">
-                      <ChevronLeftIcon className="w-4 h-4" />
-                    </button>
-                    <span className="text-lg font-medium">December 2024</span>
-                    <button className="p-2 bg-gray-100 text-black rounded-lg">
-                      <ChevronRight className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-7 gap-px mb-4">
-                  {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(
-                    (day) => (
-                      <div
-                        key={day}
-                        className="p-3 text-center text-sm font-medium text-muted"
-                      >
-                        {day}
-                      </div>
-                    ),
-                  )}
-                </div>
-
-                <div className="grid grid-cols-7 gap-px">
-                  {Array.from({ length: 31 }, (_, i) => (
-                    <div
-                      key={i + 1}
-                      className={`p-3 text-center text-sm ${[3, 5, 9, 12, 16, 19, 23].includes(i + 1)
-                        ? "bg-blue-50 dark:bg-blue-100 text-blue-900 rounded-lg"
-                        : "text-main hover:bg-canvas-alt rounded-lg"
-                        }`}
-                    >
-                      {i + 1}
-                    </div>
-                  ))}
-                </div>
-
-                <div className="flex items-center space-x-6 mt-6 text-sm">
-                  <div className="flex items-center">
-                    <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
-                    <span className="text-muted">Upcoming</span>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                    <span className="text-muted">Completed</span>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
-                    <span className="text-muted">Missed</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Today's Schedule */}
-              <div className="bg-card rounded-xl p-6 border border-border">
-                <h3 className="text-lg font-semibold text-main mb-4">
-                  Today's Schedule
-                </h3>
-                <div className="space-y-3">
-                  {schedule.map((item, index) => (
-                    <div
-                      key={index}
-                      className={`p-3 rounded-lg border-l-4 ${item.color}`}
-                    >
-                      <h4 className="font-medium text-black mb-1">
-                        {item.title}
-                      </h4>
-                      <p className="text-sm text-muted">{item.time}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
+            ) : null
+            }
           </div>
-        </main>
+
+        </div>
+
       </div>
-    </div>
+    </main>
   );
 };
 
