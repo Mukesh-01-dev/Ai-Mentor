@@ -67,6 +67,39 @@ uvicorn api:app --reload --port 8000
 ```
 > See [`ai_service/README.md`](./ai_service/README.md) for full setup guide.
 
+### 5. Setup ESLint
+
+At the frontendAdmin and root directory run:
+```bash
+npm install
+```
+
+At  the root directory run the following command:
+```bash
+npm run lint
+```
+This will run ESLint on all three following services:
+```bash
+cd backend
+npm run lint
+cd frontend
+npm run lint
+cd frontendAdmin
+npm run lint
+```
+
+To run ESLint on a specific file:
+```bash
+cd directory_name
+npx eslint path/to/file.js
+```
+For example:
+```bash
+cd backend
+npx eslint server.js
+```
+Some extensions like ESLint and Error Lens are recommended to be installed in code editor for better visibility of errors.
+
 ## Environment Variables
 
 Each service has its own `.env` file. Copy the `.env.example` in each folder and fill in your values.

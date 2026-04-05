@@ -1,8 +1,7 @@
 // frontend/src/pages/Settings.jsx
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
-import Header from "../components/Header";
-import Sidebar from "../components/Sidebar";
+import { useSidebar } from "../context/SidebarContext";
 import {
   User,
   Bell,
@@ -12,6 +11,7 @@ import {
   Camera,
   Eye,
   EyeOff,
+  UserX
 } from "lucide-react";
 import axios from "axios";
 import { useTheme } from "../context/ThemeContext";
@@ -25,6 +25,7 @@ const NAV_KEYS = [
   { icon: Shield, key: "password_security", labelKey: "settings.nav.password_security" },
   { icon: Palette, key: "appearance", labelKey: "settings.nav.appearance" },
   { icon: Globe, key: "language", labelKey: "settings.nav.language" },
+   { icon:UserX , key: "delete_account", labelKey: "settings.nav.delete_account" },
 ];
 
 export default function Settings() {
@@ -32,8 +33,7 @@ export default function Settings() {
   const [originalNotifications, setOriginalNotifications] = useState(null);
   const { theme, setTheme } = useTheme();
   const [avatarFile, setAvatarFile] = useState(null);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const { sidebarOpen, setSidebarOpen, sidebarCollapsed, setSidebarCollapsed } = useSidebar();
   const [activeSetting, setActiveSetting] = useState("profile");
   const { user, updateUser, fetchUserProfile } = useAuth();
   const [formData, setFormData] = useState({
@@ -62,6 +62,7 @@ export default function Settings() {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [profilepopup, setProfilePopup] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
+  const [confirmText, setConfirmText] = useState("");
   const [showDeletePopup, setshowDeletePopup] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -174,39 +175,31 @@ export default function Settings() {
   }, [user]);
 
   return (
-    <div className="min-h-screen bg-canvas-alt flex flex-col">
-      <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-
-      <Sidebar
-        sidebarOpen={sidebarOpen}
-        setSidebarOpen={setSidebarOpen}
-        sidebarCollapsed={sidebarCollapsed}
-        setSidebarCollapsed={setSidebarCollapsed}
-        activePage="settings"
-      />
-
-      <div
-        className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 mt-3 ${sidebarCollapsed ? "lg:ml-20" : "lg:ml-80"
-          }`}
-      >
-        <div className="flex flex-1 mt-15">
-          {/* Settings Sidebar */}
-          <aside className="w-[280px] bg-card rounded-[24px] shadow-[0_4px_6px_0_rgba(0,0,0,0.10),0_10px_15px_0_rgba(0,0,0,0.10)] m-6 mr-0">
+    <>
+        <div className="flex flex-col lg:flex-row flex-1">
+          {/* Settings Sidebar — hidden on mobile, visible on large screens */}
+          <aside className="hidden lg:block w-[280px] flex-shrink-0 bg-card rounded-[24px] shadow-[0_4px_6px_0_rgba(0,0,0,0.10),0_10px_15px_0_rgba(0,0,0,0.10)] m-6 mr-0">
             <nav className="p-6">
               <div className="space-y-2">
                 {NAV_KEYS.map((item) => {
                   const IconComponent = item.icon;
                   return (
                     <button
-                      onClick={() => setActiveSetting(item.key)}
+                        onClick={() => {
+                          if (item.key === "delete_account") {
+                            setshowDeletePopup(true);
+                          } else {
+                            setActiveSetting(item.key);
+                          }
+                        }}
                       key={item.key}
-                      className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-left transition-colors ${activeSetting === item.label
+                      className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-left transition-colors ${activeSetting === item.key
                         ? "bg-teal-50 dark:bg-teal-900/20 text-main"
                         : "text-muted hover:bg-canvas-alt"
                         }`}
                     >
                       <IconComponent
-                        className={`w-4 h-4 ${activeSetting === item.label
+                        className={`w-4 h-4 ${activeSetting === item.key
                           ? "text-[#00BEA5]"
                           : "text-[#00BEA5]"
                           }`}
@@ -221,23 +214,44 @@ export default function Settings() {
             </nav>
           </aside>
 
+          {/* Mobile Settings Tab Bar — visible only on small screens */}
+          <div className="lg:hidden flex overflow-x-auto gap-2 px-4 pt-3 pb-2 no-scrollbar">
+            {NAV_KEYS.map((item) => {
+              const IconComponent = item.icon;
+              return (
+                <button
+                  onClick={() => setActiveSetting(item.key)}
+                  key={item.key}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                    activeSetting === item.key
+                      ? "bg-teal-50 dark:bg-teal-900/20 text-[#00BEA5] border border-[#00BEA5]"
+                      : "bg-card text-muted border border-border hover:bg-canvas-alt"
+                  }`}
+                >
+                  <IconComponent className="w-4 h-4 text-[#00BEA5]" />
+                  <span>{t(item.labelKey)}</span>
+                </button>
+              );
+            })}
+          </div>
+
           {/* Main Content */}
-          <main className="flex-1 p-8 mt-5">
+          <main className="flex-1 p-3 sm:p-4 md:p-6 lg:p-8 lg:mt-5 min-w-0">
             {activeSetting === "profile" && (
-              <div className="max-w-[896px]">
+              <div className="w-full">
                 {/* Header */}
                 <div className="mb-8">
-                  <h1 className="text-[30px] font-bold text-main font-[Inter] mb-2">
+                  <h1 className="text-xl sm:text-2xl md:text-[30px] font-bold text-main font-[Inter] mb-2">
                     {t("settings.profile.title")}
                   </h1>
-                  <p className="text-[16px] text-muted font-[Inter]">
+                  <p className="text-sm sm:text-[16px] text-muted font-[Inter]">
                     {t("settings.profile.subtitle")}
                   </p>
                 </div>
 
                 {/* Settings Card */}
-                <div className="bg-card rounded-[24px] shadow-[0_4px_6px_0_rgba(0,0,0,0.10),0_10px_15px_0_rgba(0,0,0,0.10)] p-8">
-                  <div className="flex gap-8 mb-8">
+                <div className="bg-card rounded-2xl sm:rounded-[24px] shadow-[0_4px_6px_0_rgba(0,0,0,0.10),0_10px_15px_0_rgba(0,0,0,0.10)] p-4 sm:p-6 md:p-8">
+                  <div className="flex flex-col md:flex-row gap-6 md:gap-8 mb-8">
                     {/* Avatar Section */}
                     <div className="flex flex-col items-center">
                       <div className="relative mb-6">
@@ -274,7 +288,7 @@ export default function Settings() {
                     {/* Form Section */}
                     <div className="flex-1 space-y-6">
                       {/* First and Last Name */}
-                      <div className="grid grid-cols-2 gap-6">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                         <div className="relative">
                           <label className="absolute -top-2 left-4 bg-card px-2 text-[14px] text-muted font-medium font-[Inter]">
                             {t("settings.profile.first_name")}
@@ -332,17 +346,11 @@ export default function Settings() {
                         />
 
                       </div>
-                      <div className="flex justify-end ">
-                        <button className="px-4 py-1 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium font-[Inter] transition"
-                          onClick={() => setshowDeletePopup(true)}>
-                          Delete My Account
-                        </button>
-                      </div>
                     </div>
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="flex justify-end gap-4 pt-6 border-t border-border">
+                  <div className="flex flex-col-reverse sm:flex-row justify-end gap-4 pt-6 border-t border-border">
                     <button
                       type="button"
                       className="h-[50px] px-6 rounded-xl border border-border bg-card text-main text-[16px] font-medium font-[Inter] hover:bg-canvas-alt"
@@ -365,50 +373,62 @@ export default function Settings() {
             {showDeletePopup && (
               <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
 
-                <div className="bg-white dark:bg-slate-800 rounded-2xl p-8 w-[420px] text-center shadow-xl">
+                <div className="bg-white dark:bg-slate-800 rounded-2xl p-8 w-[520px] text-center shadow-xl">
                   <div className="mb-4 text-red-500 text-5xl">⚠</div>
 
                   <h2 className="text-xl font-bold mb-2 text-main">
-                    Delete Account?
+                    Delete Account ?
                   </h2>
 
                   <p className="text-muted mb-6 text-sm">
-                    This action will permanently delete your profile, courses,
-                    and progress. This cannot be undone.
+                    This action will permanently delete your profile, courses and progress. This cannot be undone.
                   </p>
 
-                  <div className="flex justify-center gap-4">
+                    <p className="text-sm text-muted mb-6">
+                        Please type <span className="font-bold text-red-500">DELETE</span> to confirm.
+                    </p>
+                    <input
+                                  type="text"
+                                  placeholder="Type DELETE here..."
+                                  value={confirmText}
+                                  onChange={(e) => setConfirmText(e.target.value)}
+                                  className="w-full h-[50px] px-4 pr-12 rounded-xl border border-border text-[16px] font-[Inter] focus:ring-2 focus:ring-primary focus:border-primary bg-input text-main mb-6" 
+                    />
+                    <div className="flex justify-center gap-25">
+                                <button
+                                 onClick={() => {setConfirmText(""),setshowDeletePopup(false)}}
+                                  className="px-6 py-2 border rounded-lg"
+                                >
+                                  Cancel
+                                </button>
 
-                    <button
-                      onClick={() => setshowDeletePopup(false)}
-                      className="px-6 py-2 border rounded-lg hover:bg-gray-200">
-                      Cancel
-                    </button>
-
-                    <button
-                      onClick={handleDeleteAccount}
-                      disabled={deleting}
-                      className="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-700 "
-                    >
-                      {deleting ? "Deleting..." : "Delete"}
-                    </button>
-                  </div>
-
+                                <button
+                                  onClick={handleDeleteAccount}
+                                  disabled={confirmText !== "DELETE" || deleting}
+                                  className={`text-white ${
+                                    confirmText === "DELETE"
+                                      ? "bg-red-500 hover:bg-red-700 h-[50px] px-6 rounded-xl from-primary to-primary hover:opacity-90 disabled:opacity-50"
+                                      : "h-[50px] px-6 rounded-xl bg-gradient-to-r from-primary to-primary hover:opacity-90 disabled:opacity-50"
+                                  }`}
+                                >
+                                  {deleting ? "Deleting..." : "Delete Account"}
+                                </button>
+                    </div>                                  
                 </div>
               </div>
             )}
             
             {activeSetting === "notifications" && (
-              <div className="max-w-[896px]">
+              <div className="w-full">
                 <div className="mb-8">
-                  <h1 className="text-[30px] font-bold text-main font-[Inter] mb-2">
+                  <h1 className="text-xl sm:text-2xl md:text-[30px] font-bold text-main font-[Inter] mb-2">
                     {t("settings.notifications.title")}
                   </h1>
-                  <p className="text-[16px] text-muted font-[Inter]">
+                  <p className="text-sm sm:text-[16px] text-muted font-[Inter]">
                     {t("settings.notifications.subtitle")}
                   </p>
                 </div>
-                <div className="bg-card rounded-[24px] shadow p-8">
+                <div className="bg-card rounded-2xl sm:rounded-[24px] shadow p-4 sm:p-6 md:p-8">
                   <div className="space-y-6">
                     {[
                       { labelKey: "settings.notifications.email", key: "emailNotifications", descKey: "settings.notifications.email_desc" },
@@ -416,10 +436,10 @@ export default function Settings() {
                       { labelKey: "settings.notifications.course_updates", key: "courseUpdates", descKey: "settings.notifications.course_updates_desc" },
                       { labelKey: "settings.notifications.discussion_replies", key: "discussionReplies", descKey: "settings.notifications.discussion_replies_desc" },
                     ].map((item) => (
-                      <div key={item.key} className="flex items-center justify-between">
-                        <div>
-                          <h3 className="text-[16px] font-semibold text-main">{t(item.labelKey)}</h3>
-                          <p className="text-[14px] text-muted">{t(item.descKey)}</p>
+                      <div key={item.key} className="flex items-center justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-sm sm:text-[16px] font-semibold text-main">{t(item.labelKey)}</h3>
+                          <p className="text-xs sm:text-[14px] text-muted">{t(item.descKey)}</p>
                         </div>
                         <label className="relative inline-flex items-center cursor-pointer">
                           <input
@@ -442,7 +462,7 @@ export default function Settings() {
                     ))}
                   </div>
 
-                  <div className="flex justify-end gap-4 pt-6 border-t border-border mt-6">
+                  <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 sm:gap-4 pt-6 border-t border-border mt-6">
                     <button
                       type="button"
                       onClick={() => {
@@ -488,23 +508,23 @@ export default function Settings() {
             )}
 
             {activeSetting === "password_security" && (
-              <div className="max-w-[896px]">
+              <div className="w-full">
                 <div className="mb-8">
-                  <h1 className="text-[30px] font-bold text-main font-[Inter] mb-2">
+                  <h1 className="text-xl sm:text-2xl md:text-[30px] font-bold text-main font-[Inter] mb-2">
                     {t("settings.security.title")}
                   </h1>
-                  <p className="text-[16px] text-muted font-[Inter]">
+                  <p className="text-sm sm:text-[16px] text-muted font-[Inter]">
                     {t("settings.security.subtitle")}
                   </p>
                 </div>
-                <div className="bg-card rounded-[24px] shadow-[0_4px_6px_0_rgba(0,0,0,0.10),0_10px_15px_0_rgba(0,0,0,0.10)] p-8">
+                <div className="bg-card rounded-2xl sm:rounded-[24px] shadow-[0_4px_6px_0_rgba(0,0,0,0.10),0_10px_15px_0_rgba(0,0,0,0.10)] p-4 sm:p-6 md:p-8">
                   <div className="space-y-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="text-[16px] font-semibold text-main font-[Inter]">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-sm sm:text-[16px] font-semibold text-main font-[Inter]">
                           {t("settings.security.two_factor")}
                         </h3>
-                        <p className="text-[14px] text-muted font-[Inter]">
+                        <p className="text-xs sm:text-[14px] text-muted font-[Inter]">
                           {t("settings.security.two_factor_desc")}
                         </p>
                       </div>
@@ -527,12 +547,12 @@ export default function Settings() {
                       </label>
                     </div>
 
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="text-[16px] font-semibold text-main font-[Inter]">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-sm sm:text-[16px] font-semibold text-main font-[Inter]">
                           {t("settings.security.login_alerts")}
                         </h3>
-                        <p className="text-[14px] text-muted font-[Inter]">
+                        <p className="text-xs sm:text-[14px] text-muted font-[Inter]">
                           {t("settings.security.login_alerts_desc")}
                         </p>
                       </div>
@@ -626,24 +646,24 @@ export default function Settings() {
                             {t("settings.security.confirm_password")}
                           </label>
                           
-<input
-  type="password"
-  autoComplete="new-password"
-  value={passwordData.confirmPassword}
-  onChange={(e) =>
-    setPasswordData((prev) => ({
-      ...prev,
-      confirmPassword: e.target.value,
-    }))
-  }
-  className="w-full h-[50px] px-4 rounded-xl border border-border text-[16px] font-[Inter] focus:ring-2 focus:ring-primary focus:border-primary bg-input text-main"
-/>
+                          <input
+                            type="password"
+                            autoComplete="new-password"
+                            value={passwordData.confirmPassword}
+                            onChange={(e) =>
+                              setPasswordData((prev) => ({
+                                ...prev,
+                                confirmPassword: e.target.value,
+                              }))
+                            }
+                            className="w-full h-[50px] px-4 rounded-xl border border-border text-[16px] font-[Inter] focus:ring-2 focus:ring-primary focus:border-primary bg-input text-main"
+                          />
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex justify-end gap-4 pt-6 border-t border-border mt-6">
+                  <div className="flex flex-col-reverse sm:flex-row justify-end gap-4 pt-6 border-t border-border mt-6">
                     <button
                       type="button"
                       className="h-[50px] px-6 rounded-xl border border-border bg-card text-main text-[16px] font-medium font-[Inter] hover:bg-canvas-alt"
@@ -707,22 +727,22 @@ export default function Settings() {
             )}
 
             {activeSetting === "appearance" && (
-              <div className="max-w-[896px]">
+              <div className="w-full">
                 <div className="mb-8">
-                  <h1 className="text-[30px] font-bold text-main font-[Inter] mb-2">
+                  <h1 className="text-xl sm:text-2xl md:text-[30px] font-bold text-main font-[Inter] mb-2">
                     {t("settings.appearance.title")}
                   </h1>
-                  <p className="text-[16px] text-muted font-[Inter]">
+                  <p className="text-sm sm:text-[16px] text-muted font-[Inter]">
                     {t("settings.appearance.subtitle")}
                   </p>
                 </div>
-                <div className="bg-card rounded-[24px] shadow-[0_4px_6px_0_rgba(0,0,0,0.10),0_10px_15px_0_rgba(0,0,0,0.10)] p-8">
+                <div className="bg-card rounded-2xl sm:rounded-[24px] shadow-[0_4px_6px_0_rgba(0,0,0,0.10),0_10px_15px_0_rgba(0,0,0,0.10)] p-4 sm:p-6 md:p-8">
                   <div className="space-y-6">
                     <div>
                       <h3 className="text-[16px] font-semibold text-main font-[Inter] mb-3">
                         {t("settings.appearance.theme")}
                       </h3>
-                      <div className="grid grid-cols-3 gap-4">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                         {[
                           { value: "light", labelKey: "settings.appearance.light", icon: "☀️" },
                           { value: "dark", labelKey: "settings.appearance.dark", icon: "🌙" },
@@ -731,7 +751,7 @@ export default function Settings() {
                           <button
                             key={themeOption.value}
                             onClick={() => setTheme(themeOption.value)}
-                            className={`p-4 rounded-xl border-2 transition-colors ${theme === theme.value
+                            className={`p-4 rounded-xl border-2 transition-colors ${theme === themeOption.value
                               ? "border-primary bg-teal-50 dark:bg-teal-900/20 text-main"
                               : "border-border hover:border-primary text-muted hover:text-main"
                               }`}
@@ -744,85 +764,22 @@ export default function Settings() {
                         ))}
                       </div>
                     </div>
-
-                    {/* <div>
-                      <h3 className="text-[16px] font-semibold text-main font-[Inter] mb-3">
-                        {t("settings.appearance.language")}
-                      </h3>
-                      <select
-                        value={settingsData.appearance.language}
-                        onChange={(e) =>
-                          setSettingsData((prev) => ({
-                            ...prev,
-                            appearance: {
-                              ...prev.appearance,
-                              language: e.target.value,
-                            },
-                          }))
-                        }
-                        className="w-full h-[50px] px-4 rounded-xl border border-border text-[16px] font-[Inter] focus:ring-2 focus:ring-primary focus:border-primary bg-input text-main"
-                      >
-                        <option value="en">English</option>
-                        <option value="es">Spanish</option>
-                        <option value="zh">Chinese (Mandarin)</option>
-                        <option value="hi">Hindi</option>
-                        <option value="ar">Arabic</option>
-                        <option value="pt">Portuguese</option>
-                        <option value="fr">French</option>
-                        <option value="ru">Russian</option>
-                        <option value="ja">Japanese</option>
-                        <option value="de">German</option>
-                      </select>
-                    </div> */}
                   </div>
-
-                  {/* <div className="flex justify-end gap-4 pt-6 border-t border-border mt-6">
-                    <button
-                      type="button"
-                      className="h-[50px] px-6 rounded-xl border border-border bg-card text-main text-[16px] font-medium font-[Inter] hover:bg-canvas-alt"
-                    >
-                      {t("common.cancel")}
-                    </button>
-                    <button
-                      onClick={async () => {
-                        setLoading(true);
-                        try {
-                          const token = localStorage.getItem("token");
-                          await axios.put(
-                            "/api/users/settings",
-                            { appearance: settingsData.appearance },
-                            { headers: { Authorization: `Bearer ${token}` } }
-                          );
-                          i18n.changeLanguage(settingsData.appearance.language);
-                          toast.success("Appearance settings updated successfully!");
-                        } catch (error) {
-                          console.error("Error updating settings:", error);
-                          toast.error("Failed to update settings. Please try again.");
-                        } finally {
-                          setLoading(false);
-                        }
-                      }}
-                      disabled={loading}
-                      className="h-[50px] px-6 rounded-xl bg-gradient-to-r from-primary to-primary text-white text-[16px] font-medium font-[Inter] hover:opacity-90 disabled:opacity-50"
-                    >
-                      {loading ? t("common.saving") : t("common.save_changes")}
-                    </button>
-                  </div> */}
                 </div>
               </div>
             )}
 
             {activeSetting === "language" && (
-              <div className="max-w-[896px]">
+              <div className="w-full">
                 <div className="mb-8">
-                  <h1 className="text-[30px] font-bold text-main font-[Inter] mb-2">
+                  <h1 className="text-xl sm:text-2xl md:text-[30px] font-bold text-main font-[Inter] mb-2">
                     {t("settings.language.title")}
                   </h1>
-                  <p className="text-[16px] text-muted font-[Inter]">
+                  <p className="text-sm sm:text-[16px] text-muted font-[Inter]">
                     {t("settings.language.subtitle")}
                   </p>
                 </div>
-                <div className="bg-card rounded-[24px] shadow-[0_4px_6px_0_rgba(0,0,0,0.10),0_10px_15px_0_rgba(0,0,0,0.10)] p-8">
+                <div className="bg-card rounded-2xl sm:rounded-[24px] shadow-[0_4px_6px_0_rgba(0,0,0,0.10),0_10px_15px_0_rgba(0,0,0,0.10)] p-4 sm:p-6 md:p-8">
                   <div className="space-y-6">
                     <div>
                       <h3 className="text-[16px] font-semibold text-main font-[Inter] mb-3">
@@ -855,7 +812,7 @@ export default function Settings() {
                     </div>
                   </div>
 
-                  <div className="flex justify-end gap-4 pt-6 border-t border-border mt-6">
+                  <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 sm:gap-4 pt-6 border-t border-border mt-6">
                     <button
                       type="button"
                       className="h-[50px] px-6 rounded-xl border border-border bg-card text-main text-[16px] font-medium font-[Inter] hover:bg-canvas-alt"
@@ -899,7 +856,7 @@ export default function Settings() {
               <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-55 animate-fadeIn">
 
                 <div className="relative bg-gradient-to-br from-white to-slate-100 dark:from-slate-800 dark:to-slate-900 
-                   rounded-3xl p-10 w-[420px] text-center shadow-2xl border border-slate-200 
+                   rounded-3xl p-6 sm:p-10 w-[90vw] max-w-[420px] text-center shadow-2xl border border-slate-200 
                    dark:border-slate-700 transform transition-all duration-300 scale-100 animate-popup">
 
                   {/* Animated Success Circle */}
@@ -931,7 +888,6 @@ export default function Settings() {
             )}
           </main>
         </div>
-      </div>
-    </div>
+    </>
   );
 }

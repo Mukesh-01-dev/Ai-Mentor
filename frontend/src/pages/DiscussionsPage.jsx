@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
-import Header from "../components/Header";
-import Sidebar from "../components/Sidebar";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useSidebar } from "../context/SidebarContext";
 import { useTranslation } from "react-i18next";
@@ -18,11 +17,18 @@ import {
   BookOpen,
   ChevronDown,
   ArrowRight,
-  MoreVertical,
+  Edit,
   Clock,
+  EyeOff,
+  Trash2,
+  XCircle,
+  Shield,
+  Ban,
+  AlertTriangle,
+  MoreVertical,
 } from "lucide-react";
 
-/* ───────── helpers ───────── */
+//helpers
 const getRelativeTime = (dateStr) => {
   if (!dateStr) return "";
   const now = new Date();
@@ -33,28 +39,20 @@ const getRelativeTime = (dateStr) => {
   if (mins < 60) return `${mins}m ago`;
   const hrs = Math.floor(mins / 60);
   if (hrs < 24) return `${hrs}h ago`;
-  const days = Math.floor(hrs / 24);
-  if (days < 30) return `${days}d ago`;
   return d.toLocaleDateString();
 };
 
-const getInitial = (name) => (name ? name.charAt(0).toUpperCase() : "?");
-
-const avatarColors = [
-  "bg-purple-600",
-  "bg-indigo-600",
-  "bg-teal-600",
-  "bg-orange-500",
-  "bg-pink-600",
-  "bg-cyan-600",
-  "bg-green-600",
-  "bg-red-500",
-];
-const pickColor = (str) => {
-  let h = 0;
-  for (let i = 0; i < (str || "").length; i++)
-    h = str.charCodeAt(i) + ((h << 5) - h);
-  return avatarColors[Math.abs(h) % avatarColors.length];
+const Avatar = ({ src, name, size = "w-10 h-10" }) => {
+  const imgSrc =
+    src ||
+    `https://api.dicebear.com/8.x/initials/svg?seed=${encodeURIComponent(name || "User")}`;
+  return (
+    <img
+      src={imgSrc}
+      alt={name || "User"}
+      className={`${size} rounded-full object-cover shrink-0`}
+    />
+  );
 };
 
 const GLOBAL_CATEGORIES = [
@@ -81,10 +79,10 @@ const categoryColorMap = {
   "Off-Topic": "border-gray-500 text-gray-400",
 };
 
-/* ────────────────────────────────────────── */
-/*  MAIN COMPONENT                            */
-/* ────────────────────────────────────────── */
+//main component
 const DiscussionsPage = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const { t } = useTranslation();
   const getCategoryLabel = (cat) =>
     t(`discussions.${CATEGORY_KEY_MAP[cat]}`, cat);
@@ -92,12 +90,12 @@ const DiscussionsPage = () => {
   const { sidebarCollapsed } = useSidebar();
   const token = localStorage.getItem("token");
 
-  /* ── top-level state ── */
+  //top level state
   const [activeView, setActiveView] = useState("courseCommunity"); // "courseCommunity" | "global"
   const [showGuidelines, setShowGuidelines] = useState(false);
   const [showWelcome, setShowWelcome] = useState(true);
 
-  /* ── course community state ── */
+  // Course community state
   const [coursePosts, setCoursePosts] = useState([]);
   const [coursePostsLoading, setCoursePostsLoading] = useState(false);
   const [courseSort, setCourseSort] = useState("Recent");
@@ -110,7 +108,7 @@ const DiscussionsPage = () => {
   const [panelReplyInputText, setPanelReplyInputText] = useState("");
   const [allCourses, setAllCourses] = useState([]);
 
-  /* ── global community state ── */
+  // Global community state
   const [globalPosts, setGlobalPosts] = useState([]);
   const [globalLoading, setGlobalLoading] = useState(false);
   const [globalSort, setGlobalSort] = useState("Recent");
@@ -121,9 +119,86 @@ const DiscussionsPage = () => {
   const [expandedGlobalPost, setExpandedGlobalPost] = useState(null);
   const [globalReplyText, setGlobalReplyText] = useState("");
 
-  const panelRef = useRef(null);
+  // Reporting & moderation state
+  const [reportModal, setReportModal] = useState({ open: false, postId: null, replyId: null });
+  const [reportDescription, setReportDescription] = useState("");
+  const [reportSubmitting, setReportSubmitting] = useState(false);
+  const [reports, setReports] = useState([]);
+  const [activeModeration, setActiveModeration] = useState(null);
+  const [reportSuccess, setReportSuccess] = useState(false);
+  const [reportAlreadyExists, setReportAlreadyExists] = useState(false); // reportId currently showing actions
+  const [popupModal, setPopupModal] = useState({
+    open: false,
+    title: "",
+    message: "",
+    confirmText: "OK",
+    cancelText: null,
+    onConfirm: null,
+  });
 
-  /* ───────────────────────── API helpers ───────────────────────── */
+  // Editing state
+  const [editingReply, setEditingReply] = useState({ postId: null, replyId: null });
+  const [editReplyText, setEditReplyText] = useState("");
+
+  // postId of the post being edited (only for global posts, course panel posts are edited inline with a textarea)
+  const [editingPost, setEditingPost] = useState(null); // postId being edited
+  const [editPostText, setEditPostText] = useState("");
+
+  // Dropdown state
+  const [openDropdown, setOpenDropdown] = useState(null); // stores postId or replyId of open dropdown
+
+  const isAdmin = user?.role === "admin";
+
+  const panelRef = useRef(null);
+  const lastHandledFocusKeyRef = useRef("");
+
+  const closePopupModal = () => {
+    setPopupModal({
+      open: false,
+      title: "",
+      message: "",
+      confirmText: "OK",
+      cancelText: null,
+      onConfirm: null,
+    });
+  };
+
+  const showInfoModal = (message, title = "Notice") => {
+    setPopupModal({
+      open: true,
+      title,
+      message,
+      confirmText: "OK",
+      cancelText: null,
+      onConfirm: null,
+    });
+  };
+
+  const showConfirmModal = (
+    message,
+    onConfirm,
+    title = "Confirm Action",
+    confirmText = "Confirm"
+  ) => {
+    setPopupModal({
+      open: true,
+      title,
+      message,
+      confirmText,
+      cancelText: "Cancel",
+      onConfirm,
+    });
+  };
+
+  const handlePopupConfirm = async () => {
+    const confirmAction = popupModal.onConfirm;
+    closePopupModal();
+    if (typeof confirmAction === "function") {
+      await confirmAction();
+    }
+  };
+
+  // Helper to get auth headers easily for API calls
   const authHeaders = useCallback(
     () => ({
       "Content-Type": "application/json",
@@ -148,7 +223,7 @@ const DiscussionsPage = () => {
     }
   }, [token]);
 
-  // Course community – all posts across courses
+  // Course community - all posts across courses
   const fetchCoursePosts = useCallback(
     async (sort) => {
       setCoursePostsLoading(true);
@@ -168,7 +243,7 @@ const DiscussionsPage = () => {
     [token]
   );
 
-  // Course panel – posts for a specific course
+  // Course panel - posts for a specific course
   const fetchPanelPosts = useCallback(
     async (courseId, sort) => {
       setPanelLoading(true);
@@ -234,6 +309,349 @@ const DiscussionsPage = () => {
   };
   const wrapperRef = useRef(null);
   /* ───────── effects ───────── */
+
+  // Report a post or reply
+  const handleReport = async () => {
+    if (!reportDescription.trim() || !reportModal.postId) return;
+    setReportSubmitting(true);
+    try {
+      const res = await fetch(`/api/community/${reportModal.postId}/report`, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({
+          replyId: reportModal.replyId || undefined,
+          reason: "other",
+          description: reportDescription,
+        }),
+      });
+      await res.json();
+      if (!res.ok) {
+        setReportModal({ open: false, postId: null, replyId: null });
+        setReportDescription("");
+        setReportAlreadyExists(true);
+        return;
+      }
+      setReportModal({ open: false, postId: null, replyId: null });
+      setReportDescription("");
+      setReportSuccess(true);
+    } catch {
+      setReportModal({ open: false, postId: null, replyId: null });
+      setReportDescription("");
+      setReportAlreadyExists(true);
+    } finally {
+      setReportSubmitting(false);
+    }
+  };
+
+  // Edit a reply
+  const handleEditReply = async (postId, replyId, newText) => {
+    if (!newText.trim()) return;
+    try {
+      const res = await fetch(`/api/community/${postId}/reply/${replyId}`, {
+        method: "PUT",
+        headers: authHeaders(),
+        body: JSON.stringify({ text: newText }),
+      });
+      if (!res.ok) throw new Error();
+      const updated = await res.json();
+
+      // Update the appropriate post list
+      if (activeView === "courseCommunity") {
+        if (selectedCourse) {
+          setPanelPosts((prev) =>
+            prev.map((p) => (p.id === postId ? updated : p))
+          );
+        } else {
+          setCoursePosts((prev) =>
+            prev.map((p) => (p.id === postId ? updated : p))
+          );
+        }
+      } else {
+        setGlobalPosts((prev) =>
+          prev.map((p) => (p.id === postId ? updated : p))
+        );
+      }
+
+      setEditingReply({ postId: null, replyId: null });
+      setEditReplyText("");
+    } catch (err) {
+      console.error("Edit reply error:", err);
+    }
+  };
+
+  // Delete a reply
+  const handleDeleteReply = async (postId, replyId) => {
+    try {
+      const res = await fetch(`/api/community/${postId}/reply/${replyId}`, {
+        method: "DELETE",
+        headers: authHeaders(),
+      });
+      if (!res.ok) throw new Error();
+      const updated = await res.json();
+
+      // Update the appropriate post list
+      if (activeView === "courseCommunity") {
+        if (selectedCourse) {
+          setPanelPosts((prev) =>
+            prev.map((p) => (p.id === postId ? updated : p))
+          );
+        } else {
+          setCoursePosts((prev) =>
+            prev.map((p) => (p.id === postId ? updated : p))
+          );
+        }
+      } else {
+        setGlobalPosts((prev) =>
+          prev.map((p) => (p.id === postId ? updated : p))
+        );
+      }
+    } catch (err) {
+      console.error("Delete reply error:", err);
+    }
+  };
+
+  // Edit a post
+  const handleEditPost = async (postId, newContent) => {
+    if (!newContent.trim()) return;
+    try {
+      const res = await fetch(`/api/community/${postId}`, {
+        method: "PUT",
+        headers: authHeaders(),
+        body: JSON.stringify({ content: newContent }),
+      });
+      if (!res.ok) throw new Error();
+      const updated = await res.json();
+
+      // Update the appropriate post list
+      if (activeView === "courseCommunity") {
+        if (selectedCourse) {
+          setPanelPosts((prev) =>
+            prev.map((p) => (p.id === postId ? updated : p))
+          );
+        }
+        setCoursePosts((prev) =>
+          prev.map((p) => (p.id === postId ? updated : p))
+        );
+      } else {
+        setGlobalPosts((prev) =>
+          prev.map((p) => (p.id === postId ? updated : p))
+        );
+      }
+
+      setEditingPost(null);
+      setEditPostText("");
+    } catch (err) {
+      console.error("Edit post error:", err);
+      showInfoModal("Failed to edit post");
+    }
+  };
+
+  // Delete a post
+  const handleDeletePost = async (postId) => {
+    try {
+      const res = await fetch(`/api/community/${postId}`, {
+        method: "DELETE",
+        headers: authHeaders(),
+      });
+      if (!res.ok) throw new Error();
+
+      // Remove from the appropriate post list
+      if (activeView === "courseCommunity") {
+        if (selectedCourse) {
+          setPanelPosts((prev) => prev.filter((p) => p.id !== postId));
+        }
+        setCoursePosts((prev) => prev.filter((p) => p.id !== postId));
+      } else {
+        setGlobalPosts((prev) => prev.filter((p) => p.id !== postId));
+      }
+    } catch (err) {
+      console.error("Delete post error:", err);
+      showInfoModal("Failed to delete post");
+    }
+  };
+
+  // Fetch reports (admin only)
+  const fetchReports = useCallback(async () => {
+    if (!isAdmin) return;
+    try {
+      const res = await fetch("/api/community/reports", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) setReports(await res.json());
+    } catch {
+      /* ignore */
+    }
+  }, [token, isAdmin]);
+
+  const executeModeration = async (reportId, action) => {
+    try {
+      const res = await fetch(`/api/community/reports/${reportId}`, {
+        method: "PUT",
+        headers: authHeaders(),
+        body: JSON.stringify({ action }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        showInfoModal(data.message || "Failed to moderate report");
+        return;
+      }
+
+      await fetchReports();
+      setActiveModeration(null);
+      // Refresh posts to reflect changes
+      if (activeView === "global") fetchGlobalPosts(globalCategoryFilter, globalSort);
+      if (activeView === "courseCommunity") {
+        fetchCoursePosts(courseSort);
+        if (selectedCourse) fetchPanelPosts(selectedCourse.courseId, panelSort);
+      }
+    } catch {
+      showInfoModal("Failed to moderate report");
+    }
+  };
+
+  // Moderate a report (admin only)
+  const handleModerate = async (reportId, action) => {
+    if (!reportId) return;
+    if (action === "deleted") {
+      showConfirmModal(
+        "Are you sure you want to delete this content?",
+        () => executeModeration(reportId, action),
+        "Confirm Delete",
+        "Delete"
+      );
+      return;
+    }
+    await executeModeration(reportId, action);
+  };
+
+  const handleUnhide = async (postId, replyId = null) => {
+    try {
+      const res = await fetch(`/api/community/${postId}/unhide`, {
+        method: "PUT",
+        headers: authHeaders(),
+        body: JSON.stringify(replyId ? { replyId } : {}),
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        showInfoModal(data.message || "Failed to unhide content");
+        return;
+      }
+
+      const updatedPost = data.post;
+      if (updatedPost?.id) {
+        setCoursePosts((prev) =>
+          prev.map((p) => (String(p.id) === String(updatedPost.id) ? updatedPost : p))
+        );
+        setPanelPosts((prev) =>
+          prev.map((p) => (String(p.id) === String(updatedPost.id) ? updatedPost : p))
+        );
+        setGlobalPosts((prev) =>
+          prev.map((p) => (String(p.id) === String(updatedPost.id) ? updatedPost : p))
+        );
+      }
+
+      await fetchReports();
+    } catch {
+      showInfoModal("Failed to unhide content");
+    }
+  };
+
+  // Helper: get reports for a specific post/reply
+  const getReportsForContent = (postId, replyId = null) =>
+    reports.filter((r) =>
+      String(r.postId) === String(postId) &&
+      (replyId ? String(r.replyId) === String(replyId) : !r.replyId)
+    );
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const focusPostId = params.get("focusPost");
+    const focusReplyId = params.get("focusReply");
+    const postType = params.get("postType");
+    const courseId = params.get("courseId");
+    const courseName = params.get("courseName");
+
+    if (!focusPostId) {
+      lastHandledFocusKeyRef.current = "";
+      return;
+    }
+
+    if (postType === "global") {
+      setActiveView("global");
+      if (focusReplyId) {
+        setExpandedGlobalPost(focusPostId);
+      }
+      return;
+    }
+
+    if (postType === "course") {
+      setActiveView("courseCommunity");
+      if (courseId) {
+        const normalizedCourseId = Number(courseId);
+        if (!Number.isNaN(normalizedCourseId)) {
+          setSelectedCourse((prev) => {
+            if (prev?.courseId === normalizedCourseId) return prev;
+            return {
+              courseId: normalizedCourseId,
+              courseName: courseName || prev?.courseName || "Course",
+            };
+          });
+        }
+      }
+    }
+  }, [location.search]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const focusPostId = params.get("focusPost");
+    const focusReplyId = params.get("focusReply");
+    const focusKey = `${focusPostId || ""}:${focusReplyId || ""}`;
+    if (!focusPostId || lastHandledFocusKeyRef.current === focusKey) return;
+
+    const selector = focusReplyId
+      ? `[data-reply-id="${focusReplyId}"][data-parent-post-id="${focusPostId}"]`
+      : `[data-post-id="${focusPostId}"]`;
+
+    const target = document.querySelector(selector);
+    if (!target) return;
+
+    target.scrollIntoView({ behavior: "smooth", block: "center" });
+    target.classList.add("ring-2", "ring-orange-500", "ring-offset-2", "ring-offset-card");
+    window.setTimeout(() => {
+      target.classList.remove("ring-2", "ring-orange-500", "ring-offset-2", "ring-offset-card");
+    }, 2500);
+
+    lastHandledFocusKeyRef.current = focusKey;
+
+    // Make notification deep-link one-time: remove focus params after successful focus.
+    const cleanedParams = new URLSearchParams(location.search);
+    cleanedParams.delete("focusPost");
+    cleanedParams.delete("focusReply");
+    cleanedParams.delete("postType");
+    cleanedParams.delete("courseId");
+    cleanedParams.delete("courseName");
+    const nextSearch = cleanedParams.toString();
+    navigate(
+      {
+        pathname: location.pathname,
+        search: nextSearch ? `?${nextSearch}` : "",
+      },
+      { replace: true }
+    );
+  }, [
+    location.search,
+    location.pathname,
+    navigate,
+    activeView,
+    selectedCourse,
+    expandedGlobalPost,
+    globalPosts,
+    panelPosts,
+    coursePosts,
+  ]);
+
+  // Initial fetch of all courses for dropdowns and course name lookups
   useEffect(() => {
     fetchAllCourses();
   }, [fetchAllCourses]);
@@ -264,6 +682,25 @@ const DiscussionsPage = () => {
     };
   }, []);
   /* ───────── handlers ───────── */
+  useEffect(() => {
+    fetchReports();
+  }, [fetchReports]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (openDropdown) {
+        setOpenDropdown(null);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [openDropdown]);
+
+  // Handlers for like, dislike, and reply actions that update the appropriate post list on success
   const handleLike = async (postId, source) => {
     try {
       const updated = await doAction(postId, "like");
@@ -340,20 +777,8 @@ const DiscussionsPage = () => {
   const courseNameForPost = (post) =>
     post.courseName || `Course #${post.courseId}`;
 
-  /* ─────────────────────────────────────────────────────── */
-  /*  RENDER                                                  */
-  /* ─────────────────────────────────────────────────────── */
   return (
-    <div className="min-h-screen bg-canvas-alt flex flex-col">
-      <Header />
-      <Sidebar activePage="discussions" />
-
-      <div
-        className={`flex-1 flex flex-col transition-all duration-300 mt-10 ${
-          sidebarCollapsed ? "lg:ml-20" : "lg:ml-80"
-        }`}
-      >
-        {/* ══════ HERO ══════ */}
+    <>
         <div className="relative overflow-hidden bg-linear-to-br from-teal-700 via-teal-600 to-teal-800 pt-16 pb-12 px-4 sm:px-8">
           {/* grid pattern overlay */}
           <div
@@ -413,9 +838,7 @@ const DiscussionsPage = () => {
           </div>
         </div>
 
-        {/* ══════ BODY ══════ */}
         <div className="flex-1 flex relative">
-          {/* ░░░░░ COURSE COMMUNITY VIEW ░░░░░ */}
           {activeView === "courseCommunity" && (
             <main className="flex-1 p-4 sm:p-6 overflow-y-auto">
               <div
@@ -485,7 +908,9 @@ const DiscussionsPage = () => {
                 ) : (
                   <>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {coursePosts.map((post) => (
+                      {coursePosts
+                        .filter((post) => isAdmin || !post.hiddenAt)
+                        .map((post) => (
                         <div
                           key={post.id}
                           onClick={() =>
@@ -494,16 +919,27 @@ const DiscussionsPage = () => {
                               courseName: courseNameForPost(post),
                             })
                           }
-                          className="bg-card border border-border rounded-xl p-5 shadow-sm hover:border-indigo-500/50 cursor-pointer transition-colors"
+                          className={`bg-card border border-border rounded-xl p-5 shadow-sm hover:border-indigo-500/50 cursor-pointer transition-colors ${
+                            post.hiddenAt ? "opacity-60" : ""
+                          }`}
                         >
-                          <div className="flex items-start gap-3 mb-3">
-                            <div
-                              className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0 ${pickColor(
-                                post.author?.name
-                              )}`}
-                            >
-                              {getInitial(post.author?.name)}
+                          {isAdmin && post.hiddenAt && (
+                            <div className="flex items-center gap-2 text-xs text-yellow-500 mb-2">
+                              <EyeOff className="w-3 h-3" />
+                              Hidden by moderator
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleUnhide(post.id);
+                                }}
+                                className="px-2 py-0.5 text-[10px] rounded bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition-colors"
+                              >
+                                Unhide
+                              </button>
                             </div>
+                          )}
+                          <div className="flex items-start gap-3 mb-3">
+                            <Avatar src={post.author?.avatar_url} name={post.author?.name} />
                             <div className="min-w-0 flex-1">
                               <div className="flex items-center gap-2 flex-wrap">
                                 <span className="font-semibold text-main text-sm">
@@ -561,7 +997,6 @@ const DiscussionsPage = () => {
                 )}
               </div>
 
-              {/* ── SIDE PANEL (course community) ── */}
               {selectedCourse && (
                 <div
                   ref={panelRef}
@@ -632,16 +1067,57 @@ const DiscussionsPage = () => {
                         {t("discussions.no_messages")}
                       </div>
                     ) : (
-                      panelPosts.map((post) => (
-                        <div key={post.id} className="space-y-2">
-                          <div className="flex items-start gap-3">
-                            <div
-                              className={`w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-xs shrink-0 ${pickColor(
-                                post.author?.name
-                              )}`}
-                            >
-                              {getInitial(post.author?.name)}
+                      panelPosts
+                        .filter((post) => isAdmin || !post.hiddenAt)
+                        .map((post) => (
+                        <div
+                          key={post.id}
+                          data-post-id={post.id}
+                          className={`space-y-2 ${post.hiddenAt ? "opacity-50" : ""}`}
+                        >
+                          {/* Admin: hidden badge */}
+                          {isAdmin && post.hiddenAt && (
+                            <div className="flex items-center gap-2 text-xs text-yellow-500">
+                              <EyeOff className="w-3 h-3" />
+                              Hidden by moderator
+                              <button
+                                onClick={() => handleUnhide(post.id)}
+                                className="px-2 py-0.5 text-[10px] rounded bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition-colors"
+                              >
+                                Unhide
+                              </button>
                             </div>
+                          )}
+                          {/* Admin: report badge for panel post */}
+                          {isAdmin && getReportsForContent(post.id).length > 0 && (
+                            <div>
+                              <button
+                                onClick={() => setActiveModeration(activeModeration === `panel-post-${post.id}` ? null : `panel-post-${post.id}`)}
+                                className="flex items-center gap-1 px-2 py-0.5 bg-orange-500/20 text-orange-400 text-[10px] font-medium rounded-md hover:bg-orange-500/30 transition-colors"
+                              >
+                                <Shield className="w-2.5 h-2.5" />
+                                {getReportsForContent(post.id).length} report{getReportsForContent(post.id).length > 1 ? "s" : ""}
+                              </button>
+                              {activeModeration === `panel-post-${post.id}` && (
+                                <div className="flex items-center gap-2 mt-1">
+                                  <span className="text-[10px] text-muted">
+                                    {getReportsForContent(post.id).length} pending reports
+                                  </span>
+                                  <button onClick={() => handleModerate(getReportsForContent(post.id)[0]?.id, "hidden")} className="p-0.5 text-yellow-500 hover:bg-yellow-500/20 rounded disabled:opacity-50" title="Hide" disabled={!getReportsForContent(post.id)[0]?.id}>
+                                    <EyeOff className="w-3 h-3" />
+                                  </button>
+                                  <button onClick={() => handleModerate(getReportsForContent(post.id)[0]?.id, "deleted")} className="p-0.5 text-red-500 hover:bg-red-500/20 rounded disabled:opacity-50" title="Delete" disabled={!getReportsForContent(post.id)[0]?.id}>
+                                    <Trash2 className="w-3 h-3" />
+                                  </button>
+                                  <button onClick={() => handleModerate(getReportsForContent(post.id)[0]?.id, "dismissed")} className="p-0.5 text-gray-400 hover:bg-gray-500/20 rounded disabled:opacity-50" title="Dismiss" disabled={!getReportsForContent(post.id)[0]?.id}>
+                                    <XCircle className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          <div className="flex items-start gap-3">
+                            <Avatar src={post.author?.avatar_url} name={post.author?.name} size="w-9 h-9" />
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2 flex-wrap">
@@ -656,13 +1132,96 @@ const DiscussionsPage = () => {
                                     {getRelativeTime(post.createdAt)}
                                   </span>
                                 </div>
-                                <button className="text-muted hover:text-main p-0.5">
-                                  <MoreVertical className="w-4 h-4" />
-                                </button>
+                                {/* Three dots menu for all users */}
+                                <div className="relative">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setOpenDropdown(openDropdown === `post-${post.id}` ? null : `post-${post.id}`);
+                                    }}
+                                    className="text-muted hover:text-orange-500 p-0.5 transition-colors"
+                                    title="More options"
+                                  >
+                                    <MoreVertical className="w-4 h-4" />
+                                  </button>
+                                  {/* Dropdown Menu */}
+                                  {openDropdown === `post-${post.id}` && (
+                                    <div className="absolute right-0 top-full mt-1 bg-card border border-border rounded-lg shadow-lg py-1 z-10 min-w-30">
+                                      {post.userId === user?.id ? (
+                                        <>
+                                          {/* Edit and Delete options for post owner */}
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setEditingPost(post.id);
+                                              setEditPostText(post.content || "");
+                                              setOpenDropdown(null);
+                                            }}
+                                            className="w-full px-3 py-2 text-left text-sm text-main hover:bg-surface-light transition-colors flex items-center gap-2"
+                                          >
+                                            <Edit className="w-3.5 h-3.5" />
+                                            Edit
+                                          </button>
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              handleDeletePost(post.id);
+                                              setOpenDropdown(null);
+                                            }}
+                                            className="w-full px-3 py-2 text-left text-sm text-red-400 hover:bg-surface-light transition-colors flex items-center gap-2"
+                                          >
+                                            <Trash2 className="w-3.5 h-3.5" />
+                                            Delete
+                                          </button>
+                                        </>
+                                      ) : (
+                                        /* Report option for other users */
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setReportModal({ open: true, postId: post.id, replyId: null });
+                                            setOpenDropdown(null);
+                                          }}
+                                          className="w-full px-3 py-2 text-left text-sm text-main hover:bg-surface-light transition-colors flex items-center gap-2"
+                                        >
+                                          <Flag className="w-3.5 h-3.5" />
+                                          Report
+                                        </button>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
                               </div>
-                              <p className="text-sm text-muted mt-1">
-                                {post.content}
-                              </p>
+                              {editingPost === post.id ? (
+                                <div className="mt-1">
+                                  <textarea
+                                    value={editPostText}
+                                    onChange={(e) => setEditPostText(e.target.value)}
+                                    rows={3}
+                                    className="w-full px-2 py-1 text-sm bg-surface-light border border-border-light rounded focus:outline-none focus:ring-1 focus:ring-purple-500 resize-none"
+                                    autoFocus
+                                  />
+                                  <div className="flex gap-2 mt-1">
+                                    <button
+                                      onClick={() => handleEditPost(post.id, editPostText)}
+                                      className="px-3 py-1 text-xs bg-purple-600 hover:bg-purple-700 rounded"
+                                    >
+                                      Save
+                                    </button>
+                                    <button
+                                      onClick={() => {
+                                        setEditingPost(null);
+                                        setEditPostText("");
+                                      }}
+                                      className="px-3 py-1 text-xs bg-surface-light hover:bg-surface-lighter rounded"
+                                    >
+                                      Cancel
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <p className="text-sm text-muted mt-1">{post.content}</p>
+                              )}
                               <div className="flex items-center gap-4 mt-2 text-xs text-muted">
                                 <button
                                   onClick={(e) => {
@@ -788,28 +1347,131 @@ const DiscussionsPage = () => {
                               {/* Replies */}
                               {post.replies?.length > 0 && (
                                 <div className="mt-3 space-y-2 border-l-2 border-border pl-3">
-                                  {post.replies.map((r) => (
+                                  {post.replies.filter((r) => isAdmin || !r.hidden).map((r) => (
                                     <div
                                       key={r.id}
-                                      className="flex items-start gap-2"
+                                      data-reply-id={r.id}
+                                      data-parent-post-id={post.id}
+                                      className="flex items-start gap-2 group/panelreply"
                                     >
-                                      <div
-                                        className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0 ${pickColor(
-                                          r.userName
-                                        )}`}
-                                      >
-                                        {getInitial(r.userName)}
-                                      </div>
-                                      <div>
-                                        <span className="text-xs font-medium text-main">
-                                          {r.userName || "Unknown"}
-                                        </span>
-                                        <span className="text-[10px] text-muted ml-2">
-                                          {getRelativeTime(r.createdAt)}
-                                        </span>
-                                        <p className="text-xs text-muted mt-0.5">
-                                          {r.text}
-                                        </p>
+                                      <Avatar src={r.userAvatar} name={r.userName} size="w-6 h-6" />
+                                      <div className="flex-1">
+                                        <div className="flex items-center gap-1">
+                                          <span className="text-xs font-medium text-main">
+                                            {r.userName || "Unknown"}
+                                          </span>
+                                          <span className="text-[10px] text-muted ml-1">
+                                            {getRelativeTime(r.createdAt)}
+                                          </span>
+                                          {r.edited && (
+                                            <span className="text-[9px] text-muted italic">(edited)</span>
+                                          )}
+                                          {isAdmin && r.hidden && (
+                                            <>
+                                              <span className="text-[9px] text-yellow-500">Hidden</span>
+                                              <button
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  handleUnhide(post.id, r.id);
+                                                }}
+                                                className="px-1.5 py-0.5 text-[9px] rounded bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition-colors"
+                                              >
+                                                Unhide
+                                              </button>
+                                            </>
+                                          )}
+                                          {/* Three dots menu for all users */}
+                                          <div className="relative inline-block">
+                                            <button
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                setOpenDropdown(openDropdown === `reply-${r.id}` ? null : `reply-${r.id}`);
+                                              }}
+                                              className="text-muted hover:text-orange-500 transition-all p-0.5 ml-1"
+                                              title="More options"
+                                            >
+                                              <MoreVertical className="w-2.5 h-2.5" />
+                                            </button>
+                                            {/* Dropdown Menu */}
+                                            {openDropdown === `reply-${r.id}` && (
+                                              <div className="absolute left-0 top-full mt-1 bg-card border border-border rounded-lg shadow-lg py-1 z-10 min-w-30">
+                                                {r.userId === user?.id ? (
+                                                  <>
+                                                    {/* Edit and Delete options for reply owner */}
+                                                    <button
+                                                      onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setEditingReply({ postId: post.id, replyId: r.id });
+                                                        setEditReplyText(r.text);
+                                                        setOpenDropdown(null);
+                                                      }}
+                                                      className="w-full px-3 py-2 text-left text-xs text-main hover:bg-surface-light transition-colors flex items-center gap-2"
+                                                    >
+                                                      <Edit className="w-3 h-3" />
+                                                      Edit
+                                                    </button>
+                                                    <button
+                                                      onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleDeleteReply(post.id, r.id);
+                                                        setOpenDropdown(null);
+                                                      }}
+                                                      className="w-full px-3 py-2 text-left text-xs text-red-400 hover:bg-surface-light transition-colors flex items-center gap-2"
+                                                    >
+                                                      <Trash2 className="w-3 h-3" />
+                                                      Delete
+                                                    </button>
+                                                  </>
+                                                ) : (
+                                                  /* Report option for other users */
+                                                  <button
+                                                    onClick={(e) => {
+                                                      e.stopPropagation();
+                                                      setReportModal({ open: true, postId: post.id, replyId: r.id });
+                                                      setOpenDropdown(null);
+                                                    }}
+                                                    className="w-full px-3 py-2 text-left text-xs text-main hover:bg-surface-light transition-colors flex items-center gap-2"
+                                                  >
+                                                    <Flag className="w-3 h-3" />
+                                                    Report
+                                                  </button>
+                                                )}
+                                              </div>
+                                            )}
+                                          </div>
+                                        </div>
+                                        {editingReply.postId === post.id && editingReply.replyId === r.id ? (
+                                          <div className="mt-1">
+                                            <input
+                                              type="text"
+                                              value={editReplyText}
+                                              onChange={(e) => setEditReplyText(e.target.value)}
+                                              className="w-full px-2 py-1 text-xs bg-surface-light border border-border-light rounded focus:outline-none focus:ring-1 focus:ring-purple-500"
+                                              autoFocus
+                                            />
+                                            <div className="flex gap-1 mt-1">
+                                              <button
+                                                onClick={() => handleEditReply(post.id, r.id, editReplyText)}
+                                                className="px-2 py-0.5 text-[10px] bg-purple-600 hover:bg-purple-700 rounded"
+                                              >
+                                                Save
+                                              </button>
+                                              <button
+                                                onClick={() => {
+                                                  setEditingReply({ postId: null, replyId: null });
+                                                  setEditReplyText("");
+                                                }}
+                                                className="px-2 py-0.5 text-[10px] bg-surface-light hover:bg-surface-lighter rounded"
+                                              >
+                                                Cancel
+                                              </button>
+                                            </div>
+                                          </div>
+                                        ) : (
+                                          <p className="text-xs text-muted mt-0.5">
+                                            {r.text}
+                                          </p>
+                                        )}
                                       </div>
                                     </div>
                                   ))}
@@ -859,7 +1521,6 @@ const DiscussionsPage = () => {
             </main>
           )}
 
-          {/* ░░░░░ GLOBAL COMMUNITY VIEW ░░░░░ */}
           {activeView === "global" && (
             <main className="flex-1 p-4 sm:p-6 overflow-y-auto">
               <div className="max-w-4xl mx-auto space-y-6">
@@ -901,24 +1562,24 @@ const DiscussionsPage = () => {
                           <div className={`absolute left-0 top-full mt-2 md:w-96 w-60 bg-[#1E1E24] border border-orange-500/30 rounded-lg p-3 text-xs text-gray-300 shadow-lg z-50 transition-all duration-200 ${showGuidelines ? "opacity-100 visible" : "opacity-0 invisible"}`}>
                             <ul className="space-y-1">
                               <li>
-                                • Be respectful and courteous to all members.
+                                - Be respectful and courteous to all members.
                               </li>
                               <li>
-                                • Avoid spam, promotions, or irrelevant links.
+                                - Avoid spam, promotions, or irrelevant links.
                               </li>
                               <li>
-                                • Keep discussions related to learning and
+                                - Keep discussions related to learning and
                                 courses.
                               </li>
                               <li>
-                                • Respect different opinions and perspectives.
+                                - Respect different opinions and perspectives.
                               </li>
                               <li>
-                                • Do not share personal or sensitive
+                                - Do not share personal or sensitive
                                 information.
                               </li>
                               <li>
-                                • Help maintain a positive and supportive
+                                - Help maintain a positive and supportive
                                 community.
                               </li>
                             </ul>
@@ -935,13 +1596,7 @@ const DiscussionsPage = () => {
                   className="bg-card border border-border rounded-xl p-5 shadow-sm"
                 >
                   <div className="flex items-start gap-3">
-                    <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0 ${pickColor(
-                        user?.name
-                      )}`}
-                    >
-                      {getInitial(user?.name)}
-                    </div>
+                    <Avatar src={user?.avatar_url} name={user?.name} />
                     <textarea
                       value={globalContent}
                       onChange={(e) => {
@@ -1073,52 +1728,176 @@ const DiscussionsPage = () => {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {globalPosts.map((post) => (
+                    {globalPosts
+                      .filter((post) => isAdmin || !post.hiddenAt)
+                      .map((post) => (
                       <div
                         key={post.id}
-                        className="bg-card border border-border rounded-xl p-5 shadow-sm"
+                        data-post-id={post.id}
+                        className={`bg-card border border-border rounded-xl p-5 shadow-sm ${post.hiddenAt ? "opacity-50" : ""}`}
                       >
+                        {/* Admin: hidden badge */}
+                        {isAdmin && post.hiddenAt && (
+                          <div className="flex items-center gap-2 text-xs text-yellow-500 mb-2">
+                            <EyeOff className="w-3 h-3" />
+                            Hidden by moderator
+                            <button
+                              onClick={() => handleUnhide(post.id)}
+                              className="px-2 py-0.5 text-[10px] rounded bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition-colors"
+                            >
+                              Unhide
+                            </button>
+                          </div>
+                        )}
+                        {/* Admin: report badge for post */}
+                        {isAdmin && getReportsForContent(post.id).length > 0 && (
+                          <div className="mb-2">
+                            <button
+                              onClick={() => setActiveModeration(activeModeration === `post-${post.id}` ? null : `post-${post.id}`)}
+                              className="flex items-center gap-1 px-2 py-1 bg-orange-500/20 text-orange-400 text-xs font-medium rounded-md hover:bg-orange-500/30 transition-colors"
+                            >
+                              <Shield className="w-3 h-3" />
+                              {getReportsForContent(post.id).length} report{getReportsForContent(post.id).length > 1 ? "s" : ""}
+                            </button>
+                            {activeModeration === `post-${post.id}` && (
+                              <div className="flex items-center gap-2 mt-2">
+                                <span className="text-[10px] text-muted">
+                                  {getReportsForContent(post.id).length} pending reports
+                                </span>
+                                <button onClick={() => handleModerate(getReportsForContent(post.id)[0]?.id, "hidden")} className="p-1 text-yellow-500 hover:bg-yellow-500/20 rounded disabled:opacity-50" title="Hide" disabled={!getReportsForContent(post.id)[0]?.id}>
+                                  <EyeOff className="w-3 h-3" />
+                                </button>
+                                <button onClick={() => handleModerate(getReportsForContent(post.id)[0]?.id, "deleted")} className="p-1 text-red-500 hover:bg-red-500/20 rounded disabled:opacity-50" title="Delete" disabled={!getReportsForContent(post.id)[0]?.id}>
+                                  <Trash2 className="w-3 h-3" />
+                                </button>
+                                <button onClick={() => handleModerate(getReportsForContent(post.id)[0]?.id, "dismissed")} className="p-1 text-gray-400 hover:bg-gray-500/20 rounded disabled:opacity-50" title="Dismiss" disabled={!getReportsForContent(post.id)[0]?.id}>
+                                  <XCircle className="w-3 h-3" />
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        )}
                         <div className="flex items-start justify-between mb-3">
                           <div className="flex items-start gap-3">
-                            <div
-                              className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0 ${pickColor(
-                                post.author?.name
-                              )}`}
-                            >
-                              {getInitial(post.author?.name)}
-                            </div>
+                            <Avatar src={post.author?.avatar_url} name={post.author?.name} />
                             <div>
                               <div className="font-semibold text-main text-sm">
                                 {post.author?.name || "Unknown"}
                               </div>
                               <div className="text-xs text-muted">
-                                {post.createdAt
-                                  ? new Date(
-                                      post.createdAt
-                                    ).toLocaleDateString()
-                                  : ""}
+                                {getRelativeTime(post.createdAt)}
                               </div>
                             </div>
                           </div>
-                          {post.category && (
-                            <span
-                              className={`px-3 py-1 rounded-full text-xs font-medium border ${
-                                categoryColorMap[post.category] ||
-                                "border-gray-500 text-gray-400"
-                              }`}
-                            >
-                              {post.category}
-                            </span>
-                          )}
+                          <div className="flex items-center gap-2">
+                            {post.category && (
+                              <span
+                                className={`px-3 py-1 rounded-full text-xs font-medium border ${
+                                  categoryColorMap[post.category] ||
+                                  "border-gray-500 text-gray-400"
+                                }`}
+                              >
+                                {post.category}
+                              </span>
+                            )}
+                            {/* Three dots menu for all users */}
+                            <div className="relative">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setOpenDropdown(openDropdown === `global-post-${post.id}` ? null : `global-post-${post.id}`);
+                                }}
+                                className="text-muted hover:text-orange-500 p-0.5 transition-colors"
+                                title="More options"
+                              >
+                                <MoreVertical className="w-4 h-4" />
+                              </button>
+                              {/* Dropdown Menu */}
+                              {openDropdown === `global-post-${post.id}` && (
+                                <div className="absolute right-0 top-full mt-1 bg-card border border-border rounded-lg shadow-lg py-1 z-10 min-w-30">
+                                  {post.userId === user?.id ? (
+                                    <>
+                                      {/* Edit and Delete options for post owner */}
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setEditingPost(post.id);
+                                          setEditPostText(post.content || "");
+                                          setOpenDropdown(null);
+                                        }}
+                                        className="w-full px-3 py-2 text-left text-sm text-main hover:bg-surface-light transition-colors flex items-center gap-2"
+                                      >
+                                        <Edit className="w-3.5 h-3.5" />
+                                        Edit
+                                      </button>
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleDeletePost(post.id);
+                                          setOpenDropdown(null);
+                                        }}
+                                        className="w-full px-3 py-2 text-left text-sm text-red-400 hover:bg-surface-light transition-colors flex items-center gap-2"
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                        Delete
+                                      </button>
+                                    </>
+                                  ) : (
+                                    /* Report option for other users */
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setReportModal({ open: true, postId: post.id, replyId: null });
+                                        setOpenDropdown(null);
+                                      }}
+                                      className="w-full px-3 py-2 text-left text-sm text-main hover:bg-surface-light transition-colors flex items-center gap-2"
+                                    >
+                                      <Flag className="w-3.5 h-3.5" />
+                                      Report
+                                    </button>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </div>
                         </div>
 
-                        <p
-                          className={`text-sm text-muted mb-4 ${
-                            expandedGlobalPost === post.id ? "" : "line-clamp-2"
-                          }`}
-                        >
-                          {post.content}
-                        </p>
+                        {editingPost === post.id ? (
+                          <div className="mb-4">
+                            <textarea
+                              value={editPostText}
+                              onChange={(e) => setEditPostText(e.target.value)}
+                              rows={4}
+                              className="w-full px-3 py-2 text-sm bg-surface-light border border-border-light rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-500 resize-none"
+                              autoFocus
+                            />
+                            <div className="flex gap-2 mt-2">
+                              <button
+                                onClick={() => handleEditPost(post.id, editPostText)}
+                                className="px-3 py-1 text-xs bg-orange-600 hover:bg-orange-700 rounded"
+                              >
+                                Save
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setEditingPost(null);
+                                  setEditPostText("");
+                                }}
+                                className="px-3 py-1 text-xs bg-surface-light hover:bg-surface-lighter rounded"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <p
+                            className={`text-sm text-muted mb-4 ${
+                              expandedGlobalPost === post.id ? "" : "line-clamp-2"
+                            }`}
+                          >
+                            {post.content}
+                          </p>
+                        )}
 
                         <div className="border-t border-border pt-3 flex items-center justify-between">
                           <div className="flex items-center gap-5 text-xs text-muted">
@@ -1167,9 +1946,6 @@ const DiscussionsPage = () => {
                                 ? "Collapse"
                                 : "View Replies"}
                             </button>
-                            <button className="text-muted hover:text-main p-1">
-                              <Flag className="w-3.5 h-3.5" />
-                            </button>
                           </div>
                         </div>
 
@@ -1178,19 +1954,15 @@ const DiscussionsPage = () => {
                           <div className="mt-4 space-y-3 border-t border-border pt-4">
                             {post.replies?.length > 0 && (
                               <div className="space-y-3 pl-3 border-l-2 border-border">
-                                {post.replies.map((r) => (
+                                {post.replies.filter((r) => isAdmin || !r.hidden).map((r) => (
                                   <div
                                     key={r.id}
-                                    className="flex items-start gap-2"
+                                    data-reply-id={r.id}
+                                    data-parent-post-id={post.id}
+                                    className="flex items-start gap-2 group/reply"
                                   >
-                                    <div
-                                      className={`w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0 ${pickColor(
-                                        r.userName
-                                      )}`}
-                                    >
-                                      {getInitial(r.userName)}
-                                    </div>
-                                    <div>
+                                    <Avatar src={r.userAvatar} name={r.userName} size="w-7 h-7" />
+                                    <div className="flex-1">
                                       <div className="flex items-center gap-2">
                                         <span className="text-xs font-medium text-main">
                                           {r.userName || "Unknown"}
@@ -1198,10 +1970,147 @@ const DiscussionsPage = () => {
                                         <span className="text-[10px] text-muted">
                                           {getRelativeTime(r.createdAt)}
                                         </span>
+                                        {r.edited && (
+                                          <span className="text-[9px] text-muted italic">(edited)</span>
+                                        )}
+                                        {isAdmin && r.hidden && (
+                                          <>
+                                            <span className="text-[9px] text-yellow-500">Hidden</span>
+                                            <button
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleUnhide(post.id, r.id);
+                                              }}
+                                              className="px-1.5 py-0.5 text-[9px] rounded bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition-colors"
+                                            >
+                                              Unhide
+                                            </button>
+                                          </>
+                                        )}
+                                        {/* Three dots menu for all users */}
+                                        <div className="relative inline-block">
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setOpenDropdown(openDropdown === `global-reply-${r.id}` ? null : `global-reply-${r.id}`);
+                                            }}
+                                            className="text-muted hover:text-orange-500 transition-all p-0.5 ml-1"
+                                            title="More options"
+                                          >
+                                            <MoreVertical className="w-3 h-3" />
+                                          </button>
+                                          {/* Dropdown Menu */}
+                                          {openDropdown === `global-reply-${r.id}` && (
+                                            <div className="absolute left-0 top-full mt-1 bg-card border border-border rounded-lg shadow-lg py-1 z-10 min-w-30">
+                                              {r.userId === user?.id ? (
+                                                <>
+                                                  {/* Edit and Delete options for reply owner */}
+                                                  <button
+                                                    onClick={(e) => {
+                                                      e.stopPropagation();
+                                                      setEditingReply({ postId: post.id, replyId: r.id });
+                                                      setEditReplyText(r.text);
+                                                      setOpenDropdown(null);
+                                                    }}
+                                                    className="w-full px-3 py-2 text-left text-xs text-main hover:bg-surface-light transition-colors flex items-center gap-2"
+                                                  >
+                                                    <Edit className="w-3 h-3" />
+                                                    Edit
+                                                  </button>
+                                                  <button
+                                                    onClick={(e) => {
+                                                      e.stopPropagation();
+                                                      handleDeleteReply(post.id, r.id);
+                                                      setOpenDropdown(null);
+                                                    }}
+                                                    className="w-full px-3 py-2 text-left text-xs text-red-400 hover:bg-surface-light transition-colors flex items-center gap-2"
+                                                  >
+                                                    <Trash2 className="w-3 h-3" />
+                                                    Delete
+                                                  </button>
+                                                </>
+                                              ) : (
+                                                /* Report option for other users */
+                                                <button
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setReportModal({ open: true, postId: post.id, replyId: r.id });
+                                                    setOpenDropdown(null);
+                                                  }}
+                                                  className="w-full px-3 py-2 text-left text-xs text-main hover:bg-surface-light transition-colors flex items-center gap-2"
+                                                >
+                                                  <Flag className="w-3 h-3" />
+                                                  Report
+                                                </button>
+                                              )}
+                                            </div>
+                                          )}
+                                        </div>
+                                        {/* Admin: report badge for reply */}
+                                        {isAdmin && getReportsForContent(post.id, r.id).length > 0 && (
+                                          <span className="flex items-center gap-0.5 text-[10px] text-orange-400">
+                                            <Shield className="w-2.5 h-2.5" />
+                                            {getReportsForContent(post.id, r.id).length}
+                                          </span>
+                                        )}
                                       </div>
-                                      <p className="text-xs text-muted mt-0.5">
-                                        {r.text}
-                                      </p>
+                                      {editingReply.postId === post.id && editingReply.replyId === r.id ? (
+                                        <div className="mt-1">
+                                          <input
+                                            type="text"
+                                            value={editReplyText}
+                                            onChange={(e) => setEditReplyText(e.target.value)}
+                                            className="w-full px-2 py-1 text-xs bg-surface-light border border-border-light rounded focus:outline-none focus:ring-1 focus:ring-purple-500"
+                                            autoFocus
+                                          />
+                                          <div className="flex gap-1 mt-1">
+                                            <button
+                                              onClick={() => handleEditReply(post.id, r.id, editReplyText)}
+                                              className="px-2 py-0.5 text-[10px] bg-purple-600 hover:bg-purple-700 rounded"
+                                            >
+                                              Save
+                                            </button>
+                                            <button
+                                              onClick={() => {
+                                                setEditingReply({ postId: null, replyId: null });
+                                                setEditReplyText("");
+                                              }}
+                                              className="px-2 py-0.5 text-[10px] bg-surface-light hover:bg-surface-lighter rounded"
+                                            >
+                                              Cancel
+                                            </button>
+                                          </div>
+                                        </div>
+                                      ) : (
+                                        <p className="text-xs text-muted mt-0.5">
+                                          {r.text}
+                                        </p>
+                                      )}
+                                      {/* Admin: moderation actions for reply */}
+                                      {isAdmin && getReportsForContent(post.id, r.id).length > 0 && activeModeration === `reply-${r.id}` && (
+                                        <div className="flex items-center gap-2 mt-1">
+                                          <span className="text-[10px] text-muted">
+                                            {getReportsForContent(post.id, r.id).length} pending reports
+                                          </span>
+                                          <button onClick={() => handleModerate(getReportsForContent(post.id, r.id)[0]?.id, "hidden")} className="p-0.5 text-yellow-500 hover:bg-yellow-500/20 rounded disabled:opacity-50" title="Hide" disabled={!getReportsForContent(post.id, r.id)[0]?.id}>
+                                            <EyeOff className="w-3 h-3" />
+                                          </button>
+                                          <button onClick={() => handleModerate(getReportsForContent(post.id, r.id)[0]?.id, "deleted")} className="p-0.5 text-red-500 hover:bg-red-500/20 rounded disabled:opacity-50" title="Delete" disabled={!getReportsForContent(post.id, r.id)[0]?.id}>
+                                            <Trash2 className="w-3 h-3" />
+                                          </button>
+                                          <button onClick={() => handleModerate(getReportsForContent(post.id, r.id)[0]?.id, "dismissed")} className="p-0.5 text-gray-400 hover:bg-gray-500/20 rounded disabled:opacity-50" title="Dismiss" disabled={!getReportsForContent(post.id, r.id)[0]?.id}>
+                                            <XCircle className="w-3 h-3" />
+                                          </button>
+                                        </div>
+                                      )}
+                                      {isAdmin && getReportsForContent(post.id, r.id).length > 0 && activeModeration !== `reply-${r.id}` && (
+                                        <button
+                                          onClick={() => setActiveModeration(`reply-${r.id}`)}
+                                          className="mt-1 text-[10px] text-orange-400 hover:underline"
+                                        >
+                                          Moderate
+                                        </button>
+                                      )}
                                     </div>
                                   </div>
                                 ))}
@@ -1253,9 +2162,192 @@ const DiscussionsPage = () => {
             </main>
           )}
         </div>
-      </div>
-    </div>
+
+      {/* Popup Modal */}
+      {popupModal.open && (
+        <div className="fixed inset-0 z-160 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-card border border-border rounded-xl shadow-2xl w-full max-w-sm">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+              <h3 className="font-bold text-main text-base">{popupModal.title || "Notice"}</h3>
+              <button
+                onClick={closePopupModal}
+                className="text-muted hover:text-main transition-colors"
+                aria-label="Close modal"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="px-4 py-5">
+              <p className="text-sm text-muted">{popupModal.message}</p>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 px-4 pb-4">
+              {popupModal.cancelText && (
+                <button
+                  onClick={closePopupModal}
+                  className="px-4 py-2 text-sm font-medium text-muted border border-border rounded-lg hover:text-main hover:border-main/30 transition-colors"
+                >
+                  {popupModal.cancelText}
+                </button>
+              )}
+              <button
+                onClick={handlePopupConfirm}
+                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  popupModal.cancelText
+                    ? "bg-red-500 text-white hover:bg-red-600"
+                    : "bg-orange-500 text-white hover:bg-orange-600"
+                }`}
+              >
+                {popupModal.confirmText || "OK"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {reportModal.open && (
+        <div className="fixed inset-0 z-150 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-card border border-border rounded-xl shadow-2xl w-full max-w-md">
+            {/* Header */}
+            <div className="px-5 pt-5 pb-1">
+              <h3 className="font-bold text-main text-lg">Report Content</h3>
+              <p className="text-muted text-sm mt-1">
+                Help us maintain a safe community. Please provide a reason for reporting.
+              </p>
+            </div>
+
+            {/* Body */}
+            
+            <div className="px-5 py-4">
+              <textarea
+                value={reportDescription}
+                onChange={(e) => setReportDescription(e.target.value)}
+                placeholder="Describe the issue (spam, harassment, inappropriate content, etc.)"
+                rows={4}
+                className="w-full px-3 py-2 bg-input border border-border rounded-lg text-sm text-main placeholder-muted focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
+              />
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-end gap-3 px-5 pb-5">
+              <button
+                onClick={() => {
+                  setReportModal({ open: false, postId: null, replyId: null });
+                  setReportDescription("");
+                }}
+                className="px-4 py-2 text-sm font-medium text-muted border border-border rounded-lg hover:text-main hover:border-main/30 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleReport}
+                disabled={!reportDescription.trim() || reportSubmitting}
+                className="px-4 py-2 bg-red-500 text-white text-sm font-medium rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {reportSubmitting ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    Submitting...
+                  </>
+                ) : (
+                  "Submit Report"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {reportSuccess && (
+        <div className="fixed inset-0 z-150 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-card border border-border rounded-xl shadow-2xl w-full max-w-sm">
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+              <h3 className="font-bold text-main text-base">Report</h3>
+              <button
+                onClick={() => setReportSuccess(false)}
+                className="text-muted hover:text-main transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="px-4 py-5 text-center space-y-3">
+              {/* Illustration */}
+              <div className="flex justify-center">
+                <div className="w-16 h-16 rounded-full bg-orange-500/10 flex items-center justify-center">
+                  <Flag className="w-8 h-8 text-orange-500" />
+                </div>
+              </div>
+
+              <h4 className="text-base font-bold text-main">
+                Thanks for helping our community
+              </h4>
+              <p className="text-xs text-muted">
+                Your report helps us protect the community from harmful content.
+              </p>
+              <p className="text-xs text-muted">
+                If you think someone is in immediate danger, please contact local law enforcement.
+              </p>
+
+              {/* What you can expect */}
+              <div className="text-left mt-3">
+                <h5 className="text-xs font-bold text-main mb-2">What you can expect</h5>
+                <div className="flex items-start gap-2.5 bg-canvas-alt rounded-lg p-2.5">
+                  <div className="w-7 h-7 rounded-full bg-red-500/15 flex items-center justify-center shrink-0">
+                    <Ban className="w-3.5 h-3.5 text-red-500" />
+                  </div>
+                  <p className="text-[11px] text-muted leading-relaxed">
+                    If this commenter has serious or repeated violations, we may temporarily restrict their ability to leave comments.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-4 pb-4">
+              <button
+                onClick={() => setReportSuccess(false)}
+                className="w-full py-2 bg-blue-500 text-white text-sm font-semibold rounded-lg hover:bg-blue-600 transition-colors"
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {reportAlreadyExists && (
+        <div className="fixed inset-0 z-150 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-card border border-border rounded-xl shadow-2xl w-full max-w-sm">
+            <div className="px-5 py-6 text-center space-y-3">
+              <div className="flex justify-center">
+                <div className="w-14 h-14 rounded-full bg-yellow-500/10 flex items-center justify-center">
+                  <AlertTriangle className="w-7 h-7 text-yellow-500" />
+                </div>
+              </div>
+              <h4 className="text-base font-bold text-main">
+                Already Reported
+              </h4>
+              <p className="text-sm text-muted">
+                You have already reported this content. Our team will review it shortly.
+              </p>
+            </div>
+            <div className="px-5 pb-5">
+              <button
+                onClick={() => setReportAlreadyExists(false)}
+                className="w-full py-2 bg-blue-500 text-white text-sm font-semibold rounded-lg hover:bg-blue-600 transition-colors"
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 
 export default DiscussionsPage;
+

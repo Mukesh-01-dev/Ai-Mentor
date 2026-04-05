@@ -1,9 +1,16 @@
 import crypto from "crypto";
 import User from "../models/User.js";
 import jwt from "jsonwebtoken";
-import bcrypt from "bcryptjs";
 import express from "express";
 import { Op } from "sequelize";
+import validate from "../middleware/validate.js";
+import {
+  registerSchema,
+  loginSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
+  googleLoginSchema,
+} from "../schemas/authSchema.js";
 
 const router = express.Router();
 
@@ -14,13 +21,10 @@ const generateToken = (id) => {
 };
 
 // ================= REGISTER =================
-router.post("/register", async (req, res) => {
+router.post("/register", validate(registerSchema), async (req, res) => {
   const { name, email, password } = req.body;
 
   try {
-    if (!name || !email || !password) {
-      return res.status(400).json({ message: "All fields are required" });
-    }
 
     const userExists = await User.findOne({ where: { email } });
     if (userExists) {
@@ -51,15 +55,10 @@ router.post("/register", async (req, res) => {
 });
 
 // ================= LOGIN =================
-router.post("/login", async (req, res) => {
+router.post("/login", validate(loginSchema), async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    if (!email || !password) {
-      return res
-        .status(400)
-        .json({ message: "Email and password are required" });
-    }
 
     console.log("Login attempt for email:", email);
     const user = await User.findOne({ where: { email } });
@@ -109,13 +108,9 @@ router.post("/login", async (req, res) => {
 });
 
 // ================= GOOGLE LOGIN =================
-router.post("/google-login", async (req, res) => {
+router.post("/google-login", validate(googleLoginSchema), async (req, res) => {
   try {
     const { idToken } = req.body;
-
-    if (!idToken) {
-      return res.status(400).json({ message: "ID token required" });
-    }
 
     // Decode Firebase ID token (client verified)
     const payload = JSON.parse(
@@ -159,7 +154,7 @@ router.post("/google-login", async (req, res) => {
 import sendEmail from "../utils/sendEmail.js";
 
 // ================= FORGOT PASSWORD =================
-router.post("/forgot-password", async (req, res) => {
+router.post("/forgot-password", validate(forgotPasswordSchema), async (req, res) => {
   const { email } = req.body;
 
   try {
@@ -219,7 +214,7 @@ router.post("/forgot-password", async (req, res) => {
 });
 
 // ================= RESET PASSWORD =================
-router.post("/reset-password/:token", async (req, res) => {
+router.post("/reset-password/:token", validate(resetPasswordSchema), async (req, res) => {
   const { password } = req.body;
 
   try {

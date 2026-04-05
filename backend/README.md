@@ -137,6 +137,7 @@ The API will be available at **http://localhost:5000**.
 |---|---|
 | `npm run dev` | Start with Nodemon (auto-restart on changes) |
 | `npm start` | Start the production server |
+| `npm run lint` | Run ESLint to check for code issues |
 
 ---
 

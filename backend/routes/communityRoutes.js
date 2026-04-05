@@ -4,14 +4,37 @@ import {
   getCourseDiscussions,
   getGlobalDiscussions,
   createCommunityPost,
+  editCommunityPost,
+  deleteCommunityPost,
   likeCommunityPost,
   dislikeCommunityPost,
   replyCommunityPost,
   getAllCoursePosts,
+  reportContent,
+  getReports,
+  moderateReport,
+  unhideContent,
+  editReply,
+  deleteReply,
 } from "../controllers/communityController.js";
-import { protect } from "../middleware/authMiddleware.js";
+import { protect, admin } from "../middleware/authMiddleware.js";
+import validate from "../middleware/validate.js";
+import {
+  createPostSchema,
+  editPostSchema,
+  replySchema,
+  editReplySchema,
+  reportContentSchema,
+  moderateReportSchema,
+} from "../schemas/communitySchema.js";
 
 const router = express.Router();
+
+/* =======================
+   REPORTS / MODERATION (must be before /:id routes)
+======================= */
+router.get("/reports", protect, admin, getReports);
+router.put("/reports/:reportId", protect, admin, validate(moderateReportSchema), moderateReport);
 
 /* =======================
    COURSE COMMUNITY
@@ -33,9 +56,15 @@ router.get("/global", protect, getGlobalDiscussions);
 /* =======================
    CRUD
 ======================= */
-router.post("/", protect, createCommunityPost);
+router.post("/", protect, validate(createPostSchema), createCommunityPost);
+router.put("/:id", protect, validate(editPostSchema), editCommunityPost);
+router.delete("/:id", protect, deleteCommunityPost);
 router.put("/:id/like", protect, likeCommunityPost);
 router.put("/:id/dislike", protect, dislikeCommunityPost);
-router.post("/:id/reply", protect, replyCommunityPost);
+router.post("/:id/reply", protect, validate(replySchema), replyCommunityPost);
+router.put("/:id/reply/:replyId", protect, validate(editReplySchema), editReply);
+router.delete("/:id/reply/:replyId", protect, deleteReply);
+router.put("/:id/unhide", protect, admin, unhideContent);
+router.post("/:id/report", protect, validate(reportContentSchema), reportContent);
 
 export default router;

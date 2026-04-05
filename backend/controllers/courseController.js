@@ -1,77 +1,73 @@
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
-import Course from "../models/Course.js"; // kept for future use
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import { Course, Module, Lesson, LessonContent } from "../models/modelAssociations.js";
 
 /* =========================
-   GET ALL COURSES (JSON)
+   HELPERS
+========================= */
+
+const parseLessonsCount = (lessons) => {
+  if (typeof lessons !== "string") return 0;
+
+  try {
+    if (lessons.includes(" of ")) {
+      const value = parseInt(lessons.split(" of ")[1], 10);
+      return Number.isNaN(value) ? 0 : value;
+    }
+
+    const value = parseInt(lessons.split(" ")[0], 10);
+    return Number.isNaN(value) ? 0 : value;
+  } catch {
+    return 0;
+  }
+};
+
+const formatCourse = (course) => ({
+  id: course.id,
+  title: course.title,
+  category: course.category,
+  categoryColor: course.categoryColor,
+  level: course.level,
+  lessons: course.lessons,
+  lessonsCount: course.lessonsCount ?? parseLessonsCount(course.lessons),
+  price: course.price,
+  priceValue: course.priceValue,
+  currency: course.currency,
+  rating: course.rating,
+  students: course.students,
+  studentsCount: course.studentsCount,
+  image: course.image,
+  isBookmarked: course.isBookmarked,
+});
+
+/* =========================
+   GET ALL COURSES (DB)
 ========================= */
 const getCourses = async (req, res) => {
   try {
-    const coursesPath = path.join(
-      __dirname,
-      "../../frontend/public/data/courses.json"
-    );
+    const courses = await Course.findAll({
+      order: [["createdAt", "ASC"]],
+    });
 
-    const rawData = fs.readFileSync(coursesPath, "utf-8");
-    const jsonData = JSON.parse(rawData);
-
-    const courses = (jsonData.popularCourses || []).map((course) => ({
-      id: course.id,
-      title: course.title,
-      category: course.category,
-      level: course.level,
-      lessons: course.lessons,
-      lessonsCount: course.lessonsCount ||
-        (course.lessons.includes(" of ")
-          ? parseInt(course.lessons.split(" of ")[1])
-          : parseInt(course.lessons.split(" ")[0])),
-      price: course.price,
-      rating: course.rating,
-      students: course.students,
-      image: course.image,
-    }));
-
-    res.json(courses);
+    res.json(courses.map(formatCourse));
   } catch (error) {
-    console.error("GET COURSES JSON ERROR:", error);
+    console.error("GET COURSES ERROR:", error);
     res.status(500).json({ message: "Failed to load courses" });
   }
 };
 
 /* =========================
-   GET COURSE BY ID (JSON)
+   GET COURSE BY ID (DB)
 ========================= */
 const getCourseById = async (req, res) => {
   try {
-    const coursesPath = path.join(
-      __dirname,
-      "../../frontend/public/data/courses.json"
-    );
+    const courseId = String(req.params.id);
 
-    const rawData = fs.readFileSync(coursesPath, "utf-8");
-    const jsonData = JSON.parse(rawData);
-
-    const course = jsonData.popularCourses.find(
-      (c) => c.id === Number(req.params.id)
-    );
+    const course = await Course.findByPk(courseId);
 
     if (!course) {
       return res.status(404).json({ message: "Course not found" });
     }
 
-    const mappedCourse = {
-      ...course,
-      lessonsCount: course.lessonsCount ||
-        (course.lessons.includes(" of ")
-          ? parseInt(course.lessons.split(" of ")[1])
-          : parseInt(course.lessons.split(" ")[0])),
-    };
-
-    res.json(mappedCourse);
+    res.json(formatCourse(course));
   } catch (error) {
     console.error("GET COURSE BY ID ERROR:", error);
     res.status(500).json({ message: "Server error" });
@@ -79,7 +75,7 @@ const getCourseById = async (req, res) => {
 };
 
 /* =========================
-   GET MY COURSES (SAFE)
+   GET MY COURSES (DB)
 ========================= */
 const getMyCourses = async (req, res) => {
   try {
@@ -87,34 +83,31 @@ const getMyCourses = async (req, res) => {
       return res.json([]);
     }
 
-    const coursesPath = path.join(
-      __dirname,
-      "../../frontend/public/data/courses.json"
-    );
-
-    const rawData = fs.readFileSync(coursesPath, "utf-8");
-    const jsonData = JSON.parse(rawData);
-
     const purchasedIds =
-      req.user.purchasedCourses?.map((c) => Number(c.courseId)) || [];
+      req.user.purchasedCourses?.map((c) => String(c.courseId)) || [];
 
-    const myCourses = (jsonData.popularCourses || [])
-      .filter((course) => purchasedIds.includes(course.id))
-      .map((course) => ({
+    if (purchasedIds.length === 0) {
+      return res.json([]);
+    }
+
+    const myCourses = await Course.findAll({
+      where: {
+        id: purchasedIds,
+      },
+      order: [["createdAt", "ASC"]],
+    });
+
+    res.json(
+      myCourses.map((course) => ({
         id: course.id,
         title: course.title,
         category: course.category,
         level: course.level,
         lessons: course.lessons,
-        lessonsCount:
-          course.lessonsCount ||
-          (course.lessons.includes(" of ")
-            ? parseInt(course.lessons.split(" of ")[1])
-            : parseInt(course.lessons.split(" ")[0])),
+        lessonsCount: course.lessonsCount ?? parseLessonsCount(course.lessons),
         image: course.image,
-      }));
-
-    res.json(myCourses);
+      }))
+    );
   } catch (error) {
     console.error("MY COURSES ERROR:", error);
     res.json([]);
@@ -122,34 +115,83 @@ const getMyCourses = async (req, res) => {
 };
 
 /* =========================
-   Learning Data
+   GET COURSE LEARNING DATA (DB)
 ========================= */
 const getCourseLearningData = async (req, res) => {
-  // res.status(501).json({ message: "Not implemented yet" });
   try {
-    const learningPath = path.join(
-      __dirname,
-      "../../frontend/public/data/learning.json"
+    const courseId = String(req.params.id);
+
+    const course = await Course.findByPk(courseId);
+
+    if (!course) {
+      return res.status(404).json({ message: "Learning data not found" });
+    }
+
+    const modules = await Module.findAll({
+      where: { courseId },
+      order: [["order", "ASC"], ["createdAt", "ASC"]],
+    });
+
+    const formattedModules = await Promise.all(
+      modules.map(async (module) => {
+        const lessons = await Lesson.findAll({
+          where: { moduleId: module.id },
+          include: [
+            {
+              model: LessonContent,
+              as: "content",
+              required: false,
+            },
+          ],
+          order: [["order", "ASC"], ["createdAt", "ASC"]],
+        });
+
+        return {
+          id: module.id,
+          title: module.title,
+          lessons: lessons.map((lesson) => ({
+            id: lesson.id,
+            title: lesson.title,
+            duration: lesson.duration,
+            completed: lesson.completed,
+            playing: lesson.playing,
+            type: lesson.type,
+            youtubeUrl: lesson.youtubeUrl,
+            content: lesson.content
+              ? {
+                introduction: lesson.content.introduction,
+                keyConcepts: lesson.content.keyConcepts,
+              }
+              : undefined,
+          })),
+        };
+      })
     );
 
-    if (!fs.existsSync(learningPath)) {
-      return res.status(404).json({ message: "Learning data not found" });
+    let currentLesson = null;
+
+    for (const module of formattedModules) {
+      const firstLesson = module.lessons?.[0];
+      if (firstLesson) {
+        currentLesson = {
+          ...firstLesson,
+          module: module.title,
+        };
+        break;
+      }
     }
 
-    const raw = fs.readFileSync(learningPath, "utf-8");
-    const jsonData = JSON.parse(raw);
-
-    const id = String(Number(req.params.id));
-    const learning = jsonData[id];
-
-    if (!learning) {
-      return res.status(404).json({ message: "Learning data not found" });
-    }
-
-    // Ensure the course object includes an id
-    const courseObj = { ...(learning.course || {}), id: Number(id) };
-
-    res.json({ ...learning, course: courseObj });
+    res.json({
+      modules: formattedModules,
+      course: {
+        id: course.id,
+        title: course.title,
+        subtitle: course.category,
+        logo: course.image,
+        progress: 0,
+      },
+      currentLesson,
+    });
   } catch (error) {
     console.error("GET COURSE LEARNING DATA ERROR:", error);
     res.status(500).json({ message: "Failed to load learning data" });
@@ -157,56 +199,47 @@ const getCourseLearningData = async (req, res) => {
 };
 
 /* =================================
-  Get Course and Lesson Titles
+   GET COURSE AND LESSON TITLES
 ===================================== */
-const getCourseAndLessonTitles = (courseId, lessonId) => {
+const getCourseAndLessonTitles = async (courseId, lessonId) => {
   try {
-    const learningPath = path.join(
-      __dirname,
-      "../../frontend/public/data/learning.json"
-    );
+    const course = await Course.findByPk(String(courseId));
+    const lesson = await Lesson.findByPk(String(lessonId));
 
-    const raw = fs.readFileSync(learningPath, "utf-8");
-    const learningData = JSON.parse(raw);
-
-    // 🔹 courseId is key in JSON
-    const courseData = learningData[String(courseId)];
-
-    if (!courseData) return null;
-
-    const courseTitle = courseData.course?.title;
-
-    if (!courseTitle) return null;
-
-    // 🔹 Flatten all modules into lessons
-    const lesson = (courseData.modules || [])
-      .flatMap((module) => module.lessons || [])
-      .find((l) => l.id === lessonId); // IMPORTANT: string compare
-
-    if (!lesson) return null;
+    if (!course || !lesson) return null;
 
     return {
-      courseTitle,
-      lessonTitle: lesson.title,
+      courseTitle: course.title || null,
+      lessonTitle: lesson.title || null,
     };
-
   } catch (error) {
-    console.error("Error reading learning.json:", error);
+    console.error("Error reading course/lesson titles:", error);
     return null;
   }
 };
 
-
-
+/* =========================
+   GET STATS CARDS (DB)
+========================= */
 const getStatsCards = async (req, res) => {
-  res.json({
-    totalCourses: 0,
-    completedCourses: 0,
-    hoursLearned: 0,
-    certificates: 0,
-  });
+  try {
+    const totalCourses = await Course.count();
+
+    res.json({
+      totalCourses,
+      completedCourses: 0,
+      hoursLearned: 0,
+      certificates: 0,
+    });
+  } catch (error) {
+    console.error("GET STATS CARDS ERROR:", error);
+    res.status(500).json({ message: "Failed to load stats" });
+  }
 };
 
+/* =========================
+   ADMIN STUBS (UNCHANGED)
+========================= */
 const addCourse = async (req, res) => {
   res.status(501).json({ message: "addCourse not implemented" });
 };

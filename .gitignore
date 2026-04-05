@@ -29,6 +29,7 @@ videos/
 backend/.env
 backend/.env
 backend/config/*.local.js
+backend/scripts/testValidation.js
 
 # =====================
 # Frontend (Vite / React)
@@ -58,4 +59,6 @@ logs/
 coverage/
 .cache/
 
+*/.agents
 
+outputfolder/
