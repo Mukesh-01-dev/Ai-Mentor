@@ -49,6 +49,7 @@ const Dashboard = () => {
         const [coursesRes, statsRes] = await Promise.all([
           fetch(`${API_BASE_URL}/api/courses`, { headers }),
           fetch(`${API_BASE_URL}/api/courses/stats/cards`, { headers }),
+        fetch(`${API_BASE_URL}/api/certificates`, { headers }),
         ]);
 
         if (!coursesRes.ok) {
@@ -60,11 +61,12 @@ const Dashboard = () => {
 
         const allCourses = await coursesRes.json();
         const { statsCards } = await statsRes.json();
+        const certsData = certsRes.ok ? await certsRes.json() : { stats: {} };
 
         console.log("Fetched allCourses:", allCourses);
         console.log("Fetched statsCards:", statsCards);
-
-        setCoursesData({ allCourses, statsCards });
+        
+        setCoursesData({ allCourses, statsCards, certsStats: certsData.stats });
         await fetchUserProfile(); // Ensure user data is up to date
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
@@ -79,101 +81,31 @@ const Dashboard = () => {
 
   // Calculate dynamic stats based on user's actual progress
   const calculateStats = () => {
-    console.log("Calculating stats with user:", user);
-    console.log("coursesData:", coursesData);
+  const certsStats = coursesData.certsStats;
 
-    if (
-      !user?.purchasedCourses ||
-      !coursesData.statsCards ||
-      coursesData.statsCards.length < 4
-    ) {
-      return [
-        {
-          icon: <Play className="w-5 h-5 text-blue-600" />,
-          value: "0",
-          label: "Ongoing Courses",
-          change: "+0%",
-          bgColor: "bg-blue-50",
-          iconBg: "bg-blue-100",
-        },
-        {
-          icon: <CheckCircle className="w-5 h-5 text-green-600" />,
-          value: "0",
-          label: "Completed",
-          change: "+0",
-          bgColor: "bg-green-50",
-          iconBg: "bg-green-100",
-        },
-        {
-          icon: <Bookmark className="w-5 h-5 text-purple-600" />,
-          value: "0",
-          label: "Certificates",
-          change: "+0",
-          bgColor: "bg-purple-50",
-          iconBg: "bg-purple-100",
-        },
-        {
-          icon: <Clock className="w-5 h-5 text-orange-600" />,
-          value: "0h",
-          label: "Hours Spent",
-          change: "+0h",
-          bgColor: "bg-orange-50",
-          iconBg: "bg-orange-100",
-        },
-      ];
-    }
-
-    let coursesInProgress = 0;
-    let completedCourses = 0;
-    const certificates = user.analytics?.certificates || 0;
-    const totalHours = user.analytics?.totalHours || 0;
-
-    user.purchasedCourses.forEach((purchasedCourse) => {
-      // Find the course in allCourses to get lesson count
-      const courseInfo = coursesData.allCourses.find(
-        (c) => c.id == purchasedCourse.courseId
-      );
-      if (courseInfo) {
-        const totalLessons =
-          courseInfo.lessonsCount ||
-          (courseInfo.lessons
-            ? courseInfo.lessons.includes(" of ")
-              ? parseInt(courseInfo.lessons.split(" of ")[1])
-              : parseInt(courseInfo.lessons.split(" ")[0])
-            : 0);
-        const completedLessons =
-          purchasedCourse.progress?.completedLessons?.length || 0;
-
-        if (completedLessons === totalLessons && totalLessons > 0) {
-          completedCourses++;
-        } else if (completedLessons > 0) {
-          coursesInProgress++;
-        }
-      }
-    });
-
-    const result = [
-      {
-        ...coursesData.statsCards[0],
-        value: coursesInProgress.toString(),
-      },
-      {
-        ...coursesData.statsCards[1],
-        value: completedCourses.toString(),
-      },
-      {
-        ...coursesData.statsCards[2],
-        value: certificates.toString(),
-      },
-      {
-        ...coursesData.statsCards[3],
-        value: `${totalHours}h`,
-      },
+  // If the API data isn't ready yet, show zeros
+  if (!certsStats || !coursesData.statsCards || coursesData.statsCards.length < 4) {
+    return [
+      { icon: <Play className="w-5 h-5 text-blue-600" />, value: "0", label: "Ongoing Courses", change: "+0%", bgColor: "bg-blue-50", iconBg: "bg-blue-100" },
+      { icon: <CheckCircle className="w-5 h-5 text-green-600" />, value: "0", label: "Completed", change: "+0", bgColor: "bg-green-50", iconBg: "bg-green-100" },
+      { icon: <Bookmark className="w-5 h-5 text-purple-600" />, value: "0", label: "Certificates", change: "+0", bgColor: "bg-purple-50", iconBg: "bg-purple-100" },
+      { icon: <Clock className="w-5 h-5 text-orange-600" />, value: "0h", label: "Hours Spent", change: "+0h", bgColor: "bg-orange-50", iconBg: "bg-orange-100" },
     ];
+  }
 
-    console.log("Calculated stats result:", result);
-    return result;
-  };
+  // Use the same data source as the Certificates page
+  const inProgress = certsStats.inProgress ?? 0;
+  const completed  = certsStats.completed ?? 0;
+  const certs      = certsStats.certificatesEarned ?? 0;
+  const hours      = user?.analytics?.totalHours ?? 0;
+
+  return [
+    { ...coursesData.statsCards[0], value: inProgress.toString() },
+    { ...coursesData.statsCards[1], value: completed.toString() },
+    { ...coursesData.statsCards[2], value: certs.toString() },
+    { ...coursesData.statsCards[3], value: `${hours}h` },
+  ];
+};
 
   const dynamicStatsCards = calculateStats();
 
