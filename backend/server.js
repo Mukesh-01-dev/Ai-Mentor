@@ -18,6 +18,7 @@ import communityRoutes from "./routes/communityRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import certificateRoutes from "./routes/certificateRoutes.js";
 import paymentRoutes from "./routes/payment.js";
+import preferenceRoutes from "./routes/preferenceRoutes.js";
 
 // MODELS
 import "./models/CommunityPost.js";
@@ -64,6 +65,7 @@ app.use("/api/ai", aiRoutes);
 app.use("/api/community", communityRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/certificate", certificateRoutes);
+app.use("/api/preferences", preferenceRoutes);
 
 /* ================= GLOBAL ERROR ================= */
 app.use((err, req, res, _next) => {

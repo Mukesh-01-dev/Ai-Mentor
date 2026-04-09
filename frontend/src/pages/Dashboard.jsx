@@ -22,6 +22,7 @@ import {
   Star,
   Award,
 } from "lucide-react";
+import Preferences from "../components/Preferences";
 
 const Dashboard = () => {
   const { t } = useTranslation();
@@ -341,6 +342,7 @@ const Dashboard = () => {
 
   return (
     <main className="flex-1 overflow-x-hidden overflow-y-auto bg-canvas-alt p-6">
+      <Preferences mode="modal" onSuccess={() => { console.log('Preferences saved') }} />
       <div className="max-w-7xl pt-16 mx-auto space-y-8">
             {/* Stats Cards */}
             <div className="grid grid-cols-1  sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -638,19 +640,20 @@ const Dashboard = () => {
                     </div>
                   </div>
                 ) : (
-                  <div className="p-6  text-muted">
-                    <p>
-                      {normalizedSearchQuery
-                        ? "No in-progress courses match your search."
-                        : "Start Learning to get your progress tracked!"}
-                    </p>
-                    <button
-                      className="mt-4 px-4 py-2 bg-teal-500 text-white text-sm font-medium rounded-lg hover:bg-teal-600"
-                      onClick={() => navigate("/courses")}
-                    >
-                      My Courses
-                    </button>
-                  </div>
+                  null
+                  // <div className="p-6  text-muted">
+                  //   <p>
+                  //     {normalizedSearchQuery
+                  //       ? "No in-progress courses match your search."
+                  //       : "Start Learning to get your progress tracked!"}
+                  //   </p>
+                  //   <button
+                  //     className="mt-4 px-4 py-2 bg-teal-500 text-white text-sm font-medium rounded-lg hover:bg-teal-600"
+                  //     onClick={() => navigate("/courses")}
+                  //   >
+                  //     My Courses
+                  //   </button>
+                  // </div>
               )}
               </div>
 

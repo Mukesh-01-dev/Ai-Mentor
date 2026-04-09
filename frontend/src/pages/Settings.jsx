@@ -11,9 +11,11 @@ import {
   Camera,
   Eye,
   EyeOff,
-  UserX
+  UserX,
+  Sparkles
 } from "lucide-react";
 import axios from "axios";
+import Preferences from "../components/Preferences";
 import { useTheme } from "../context/ThemeContext";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
@@ -23,9 +25,10 @@ const NAV_KEYS = [
   { icon: User, key: "profile", labelKey: "settings.nav.profile" },
   { icon: Bell, key: "notifications", labelKey: "settings.nav.notifications" },
   { icon: Shield, key: "password_security", labelKey: "settings.nav.password_security" },
+  { icon: Sparkles, key: "preferences", labelKey: "preferences.nav_title" },
   { icon: Palette, key: "appearance", labelKey: "settings.nav.appearance" },
   { icon: Globe, key: "language", labelKey: "settings.nav.language" },
-   { icon:UserX , key: "delete_account", labelKey: "settings.nav.delete_account" },
+  { icon: UserX , key: "delete_account", labelKey: "settings.nav.delete_account" },
 ];
 
 export default function Settings() {
@@ -237,6 +240,20 @@ export default function Settings() {
 
           {/* Main Content */}
           <main className="flex-1 p-3 sm:p-4 md:p-6 lg:p-8 lg:mt-5 min-w-0">
+            {activeSetting === "preferences" && (
+              <div className="w-full">
+                <div className="mb-8">
+                  <h1 className="text-xl sm:text-2xl md:text-[30px] font-bold text-main font-[Inter] mb-2">
+                    {t("preferences.nav_title")}
+                  </h1>
+                  <p className="text-sm sm:text-[16px] text-muted font-[Inter]">
+                    {t("preferences.settings_modal_subtitle")}
+                  </p>
+                </div>
+                <Preferences mode="settings" onSuccess={() => toast.success(t("preferences.save_success"))} />
+              </div>
+            )}
+
             {activeSetting === "profile" && (
               <div className="w-full">
                 {/* Header */}

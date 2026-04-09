@@ -266,5 +266,45 @@
     "email": "Correo Electrónico",
     "password": "Contraseña",
     "logout": "Cerrar Sesión"
+  },
+  "preferences": {
+    "nav_title": "Preferencias del Tutor IA",
+    "modal_title": "Personaliza tu Tutor de IA",
+    "modal_subtitle": "Ayúdanos a adaptar las explicaciones a tu estilo de aprendizaje.",
+    "settings_modal_subtitle": "Adapta las explicaciones, el ritmo y las referencias de ejemplos de tu tutor de IA.",
+    "save_continue": "Guardar y Continuar",
+    "save_changes": "Guardar Cambios",
+    "save_success": "Preferencias actualizadas con éxito",
+    "extra_title": "6. Preferencias Extras (Opcional)",
+    "extra_placeholder": "Ej. prefiero animaciones, videos cortos, ejemplos de código",
+    "questions": {
+      "explanation_type": "1. ¿Qué tipo de explicaciones prefieres?",
+      "learning_style": "2. ¿Qué estilo de aprendizaje funciona mejor para ti?",
+      "teaching_pace": "3. ¿Qué ritmo de enseñanza prefieres?",
+      "example_type": "4. ¿Cómo prefieres los ejemplos en las explicaciones?",
+      "focus_area": "5. ¿En qué debería enfocarse más la IA en los videos?"
+    },
+    "options": {
+      "simple": "Simple y para principiantes",
+      "balanced": "Equilibrado (fácil + algo de profundidad)",
+      "detailed": "Detallado y profundo",
+      "expert": "Nivel experto (técnico)",
+      "step_by_step": "Guía paso a paso",
+      "concept_first": "Explicación de conceptos primero",
+      "real_world": "Ejemplos del mundo real",
+      "problem_solving": "Enfoque en resolución de problemas",
+      "slow": "Lento y minucioso",
+      "moderate": "Moderado",
+      "fast": "Ritmo rápido",
+      "adaptive": "Adaptable (según mi progreso)",
+      "real_life": "Ejemplos de la vida real",
+      "technical": "Ejemplos técnicos",
+      "visual": "Visual / diagramas",
+      "minimal": "Ejemplos mínimos",
+      "concepts": "Conceptos y teoría",
+      "practical": "Aplicaciones prácticas",
+      "coding": "Programación / solución de problemas",
+      "exams": "Preparación de exámenes"
+    }
   }
 }

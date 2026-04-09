@@ -266,5 +266,45 @@
     "email": "E-mail",
     "password": "Senha",
     "logout": "Sair"
+  },
+  "preferences": {
+    "nav_title": "Preferências do Tutor IA",
+    "modal_title": "Personalize o seu Tutor IA",
+    "modal_subtitle": "Ajude-nos a adaptar as explicações ao seu estilo de aprendizagem.",
+    "settings_modal_subtitle": "Adapte as explicações, o ritmo e as referências de exemplos do seu tutor de IA.",
+    "save_continue": "Guardar e Continuar",
+    "save_changes": "Guardar Alterações",
+    "save_success": "Preferências atualizadas com sucesso",
+    "extra_title": "6. Preferências Extras (Opcional)",
+    "extra_placeholder": "Ex: prefiro animações, vídeos curtos, foco no código",
+    "questions": {
+      "explanation_type": "1. Que tipo de explicações prefere?",
+      "learning_style": "2. Que estilo de aprendizagem funciona melhor para si?",
+      "teaching_pace": "3. Que ritmo de ensino prefere?",
+      "example_type": "4. Como prefere os exemplos nas explicações?",
+      "focus_area": "5. Em que é que a IA se deveria focar mais nos vídeos?"
+    },
+    "options": {
+      "simple": "Simples e para principiantes",
+      "balanced": "Equilibrado (fácil + alguma profundidade)",
+      "detailed": "Detalhado e profundo",
+      "expert": "Nível especialista (técnico)",
+      "step_by_step": "Guia passo-a-passo",
+      "concept_first": "Explicação de conceitos primeiro",
+      "real_world": "Exemplos do mundo real",
+      "problem_solving": "Foco na resolução de problemas",
+      "slow": "Lento e minucioso",
+      "moderate": "Moderado",
+      "fast": "Ritmo acelerado",
+      "adaptive": "Adaptável (baseado no meu progresso)",
+      "real_life": "Exemplos da vida real",
+      "technical": "Exemplos técnicos",
+      "visual": "Visual / baseado em diagramas",
+      "minimal": "Exemplos mínimos",
+      "concepts": "Conceitos e teoria",
+      "practical": "Aplicações práticas",
+      "coding": "Programação / resolução de problemas",
+      "exams": "Preparação para exames"
+    }
   }
 }

@@ -266,5 +266,45 @@
     "email": "E-mail",
     "password": "Mot de Passe",
     "logout": "Déconnexion"
+  },
+  "preferences": {
+    "nav_title": "Préférences du Tuteur IA",
+    "modal_title": "Personnalisez votre Tuteur IA",
+    "modal_subtitle": "Aidez-nous à adapter les explications à votre style d'apprentissage.",
+    "settings_modal_subtitle": "Adaptez les explications, le rythme et les références d'exemples de votre tuteur IA.",
+    "save_continue": "Enregistrer et Continuer",
+    "save_changes": "Enregistrer les modifications",
+    "save_success": "Préférences mises à jour avec succès",
+    "extra_title": "6. Préférences Supplémentaires (Optionnel)",
+    "extra_placeholder": "Ex : préfère les animations, vidéos courtes, exemples de code",
+    "questions": {
+      "explanation_type": "1. Quel type d'explications préférez-vous ?",
+      "learning_style": "2. Quel style d'apprentissage vous convient le mieux ?",
+      "teaching_pace": "3. Quel rythme d'enseignement préférez-vous ?",
+      "example_type": "4. Comment préférez-vous les exemples dans les explications ?",
+      "focus_area": "5. Sur quoi l'IA devrait-elle se concentrer davantage dans les vidéos ?"
+    },
+    "options": {
+      "simple": "Simple et adapté aux débutants",
+      "balanced": "Équilibré (facile + profondeur)",
+      "detailed": "Détaillé et approfondi",
+      "expert": "Niveau expert (technique)",
+      "step_by_step": "Accompagnement pas à pas",
+      "concept_first": "Explications conceptuelles d'abord",
+      "real_world": "Exemples concrets",
+      "problem_solving": "Axé sur la résolution de problèmes",
+      "slow": "Lent et approfondi",
+      "moderate": "Modéré",
+      "fast": "Rythme soutenu",
+      "adaptive": "Adaptatif (basé sur mes progrès)",
+      "real_life": "Exemples de la vie réelle",
+      "technical": "Exemples techniques",
+      "visual": "Visuel / à base de diagrammes",
+      "minimal": "Exemples minimaux",
+      "concepts": "Concepts et théorie",
+      "practical": "Applications pratiques",
+      "coding": "Codage / résolution de problèmes",
+      "exams": "Préparation aux examens"
+    }
   }
 }
