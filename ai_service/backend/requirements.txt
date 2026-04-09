@@ -3,6 +3,6 @@ uvicorn
 python-dotenv
 google-genai
 asyncio
-edge_tts
+edge-tts #Added
 requests
 cloudinary

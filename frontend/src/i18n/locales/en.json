@@ -37,6 +37,7 @@
       "password_security": "Password & Security",
       "appearance": "Appearance",
       "language": "Language",
+      "contactus": "Contact Support",
       "delete_account": "Delete My Account"
     },
     "profile": {
@@ -90,6 +91,12 @@
       "subtitle": "Choose your preferred language for the interface",
       "interface_language": "Interface Language",
       "updated": "Language settings updated successfully!"
+    },
+    "contactus": {
+      "title": "Contact Support",
+      "subtitle": "We usually respond within 24 hours.",
+      "subject": "Subject",
+      "message": "Message"
     }
   },
   "dashboard": {
