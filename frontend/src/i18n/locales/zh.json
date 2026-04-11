@@ -266,5 +266,45 @@
     "email": "电子邮件",
     "password": "密码",
     "logout": "退出登录"
+  },
+  "preferences": {
+    "nav_title": "AI 导师偏好",
+    "modal_title": "个性化您的 AI 导师",
+    "modal_subtitle": "帮助我们调整解释，以匹配您的学习风格。",
+    "settings_modal_subtitle": "定制您的 AI 导师的解释、节奏和示例参考。",
+    "save_continue": "保存并继续",
+    "save_changes": "保存更改",
+    "save_success": "偏好设置升级成功",
+    "extra_title": "6. 额外偏好（可选）",
+    "extra_placeholder": "例如：偏好动画、短视频、专注于代码示例",
+    "questions": {
+      "explanation_type": "1. 您偏好哪种类型的解释？",
+      "learning_style": "2. 哪种学习风格最适合您？",
+      "teaching_pace": "3. 您偏好怎样的教学节奏？",
+      "example_type": "4. 您喜欢解释中包含怎样的示例？",
+      "focus_area": "5. AI 在视频中应更多关注什么？"
+    },
+    "options": {
+      "simple": "简单 & 适合初学者",
+      "balanced": "平衡型（简单 + 一些深度）",
+      "detailed": "详细且深入",
+      "expert": "专家级（技术性）",
+      "step_by_step": "逐步指导",
+      "concept_first": "概念优先的解释",
+      "real_world": "实际世界的例子",
+      "problem_solving": "问题解决导向",
+      "slow": "缓慢且详尽",
+      "moderate": "适中",
+      "fast": "快节奏",
+      "adaptive": "自适应（基于我的进度）",
+      "real_life": "现实生活示例",
+      "technical": "技术型示例",
+      "visual": "视觉 / 图表导向",
+      "minimal": "极简示例",
+      "concepts": "概念与理论",
+      "practical": "实际应用",
+      "coding": "编程 / 解决问题",
+      "exams": "考试准备"
+    }
   }
 }

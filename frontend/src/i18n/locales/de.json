@@ -266,5 +266,45 @@
     "email": "E-Mail",
     "password": "Passwort",
     "logout": "Abmelden"
+  },
+  "preferences": {
+    "nav_title": "KI-Tutor Einstellungen",
+    "modal_title": "Personalisieren Sie Ihren KI-Tutor",
+    "modal_subtitle": "Helfen Sie uns, Erklärungen an Ihren Lernstil anzupassen.",
+    "settings_modal_subtitle": "Passen Sie die Erklärungen, das Tempo und die Beispielreferenzen Ihres KI-Tutors an.",
+    "save_continue": "Speichern & Weiter",
+    "save_changes": "Änderungen speichern",
+    "save_success": "Einstellungen erfolgreich aktualisiert",
+    "extra_title": "6. Zusätzliche Einstellungen (Optional)",
+    "extra_placeholder": "z.B. Animationen bevorzugen, kurze Videos, Fokus auf Code",
+    "questions": {
+      "explanation_type": "1. Welche Art von Erklärungen bevorzugen Sie?",
+      "learning_style": "2. Welcher Lernstil funktioniert am besten für Sie?",
+      "teaching_pace": "3. Welches Lerntempo bevorzugen Sie?",
+      "example_type": "4. Wie bevorzugen Sie Beispiele in Erklärungen?",
+      "focus_area": "5. Worauf sollte sich die KI in den Videos mehr konzentrieren?"
+    },
+    "options": {
+      "simple": "Einfach & anfängerfreundlich",
+      "balanced": "Ausgewogen (leicht + etwas Tiefe)",
+      "detailed": "Detailliert & tiefgehend",
+      "expert": "Expertenniveau (technisch)",
+      "step_by_step": "Schritt-für-Schritt-Anleitung",
+      "concept_first": "Konzept-zuerst Erklärung",
+      "real_world": "Realwelt-Beispiele",
+      "problem_solving": "Fokus auf Problemlösung",
+      "slow": "Langsam & gründlich",
+      "moderate": "Moderat",
+      "fast": "Schnelles Tempo",
+      "adaptive": "Adaptiv (basierend auf meinem Fortschritt)",
+      "real_life": "Beispiele aus dem echten Leben",
+      "technical": "Technische Beispiele",
+      "visual": "Visuell / diagrammbasiert",
+      "minimal": "Minimale Beispiele",
+      "concepts": "Konzepte & Theorie",
+      "practical": "Praktische Anwendungen",
+      "coding": "Programmierung / Problemlösung",
+      "exams": "Prüfungsvorbereitung"
+    }
   }
 }

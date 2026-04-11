@@ -1,24 +1,27 @@
-import React from "react";
+import React, { Suspense, lazy } from "react";
 import { Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import DashboardLayout from "./components/DashboardLayout";
-import LoginPage from "./pages/LoginPage";
-import SignUpPage from "./pages/SignUpPage";
-import Dashboard from "./pages/Dashboard";
-import Analytics from "./pages/Analytics";
-import CoursesPage from "./pages/CoursesPage";
-import DiscussionsPage from "./pages/DiscussionsPage";
-import Settings from "./pages/Settings";
-import WatchedVideos from "./pages/WatchedVideos";
-import CoursePreview from "./pages/CoursePreview";
-import LearningPage from "./pages/LearningPage";
-import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword";
-import CertificatesPage from "./pages/CertificatesPage";
+import LoadingSpinner from "./components/common/LoadingSpinner";
+
+// Lazy Loading 
+const LoginPage = lazy(() => import("./pages/LoginPage"));
+const SignUpPage = lazy(() => import("./pages/SignUpPage"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Analytics = lazy(() => import("./pages/Analytics"));
+const CoursesPage = lazy(() => import("./pages/CoursesPage"));
+const DiscussionsPage = lazy(() => import("./pages/DiscussionsPage"));
+const Settings = lazy(() => import("./pages/Settings"));
+const WatchedVideos = lazy(() => import("./pages/WatchedVideos"));
+const CoursePreview = lazy(() => import("./pages/CoursePreview"));
+const LearningPage = lazy(() => import("./pages/LearningPage"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const CertificatesPage = lazy(() => import("./pages/CertificatesPage"));
+const Success = lazy(() => import("./pages/Success"));
 import CompleteProfilePage from "./pages/CompleteProfilePage";
 import "./App.css";
-import Success from "./pages/Success";
 // Redirects from the root path based on authentication status.
 const RootRedirect = () => {
   const { isAuthenticated, user } = useAuth();
@@ -37,40 +40,37 @@ const PublicRoutes = () => {
 
 const App = () => {
   return (
-    <Routes>
-      {/* Redirect from root */}
-      <Route path="/" element={<RootRedirect />} />
+    <Suspense fallback={<LoadingSpinner />}>
+      <Routes>
+        {/* Redirect from root */}
+        <Route path="/" element={<RootRedirect />} />
 
-      {/* Public routes that logged-in users should not see */}
-      <Route element={<PublicRoutes />}>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignUpPage />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password/:token" element={<ResetPassword />} />
-      </Route>
-
-      {/* Protected Routes */}
-      <Route element={<ProtectedRoute />}>
-        {/* Onboarding — no sidebar/header */}
-        <Route path="/complete-profile" element={<CompleteProfilePage />} />
-
-        {/* Dashboard layout with sidebar + header */}
-        <Route element={<DashboardLayout />}>
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/analytics" element={<Analytics />} />
-          <Route path="/courses" element={<CoursesPage />} />
-          <Route path="/discussions" element={<DiscussionsPage />} />
-          <Route path="/settings" element={<Settings />} />
-           <Route path="/certificates" element={<CertificatesPage />} />
-          <Route path="/watchedvideos" element={<WatchedVideos />} />
-          <Route path="/learning/:id" element={<LearningPage />} />
-          <Route path="/success" element={<Success />} />
+        {/* Public routes that logged-in users should not see */}
+        <Route element={<PublicRoutes />}>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignUpPage />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password/:token" element={<ResetPassword />} />
         </Route>
-      </Route>
 
-      {/* Other public routes */}
-      <Route path="/course-preview/:courseId" element={<CoursePreview />} />
-    </Routes>
+        {/* Protected Routes with shared Header + Sidebar layout */}
+        <Route element={<ProtectedRoute />}>
+          <Route element={<DashboardLayout />}>
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/analytics" element={<Analytics />} />
+            <Route path="/courses" element={<CoursesPage />} />
+            <Route path="/discussions" element={<DiscussionsPage />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/certificates" element={<CertificatesPage />} />
+            <Route path="/watchedvideos" element={<WatchedVideos />} />
+            <Route path="/learning/:id" element={<LearningPage />} />
+            <Route path="/success" element={<Success />} />
+        </Route>
+
+        {/* Other public routes */}
+        <Route path="/course-preview/:courseId" element={<CoursePreview />} />
+      </Routes>
+    </Suspense>
   );
 };
 

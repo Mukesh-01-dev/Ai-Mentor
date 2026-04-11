@@ -11,9 +11,12 @@ import {
   Camera,
   Eye,
   EyeOff,
-  UserX
+  UserX,
+  Sparkles,
+  Contact
 } from "lucide-react";
 import axios from "axios";
+import Preferences from "../components/Preferences";
 import { useTheme } from "../context/ThemeContext";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
@@ -23,17 +26,24 @@ const NAV_KEYS = [
   { icon: User, key: "profile", labelKey: "settings.nav.profile" },
   { icon: Bell, key: "notifications", labelKey: "settings.nav.notifications" },
   { icon: Shield, key: "password_security", labelKey: "settings.nav.password_security" },
+  { icon: Sparkles, key: "preferences", labelKey: "preferences.nav_title" },
   { icon: Palette, key: "appearance", labelKey: "settings.nav.appearance" },
   { icon: Globe, key: "language", labelKey: "settings.nav.language" },
-   { icon:UserX , key: "delete_account", labelKey: "settings.nav.delete_account" },
+  { icon: UserX , key: "delete_account", labelKey: "settings.nav.delete_account" },
 ];
 
 export default function Settings() {
   const { t } = useTranslation();
   const [originalNotifications, setOriginalNotifications] = useState(null);
   const { theme, setTheme } = useTheme();
+  const [contactForm, setContactForm] = useState({
+    subject: "",
+    message: "",
+  });
+
   const [avatarFile, setAvatarFile] = useState(null);
-  const { sidebarOpen, setSidebarOpen, sidebarCollapsed, setSidebarCollapsed } = useSidebar();
+  const { sidebarOpen, setSidebarOpen, sidebarCollapsed, setSidebarCollapsed } =
+    useSidebar();
   const [activeSetting, setActiveSetting] = useState("profile");
   const { user, updateUser, fetchUserProfile } = useAuth();
   const [formData, setFormData] = useState({
@@ -90,7 +100,7 @@ export default function Settings() {
     } finally {
       setDeleting(false);
     }
-  }
+  };
 
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -125,20 +135,80 @@ export default function Settings() {
       // 🔥 FIX 2: Wait for state to update, THEN fetch (or skip fetch entirely)
       setTimeout(async () => {
         await fetchUserProfile(); // This will now return avatar_url!
-        console.log("🔄 Refetched user:", JSON.parse(localStorage.getItem("user")));
+        console.log(
+          "🔄 Refetched user:",
+          JSON.parse(localStorage.getItem("user")),
+        );
       }, 500);
 
       setAvatarFile(null);
       toast.success("Profile updated successfully!");
       setProfilePopup(true);
     } catch (error) {
-      console.error("❌ Error updating profile:", error.response?.data || error);
+      console.error(
+        "❌ Error updating profile:",
+        error.response?.data || error,
+      );
       toast.error("Failed to update profile.");
     } finally {
       setLoading(false);
     }
   };
 
+  const handleContactSubmit = async () => {
+    if (!contactForm.subject.trim() || !contactForm.message.trim()) {
+      toast.error("Please enter subject and message");
+      return;
+    }
+
+    // very important: user email should exist
+    if (!user?.email) {
+      toast.error("User email not found. Please login again.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const token = localStorage.getItem("token");
+
+      console.log("Sending:", {
+        email: user.email,
+        subject: contactForm.subject,
+        message: contactForm.message,
+      });
+
+      const response = await axios.post(
+        "http://localhost:5000/api/contactus",
+        {
+          email: user.email,
+          subject: contactForm.subject.trim(),
+          message: contactForm.message.trim(),
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        },
+      );
+
+      if (response.data.success) {
+        toast.success(response.data.message);
+
+        setContactForm({
+          subject: "",
+          message: "",
+        });
+      }
+    } catch (error) {
+      console.error("Contact Error:", error.response?.data || error);
+
+      toast.error(error.response?.data?.message || "Failed to send message");
+    } finally {
+      setLoading(false);
+    }
+  };
   useEffect(() => {
     if (user) {
       setFormData({
@@ -176,43 +246,83 @@ export default function Settings() {
 
   return (
     <>
-        <div className="flex flex-col lg:flex-row flex-1">
-          {/* Settings Sidebar — hidden on mobile, visible on large screens */}
-          <aside className="hidden lg:block w-[280px] flex-shrink-0 bg-card rounded-[24px] shadow-[0_4px_6px_0_rgba(0,0,0,0.10),0_10px_15px_0_rgba(0,0,0,0.10)] m-6 mr-0">
-            <nav className="p-6">
-              <div className="space-y-2">
-                {NAV_KEYS.map((item) => {
-                  const IconComponent = item.icon;
-                  return (
-                    <button
-                        onClick={() => {
-                          if (item.key === "delete_account") {
-                            setshowDeletePopup(true);
-                          } else {
-                            setActiveSetting(item.key);
-                          }
-                        }}
-                      key={item.key}
-                      className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-left transition-colors ${activeSetting === item.key
+      <div className="flex flex-col lg:flex-row flex-1">
+        {/* Settings Sidebar — hidden on mobile, visible on large screens */}
+        <aside className="hidden lg:block w-[280px] flex-shrink-0 bg-card rounded-[24px] shadow-[0_4px_6px_0_rgba(0,0,0,0.10),0_10px_15px_0_rgba(0,0,0,0.10)] m-6 mr-0">
+          <nav className="p-6">
+            <div className="space-y-2">
+              {NAV_KEYS.map((item) => {
+                const IconComponent = item.icon;
+                return (
+                  <button
+                    onClick={() => {
+                      if (item.key === "delete_account") {
+                        setshowDeletePopup(true);
+                      } else {
+                        setActiveSetting(item.key);
+                      }
+                    }}
+                    key={item.key}
+                    className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-left transition-colors ${
+                      activeSetting === item.key
                         ? "bg-teal-50 dark:bg-teal-900/20 text-main"
                         : "text-muted hover:bg-canvas-alt"
-                        }`}
-                    >
-                      <IconComponent
-                        className={`w-4 h-4 ${activeSetting === item.key
+                    }`}
+                  >
+                    <IconComponent
+                      className={`w-4 h-4 ${
+                        activeSetting === item.key
                           ? "text-[#00BEA5]"
                           : "text-[#00BEA5]"
-                          }`}
-                      />
-                      <span className="font-medium text-[16px] font-[Inter]">
-                        {t(item.labelKey)}
-                      </span>
-                    </button>
-                  );
-                })}
+                      }`}
+                    />
+                    <span className="font-medium text-[16px] font-[Inter]">
+                      {t(item.labelKey)}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </nav>
+        </aside>
+
+        {/* Mobile Settings Tab Bar — visible only on small screens */}
+        <div className="lg:hidden flex overflow-x-auto gap-2 px-4 pt-3 pb-2 no-scrollbar">
+          {NAV_KEYS.map((item) => {
+            const IconComponent = item.icon;
+            return (
+              <button
+                onClick={() => setActiveSetting(item.key)}
+                key={item.key}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                  activeSetting === item.key
+                    ? "bg-teal-50 dark:bg-teal-900/20 text-[#00BEA5] border border-[#00BEA5]"
+                    : "bg-card text-muted border border-border hover:bg-canvas-alt"
+                }`}
+              >
+                <IconComponent className="w-4 h-4 text-[#00BEA5]" />
+                <span>{t(item.labelKey)}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Main Content */}
+        <main className="flex-1 p-3 sm:p-4 md:p-6 lg:p-8 lg:mt-5 min-w-0">
+          {activeSetting === "profile" && (
+            <nav className="w-full">
+              {/* Header */}
+              <div className="mb-8">
+                <h1 className="text-xl sm:text-2xl md:text-[30px] font-bold text-main font-[Inter] mb-2">
+                  {t("settings.profile.title")}
+                </h1>
+                <p className="text-sm sm:text-[16px] text-muted font-[Inter]">
+                  {t("settings.profile.subtitle")}
+                </p>
               </div>
             </nav>
-          </aside>
+          )}
+        </main>
 
           {/* Mobile Settings Tab Bar — visible only on small screens */}
           <div className="lg:hidden flex overflow-x-auto gap-2 px-4 pt-3 pb-2 no-scrollbar">
@@ -237,6 +347,20 @@ export default function Settings() {
 
           {/* Main Content */}
           <main className="flex-1 p-3 sm:p-4 md:p-6 lg:p-8 lg:mt-5 min-w-0">
+            {activeSetting === "preferences" && (
+              <div className="w-full">
+                <div className="mb-8">
+                  <h1 className="text-xl sm:text-2xl md:text-[30px] font-bold text-main font-[Inter] mb-2">
+                    {t("preferences.nav_title")}
+                  </h1>
+                  <p className="text-sm sm:text-[16px] text-muted font-[Inter]">
+                    {t("preferences.settings_modal_subtitle")}
+                  </p>
+                </div>
+                <Preferences mode="settings" onSuccess={() => toast.success(t("preferences.save_success"))} />
+              </div>
+            )}
+
             {activeSetting === "profile" && (
               <div className="w-full">
                 {/* Header */}
@@ -249,656 +373,767 @@ export default function Settings() {
                   </p>
                 </div>
 
-                {/* Settings Card */}
-                <div className="bg-card rounded-2xl sm:rounded-[24px] shadow-[0_4px_6px_0_rgba(0,0,0,0.10),0_10px_15px_0_rgba(0,0,0,0.10)] p-4 sm:p-6 md:p-8">
-                  <div className="flex flex-col md:flex-row gap-6 md:gap-8 mb-8">
-                    {/* Avatar Section */}
-                    <div className="flex flex-col items-center">
-                      <div className="relative mb-6">
-                        <img
-                          src={
-                            avatarFile
-                              ? URL.createObjectURL(avatarFile)
-                              : user?.avatar_url
-                                ? user.avatar_url
-                                : ( (user?.isGoogleUser || !!user?.googleId) 
-                                    ? `https://api.dicebear.com/8.x/initials/svg?seed=${encodeURIComponent(`${formData.firstName || ""} ${formData.lastName || ""}`.trim() || user?.name || "User")}` 
-                                    : "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'/%3E%3Ccircle cx='12' cy='7' r='4'/%3E%3C/svg%3E")
-                          }
-                          alt="Profile"
-                          className={`w-32 h-32 rounded-full border-4 border-[rgba(255,135,89,0.65)] shadow-[0_4px_6px_0_rgba(0,0,0,0.10),0_10px_15px_0_rgba(0,0,0,0.10)] object-cover ${!avatarFile && !user?.avatar_url && !(user?.isGoogleUser || !!user?.googleId) ? 'p-6 bg-canvas-alt' : ''}`}
-                          onError={(e) => {
-                            if (user?.isGoogleUser || !!user?.googleId) {
-                              const seed = encodeURIComponent(`${formData.firstName || ""} ${formData.lastName || ""}`.trim() || user?.name || "User");
-                              e.target.src = `https://api.dicebear.com/8.x/initials/svg?seed=${seed}`;
-                            } else {
-                              e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'/%3E%3Ccircle cx='12' cy='7' r='4'/%3E%3C/svg%3E";
-                              e.target.classList.add('p-6', 'bg-canvas-alt');
-                            }
-                          }}
+              {/* Settings Card */}
+              <div className="bg-card rounded-2xl sm:rounded-[24px] shadow-[0_4px_6px_0_rgba(0,0,0,0.10),0_10px_15px_0_rgba(0,0,0,0.10)] p-4 sm:p-6 md:p-8">
+                <div className="flex flex-col md:flex-row gap-6 md:gap-8 mb-8">
+                  {/* Avatar Section */}
+                  <div className="flex flex-col items-center">
+                    <div className="relative mb-6">
+                      <img
+                        src={
+                          avatarFile
+                            ? URL.createObjectURL(avatarFile)
+                            : user?.avatar_url
+                              ? user.avatar_url
+                              : `https://api.dicebear.com/8.x/initials/svg?seed=${formData.firstName}%20${formData.lastName}`
+                        }
+                        alt="Profile"
+                        className="w-32 h-32 rounded-full border-4 border-[rgba(255,135,89,0.65)] shadow-[0_4px_6px_0_rgba(0,0,0,0.10),0_10px_15px_0_rgba(0,0,0,0.10)]"
+                      />
+
+                      <label className="absolute bottom-2 right-2 w-10 h-10 bg-[#475569] rounded-full flex items-center justify-center cursor-pointer shadow-[0_4px_6px_0_rgba(0,0,0,0.10),0_10px_15px_0_rgba(0,0,0,0.10)]">
+                        <Camera className="w-[14px] h-[14px] text-white" />
+                        <input
+                          type="file"
+                          accept="image/*"
+                          hidden
+                          onChange={(e) => setAvatarFile(e.target.files[0])}
                         />
-
-                        <label className="absolute bottom-2 right-2 w-10 h-10 bg-[#475569] rounded-full flex items-center justify-center cursor-pointer shadow-[0_4px_6px_0_rgba(0,0,0,0.10),0_10px_15px_0_rgba(0,0,0,0.10)]">
-                          <Camera className="w-[14px] h-[14px] text-white" />
-                          <input
-                            type="file"
-                            accept="image/*"
-                            hidden
-                            onChange={(e) => setAvatarFile(e.target.files[0])}
-                          />
-                        </label>
-                      </div>
-                      <h2 className="text-[20px] font-semibold text-main font-[Inter] mb-1">
-                        {formData.firstName} {formData.lastName}
-                      </h2>
-                      <p className="text-[16px] text-muted font-[Inter]">
-                        {t("common.premium_member")}
-                      </p>
+                      </label>
                     </div>
+                    <h2 className="text-[20px] font-semibold text-main font-[Inter] mb-1">
+                      {formData.firstName} {formData.lastName}
+                    </h2>
+                    <p className="text-[16px] text-muted font-[Inter]">
+                      {t("common.premium_member")}
+                    </p>
+                  </div>
 
-                    {/* Form Section */}
-                    <div className="flex-1 space-y-6">
-                      {/* First and Last Name */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                        <div className="relative">
-                          <label className="absolute -top-2 left-4 bg-card px-2 text-[14px] text-muted font-medium font-[Inter]">
-                            {t("settings.profile.first_name")}
-                          </label>
-                          <input
-                            type="text"
-                            value={formData.firstName}
-                            onChange={(e) =>
-                              handleInputChange("firstName", e.target.value)
-                            }
-                            className="w-full h-[50px] px-4 rounded-xl border border-border text-[16px] font-[Inter] focus:ring-2 focus:ring-primary focus:border-primary bg-input text-main"
-                          />
-                        </div>
-                        <div className="relative">
-                          <label className="absolute -top-2 left-4 bg-card px-2 text-[14px] text-muted font-medium font-[Inter]">
-                            {t("settings.profile.last_name")}
-                          </label>
-                          <input
-                            type="text"
-                            value={formData.lastName}
-                            onChange={(e) =>
-                              handleInputChange("lastName", e.target.value)
-                            }
-                            className="w-full h-[50px] px-4 rounded-xl border border-border text-[16px] font-[Inter] focus:ring-2 focus:ring-primary focus:border-primary bg-input text-main"
-                          />
-                        </div>
-                      </div>
-
-                      {/* Email */}
+                  {/* Form Section */}
+                  <div className="flex-1 space-y-6">
+                    {/* First and Last Name */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                       <div className="relative">
                         <label className="absolute -top-2 left-4 bg-card px-2 text-[14px] text-muted font-medium font-[Inter]">
-                          {t("settings.profile.email")}
+                          {t("settings.profile.first_name")}
                         </label>
                         <input
-                          type="email"
-                          value={formData.email}
+                          type="text"
+                          value={formData.firstName}
                           onChange={(e) =>
-                            handleInputChange("email", e.target.value)
+                            handleInputChange("firstName", e.target.value)
                           }
                           className="w-full h-[50px] px-4 rounded-xl border border-border text-[16px] font-[Inter] focus:ring-2 focus:ring-primary focus:border-primary bg-input text-main"
                         />
                       </div>
-
-                      {/* Bio */}
                       <div className="relative">
                         <label className="absolute -top-2 left-4 bg-card px-2 text-[14px] text-muted font-medium font-[Inter]">
-                          {t("settings.profile.bio")}
+                          {t("settings.profile.last_name")}
                         </label>
-                        <textarea
-                          value={formData.bio}
+                        <input
+                          type="text"
+                          value={formData.lastName}
                           onChange={(e) =>
-                            handleInputChange("bio", e.target.value)
+                            handleInputChange("lastName", e.target.value)
                           }
-                          className="w-full min-h-[122px] px-4 py-3 rounded-xl border border-border text-[16px] font-[Inter] resize-none focus:ring-2 focus:ring-primary focus:border-primary bg-input text-main"
+                          className="w-full h-[50px] px-4 rounded-xl border border-border text-[16px] font-[Inter] focus:ring-2 focus:ring-primary focus:border-primary bg-input text-main"
                         />
-
                       </div>
                     </div>
-                  </div>
 
-                  {/* Action Buttons */}
-                  <div className="flex flex-col-reverse sm:flex-row justify-end gap-4 pt-6 border-t border-border">
-                    <button
-                      type="button"
-                      className="h-[50px] px-6 rounded-xl border border-border bg-card text-main text-[16px] font-medium font-[Inter] hover:bg-canvas-alt"
-                    >
-                      {t("common.cancel")}
-                    </button>
-                    <button
-                      onClick={handleSaveChanges}
-                      disabled={loading}
-                      className="h-[50px] px-6 rounded-xl bg-gradient-to-r from-primary to-primary text-white text-[16px] font-medium font-[Inter] hover:opacity-90 disabled:opacity-50"
-                    >
-                      {loading ? t("common.saving") : t("common.save_changes")}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Delete Button Popup */}
-            {showDeletePopup && (
-              <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-
-                <div className="bg-white dark:bg-slate-800 rounded-2xl p-8 w-[520px] text-center shadow-xl">
-                  <div className="mb-4 text-red-500 text-5xl">⚠</div>
-
-                  <h2 className="text-xl font-bold mb-2 text-main">
-                    Delete Account ?
-                  </h2>
-
-                  <p className="text-muted mb-6 text-sm">
-                    This action will permanently delete your profile, courses and progress. This cannot be undone.
-                  </p>
-
-                    <p className="text-sm text-muted mb-6">
-                        Please type <span className="font-bold text-red-500">DELETE</span> to confirm.
-                    </p>
-                    <input
-                                  type="text"
-                                  placeholder="Type DELETE here..."
-                                  value={confirmText}
-                                  onChange={(e) => setConfirmText(e.target.value)}
-                                  className="w-full h-[50px] px-4 pr-12 rounded-xl border border-border text-[16px] font-[Inter] focus:ring-2 focus:ring-primary focus:border-primary bg-input text-main mb-6" 
-                    />
-                    <div className="flex justify-center gap-25">
-                                <button
-                                 onClick={() => {setConfirmText(""),setshowDeletePopup(false)}}
-                                  className="px-6 py-2 border rounded-lg"
-                                >
-                                  Cancel
-                                </button>
-
-                                <button
-                                  onClick={handleDeleteAccount}
-                                  disabled={confirmText !== "DELETE" || deleting}
-                                  className={`text-white ${
-                                    confirmText === "DELETE"
-                                      ? "bg-red-500 hover:bg-red-700 h-[50px] px-6 rounded-xl from-primary to-primary hover:opacity-90 disabled:opacity-50"
-                                      : "h-[50px] px-6 rounded-xl bg-gradient-to-r from-primary to-primary hover:opacity-90 disabled:opacity-50"
-                                  }`}
-                                >
-                                  {deleting ? "Deleting..." : "Delete Account"}
-                                </button>
-                    </div>                                  
-                </div>
-              </div>
-            )}
-            
-            {activeSetting === "notifications" && (
-              <div className="w-full">
-                <div className="mb-8">
-                  <h1 className="text-xl sm:text-2xl md:text-[30px] font-bold text-main font-[Inter] mb-2">
-                    {t("settings.notifications.title")}
-                  </h1>
-                  <p className="text-sm sm:text-[16px] text-muted font-[Inter]">
-                    {t("settings.notifications.subtitle")}
-                  </p>
-                </div>
-                <div className="bg-card rounded-2xl sm:rounded-[24px] shadow p-4 sm:p-6 md:p-8">
-                  <div className="space-y-6">
-                    {[
-                      { labelKey: "settings.notifications.email", key: "emailNotifications", descKey: "settings.notifications.email_desc" },
-                      { labelKey: "settings.notifications.push", key: "pushNotifications", descKey: "settings.notifications.push_desc" },
-                      { labelKey: "settings.notifications.course_updates", key: "courseUpdates", descKey: "settings.notifications.course_updates_desc" },
-                      { labelKey: "settings.notifications.discussion_replies", key: "discussionReplies", descKey: "settings.notifications.discussion_replies_desc" },
-                    ].map((item) => (
-                      <div key={item.key} className="flex items-center justify-between gap-4">
-                        <div className="flex-1 min-w-0">
-                          <h3 className="text-sm sm:text-[16px] font-semibold text-main">{t(item.labelKey)}</h3>
-                          <p className="text-xs sm:text-[14px] text-muted">{t(item.descKey)}</p>
-                        </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={settingsData.notifications[item.key]}
-                            onChange={(e) =>
-                              setSettingsData((prev) => ({
-                                ...prev,
-                                notifications: {
-                                  ...prev.notifications,
-                                  [item.key]: e.target.checked,
-                                },
-                              }))
-                            }
-                            className="sr-only peer"
-                          />
-                          <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-primary after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
-                        </label>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 sm:gap-4 pt-6 border-t border-border mt-6">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (originalNotifications)
-                          setSettingsData((prev) => ({ ...prev, notifications: originalNotifications }));
-                      }}
-                      className="h-[50px] px-6 rounded-xl border border-border bg-card text-main hover:bg-canvas-alt"
-                    >
-                      {t("common.cancel")}
-                    </button>
-                    <button
-                      onClick={async () => {
-                        setLoading(true);
-                        try {
-                          const token = localStorage.getItem("token");
-
-                          await axios.put(
-                            "/api/users/settings",
-                            {
-                              notifications: { ...settingsData.notifications },
-                            },
-                            { headers: { Authorization: `Bearer ${token}` } }
-                          );
-
-
-                          toast.success("Notification settings updated successfully!");
-                          setOriginalNotifications({ ...settingsData.notifications });
-                        } catch (error) {
-                          console.error("Error updating settings:", error);
-                          toast.error("Failed to update settings. Please try again.");
-                        } finally {
-                          setLoading(false);
+                    {/* Email */}
+                    <div className="relative">
+                      <label className="absolute -top-2 left-4 bg-card px-2 text-[14px] text-muted font-medium font-[Inter]">
+                        {t("settings.profile.email")}
+                      </label>
+                      <input
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) =>
+                          handleInputChange("email", e.target.value)
                         }
-                      }}
-                      disabled={loading}
-                      className="h-[50px] px-6 rounded-xl bg-gradient-to-r from-primary to-primary text-white hover:opacity-90 disabled:opacity-50"
-                    >
-                      {loading ? t("common.saving") : t("common.save_changes")}
-                    </button>
+                        className="w-full h-[50px] px-4 rounded-xl border border-border text-[16px] font-[Inter] focus:ring-2 focus:ring-primary focus:border-primary bg-input text-main"
+                      />
+                    </div>
+
+                    {/* Bio */}
+                    <div className="relative">
+                      <label className="absolute -top-2 left-4 bg-card px-2 text-[14px] text-muted font-medium font-[Inter]">
+                        {t("settings.profile.bio")}
+                      </label>
+                      <textarea
+                        value={formData.bio}
+                        onChange={(e) =>
+                          handleInputChange("bio", e.target.value)
+                        }
+                        className="w-full min-h-[122px] px-4 py-3 rounded-xl border border-border text-[16px] font-[Inter] resize-none focus:ring-2 focus:ring-primary focus:border-primary bg-input text-main"
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
 
-            {activeSetting === "password_security" && (
-              <div className="w-full">
-                <div className="mb-8">
-                  <h1 className="text-xl sm:text-2xl md:text-[30px] font-bold text-main font-[Inter] mb-2">
-                    {t("settings.security.title")}
-                  </h1>
-                  <p className="text-sm sm:text-[16px] text-muted font-[Inter]">
-                    {t("settings.security.subtitle")}
-                  </p>
+                {/* Action Buttons */}
+                <div className="flex flex-col-reverse sm:flex-row justify-end gap-4 pt-6 border-t border-border">
+                  <button
+                    type="button"
+                    className="h-[50px] px-6 rounded-xl border border-border bg-card text-main text-[16px] font-medium font-[Inter] hover:bg-canvas-alt"
+                  >
+                    {t("common.cancel")}
+                  </button>
+                  <button
+                    onClick={handleSaveChanges}
+                    disabled={loading}
+                    className="h-[50px] px-6 rounded-xl bg-gradient-to-r from-primary to-primary text-white text-[16px] font-medium font-[Inter] hover:opacity-90 disabled:opacity-50"
+                  >
+                    {loading ? t("common.saving") : t("common.save_changes")}
+                  </button>
                 </div>
-                <div className="bg-card rounded-2xl sm:rounded-[24px] shadow-[0_4px_6px_0_rgba(0,0,0,0.10),0_10px_15px_0_rgba(0,0,0,0.10)] p-4 sm:p-6 md:p-8">
-                  <div className="space-y-6">
-                    <div className="flex items-center justify-between gap-4">
+              </div>
+            </div>
+          )}
+
+          {/* Delete Button Popup */}
+          {showDeletePopup && (
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+              <div className="bg-white dark:bg-slate-800 rounded-2xl p-8 w-[520px] text-center shadow-xl">
+                <div className="mb-4 text-red-500 text-5xl">⚠</div>
+
+                <h2 className="text-xl font-bold mb-2 text-main">
+                  Delete Account ?
+                </h2>
+
+                <p className="text-muted mb-6 text-sm">
+                  This action will permanently delete your profile, courses and
+                  progress. This cannot be undone.
+                </p>
+
+                <p className="text-sm text-muted mb-6">
+                  Please type{" "}
+                  <span className="font-bold text-red-500">DELETE</span> to
+                  confirm.
+                </p>
+                <input
+                  type="text"
+                  placeholder="Type DELETE here..."
+                  value={confirmText}
+                  onChange={(e) => setConfirmText(e.target.value)}
+                  className="w-full h-[50px] px-4 pr-12 rounded-xl border border-border text-[16px] font-[Inter] focus:ring-2 focus:ring-primary focus:border-primary bg-input text-main mb-6"
+                />
+                <div className="flex justify-center gap-25">
+                  <button
+                    onClick={() => {
+                      (setConfirmText(""), setshowDeletePopup(false));
+                    }}
+                    className="px-6 py-2 border rounded-lg"
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    onClick={handleDeleteAccount}
+                    disabled={confirmText !== "DELETE" || deleting}
+                    className={`text-white ${
+                      confirmText === "DELETE"
+                        ? "bg-red-500 hover:bg-red-700 h-[50px] px-6 rounded-xl from-primary to-primary hover:opacity-90 disabled:opacity-50"
+                        : "h-[50px] px-6 rounded-xl bg-gradient-to-r from-primary to-primary hover:opacity-90 disabled:opacity-50"
+                    }`}
+                  >
+                    {deleting ? "Deleting..." : "Delete Account"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeSetting === "notifications" && (
+            <div className="w-full">
+              <div className="mb-8">
+                <h1 className="text-xl sm:text-2xl md:text-[30px] font-bold text-main font-[Inter] mb-2">
+                  {t("settings.notifications.title")}
+                </h1>
+                <p className="text-sm sm:text-[16px] text-muted font-[Inter]">
+                  {t("settings.notifications.subtitle")}
+                </p>
+              </div>
+              <div className="bg-card rounded-2xl sm:rounded-[24px] shadow p-4 sm:p-6 md:p-8">
+                <div className="space-y-6">
+                  {[
+                    {
+                      labelKey: "settings.notifications.email",
+                      key: "emailNotifications",
+                      descKey: "settings.notifications.email_desc",
+                    },
+                    {
+                      labelKey: "settings.notifications.push",
+                      key: "pushNotifications",
+                      descKey: "settings.notifications.push_desc",
+                    },
+                    {
+                      labelKey: "settings.notifications.course_updates",
+                      key: "courseUpdates",
+                      descKey: "settings.notifications.course_updates_desc",
+                    },
+                    {
+                      labelKey: "settings.notifications.discussion_replies",
+                      key: "discussionReplies",
+                      descKey: "settings.notifications.discussion_replies_desc",
+                    },
+                  ].map((item) => (
+                    <div
+                      key={item.key}
+                      className="flex items-center justify-between gap-4"
+                    >
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-sm sm:text-[16px] font-semibold text-main font-[Inter]">
-                          {t("settings.security.two_factor")}
+                        <h3 className="text-sm sm:text-[16px] font-semibold text-main">
+                          {t(item.labelKey)}
                         </h3>
-                        <p className="text-xs sm:text-[14px] text-muted font-[Inter]">
-                          {t("settings.security.two_factor_desc")}
+                        <p className="text-xs sm:text-[14px] text-muted">
+                          {t(item.descKey)}
                         </p>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input
                           type="checkbox"
-                          checked={settingsData.security.twoFactorAuth}
+                          checked={settingsData.notifications[item.key]}
                           onChange={(e) =>
                             setSettingsData((prev) => ({
                               ...prev,
-                              security: {
-                                ...prev.security,
-                                twoFactorAuth: e.target.checked,
+                              notifications: {
+                                ...prev.notifications,
+                                [item.key]: e.target.checked,
                               },
                             }))
                           }
                           className="sr-only peer"
                         />
-                        <div className="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/25 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                        <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-primary after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
                       </label>
                     </div>
+                  ))}
+                </div>
 
-                    <div className="flex items-center justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-sm sm:text-[16px] font-semibold text-main font-[Inter]">
-                          {t("settings.security.login_alerts")}
-                        </h3>
-                        <p className="text-xs sm:text-[14px] text-muted font-[Inter]">
-                          {t("settings.security.login_alerts_desc")}
-                        </p>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={settingsData.security.loginAlerts}
-                          onChange={(e) =>
-                            setSettingsData((prev) => ({
-                              ...prev,
-                              security: {
-                                ...prev.security,
-                                loginAlerts: e.target.checked,
-                              },
-                            }))
-                          }
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/25 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-                      </label>
-                    </div>
+                <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 sm:gap-4 pt-6 border-t border-border mt-6">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (originalNotifications)
+                        setSettingsData((prev) => ({
+                          ...prev,
+                          notifications: originalNotifications,
+                        }));
+                    }}
+                    className="h-[50px] px-6 rounded-xl border border-border bg-card text-main hover:bg-canvas-alt"
+                  >
+                    {t("common.cancel")}
+                  </button>
+                  <button
+                    onClick={async () => {
+                      setLoading(true);
+                      try {
+                        const token = localStorage.getItem("token");
 
-                    <div className="border-t border-border pt-6">
-                      <h3 className="text-[18px] font-semibold text-main font-[Inter]  mb-4">
-                        {t("settings.security.change_password")}
-                      </h3>
-                      <div className="space-y-5">
-                        <div className="relative">
-                          <label className="absolute -top-2 left-4 bg-card px-2 text-[14px] text-muted font-medium font-[Inter]">
-                            {t("settings.security.current_password")}
-                          </label>
-                          <input
-                            type={showCurrentPassword ? "text" : "password"}
-                            value={passwordData.currentPassword}
-                            onChange={(e) =>
-                              setPasswordData((prev) => ({
-                                ...prev,
-                                currentPassword: e.target.value,
-                              }))
-                            }
-                            className="w-full h-[50px] px-4 pr-12 rounded-xl border border-border text-[16px] font-[Inter] focus:ring-2 focus:ring-primary focus:border-primary bg-input text-main"
-                          />
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setShowCurrentPassword(!showCurrentPassword)
-                            }
-                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted hover:text-main"
-                          >
-                            {showCurrentPassword ? (
-                              <EyeOff className="w-5 h-5" />
-                            ) : (
-                              <Eye className="w-5 h-5" />
-                            )}
-                          </button>
-                        </div>
+                        await axios.put(
+                          "/api/users/settings",
+                          {
+                            notifications: { ...settingsData.notifications },
+                          },
+                          { headers: { Authorization: `Bearer ${token}` } },
+                        );
 
-                        <div className="relative">
-                          <label className="absolute -top-2 left-4 bg-card px-2 text-[14px] text-muted font-medium font-[Inter]">
-                            {t("settings.security.new_password")}
-                          </label>
-                          <input
-                            type={showNewPassword ? "text" : "password"}
-                            value={passwordData.newPassword}
-                            onChange={(e) =>
-                              setPasswordData((prev) => ({
-                                ...prev,
-                                newPassword: e.target.value,
-                              }))
-                            }
-                            className="w-full h-[50px] px-4 pr-12 rounded-xl border border-border text-[16px] font-[Inter] focus:ring-2 focus:ring-primary focus:border-primary bg-input text-main"
-                          />
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setShowNewPassword(!showNewPassword)
-                            }
-                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted hover:text-main"
-                          >
-                            {showNewPassword ? (
-                              <EyeOff className="w-5 h-5" />
-                            ) : (
-                              <Eye className="w-5 h-5" />
-                            )}
-                          </button>
-
-                        </div>
-
-                        <div className="relative">
-                          <label className="absolute -top-2 left-4 bg-card px-2 text-[14px] text-muted font-medium font-[Inter]">
-                            {t("settings.security.confirm_password")}
-                          </label>
-                          
-                          <input
-                            type="password"
-                            autoComplete="new-password"
-                            value={passwordData.confirmPassword}
-                            onChange={(e) =>
-                              setPasswordData((prev) => ({
-                                ...prev,
-                                confirmPassword: e.target.value,
-                              }))
-                            }
-                            className="w-full h-[50px] px-4 rounded-xl border border-border text-[16px] font-[Inter] focus:ring-2 focus:ring-primary focus:border-primary bg-input text-main"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col-reverse sm:flex-row justify-end gap-4 pt-6 border-t border-border mt-6">
-                    <button
-                      type="button"
-                      className="h-[50px] px-6 rounded-xl border border-border bg-card text-main text-[16px] font-medium font-[Inter] hover:bg-canvas-alt"
-                    >
-                      {t("common.cancel")}
-                    </button>
-                    <button
-                      onClick={async () => {
-
-  if (!passwordData.currentPassword || !passwordData.newPassword) {
-    toast.error("Please fill all fields!");
-    return;
-  }
-
-  if (passwordData.newPassword !== passwordData.confirmPassword) {
-    toast.error("New passwords do not match!");
-    return;
-  }
-
-  setLoading(true);
-
-  try {
-    const token = localStorage.getItem("token");
-
-    await axios.put(
-      "/api/users/change-password",
-      {
-        currentPassword: passwordData.currentPassword,
-        newPassword: passwordData.newPassword
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      }
-    );
-
-    toast.success("Password updated successfully!");
-
-    setPasswordData({
-      currentPassword: "",
-      newPassword: "",
-      confirmPassword: ""
-    });
-
-  } catch (error) {
-    console.error("Password update error:", error);
-    toast.error(error.response?.data?.message || "Failed to update password");
-  } finally {
-    setLoading(false);
-  }
-}}
-                      disabled={loading}
-                      className="h-[50px] px-6 rounded-xl bg-gradient-to-r from-primary to-primary text-white text-[16px] font-medium font-[Inter] hover:opacity-90 disabled:opacity-50"
-                    >
-                      {loading ? t("common.saving") : t("common.save_changes")}
-                    </button>
-                  </div>
+                        toast.success(
+                          "Notification settings updated successfully!",
+                        );
+                        setOriginalNotifications({
+                          ...settingsData.notifications,
+                        });
+                      } catch (error) {
+                        console.error("Error updating settings:", error);
+                        toast.error(
+                          "Failed to update settings. Please try again.",
+                        );
+                      } finally {
+                        setLoading(false);
+                      }
+                    }}
+                    disabled={loading}
+                    className="h-[50px] px-6 rounded-xl bg-gradient-to-r from-primary to-primary text-white hover:opacity-90 disabled:opacity-50"
+                  >
+                    {loading ? t("common.saving") : t("common.save_changes")}
+                  </button>
                 </div>
               </div>
-            )}
+            </div>
+          )}
 
-            {activeSetting === "appearance" && (
-              <div className="w-full">
-                <div className="mb-8">
-                  <h1 className="text-xl sm:text-2xl md:text-[30px] font-bold text-main font-[Inter] mb-2">
-                    {t("settings.appearance.title")}
-                  </h1>
-                  <p className="text-sm sm:text-[16px] text-muted font-[Inter]">
-                    {t("settings.appearance.subtitle")}
-                  </p>
-                </div>
-                <div className="bg-card rounded-2xl sm:rounded-[24px] shadow-[0_4px_6px_0_rgba(0,0,0,0.10),0_10px_15px_0_rgba(0,0,0,0.10)] p-4 sm:p-6 md:p-8">
-                  <div className="space-y-6">
-                    <div>
-                      <h3 className="text-[16px] font-semibold text-main font-[Inter] mb-3">
-                        {t("settings.appearance.theme")}
-                      </h3>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                        {[
-                          { value: "light", labelKey: "settings.appearance.light", icon: "☀️" },
-                          { value: "dark", labelKey: "settings.appearance.dark", icon: "🌙" },
-                          { value: "auto", labelKey: "settings.appearance.auto", icon: "⚙️" },
-                        ].map((themeOption) => (
-                          <button
-                            key={themeOption.value}
-                            onClick={() => setTheme(themeOption.value)}
-                            className={`p-4 rounded-xl border-2 transition-colors ${theme === themeOption.value
-                              ? "border-primary bg-teal-50 dark:bg-teal-900/20 text-main"
-                              : "border-border hover:border-primary text-muted hover:text-main"
-                              }`}
-                          >
-                            <div className="text-2xl mb-2">{themeOption.icon}</div>
-                            <div className="text-[14px] font-medium font-[Inter]">
-                              {t(themeOption.labelKey)}
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
+          {activeSetting === "password_security" && (
+            <div className="w-full">
+              <div className="mb-8">
+                <h1 className="text-xl sm:text-2xl md:text-[30px] font-bold text-main font-[Inter] mb-2">
+                  {t("settings.security.title")}
+                </h1>
+                <p className="text-sm sm:text-[16px] text-muted font-[Inter]">
+                  {t("settings.security.subtitle")}
+                </p>
               </div>
-            )}
-
-            {activeSetting === "language" && (
-              <div className="w-full">
-                <div className="mb-8">
-                  <h1 className="text-xl sm:text-2xl md:text-[30px] font-bold text-main font-[Inter] mb-2">
-                    {t("settings.language.title")}
-                  </h1>
-                  <p className="text-sm sm:text-[16px] text-muted font-[Inter]">
-                    {t("settings.language.subtitle")}
-                  </p>
-                </div>
-                <div className="bg-card rounded-2xl sm:rounded-[24px] shadow-[0_4px_6px_0_rgba(0,0,0,0.10),0_10px_15px_0_rgba(0,0,0,0.10)] p-4 sm:p-6 md:p-8">
-                  <div className="space-y-6">
-                    <div>
-                      <h3 className="text-[16px] font-semibold text-main font-[Inter] mb-3">
-                        {t("settings.language.interface_language")}
+              <div className="bg-card rounded-2xl sm:rounded-[24px] shadow-[0_4px_6px_0_rgba(0,0,0,0.10),0_10px_15px_0_rgba(0,0,0,0.10)] p-4 sm:p-6 md:p-8">
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-sm sm:text-[16px] font-semibold text-main font-[Inter]">
+                        {t("settings.security.two_factor")}
                       </h3>
-                      <select
-                        value={settingsData.appearance.language}
+                      <p className="text-xs sm:text-[14px] text-muted font-[Inter]">
+                        {t("settings.security.two_factor_desc")}
+                      </p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={settingsData.security.twoFactorAuth}
                         onChange={(e) =>
                           setSettingsData((prev) => ({
                             ...prev,
-                            appearance: {
-                              ...prev.appearance,
-                              language: e.target.value,
+                            security: {
+                              ...prev.security,
+                              twoFactorAuth: e.target.checked,
                             },
                           }))
                         }
-                        className="w-full h-[50px] px-4 rounded-xl border border-border text-[16px] font-[Inter] focus:ring-2 focus:ring-primary focus:border-primary bg-input text-main"
-                      >
-                        <option value="en">English</option>
-                        <option value="es">Spanish</option>
-                        <option value="zh">Chinese (Mandarin)</option>
-                        <option value="hi">Hindi</option>
-                        <option value="ar">Arabic</option>
-                        <option value="pt">Portuguese</option>
-                        <option value="fr">French</option>
-                        <option value="ru">Russian</option>
-                        <option value="ja">Japanese</option>
-                        <option value="de">German</option>
-                      </select>
-                    </div>
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/25 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                    </label>
                   </div>
 
-                  <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 sm:gap-4 pt-6 border-t border-border mt-6">
-                    <button
-                      type="button"
-                      className="h-[50px] px-6 rounded-xl border border-border bg-card text-main text-[16px] font-medium font-[Inter] hover:bg-canvas-alt"
-                    >
-                      {t("common.cancel")}
-                    </button>
-                    <button
-                      onClick={async () => {
-                        setLoading(true);
-                        try {
-                          const token = localStorage.getItem("token");
-                          await axios.put(
-                            "/api/users/settings",
-                            {
-                              appearance: {
-                                language: settingsData.appearance.language,
-                              },
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-sm sm:text-[16px] font-semibold text-main font-[Inter]">
+                        {t("settings.security.login_alerts")}
+                      </h3>
+                      <p className="text-xs sm:text-[14px] text-muted font-[Inter]">
+                        {t("settings.security.login_alerts_desc")}
+                      </p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={settingsData.security.loginAlerts}
+                        onChange={(e) =>
+                          setSettingsData((prev) => ({
+                            ...prev,
+                            security: {
+                              ...prev.security,
+                              loginAlerts: e.target.checked,
                             },
-                            { headers: { Authorization: `Bearer ${token}` } }
-                          );
-                          i18n.changeLanguage(settingsData.appearance.language);
-                          toast.success("Language settings updated successfully!");
-                        } catch (error) {
-                          console.error("Error updating settings:", error);
-                          toast.error("Failed to update settings. Please try again.");
-                        } finally {
-                          setLoading(false);
+                          }))
                         }
-                      }}
-                      disabled={loading}
-                      className="h-[50px] px-6 rounded-xl bg-gradient-to-r from-[#00BEA5] to-[#00BEA5] text-white text-[16px] font-medium font-[Inter] hover:opacity-90 disabled:opacity-50"
-                    >
-                      {loading ? t("common.saving") : t("common.save_changes")}
-                    </button>
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/25 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                    </label>
+                  </div>
+
+                  <div className="border-t border-border pt-6">
+                    <h3 className="text-[18px] font-semibold text-main font-[Inter]  mb-4">
+                      {t("settings.security.change_password")}
+                    </h3>
+                    <div className="space-y-5">
+                      <div className="relative">
+                        <label className="absolute -top-2 left-4 bg-card px-2 text-[14px] text-muted font-medium font-[Inter]">
+                          {t("settings.security.current_password")}
+                        </label>
+                        <input
+                          type={showCurrentPassword ? "text" : "password"}
+                          value={passwordData.currentPassword}
+                          onChange={(e) =>
+                            setPasswordData((prev) => ({
+                              ...prev,
+                              currentPassword: e.target.value,
+                            }))
+                          }
+                          className="w-full h-[50px] px-4 pr-12 rounded-xl border border-border text-[16px] font-[Inter] focus:ring-2 focus:ring-primary focus:border-primary bg-input text-main"
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setShowCurrentPassword(!showCurrentPassword)
+                          }
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted hover:text-main"
+                        >
+                          {showCurrentPassword ? (
+                            <EyeOff className="w-5 h-5" />
+                          ) : (
+                            <Eye className="w-5 h-5" />
+                          )}
+                        </button>
+                      </div>
+
+                      <div className="relative">
+                        <label className="absolute -top-2 left-4 bg-card px-2 text-[14px] text-muted font-medium font-[Inter]">
+                          {t("settings.security.new_password")}
+                        </label>
+                        <input
+                          type={showNewPassword ? "text" : "password"}
+                          value={passwordData.newPassword}
+                          onChange={(e) =>
+                            setPasswordData((prev) => ({
+                              ...prev,
+                              newPassword: e.target.value,
+                            }))
+                          }
+                          className="w-full h-[50px] px-4 pr-12 rounded-xl border border-border text-[16px] font-[Inter] focus:ring-2 focus:ring-primary focus:border-primary bg-input text-main"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowNewPassword(!showNewPassword)}
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted hover:text-main"
+                        >
+                          {showNewPassword ? (
+                            <EyeOff className="w-5 h-5" />
+                          ) : (
+                            <Eye className="w-5 h-5" />
+                          )}
+                        </button>
+                      </div>
+
+                      <div className="relative">
+                        <label className="absolute -top-2 left-4 bg-card px-2 text-[14px] text-muted font-medium font-[Inter]">
+                          {t("settings.security.confirm_password")}
+                        </label>
+
+                        <input
+                          type="password"
+                          autoComplete="new-password"
+                          value={passwordData.confirmPassword}
+                          onChange={(e) =>
+                            setPasswordData((prev) => ({
+                              ...prev,
+                              confirmPassword: e.target.value,
+                            }))
+                          }
+                          className="w-full h-[50px] px-4 rounded-xl border border-border text-[16px] font-[Inter] focus:ring-2 focus:ring-primary focus:border-primary bg-input text-main"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-col-reverse sm:flex-row justify-end gap-4 pt-6 border-t border-border mt-6">
+                  <button
+                    type="button"
+                    className="h-[50px] px-6 rounded-xl border border-border bg-card text-main text-[16px] font-medium font-[Inter] hover:bg-canvas-alt"
+                  >
+                    {t("common.cancel")}
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (
+                        !passwordData.currentPassword ||
+                        !passwordData.newPassword
+                      ) {
+                        toast.error("Please fill all fields!");
+                        return;
+                      }
+
+                      if (
+                        passwordData.newPassword !==
+                        passwordData.confirmPassword
+                      ) {
+                        toast.error("New passwords do not match!");
+                        return;
+                      }
+
+                      setLoading(true);
+
+                      try {
+                        const token = localStorage.getItem("token");
+
+                        await axios.put(
+                          "/api/users/change-password",
+                          {
+                            currentPassword: passwordData.currentPassword,
+                            newPassword: passwordData.newPassword,
+                          },
+                          {
+                            headers: {
+                              Authorization: `Bearer ${token}`,
+                            },
+                          },
+                        );
+
+                        toast.success("Password updated successfully!");
+
+                        setPasswordData({
+                          currentPassword: "",
+                          newPassword: "",
+                          confirmPassword: "",
+                        });
+                      } catch (error) {
+                        console.error("Password update error:", error);
+                        toast.error(
+                          error.response?.data?.message ||
+                            "Failed to update password",
+                        );
+                      } finally {
+                        setLoading(false);
+                      }
+                    }}
+                    disabled={loading}
+                    className="h-[50px] px-6 rounded-xl bg-gradient-to-r from-primary to-primary text-white text-[16px] font-medium font-[Inter] hover:opacity-90 disabled:opacity-50"
+                  >
+                    {loading ? t("common.saving") : t("common.save_changes")}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeSetting === "appearance" && (
+            <div className="w-full">
+              <div className="mb-8">
+                <h1 className="text-xl sm:text-2xl md:text-[30px] font-bold text-main font-[Inter] mb-2">
+                  {t("settings.appearance.title")}
+                </h1>
+                <p className="text-sm sm:text-[16px] text-muted font-[Inter]">
+                  {t("settings.appearance.subtitle")}
+                </p>
+              </div>
+              <div className="bg-card rounded-2xl sm:rounded-[24px] shadow-[0_4px_6px_0_rgba(0,0,0,0.10),0_10px_15px_0_rgba(0,0,0,0.10)] p-4 sm:p-6 md:p-8">
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-[16px] font-semibold text-main font-[Inter] mb-3">
+                      {t("settings.appearance.theme")}
+                    </h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                      {[
+                        {
+                          value: "light",
+                          labelKey: "settings.appearance.light",
+                          icon: "☀️",
+                        },
+                        {
+                          value: "dark",
+                          labelKey: "settings.appearance.dark",
+                          icon: "🌙",
+                        },
+                        {
+                          value: "auto",
+                          labelKey: "settings.appearance.auto",
+                          icon: "⚙️",
+                        },
+                      ].map((themeOption) => (
+                        <button
+                          key={themeOption.value}
+                          onClick={() => setTheme(themeOption.value)}
+                          className={`p-4 rounded-xl border-2 transition-colors ${
+                            theme === themeOption.value
+                              ? "border-primary bg-teal-50 dark:bg-teal-900/20 text-main"
+                              : "border-border hover:border-primary text-muted hover:text-main"
+                          }`}
+                        >
+                          <div className="text-2xl mb-2">
+                            {themeOption.icon}
+                          </div>
+                          <div className="text-[14px] font-medium font-[Inter]">
+                            {t(themeOption.labelKey)}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
-            )}
-            {/* //=== Profile Popup======// */}
-            {profilepopup && (
-              <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-55 animate-fadeIn">
+            </div>
+          )}
 
-                <div className="relative bg-gradient-to-br from-white to-slate-100 dark:from-slate-800 dark:to-slate-900 
-                   rounded-3xl p-6 sm:p-10 w-[90vw] max-w-[420px] text-center shadow-2xl border border-slate-200 
-                   dark:border-slate-700 transform transition-all duration-300 scale-100 animate-popup">
-
-                  {/* Animated Success Circle */}
-                  <div className="mx-auto mb-6 w-20 h-20 flex items-center justify-center 
-                     rounded-full bg-gradient-to-r from-emerald-400 to-green-500 
-                     shadow-lg animate-bounce">
-                    <span className="text-4xl text-white">✓</span>
+          {activeSetting === "language" && (
+            <div className="w-full">
+              <div className="mb-8">
+                <h1 className="text-xl sm:text-2xl md:text-[30px] font-bold text-main font-[Inter] mb-2">
+                  {t("settings.language.title")}
+                </h1>
+                <p className="text-sm sm:text-[16px] text-muted font-[Inter]">
+                  {t("settings.language.subtitle")}
+                </p>
+              </div>
+              <div className="bg-card rounded-2xl sm:rounded-[24px] shadow-[0_4px_6px_0_rgba(0,0,0,0.10),0_10px_15px_0_rgba(0,0,0,0.10)] p-4 sm:p-6 md:p-8">
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-[16px] font-semibold text-main font-[Inter] mb-3">
+                      {t("settings.language.interface_language")}
+                    </h3>
+                    <select
+                      value={settingsData.appearance.language}
+                      onChange={(e) =>
+                        setSettingsData((prev) => ({
+                          ...prev,
+                          appearance: {
+                            ...prev.appearance,
+                            language: e.target.value,
+                          },
+                        }))
+                      }
+                      className="w-full h-[50px] px-4 rounded-xl border border-border text-[16px] font-[Inter] focus:ring-2 focus:ring-primary focus:border-primary bg-input text-main"
+                    >
+                      <option value="en">English</option>
+                      <option value="es">Spanish</option>
+                      <option value="zh">Chinese (Mandarin)</option>
+                      <option value="hi">Hindi</option>
+                      <option value="ar">Arabic</option>
+                      <option value="pt">Portuguese</option>
+                      <option value="fr">French</option>
+                      <option value="ru">Russian</option>
+                      <option value="ja">Japanese</option>
+                      <option value="de">German</option>
+                    </select>
                   </div>
+                </div>
 
-                  {/* Heading */}
-                  <h2 className="text-2xl font-bold bg-gradient-to-r from-emerald-500 to-teal-500 
-                    bg-clip-text text-transparent mb-3">
-                    Profile Updated Successfully!
-                  </h2>
-
-                  {/* Action Button */}
+                <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 sm:gap-4 pt-6 border-t border-border mt-6">
                   <button
-                    onClick={() => setProfilePopup(false)}
-                    className="px-8 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 
+                    type="button"
+                    className="h-[50px] px-6 rounded-xl border border-border bg-card text-main text-[16px] font-medium font-[Inter] hover:bg-canvas-alt"
+                  >
+                    {t("common.cancel")}
+                  </button>
+                  <button
+                    onClick={async () => {
+                      setLoading(true);
+                      try {
+                        const token = localStorage.getItem("token");
+                        await axios.put(
+                          "/api/users/settings",
+                          {
+                            appearance: {
+                              language: settingsData.appearance.language,
+                            },
+                          },
+                          { headers: { Authorization: `Bearer ${token}` } },
+                        );
+                        i18n.changeLanguage(settingsData.appearance.language);
+                        toast.success(
+                          "Language settings updated successfully!",
+                        );
+                      } catch (error) {
+                        console.error("Error updating settings:", error);
+                        toast.error(
+                          "Failed to update settings. Please try again.",
+                        );
+                      } finally {
+                        setLoading(false);
+                      }
+                    }}
+                    disabled={loading}
+                    className="h-[50px] px-6 rounded-xl bg-gradient-to-r from-[#00BEA5] to-[#00BEA5] text-white text-[16px] font-medium font-[Inter] hover:opacity-90 disabled:opacity-50"
+                  >
+                    {loading ? t("common.saving") : t("common.save_changes")}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+          {/* //=== Profile Popup======// */}
+          {profilepopup && (
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-55 animate-fadeIn">
+              <div
+                className="relative bg-gradient-to-br from-white to-slate-100 dark:from-slate-800 dark:to-slate-900 
+                   rounded-3xl p-6 sm:p-10 w-[90vw] max-w-[420px] text-center shadow-2xl border border-slate-200 
+                   dark:border-slate-700 transform transition-all duration-300 scale-100 animate-popup"
+              >
+                {/* Animated Success Circle */}
+                <div
+                  className="mx-auto mb-6 w-20 h-20 flex items-center justify-center 
+                     rounded-full bg-gradient-to-r from-emerald-400 to-green-500 
+                     shadow-lg animate-bounce"
+                >
+                  <span className="text-4xl text-white">✓</span>
+                </div>
+
+                {/* Heading */}
+                <h2
+                  className="text-2xl font-bold bg-gradient-to-r from-emerald-500 to-teal-500 
+                    bg-clip-text text-transparent mb-3"
+                >
+                  Profile Updated Successfully!
+                </h2>
+
+                {/* Action Button */}
+                <button
+                  onClick={() => setProfilePopup(false)}
+                  className="px-8 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 
                   text-white rounded-2xl font-semibold 
                   shadow-lg hover:scale-105 hover:shadow-emerald-400/40 
                   transition-all duration-300"
-                  >
-                    Ok
-                  </button>
+                >
+                  Ok
+                </button>
+              </div>
+            </div>
+          )}
 
+          {activeSetting === "contactus" && (
+            <div className="max-w-[896px]">
+              <div className="mb-8">
+                <h1 className="text-[30px] font-bold text-main font-[Inter] mb-2">
+                  {t("settings.contactus.title")}
+                </h1>
+                <p className="text-[16px] text-muted font-[Inter]">
+                  {t("settings.contactus.subtitle")}
+                </p>
+              </div>
+              <div className="bg-card rounded-[24px] shadow-[0_4px_6px_0_rgba(0,0,0,0.10),0_10px_15px_0_rgba(0,0,0,0.10)] p-8">
+                <div className="space-y-6">
+                  <div>
+                    <label className="block text-sm font-medium text-muted mb-2 font-[Inter]">
+                      {t("settings.contactus.subject")}
+                    </label>
+                    <input
+                      type="text"
+                      value={contactForm.subject}
+                      onChange={(e) =>
+                        setContactForm((prev) => ({
+                          ...prev,
+                          subject: e.target.value,
+                        }))
+                      }
+                      placeholder="Enter subject..."
+                      className="w-full h-[50px] px-4 rounded-xl border border-border focus:ring-2 focus:ring-primary bg-input text-main"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-muted mb-2 font-[Inter]">
+                      {t("settings.contactus.message")}
+                    </label>
+                    <textarea
+                      value={contactForm.message}
+                      onChange={(e) =>
+                        setContactForm((prev) => ({
+                          ...prev,
+                          message: e.target.value,
+                        }))
+                      }
+                      rows={6}
+                      placeholder="Describe your issue or question..."
+                      className="w-full px-4 py-3 rounded-xl border border-border focus:ring-2 focus:ring-primary bg-input text-main resize-vertical"
+                    />
+                  </div>
+                  <div className="flex justify-end">
+                    <button
+                      onClick={handleContactSubmit}
+                      disabled={loading}
+                      className="h-[50px] px-8 rounded-xl bg-gradient-to-r from-primary to-primary text-white font-medium hover:opacity-90 disabled:opacity-50"
+                    >
+                      {loading
+                        ? t("common.loading") + "..."
+                        : t("Send Message")}
+                    </button>
+                  </div>
                 </div>
               </div>
-            )}
-          </main>
-        </div>
+            </div>
+          )}
+        </main>
+      </div>
     </>
   );
 }

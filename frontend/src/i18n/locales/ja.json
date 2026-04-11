@@ -266,5 +266,45 @@
     "email": "メール",
     "password": "パスワード",
     "logout": "ログアウト"
+  },
+  "preferences": {
+    "nav_title": "AI チューター設定",
+    "modal_title": "AI チューターをパーソナライズ",
+    "modal_subtitle": "あなたの学習スタイルに合わせて解説を調整するお手伝いをします。",
+    "settings_modal_subtitle": "AIチューターの解説、ペース、および例の参照を調整します。",
+    "save_continue": "保存して続行",
+    "save_changes": "変更を保存",
+    "save_success": "設定が正常に更新されました",
+    "extra_title": "6. 追加設定（オプション）",
+    "extra_placeholder": "例: アニメーションを好む、動画を短くする、コード例に集中する",
+    "questions": {
+      "explanation_type": "1. どのようなタイプの解説を好みますか？",
+      "learning_style": "2. どのような学習スタイルが適していますか？",
+      "teaching_pace": "3. どのような授業ペースを好みますか？",
+      "example_type": "4. 解説での「例え」はどのようなものを好みますか？",
+      "focus_area": "5. AI は動画内で何にもっと焦点を当てるべきですか？"
+    },
+    "options": {
+      "simple": "シンプル＆初心者向け",
+      "balanced": "バランス（分かりやすさ＋少し深掘り）",
+      "detailed": "詳細で深掘り",
+      "expert": "エキスパートレベル（専門的）",
+      "step_by_step": "ステップ・バイ・ステップのガイド",
+      "concept_first": "概念優先の解説",
+      "real_world": "現実世界に基づいた例",
+      "problem_solving": "問題解決フォーカス",
+      "slow": "ゆっくり＆丁寧",
+      "moderate": "適度",
+      "fast": "ハイペース",
+      "adaptive": "適応型（進行状況に応じて）",
+      "real_life": "実生活の例",
+      "technical": "専門的な例",
+      "visual": "視覚・図を中心としたもの",
+      "minimal": "最小限の例",
+      "concepts": "概念と理論",
+      "practical": "実践的応用",
+      "coding": "コーディング／問題解決",
+      "exams": "試験対策"
+    }
   }
 }

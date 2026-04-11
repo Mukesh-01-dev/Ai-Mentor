@@ -2,6 +2,8 @@ import Course from "./Course.js";
 import Module from "./Module.js";
 import Lesson from "./Lesson.js";
 import LessonContent from "./LessonContent.js";
+import User from "./User.js";
+import Preference from "./Preference.js";
 
 /* ======================
    COURSE → MODULE
@@ -45,4 +47,18 @@ LessonContent.belongsTo(Lesson, {
     foreignKey: "lessonId",
 });
 
-export { Course, Module, Lesson, LessonContent };
+/* ======================
+   USER → PREFERENCE
+====================== */
+
+User.hasOne(Preference, {
+    foreignKey: "user_id",
+    as: "preferences",
+    onDelete: "CASCADE",
+});
+
+Preference.belongsTo(User, {
+    foreignKey: "user_id",
+});
+
+export { Course, Module, Lesson, LessonContent, User, Preference };
