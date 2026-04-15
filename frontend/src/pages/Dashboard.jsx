@@ -47,8 +47,8 @@ const Dashboard = () => {
         };
 
         const [coursesRes, statsRes] = await Promise.all([
-          fetch("/api/courses", { headers }),
-          fetch("/api/courses/stats/cards", { headers }),
+          fetch(`${API_BASE_URL}/api/courses`, { headers }),
+          fetch(`${API_BASE_URL}/api/courses/stats/cards`, { headers }),
         ]);
 
         if (!coursesRes.ok) {
@@ -79,100 +79,102 @@ const Dashboard = () => {
 
   // Calculate dynamic stats based on user's actual progress
   const calculateStats = () => {
-    console.log("Calculating stats with user:", user);
-    console.log("coursesData:", coursesData);
-
-    if (
-      !user?.purchasedCourses ||
-      !coursesData.statsCards ||
-      coursesData.statsCards.length < 4
-    ) {
-      return [
-        {
-          icon: <Play className="w-5 h-5 text-blue-600" />,
-          value: "0",
-          label: "Ongoing Courses",
-          change: "+0%",
-          bgColor: "bg-blue-50",
-          iconBg: "bg-blue-100",
-        },
-        {
-          icon: <CheckCircle className="w-5 h-5 text-green-600" />,
-          value: "0",
-          label: "Completed",
-          change: "+0",
-          bgColor: "bg-green-50",
-          iconBg: "bg-green-100",
-        },
-        {
-          icon: <Bookmark className="w-5 h-5 text-purple-600" />,
-          value: "0",
-          label: "Certificates",
-          change: "+0",
-          bgColor: "bg-purple-50",
-          iconBg: "bg-purple-100",
-        },
-        {
-          icon: <Clock className="w-5 h-5 text-orange-600" />,
-          value: "0h",
-          label: "Hours Spent",
-          change: "+0h",
-          bgColor: "bg-orange-50",
-          iconBg: "bg-orange-100",
-        },
-      ];
-    }
-
-    let coursesInProgress = 0;
-    let completedCourses = 0;
-    const certificates = user.analytics?.certificates || 0;
-    const totalHours = user.analytics?.totalHours || 0;
-
-    user.purchasedCourses.forEach((purchasedCourse) => {
-      // Find the course in allCourses to get lesson count
-      const courseInfo = coursesData.allCourses.find(
-        (c) => c.id == purchasedCourse.courseId
-      );
-      if (courseInfo) {
-        const totalLessons =
-          courseInfo.lessonsCount ||
-          (courseInfo.lessons
-            ? courseInfo.lessons.includes(" of ")
-              ? parseInt(courseInfo.lessons.split(" of ")[1])
-              : parseInt(courseInfo.lessons.split(" ")[0])
-            : 0);
-        const completedLessons =
-          purchasedCourse.progress?.completedLessons?.length || 0;
-
-        if (completedLessons === totalLessons && totalLessons > 0) {
-          completedCourses++;
-        } else if (completedLessons > 0) {
-          coursesInProgress++;
-        }
-      }
-    });
-
-    const result = [
+    // Baseline template with icons and colors that cannot come from API
+    const template = [
       {
-        ...coursesData.statsCards[0],
-        value: coursesInProgress.toString(),
+        icon: <Play className="w-5 h-5 text-blue-600" />,
+        labelKey: "ongoing_courses",
+        bgColor: "bg-blue-50",
+        iconBg: "bg-blue-100",
+        change: "+0%",
+        value: "0"
       },
       {
-        ...coursesData.statsCards[1],
-        value: completedCourses.toString(),
+        icon: <CheckCircle className="w-5 h-5 text-green-600" />,
+        labelKey: "completed",
+        bgColor: "bg-green-50",
+        iconBg: "bg-green-100",
+        change: "+0",
+        value: "0"
       },
       {
-        ...coursesData.statsCards[2],
-        value: certificates.toString(),
+        icon: <Bookmark className="w-5 h-5 text-purple-600" />,
+        labelKey: "certificates",
+        bgColor: "bg-purple-50",
+        iconBg: "bg-purple-100",
+        change: "+0",
+        value: "0"
       },
       {
-        ...coursesData.statsCards[3],
-        value: `${totalHours}h`,
+        icon: <Clock className="w-5 h-5 text-orange-600" />,
+        labelKey: "hours_spent",
+        bgColor: "bg-orange-50",
+        iconBg: "bg-orange-100",
+        change: "+0h",
+        value: "0h"
       },
     ];
 
-    console.log("Calculated stats result:", result);
-    return result;
+    if (!user) return template;
+
+    let coursesInProgress = 0;
+    let completedCourses = 0;
+    
+    // Use analytics from user object (now included in profile response)
+    const certificates = user.analytics?.certificates || 0;
+    const totalHours = user.analytics?.totalHours || 0;
+
+    if (user.purchasedCourses) {
+      user.purchasedCourses.forEach((purchasedCourse) => {
+        // Find the course in allCourses to get lesson count
+        const courseInfo = coursesData.allCourses.find(
+          (c) => String(c.id) === String(purchasedCourse.courseId)
+        );
+        if (courseInfo) {
+          const totalLessons =
+            courseInfo.lessonsCount ||
+            (courseInfo.lessons
+              ? courseInfo.lessons.includes(" of ")
+                ? parseInt(courseInfo.lessons.split(" of ")[1])
+                : parseInt(courseInfo.lessons.split(" ")[0])
+              : 0);
+          const completedLessons =
+            purchasedCourse.progress?.completedLessons?.length || 0;
+
+          if (completedLessons === totalLessons && totalLessons > 0) {
+            completedCourses++;
+          } else if (completedLessons > 0 || (completedLessons === 0 && totalLessons > 0)) {
+            // If they purchased it and haven't finished, it's ongoing
+            coursesInProgress++;
+          }
+        } else {
+            // fallback if course info not found but purchased
+            coursesInProgress++;
+        }
+      });
+    }
+
+    // Map template to actual values
+    return template.map((card) => {
+      let value = card.value;
+      let change = card.change;
+      
+      // Try to find matching data from API stats cards if available
+      const apiCard = Array.isArray(coursesData.statsCards) 
+        ? coursesData.statsCards.find(c => c.label === card.labelKey)
+        : null;
+
+      if (card.labelKey === "ongoing_courses") value = coursesInProgress.toString();
+      if (card.labelKey === "completed") value = completedCourses.toString();
+      if (card.labelKey === "certificates") value = certificates.toString();
+      if (card.labelKey === "hours_spent") value = `${totalHours}h`;
+
+      return {
+        ...card,
+        value: value,
+        change: apiCard?.change || change
+      };
+    });
   };
 
   const dynamicStatsCards = calculateStats();

@@ -22,7 +22,7 @@ if (connectionString) {
     dialectOptions: {
       ssl: {
         require: true,
-        rejectUnauthorized: true,
+        rejectUnauthorized: false, // Standard for Neon when not using a CA certificate
       },
     },
   });

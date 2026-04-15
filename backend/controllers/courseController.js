@@ -223,13 +223,39 @@ const getCourseAndLessonTitles = async (courseId, lessonId) => {
 ========================= */
 const getStatsCards = async (req, res) => {
   try {
-    const totalCourses = await Course.count();
+    const user = req.user;
+    if (!user) {
+      return res.json({
+        statsCards: []
+      });
+    }
+
+    const purchasedCourses = user.purchasedCourses || [];
+    let ongoingCount = 0;
+    let completedCount = 0;
+
+    // We need to fetch course info to get total lessons for each purchased course
+    // or we can rely on what's in the purchasedCourses object if it's reliable.
+    // In userController.js purchaseCourse/updateCourseProgress, it seems we track completedLessons.
+    
+    // For simplicity and performance, we'll use a heuristic or just return the analytics directly if they are tracked.
+    // The user model HAS analytics.
+    
+    const analytics = user.analytics || {};
+    
+    // Ongoing is purchased but not completed
+    // This is a bit simplified.
+    ongoingCount = purchasedCourses.length - (analytics.completedCourses || 0);
+    if (ongoingCount < 0) ongoingCount = 0;
 
     res.json({
-      totalCourses,
-      completedCourses: 0,
-      hoursLearned: 0,
-      certificates: 0,
+      statsCards: [
+        { label: "ongoing_courses", value: ongoingCount.toString(), change: "+0%" },
+        { label: "completed", value: (analytics.completedCourses || 0).toString(), change: "+0" },
+        { label: "certificates", value: (analytics.certificates || 0).toString(), change: "+0" },
+        { label: "hours_spent", value: `${analytics.totalHours || 0}h`, change: "+0h" },
+      ],
+      totalCourses: await Course.count(),
     });
   } catch (error) {
     console.error("GET STATS CARDS ERROR:", error);

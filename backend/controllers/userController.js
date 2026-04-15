@@ -161,6 +161,7 @@ const getUserProfile = async (req, res) => {
       bio: user.bio,
       avatar_url: user.avatar_url,  // 👈 ADD THIS LINE
       purchasedCourses: user.purchasedCourses,
+      analytics: user.analytics,
     });
   } catch (error) {
     console.error("PROFILE ERROR:", error);
@@ -434,6 +435,7 @@ const updateUserProfile = async (req, res) => {
       bio: user.bio,
       avatar_url: user.avatar_url,  // 👈 added
       purchasedCourses: user.purchasedCourses,
+      analytics: user.analytics,
     });
 
   } catch (error) {
