@@ -112,9 +112,9 @@ const getInitialAvatar = () => {
       const fName = names[0] || "";
       const lName = names.slice(1).join(" ") || "";
 
-      // ✅ Only set if DB values are empty (IMPORTANT)
-      if (!user?.firstName) setFirstName(fName);
-      if (!user?.lastName) setLastName(lName);
+      // ✅ Only set if DB values are empty and the user hasn't typed locally yet
+      if (!user?.firstName) setFirstName((currentFirstName) => currentFirstName || fName);
+      if (!user?.lastName) setLastName((currentLastName) => currentLastName || lName);
 
       // ✅ Set profile image from Google
       if (!user?.avatar_url && firebaseUser.photoURL) {
