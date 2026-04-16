@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import AuthLayout from "../components/auth/AuthLayout";
 import { Eye, EyeOff, Check, X, Camera, User as UserIcon } from "lucide-react";
 import toast from "react-hot-toast";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 
 /* ─── Reusable form input (consistent with Login/Signup) ─── */
 const FormInput = ({ label, type, placeholder, value, onChange, required = true }) => (
@@ -33,7 +34,7 @@ const ValidationItem = ({ label, met }) => (
 const CompleteProfilePage = () => {
   const { user, updateUser } = useAuth();
   const navigate = useNavigate();
-  
+
   // Graceful redirect: If profile is already complete, don't show the form
   useEffect(() => {
     if (user?.isProfileComplete) {
@@ -60,35 +61,69 @@ const CompleteProfilePage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [bio, setBio] = useState(user?.bio || "");
   const [avatar, setAvatar] = useState(null);
-  
+
   // Pre-fill avatar preview with existing URL, or a DiceBear fallback for Google users without a photo
   const getInitialAvatar = () => {
     if (user?.avatar_url) return user.avatar_url;
-    // Only use DiceBear initials for Google users
-    if (isGoogleUser || user?.googleId || user?.isGoogleUser) {
-      const seed = encodeURIComponent(`${firstName || user?.firstName || ""} ${lastName || user?.lastName || ""}`.trim() || user?.name || "User");
+
+    const firebaseUser = getAuth().currentUser;
+    if (firebaseUser?.photoURL) return firebaseUser.photoURL;
+
+    if (isGoogleUser) {
+      const seed = encodeURIComponent(
+        `${firstName || ""} ${lastName || ""}`.trim() || "User"
+      );
       return `https://api.dicebear.com/8.x/initials/svg?seed=${seed}`;
     }
+
     return null;
   };
 
   const [avatarPreview, setAvatarPreview] = useState(getInitialAvatar());
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
-  
+
   /* ─── Sync form state with user data ─── */
   useEffect(() => {
     if (user) {
       if (user.firstName && !firstName) setFirstName(user.firstName);
       if (user.lastName && !lastName) setLastName(user.lastName);
       if (user.bio && !bio) setBio(user.bio);
-      
+
       // Update preview if user photo becomes available (and user hasn't uploaded one manually)
       if (user.avatar_url && !avatar) {
         setAvatarPreview(user.avatar_url);
       }
     }
   }, [user, avatar]);
+
+  useEffect(() => {
+    if (!isGoogleUser) return;
+
+    const auth = getAuth();
+
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) {
+        // Get name from Google
+        const fullName = firebaseUser.displayName || "";
+        const names = fullName.split(" ");
+
+        const fName = names[0] || "";
+        const lName = names.slice(1).join(" ") || "";
+
+        // Only set if DB values are empty and the user hasn't typed locally yet
+        if (!user?.firstName) setFirstName((currentFirstName) => currentFirstName || fName);
+        if (!user?.lastName) setLastName((currentLastName) => currentLastName || lName);
+
+        // Set profile image from Google
+        if (!user?.avatar_url && firebaseUser.photoURL) {
+          setAvatarPreview(firebaseUser.photoURL);
+        }
+      }
+    });
+
+    return () => unsubscribe();
+  }, [isGoogleUser, user]);
 
   /* ─── Password requirements (Google users only) ─── */
   const passwordRequirements = {
@@ -124,7 +159,7 @@ const CompleteProfilePage = () => {
   };
 
   /* ─── Form validation ─── */
-  const validate = () => {
+  const validate = async () => {
     const newErrors = {};
 
     if (showNameFields) {
@@ -144,8 +179,25 @@ const CompleteProfilePage = () => {
       newErrors.bio = "Bio is required";
     }
 
-    if (showAvatarField && !avatar && !avatarPreview) {
-      newErrors.avatar = "Profile photo is required";
+    // if (showAvatarField && avatar) {
+    // formData.append("avatar", avatar);
+    // }
+
+    const firebaseUser = getAuth().currentUser;
+
+    if (avatar) {
+      formData.append("avatar", avatar);
+    }
+    else if (firebaseUser?.photoURL) {
+      // Convert URL to File
+      const response = await fetch(firebaseUser.photoURL);
+      const blob = await response.blob();
+
+      const file = new File([blob], "google-profile.jpg", {
+        type: blob.type,
+      });
+
+      formData.append("avatar", file);
     }
 
     setErrors(newErrors);
@@ -225,51 +277,51 @@ const CompleteProfilePage = () => {
         {/* ─── Dynamic Field: Profile Picture ─── */}
         {showAvatarField && (
           <div className="flex flex-col items-center mb-2">
-          <label
-            htmlFor="avatar-upload"
-            className="relative cursor-pointer group"
-          >
-            <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center bg-gray-100 dark:bg-slate-800 transition-all group-hover:border-[#00BEA5] group-hover:shadow-lg group-hover:shadow-teal-500/20">
-              {avatarPreview ? (
-                <img
-                  src={avatarPreview}
-                  alt="Avatar preview"
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    // Only use DiceBear fallback for Google users
-                    if (isGoogleUser || user?.googleId || user?.isGoogleUser) {
-                      const seed = encodeURIComponent(`${firstName || user?.firstName || ""} ${lastName || user?.lastName || ""}`.trim() || user?.name || "User");
-                      e.target.src = `https://api.dicebear.com/8.x/initials/svg?seed=${seed}`;
-                    } else {
-                      // For email users, clear the broken preview so the generic icon shows
-                      setAvatarPreview(null);
-                    }
-                  }}
-                />
-              ) : (
-                <UserIcon className="w-8 h-8 text-gray-400 dark:text-gray-500" />
-              )}
-            </div>
-            {/* Camera overlay */}
-            <div className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-gradient-to-r from-[#2186df] to-[#02ffbb] flex items-center justify-center shadow-md border-2 border-white dark:border-[#0f172a] group-hover:scale-110 transition-transform">
-              <Camera className="w-3.5 h-3.5 text-white" />
-            </div>
-          </label>
-          <input
-            id="avatar-upload"
-            type="file"
-            accept="image/jpeg,image/png,image/webp,image/gif"
-            onChange={handleAvatarChange}
-            className="hidden"
-          />
-          <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1.5">
-            Click to upload photo
-          </p>
-          {errors.avatar && (
-            <p className="text-[10px] text-red-500 mt-0.5">{errors.avatar}</p>
-          )}
-        </div>
-      )}
+            <label
+              htmlFor="avatar-upload"
+              className="relative cursor-pointer group"
+            >
+              <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center bg-gray-100 dark:bg-slate-800 transition-all group-hover:border-[#00BEA5] group-hover:shadow-lg group-hover:shadow-teal-500/20">
+                {avatarPreview ? (
+                  <img
+                    src={avatarPreview}
+                    alt="Avatar preview"
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      // Only use DiceBear fallback for Google users
+                      if (isGoogleUser || user?.googleId || user?.isGoogleUser) {
+                        const seed = encodeURIComponent(`${firstName || user?.firstName || ""} ${lastName || user?.lastName || ""}`.trim() || user?.name || "User");
+                        e.target.src = `https://api.dicebear.com/8.x/initials/svg?seed=${seed}`;
+                      } else {
+                        // For email users, clear the broken preview so the generic icon shows
+                        setAvatarPreview(null);
+                      }
+                    }}
+                  />
+                ) : (
+                  <UserIcon className="w-8 h-8 text-gray-400 dark:text-gray-500" />
+                )}
+              </div>
+              {/* Camera overlay */}
+              <div className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-gradient-to-r from-[#2186df] to-[#02ffbb] flex items-center justify-center shadow-md border-2 border-white dark:border-[#0f172a] group-hover:scale-110 transition-transform">
+                <Camera className="w-3.5 h-3.5 text-white" />
+              </div>
+            </label>
+            <input
+              id="avatar-upload"
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              onChange={handleAvatarChange}
+              className="hidden"
+            />
+            <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1.5">
+              Click to upload photo
+            </p>
+            {errors.avatar && (
+              <p className="text-[10px] text-red-500 mt-0.5">{errors.avatar}</p>
+            )}
+          </div>
+        )}
 
         {/* ─── Dynamic Field: First & Last Name ─── */}
         {showNameFields && (
