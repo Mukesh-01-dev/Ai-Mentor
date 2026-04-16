@@ -223,34 +223,51 @@ router.get("/status/:jobId", protect, async (req, res) => {
 router.get("/video/:courseId/:filename", async (req, res) => {
   try {
     const { courseId, filename } = req.params;
+    const range = req.headers.range;
 
-    const pythonVideoUrl =
-      `${process.env.AI_SERVICE_URL}/video-stream/${filename}`;
+    const pythonVideoUrl = `${process.env.AI_SERVICE_URL}/video-stream/${filename}`;
 
-    const response = await fetch(pythonVideoUrl);
-
-    if (!response.ok) {
-      return res.status(404).json({
-        error: "Video not found in AI service",
-      });
+    const headers = {};
+    if (range) {
+      headers.Range = range;
     }
 
-    res.setHeader("Content-Type", "video/mp4");
-    // Streams the response body directly to the client
-    const reader = response.body.getReader();
+    const response = await fetch(pythonVideoUrl, { headers });
 
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      res.write(value);
+    // Forward status code and essential headers for video streaming
+    res.status(response.status);
+    
+    const forwardHeaders = [
+      "content-type",
+      "content-length",
+      "content-range",
+      "accept-ranges",
+    ];
+
+    forwardHeaders.forEach((h) => {
+      const val = response.headers.get(h);
+      if (val) res.setHeader(h, val);
+    });
+
+    // Handle streaming response body
+    if (response.body) {
+      const reader = response.body.getReader();
+      
+      // Node.js res is a WritableStream. We can write chunks as they come.
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        res.write(value);
+      }
     }
     res.end();
-
   } catch (error) {
     console.error("❌ Proxy Error:", error.message);
-    res.status(500).json({
-      error: "Failed to load video via proxy",
-    });
+    if (!res.headersSent) {
+      res.status(500).json({
+        error: "Failed to load video via proxy",
+      });
+    }
   }
 });
 

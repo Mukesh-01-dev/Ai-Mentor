@@ -33,6 +33,7 @@ function sanitizeFilename(name) {
 }
 
 const getYouTubeVideoId = (url) => {
+  if (!url || typeof url !== 'string') return null;
   const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
   const match = url.match(regExp);
   return match && match[2].length === 11 ? match[2] : null;
@@ -79,6 +80,13 @@ export default function Learning() {
   const [aiTranscript, setAiTranscript] = useState(null);
   const [isAIVideoLoading, setIsAIVideoLoading] = useState(false);
   const [generatedTextContent, setGeneratedTextContent] = useState("");
+
+  const youtubeId = getYouTubeVideoId(
+    aiVideoUrl || 
+    (selectedCelebrity && celebrityVideoMap[selectedCelebrity]?.video) || 
+    learningData?.currentLesson?.videoUrl || 
+    learningData?.currentLesson?.youtubeUrl
+  );
 
   const videoRef = useRef(null);
   const playerContainerRef = useRef(null);
@@ -687,11 +695,12 @@ export default function Learning() {
   };
 
   const togglePlay = () => {
+    if (youtubeId) {
+      setIsPlaying(!isPlaying);
+      return;
+    }
+
     if (videoRef.current) {
-      if (!selectedCelebrity && !isPlaying) {
-        setIsCelebrityModalOpen(true);
-        return;
-      }
       if (isPlaying) {
         videoRef.current.pause();
         setIsPlaying(false);
