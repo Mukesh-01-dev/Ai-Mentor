@@ -328,7 +328,7 @@ const Dashboard = () => {
   return (
     <main className="flex-1 overflow-x-hidden overflow-y-auto bg-canvas-alt p-6">
       <Preferences mode="modal" onSuccess={() => { console.log('Preferences saved') }} />
-      <div className="max-w-7xl pt-16 mx-auto space-y-8">
+      <div className="max-w-7xl  mx-auto space-y-8">
             {/* Stats Cards */}
             <div className="grid grid-cols-1  sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {dynamicStatsCards.map((card, index) => {
@@ -396,7 +396,7 @@ const Dashboard = () => {
   {/* Slider */}
   <div
     id="courseSlider"
-    className="flex gap-6 overflow-x-auto pb-4 scroll-smooth"
+    className="flex gap-6 overflow-x-auto pb-4 scroll-smooth "
   >
     {coursesData.allCourses.slice(0, 10).map((course, index) => (
       <div

@@ -41,5 +41,35 @@
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #9ca3af;
+  background:#d1d5db;;
+}
+
+/* LIGHT MODE (default) */
+#courseSlider {
+  scrollbar-width: auto;
+  scrollbar-color: #cbd5f5 transparent; 
+}
+
+#courseSlider::-webkit-scrollbar {
+  height: 6px;
+}
+
+#courseSlider::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+#courseSlider::-webkit-scrollbar-thumb {
+  background-color: #cbd5f5; 
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+/* DARK MODE */
+.dark #courseSlider {
+  scrollbar-color: #3f3f46 transparent;
+}
+
+.dark #courseSlider::-webkit-scrollbar-thumb {
+  background-color: #3f3f46;
 }

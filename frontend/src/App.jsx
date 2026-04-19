@@ -20,7 +20,9 @@ const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const CertificatesPage = lazy(() => import("./pages/CertificatesPage"));
 const Success = lazy(() => import("./pages/Success"));
-import CompleteProfilePage from "./pages/CompleteProfilePage";
+//import CompleteProfilePage from "./pages/CompleteProfilePage";
+
+const CompleteProfilePage = lazy(() => import("./pages/CompleteProfilePage"));
 import "./App.css";
 // Redirects from the root path based on authentication status.
 const RootRedirect = () => {
@@ -52,7 +54,7 @@ const App = () => {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password/:token" element={<ResetPassword />} />
         </Route>
-
+        <Route path="/complete-profile" element={<CompleteProfilePage />} />
         {/* Protected Routes with shared Header + Sidebar layout */}
         <Route element={<ProtectedRoute />}>
           <Route element={<DashboardLayout />}>
