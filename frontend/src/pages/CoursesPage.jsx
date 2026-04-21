@@ -366,7 +366,7 @@ const CoursesPage = () => {
               onClick={handleEnroll}
               className="w-full mt-6 py-3 rounded-xl bg-[#2DD4BF] text-white font-semibold"
             >
-              {t("courses.confirm_enrollment")}
+              {/* {t("courses.confirm_enrollment")} */}
             </button>
           </div>
         </div>
