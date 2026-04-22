@@ -9,9 +9,9 @@ const ProtectedRoute = () => {
 
   useEffect(() => {
     // If logged in, profile complete, and trying to access /complete-profile,
-    // bounce them back to the previous page
+    // bounce them back to the dashboard to avoid getting stuck
     if (isAuthenticated && user?.isProfileComplete && location.pathname === '/complete-profile') {
-      navigate(-1);
+      navigate('/dashboard', { replace: true });
     }
   }, [isAuthenticated, user?.isProfileComplete, location.pathname, navigate]);
 

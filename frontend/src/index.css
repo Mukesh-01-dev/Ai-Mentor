@@ -105,6 +105,16 @@ button{
   scrollbar-width: none;
 }
 
+/* Hide scrollbar utility (used by mobile settings tab bar) */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 /* Responsive adjustments */
 @media (max-width: 1024px) {
   .w-70 {
@@ -146,4 +156,35 @@ button{
   /* space between bullets */
   font-weight: 900;
   /* bolder bullets */
+}
+
+/* Wizard step transitions */
+.wizard-step-enter {
+  opacity: 0;
+  transform: translateX(30px);
+}
+.wizard-step-enter-active {
+  opacity: 1;
+  transform: translateX(0);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.wizard-step-exit {
+  opacity: 0;
+  transform: translateX(-30px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+/* Progress bar animation */
+.wizard-progress-bar {
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Selected option highlight pulse */
+@keyframes option-select {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+  100% { transform: scale(1); }
+}
+.wizard-option-selected {
+  animation: option-select 0.2s ease;
 }

@@ -1,276 +1,162 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { X, CheckCircle, ChevronRight, Loader2, Sparkles } from "lucide-react";
+import { Loader2, ArrowRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-export const PREFERENCE_QUESTIONS = [
+export const WIZARD_STEPS = [
   {
-    id: "explanation_type",
-    title: "1. What type of explanations do you prefer?",
+    id: "learning_goal",
+    questionKey: "learning_goal",
+    hintKey: "select_one",
+    multiSelect: false,
     options: [
-      { id: "simple", label: "Simple & beginner-friendly" },
-      { id: "balanced", label: "Balanced (easy + some depth)" },
-      { id: "detailed", label: "Detailed & in-depth" },
-      { id: "expert", label: "Expert-level (technical)" }
+      { id: "switch_careers", value: "Switch Careers", icon: "🚀" },
+      { id: "upskill_work", value: "Upskill at Work", icon: "📈" },
+      { id: "personal_interest", value: "Personal Interest", icon: "🎯" },
+      { id: "get_certified", value: "Get Certified", icon: "🏆" }
+    ]
+  },
+  {
+    id: "interested_topics",
+    questionKey: "interested_topics",
+    hintKey: "select_multiple",
+    multiSelect: true,
+    options: [
+      { id: "ai", value: "Artificial Intelligence", icon: "🤖" },
+      { id: "web_dev", value: "Web Development", icon: "💻" },
+      { id: "data_science", value: "Data Science", icon: "📊" },
+      { id: "cloud", value: "Cloud Computing", icon: "☁️" },
+      { id: "cybersecurity", value: "Cybersecurity", icon: "🛡️" },
+      { id: "mobile_apps", value: "Mobile Apps", icon: "📱" }
+    ]
+  },
+  {
+    id: "experience_level",
+    questionKey: "experience_level",
+    hintKey: "select_one",
+    multiSelect: false,
+    options: [
+      { id: "beginner", value: "Complete Beginner", icon: "🌱" },
+      { id: "basics", value: "Some Basics", icon: "🌿" },
+      { id: "intermediate", value: "Intermediate", icon: "🌳" },
+      { id: "advanced", value: "Advanced", icon: "🏔️" }
+    ]
+  },
+  {
+    id: "weekly_commitment",
+    questionKey: "weekly_commitment",
+    hintKey: "select_one",
+    multiSelect: false,
+    options: [
+      { id: "1_2_hours", value: "1–2 hours", icon: "⚡" },
+      { id: "3_5_hours", value: "3–5 hours", icon: "🔥" },
+      { id: "6_10_hours", value: "6–10 hours", icon: "🎖️" },
+      { id: "10_plus_hours", value: "10+ hours", icon: "👑" }
     ]
   },
   {
     id: "learning_style",
-    title: "2. What learning style works best for you?",
+    questionKey: "learning_style",
+    hintKey: "select_one",
+    multiSelect: false,
     options: [
-      { id: "step_by_step", label: "Step-by-step guidance" },
-      { id: "concept_first", label: "Concept-first explanation" },
-      { id: "real_world", label: "Real-world examples" },
-      { id: "problem_solving", label: "Problem-solving focused" }
-    ]
-  },
-  {
-    id: "teaching_pace",
-    title: "3. What teaching pace do you prefer?",
-    options: [
-      { id: "slow", label: "Slow & thorough" },
-      { id: "moderate", label: "Moderate" },
-      { id: "fast", label: "Fast-paced" },
-      { id: "adaptive", label: "Adaptive (based on my progress)" }
-    ]
-  },
-  {
-    id: "example_type",
-    title: "4. How do you prefer examples in explanations?",
-    options: [
-      { id: "real_life", label: "Real-life examples" },
-      { id: "technical", label: "Technical examples" },
-      { id: "visual", label: "Visual / diagram-based" },
-      { id: "minimal", label: "Minimal examples" }
-    ]
-  },
-  {
-    id: "focus_area",
-    title: "5. What should the AI focus more on in the videos?",
-    options: [
-      { id: "concepts", label: "Concepts & theory" },
-      { id: "practical", label: "Practical applications" },
-      { id: "coding", label: "Coding / problem-solving" },
-      { id: "exams", label: "Exam preparation" }
+      { id: "videos", value: "Video Lectures", icon: "🎥" },
+      { id: "projects", value: "Hands-on Projects", icon: "🛠️" },
+      { id: "articles", value: "Reading Articles", icon: "📖" },
+      { id: "live_classes", value: "Live Classes", icon: "🏫" }
     ]
   }
 ];
 
-let moduleCache = { token: null, data: null, hasExisting: null };
-
 export const buildAIPromptFromPreferences = (preferences) => {
   if (!preferences) return "";
 
+  const topics = Array.isArray(preferences.interested_topics) 
+    ? preferences.interested_topics.join(", ") 
+    : preferences.interested_topics;
+
   return `
     The user has specified the following learning preferences:
-    - Explanation Type: ${preferences.explanation_type}
+    - Learning Goal: ${preferences.learning_goal}
+    - Interested Topics: ${topics}
+    - Experience Level: ${preferences.experience_level}
+    - Weekly Commitment: ${preferences.weekly_commitment}
     - Learning Style: ${preferences.learning_style}
-    - Teaching Pace: ${preferences.teaching_pace}
-    - Example Type: ${preferences.example_type}
-    - Focus Area: ${preferences.focus_area}
-    ${preferences.extra_preferences ? `- Extra Preferences: ${preferences.extra_preferences}` : ""}
     
     Please ensure all your explanations and generated contents are aligned with these preferences.
   `.trim();
 };
 
-const QuestionBlock = ({ question, currentValue, onChange }) => {
+let moduleCache = { token: null, data: null, hasExisting: null, loaded: false };
+
+const ProgressBar = ({ current, total }) => {
+  const percentage = ((current + 1) / total) * 100;
   return (
-    <div className="mb-8">
-      <h3 className="text-[16px] font-semibold text-main mb-4">{question.title}</h3>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {question.options.map((opt) => (
-          <label
-            key={opt.id}
-            className={`
-              relative flex items-center justify-between p-4 cursor-pointer rounded-xl border-2 transition-all
-              ${currentValue === opt.label 
-                  ? "border-[#00bea5] bg-teal-50/50 dark:bg-teal-900/10" 
-                  : "border-border hover:border-[#00bea5]/50 bg-card"}
-            `}
-          >
-            <div className="flex items-center gap-3">
-              <div className={`
-                w-5 h-5 rounded-full border-2 flex items-center justify-center
-                ${currentValue === opt.label ? "border-[#00bea5]" : "border-muted"}
-              `}>
-                {currentValue === opt.label && <div className="w-2.5 h-2.5 rounded-full bg-[#00bea5]" />}
-              </div>
-              <span className={`text-[15px] font-medium ${currentValue === opt.label ? "text-[#00bea5]" : "text-main"}`}>
-                {opt.label}
-              </span>
-            </div>
-          </label>
-        ))}
-      </div>
-    </div>
-  );
-};
-
-const PreferencesContent = ({ 
-  state, 
-  setState, 
-  onSave, 
-  isSaving, 
-  error,
-  isModal = false 
-}) => {
-  const isComplete = 
-    state.explanation_type &&
-    state.learning_style &&
-    state.teaching_pace &&
-    state.example_type &&
-    state.focus_area;
-
-  return (
-    <div className="flex flex-col h-full bg-card">
-      <div className={`${isModal ? "p-6 sm:p-8" : "p-0"}`}>
-        {isModal && (
-          <div className="mb-8 text-center">
-            <div className="w-16 h-16 bg-teal-50 dark:bg-teal-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Sparkles className="w-8 h-8 text-[#00bea5]" />
-            </div>
-            <h2 className="text-2xl font-bold text-main mb-2">Personalize Your AI Tutor</h2>
-            <p className="text-muted text-[15px]">Help us tailor explanations to match your learning style.</p>
-          </div>
-        )}
-
-        <div className="space-y-2">
-          {PREFERENCE_QUESTIONS.map((q) => (
-            <QuestionBlock
-              key={q.id}
-              question={q}
-              currentValue={state[q.id]}
-              onChange={(val) => setState(prev => ({ ...prev, [q.id]: val }))}
-            />
-          ))}
-        </div>
-
-        <div className="mb-8">
-          <h3 className="text-[16px] font-semibold text-main mb-4">6. Extra Preferences (Optional)</h3>
-          <textarea
-            value={state.extra_preferences}
-            onChange={(e) => setState(prev => ({ ...prev, extra_preferences: e.target.value }))}
-            placeholder="e.g., Prefer animations, keep videos short, focus on coding examples"
-            className="w-full min-h-[120px] p-4 rounded-xl border border-border bg-input text-main text-[15px] focus:ring-2 focus:ring-[#00bea5] focus:border-[#00bea5] resize-none"
-          />
-        </div>
-
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-xl text-[14px]">
-            {error}
-          </div>
-        )}
-
-        <div className={`flex items-center pt-6 border-t border-border mt-8 ${isModal ? "justify-center" : "justify-end"}`}>
-          <button
-            onClick={onSave}
-            disabled={!isComplete || isSaving}
-            className={`
-              flex items-center gap-2 h-[50px] px-8 rounded-xl text-white font-medium text-[16px] transition-all
-              ${!isComplete || isSaving 
-                ? "bg-muted cursor-not-allowed opacity-70" 
-                : "bg-gradient-to-r from-[#00bea5] to-[#00b09b] hover:shadow-lg hover:shadow-[#00bea5]/20 hover:-translate-y-0.5"
-              }
-            `}
-          >
-            {isSaving ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
-            ) : (
-              <>
-                {isModal ? "Save & Continue" : "Save Changes"}
-                <ChevronRight className="w-5 h-5" />
-              </>
-            )}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Override QuestionBlock to attach onChange to the labels
-const QuestionBlockWithActions = ({ question, currentValue, onChange }) => {
-  const { t } = useTranslation();
-  return (
-    <div className="mb-5">
-      <h3 className="text-[15px] font-semibold text-main mb-3">{t(`preferences.questions.${question.id}`)}</h3>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {question.options.map((opt) => (
-          <label
-            key={opt.id}
-            onClick={() => onChange(opt.label)}
-            className={`
-              relative flex items-center justify-between px-4 py-3 cursor-pointer rounded-xl border-2 transition-all
-              ${currentValue === opt.label 
-                  ? "border-[#00bea5] bg-teal-50/50 dark:bg-teal-900/10" 
-                  : "border-border hover:border-[#00bea5]/50 bg-card"}
-            `}
-          >
-            <div className="flex items-center gap-3">
-              <div className={`
-                w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0
-                ${currentValue === opt.label ? "border-[#00bea5]" : "border-muted"}
-              `}>
-                {currentValue === opt.label && <div className="w-2 h-2 rounded-full bg-[#00bea5]" />}
-              </div>
-              <span className={`text-[14px] leading-tight font-medium ${currentValue === opt.label ? "text-[#00bea5]" : "text-main"}`}>
-                {t(`preferences.options.${opt.id}`)}
-              </span>
-            </div>
-          </label>
-        ))}
-      </div>
-    </div>
-  );
-};
-
-
-const PreferencesModal = ({ state, setState, onSave, isSaving, error }) => {
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
-      <div className="relative w-full max-w-2xl bg-card rounded-2xl sm:rounded-[24px] shadow-2xl my-8">
-        <PreferencesContent 
-          state={state}
-          setState={setState}
-          onSave={onSave}
-          isSaving={isSaving}
-          error={error}
-          isModal={true}
+    <div className="flex items-center gap-4 mb-6">
+      <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden shrink border border-gray-200">
+        <div 
+          className="h-full bg-gradient-to-r from-blue-500 to-teal-400 wizard-progress-bar rounded-full" 
+          style={{ width: `${percentage}%` }}
         />
       </div>
+      <span className="text-[14px] font-medium text-gray-500 whitespace-nowrap">
+        {current + 1} / {total}
+      </span>
     </div>
   );
 };
+
+// ... More UI logic within component
 
 export default function Preferences({ mode = "modal", onSuccess }) {
   const { t } = useTranslation();
   const currentToken = localStorage.getItem("token");
   
-  // Conditionally bypass initial loading if valid cache exists
-  const isCached = moduleCache.token === currentToken && moduleCache.data !== null;
+  const isCached = moduleCache.token === currentToken && moduleCache.loaded;
   const [loading, setLoading] = useState(!isCached);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
   const [hasExisting, setHasExisting] = useState(isCached ? moduleCache.hasExisting : false);
+  const [isSkipped, setIsSkipped] = useState(() => localStorage.getItem("preferencesSkipped") === "true");
+
+  // Debug logging
+  useEffect(() => {
+    if (mode === "modal") {
+      console.log("Preferences Modal State:", {
+        loading,
+        hasExisting,
+        isSkipped,
+        isCached,
+        currentToken: currentToken ? currentToken.substring(0, 10) + "..." : "null"
+      });
+    }
+  }, [loading, hasExisting, isSkipped, isCached, currentToken, mode]);
   
-  const [state, setState] = useState(isCached ? moduleCache.data : {
-    explanation_type: "",
-    learning_style: "",
-    teaching_pace: "",
-    example_type: "",
-    focus_area: "",
-    extra_preferences: ""
+  const [stepIndex, setStepIndex] = useState(0);
+  const [preferences, setPreferences] = useState(isCached && moduleCache.data ? moduleCache.data : {
+    learning_goal: "",
+    interested_topics: [],
+    experience_level: "",
+    weekly_commitment: "",
+    learning_style: ""
   });
+
+  const totalSteps = WIZARD_STEPS.length;
+  const currentStep = WIZARD_STEPS[stepIndex];
 
   useEffect(() => {
     const fetchPreferences = async () => {
       try {
         const token = localStorage.getItem("token");
-        if (!token) return;
+        if (!token) {
+          setLoading(false);
+          return;
+        }
 
-        if (moduleCache.token === token && moduleCache.data) {
-          setState(moduleCache.data);
+        if (moduleCache.token === token && moduleCache.loaded) {
+          if (moduleCache.data) {
+             setPreferences(moduleCache.data);
+          }
           setHasExisting(moduleCache.hasExisting);
           setLoading(false);
           return;
@@ -280,28 +166,53 @@ export default function Preferences({ mode = "modal", onSuccess }) {
           headers: { Authorization: `Bearer ${token}` }
         });
 
+        // Use a consistent token for caching
+        const tokenForCache = localStorage.getItem("token") || token;
+
         if (res.data) {
           const freshData = {
-            explanation_type: res.data.explanation_type || "",
-            learning_style: res.data.learning_style || "",
-            teaching_pace: res.data.teaching_pace || "",
-            example_type: res.data.example_type || "",
-            focus_area: res.data.focus_area || "",
-            extra_preferences: res.data.extra_preferences || ""
+            learning_goal: res.data.learning_goal || "",
+            interested_topics: Array.isArray(res.data.interested_topics) ? res.data.interested_topics : (res.data.interested_topics ? JSON.parse(res.data.interested_topics) : []),
+            experience_level: res.data.experience_level || "",
+            weekly_commitment: res.data.weekly_commitment || "",
+            learning_style: res.data.learning_style || ""
           };
-          setState(freshData);
+          setPreferences(freshData);
           setHasExisting(true);
-          moduleCache = { token, data: freshData, hasExisting: true };
+          moduleCache = { token: tokenForCache, data: freshData, hasExisting: true, loaded: true };
+        } else {
+          // No preferences exist - update cache to prevent re-fetching
+          setHasExisting(false);
+          moduleCache = { token: tokenForCache, data: null, hasExisting: false, loaded: true };
         }
       } catch (err) {
         console.error("Failed to fetch preferences:", err);
+        const tokenForCache = localStorage.getItem("token");
+
+        if (axios.isAxiosError(err) && err.response?.status === 404) {
+          // No preferences exist - cache this state to prevent re-fetching
+          setHasExisting(false);
+          moduleCache = { token: tokenForCache, data: null, hasExisting: false, loaded: true };
+        } else {
+          // Keep transient/network/server errors retryable
+          moduleCache = { token: tokenForCache, data: null, hasExisting: false, loaded: false };
+        }
       } finally {
         setLoading(false);
       }
     };
 
     fetchPreferences();
-  }, []);
+  }, [currentToken]);
+
+  useEffect(() => {
+    if (mode === "modal" && !loading && !hasExisting && !isSkipped) {
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = 'unset';
+      };
+    }
+  }, [mode, loading, hasExisting, isSkipped]);
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -311,17 +222,17 @@ export default function Preferences({ mode = "modal", onSuccess }) {
       const token = localStorage.getItem("token");
       
       if (hasExisting) {
-        await axios.put("/api/preferences", state, {
+        await axios.put("/api/preferences", preferences, {
           headers: { Authorization: `Bearer ${token}` }
         });
       } else {
-        await axios.post("/api/preferences", state, {
+        await axios.post("/api/preferences", preferences, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setHasExisting(true);
       }
 
-      moduleCache = { token, data: state, hasExisting: true };
+      moduleCache = { token, data: preferences, hasExisting: true, loaded: true };
 
       if (onSuccess) onSuccess();
 
@@ -332,105 +243,183 @@ export default function Preferences({ mode = "modal", onSuccess }) {
     }
   };
 
-  // We add useEffect to lock body scroll when modal is open to ensure dashboard doesn't scroll behind it
-  // Placed at the top level to respect Rules of Hooks
-  useEffect(() => {
-    if (mode === "modal" && !loading && !hasExisting) {
-      document.body.style.overflow = 'hidden';
-      return () => {
-        document.body.style.overflow = 'unset';
-      };
+  const handleSkip = () => {
+    localStorage.setItem("preferencesSkipped", "true");
+    setIsSkipped(true);
+  };
+
+  const handleNext = () => {
+    if (stepIndex < totalSteps - 1) {
+      setStepIndex(prev => prev + 1);
+    } else {
+      handleSave();
     }
-  }, [mode, loading, hasExisting]);
+  };
+
+  const handleBack = () => {
+    if (stepIndex > 0) {
+        setStepIndex(prev => prev - 1);
+    }
+  };
+
+  const handleOptionToggle = (optionValue) => {
+    const isMulti = currentStep.multiSelect;
+    const fieldId = currentStep.id;
+
+    setPreferences(prev => {
+        if (!isMulti) {
+            return { ...prev, [fieldId]: optionValue };
+        }
+
+        // Multi-select logic
+        const currentSelection = Array.isArray(prev[fieldId]) ? prev[fieldId] : [];
+        if (currentSelection.includes(optionValue)) {
+            return { ...prev, [fieldId]: currentSelection.filter(item => item !== optionValue) };
+        } else {
+            return { ...prev, [fieldId]: [...currentSelection, optionValue] };
+        }
+    });
+  };
 
   if (loading) {
-    if (mode === "settings") {
-      return (
-        <div className="flex items-center justify-center p-12">
-          <Loader2 className="w-8 h-8 animate-spin text-[#00bea5]" />
-        </div>
-      );
+    if (mode === "modal") {
+      return null; // For dashboard this is correct, but let it be handled below or just return null
     }
+
+    return (
+      <div className="bg-transparent text-slate-800 dark:text-slate-200">
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-6 w-6 animate-spin text-slate-500 dark:text-slate-400" />
+        </div>
+      </div>
+    );
+  }
+
+  if (mode === "modal" && (hasExisting || isSkipped)) {
     return null;
   }
 
-  // If in modal mode and user already has preferences, do not show modal
-  if (mode === "modal" && hasExisting) {
-    return null;
-  }
+  // Check if current step has selection
+  const currentVal = preferences[currentStep.id];
+  const hasSelection = currentStep.multiSelect 
+    ? Array.isArray(currentVal) && currentVal.length > 0
+    : Boolean(currentVal);
 
-  // Swap out the earlier QuestionBlock reference to use QuestionBlockWithActions
+  const isModal = mode === "modal";
+
   const renderContent = () => (
-    <div className={`flex flex-col h-full bg-card ${mode === "modal" ? "overflow-hidden" : ""}`} onClick={e => e.stopPropagation()}>
-      <div className={`${mode === "modal" ? "p-6 sm:p-8 flex flex-col h-full min-h-0" : "p-0"}`}>
-        {mode === "modal" && (
-          <div className="mb-5 text-center shrink-0">
-            <h2 className="text-xl sm:text-2xl font-bold text-main mb-2">{t("preferences.modal_title")}</h2>
-            <p className="text-muted text-[14px]">{t("preferences.modal_subtitle")}</p>
+    <div className="flex flex-col h-full" onClick={e => e.stopPropagation()}>
+      <div className={`${isModal ? "p-8 flex flex-col h-full min-h-0" : "p-0"}`}>
+        
+        {isModal && (
+          <div className="mb-6 shrink-0">
+            <h4 className="text-[12px] font-bold text-blue-600 dark:text-blue-500 tracking-wider uppercase mb-2">
+              QUICK SETUP
+            </h4>
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-800 dark:text-white mb-2 font-sans tracking-tight">
+              {t("preferences.modal_title")}
+            </h2>
+            <p className="text-gray-500 dark:text-gray-400 text-[15px]">
+              {t("preferences.modal_subtitle")}
+            </p>
           </div>
         )}
 
-        <div className={`${mode === "modal" ? "overflow-y-auto flex-1 min-h-0 pl-1 -ml-1 pr-2 custom-scrollbar shrink" : ""}`}>
-          <div className="space-y-1">
-            {PREFERENCE_QUESTIONS.map((q) => (
-              <QuestionBlockWithActions
-                key={q.id}
-                question={q}
-                currentValue={state[q.id]}
-                onChange={(val) => setState(prev => ({ ...prev, [q.id]: val }))}
-              />
-            ))}
-          </div>
+        <div className={`${isModal ? "overflow-y-auto flex-1 min-h-0 pl-1 -ml-1 pr-2 custom-scrollbar shrink" : ""}`}>
+          
+          <ProgressBar current={stepIndex} total={totalSteps} />
 
-          <div className="mb-4 mt-2">
-            <h3 className="text-[15px] font-semibold text-main mb-3">{t("preferences.extra_title")}</h3>
-            <textarea
-              value={state.extra_preferences}
-              onChange={(e) => setState(prev => ({ ...prev, extra_preferences: e.target.value }))}
-              placeholder={t("preferences.extra_placeholder")}
-              className="w-full min-h-[80px] px-4 py-3 rounded-xl border border-border bg-input text-main text-[14px] focus:ring-2 focus:ring-[#00bea5] focus:border-[#00bea5] resize-none"
-            />
+          <div className="mb-6 wizard-step-enter-active" key={stepIndex}>
+            <h3 className="text-[18px] font-bold text-slate-800 dark:text-slate-100 mb-1">
+              {t(`preferences.questions.${currentStep.questionKey}`)}
+            </h3>
+            <p className="text-[13px] text-gray-400 dark:text-gray-500 font-medium mb-4">
+              {t(`preferences.hints.${currentStep.hintKey}`)}
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {currentStep.options.map((opt) => {
+                  const label = t(`preferences.options.${opt.id}`);
+                  const isSelected = currentStep.multiSelect 
+                    ? (Array.isArray(currentVal) && currentVal.includes(opt.value))
+                    : currentVal === opt.value;
+
+                  return (
+                    <button
+                        key={opt.id}
+                        onClick={() => handleOptionToggle(opt.value)}
+                        className={`
+                        group relative flex items-center gap-3 px-4 py-[14px] rounded-[14px] text-left transition-all duration-200 border
+                        ${isSelected 
+                            ? "border-sky-400 bg-sky-50 dark:bg-sky-900/30 dark:border-sky-500 shadow-sm wizard-option-selected" 
+                            : "border-gray-200 dark:border-slate-700 hover:border-sky-200 dark:hover:border-slate-600 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700"}
+                        `}
+                    >
+                        <span className="text-xl shrink-0">{opt.icon}</span>
+                        <span className={`text-[15px] font-medium transition-colors ${isSelected ? "text-slate-800 dark:text-white" : "text-slate-600 dark:text-slate-300 group-hover:text-slate-800 dark:group-hover:text-slate-50"}`}>
+                            {label}
+                        </span>
+                    </button>
+                  );
+              })}
+            </div>
           </div>
         </div>
 
         {error && (
-          <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-xl text-[14px]">
+          <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800/50 text-red-600 dark:text-red-400 rounded-xl text-[14px]">
             {error}
           </div>
         )}
 
-        <div className={`flex items-center pt-5 border-t border-border mt-4 shrink-0 ${mode === "modal" ? "justify-center" : "justify-end"}`}>
+        <div className={`mt-6 pt-6 border-t border-gray-100 dark:border-slate-800 flex items-center justify-between shrink-0`}>
+          {/* Back Button */}
           <button
-            onClick={handleSave}
-            disabled={
-              !(state.explanation_type && state.learning_style && state.teaching_pace && state.example_type && state.focus_area) || isSaving
-            }
+              onClick={handleBack}
+              className={`text-gray-400 dark:text-gray-500 font-medium hover:text-gray-600 dark:hover:text-gray-300 px-2 transition-colors ${stepIndex === 0 ? "invisible" : ""}`}
+            >
+              {t("preferences.back")}
+          </button>
+
+          {/* Next / Finish Button */}
+          <button
+            onClick={handleNext}
+            disabled={!hasSelection || isSaving}
             className={`
-              flex items-center gap-2 h-[50px] px-8 rounded-xl text-white font-medium text-[16px] transition-all
-              ${(!(state.explanation_type && state.learning_style && state.teaching_pace && state.example_type && state.focus_area) || isSaving)
-                ? "bg-muted cursor-not-allowed opacity-70" 
-                : "bg-gradient-to-r from-[#00bea5] to-[#00b09b] hover:shadow-lg hover:shadow-[#00bea5]/20 hover:-translate-y-0.5"
+              flex items-center gap-2 h-12 px-6 rounded-xl text-white font-semibold transition-all
+              ${!hasSelection || isSaving 
+                ? "bg-gray-200 dark:bg-slate-800 text-gray-400 dark:text-slate-600 cursor-not-allowed" 
+                : "bg-gradient-to-r from-blue-600 to-teal-500 hover:shadow-lg hover:shadow-blue-500/20 hover:-translate-y-0.5"
               }
             `}
           >
             {isSaving ? (
               <Loader2 className="w-5 h-5 animate-spin" />
             ) : (
-              <>
-                {mode === "modal" ? t("preferences.save_continue") : t("preferences.save_changes")}
-                <ChevronRight className="w-5 h-5" />
-              </>
+               stepIndex === totalSteps - 1 ? t("preferences.finish") : t("preferences.next")
             )}
           </button>
         </div>
+
+        {isModal && (
+            <div className="text-center mt-6 shrink-0">
+                <button
+                    onClick={handleSkip}
+                    className="text-[13px] text-gray-400 hover:text-gray-600 underline underline-offset-4 decoration-gray-300 transition-colors"
+                >
+                    {t("preferences.skip_for_now")}
+                </button>
+            </div>
+        )}
+
       </div>
     </div>
   );
 
-  if (mode === "modal") {
+  if (isModal) {
     return (
-      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 sm:p-6" style={{ overscrollBehavior: 'contain' }}>
-        <div className="relative w-full max-w-2xl bg-card rounded-2xl sm:rounded-[24px] shadow-2xl max-h-[90vh] flex flex-col overflow-hidden">
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 dark:bg-slate-950/80 backdrop-blur-sm p-4 sm:p-6" style={{ overscrollBehavior: 'contain' }}>
+        <div className="relative w-full max-w-xl bg-white dark:bg-slate-900 rounded-2xl sm:rounded-[24px] shadow-2xl max-h-[90vh] flex flex-col overflow-hidden">
           {renderContent()}
         </div>
       </div>
@@ -438,7 +427,7 @@ export default function Preferences({ mode = "modal", onSuccess }) {
   }
 
   return (
-    <div className="bg-card rounded-2xl sm:rounded-[24px] shadow-[0_4px_6px_0_rgba(0,0,0,0.10),0_10px_15px_0_rgba(0,0,0,0.10)] p-4 sm:p-6 md:p-8">
+    <div className="bg-transparent text-slate-800 dark:text-slate-200">
       {renderContent()}
     </div>
   );

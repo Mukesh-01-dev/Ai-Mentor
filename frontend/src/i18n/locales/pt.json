@@ -14,7 +14,8 @@
     "learning": "Aprendizado",
     "watched": "Vídeos Assistidos",
     "admin": "Painel Admin",
-    "account": "Conta"
+    "account": "Conta",
+    "certificates": "Certificados"
   },
   "common": {
     "cancel": "Cancelar",
@@ -35,7 +36,9 @@
       "notifications": "Notificações",
       "password_security": "Senha e Segurança",
       "appearance": "Aparência",
-      "language": "Idioma"
+      "language": "Idioma",
+      "contactus": "Contatar Suporte",
+      "delete_account": "Excluir Minha Conta"
     },
     "profile": {
       "title": "Configurações de Perfil",
@@ -88,6 +91,12 @@
       "subtitle": "Escolha seu idioma preferido para a interface",
       "interface_language": "Idioma da Interface",
       "updated": "Configurações de idioma atualizadas com sucesso!"
+    },
+    "contactus": {
+      "title": "Contatar Suporte",
+      "subtitle": "Geralmente respondemos em 24 horas.",
+      "subject": "Assunto",
+      "message": "Mensagem"
     }
   },
   "dashboard": {
@@ -113,7 +122,14 @@
     "design": "Design",
     "beginner": "Iniciante",
     "intermediate": "Intermediario",
-    "advanced": "Avancado"
+    "advanced": "Avancado",
+    "no_courses_search": "Nenhum curso corresponde à sua pesquisa.",
+    "no_courses_enrolled": "Você ainda não se matriculou em nenhum curso.",
+    "browse_courses": "Explorar Cursos",
+    "continue_learning": "Continuar Aprendendo",
+    "continue": "Continuar",
+    "view": "Ver",
+    "enroll": "Inscrever-se"
   },
   "courses": {
     "title": "Central de Aprendizado",
@@ -123,7 +139,20 @@
     "not_enrolled": "Você ainda não está matriculado em nenhum curso.",
     "lessons": "aulas",
     "loading": "Carregando cursos...",
-    "confirm_enrollment": "Confirmar Matrícula"
+    "confirm_enrollment": "Confirmar Matrícula",
+    "enrolled_courses": "Cursos Matriculados",
+    "enrolled_short": "Matriculado",
+    "explore_short": "Explorar",
+    "filters": "Filtros",
+    "apply_filters": "Aplicar Filtros",
+    "clear_all": "Limpar Tudo",
+    "category": "Categoria",
+    "skill_level": "Nível de Habilidade",
+    "pricing": "Preços",
+    "any_level": "Qualquer Nível",
+    "any_price": "Qualquer Preço",
+    "all_categories": "Todas as Categorias",
+    "no_match_filters": "Nenhum curso matriculado corresponde à sua pesquisa ou filtros atuais."
   },
   "learning": {
     "loading": "Carregando...",
@@ -265,46 +294,77 @@
     "signup": "Cadastrar",
     "email": "E-mail",
     "password": "Senha",
-    "logout": "Sair"
+    "logout": "Sair",
+    "logout_confirm_title": "Sair",
+    "logout_confirm_msg": "Tem certeza que deseja sair?",
+    "cancel": "Cancelar"
   },
   "preferences": {
-    "nav_title": "Preferências do Tutor IA",
-    "modal_title": "Personalize o seu Tutor IA",
-    "modal_subtitle": "Ajude-nos a adaptar as explicações ao seu estilo de aprendizagem.",
-    "settings_modal_subtitle": "Adapte as explicações, o ritmo e as referências de exemplos do seu tutor de IA.",
-    "save_continue": "Guardar e Continuar",
-    "save_changes": "Guardar Alterações",
+    "nav_title": "Preferências",
+    "modal_title": "Personalize sua experiência",
+    "modal_subtitle": "Apenas 5 perguntas rápidas para começar",
+    "settings_modal_subtitle": "Adapte sua experiência de aprendizado da maneira que for melhor para você.",
+    "save_continue": "Próximo →",
+    "save_changes": "Finalizar",
     "save_success": "Preferências atualizadas com sucesso",
-    "extra_title": "6. Preferências Extras (Opcional)",
-    "extra_placeholder": "Ex: prefiro animações, vídeos curtos, foco no código",
+    "step_of": "{{current}} / {{total}}",
+    "next": "Próximo →",
+    "back": "← Voltar",
+    "finish": "Finalizar",
+    "skip_for_now": "Pular por enquanto - vou configurar depois",
     "questions": {
-      "explanation_type": "1. Que tipo de explicações prefere?",
-      "learning_style": "2. Que estilo de aprendizagem funciona melhor para si?",
-      "teaching_pace": "3. Que ritmo de ensino prefere?",
-      "example_type": "4. Como prefere os exemplos nas explicações?",
-      "focus_area": "5. Em que é que a IA se deveria focar mais nos vídeos?"
+      "learning_goal": "Qual é o seu objetivo de aprendizado?",
+      "interested_topics": "Quais tópicos mais lhe interessam?",
+      "experience_level": "Quanta experiência você tem?",
+      "weekly_commitment": "Quantas horas por semana você pode dedicar?",
+      "learning_style": "Qual é o seu estilo preferido?"
+    },
+    "hints": {
+      "select_one": "Selecione uma opção",
+      "select_multiple": "Selecione todas as opções que se aplicam"
     },
     "options": {
-      "simple": "Simples e para principiantes",
-      "balanced": "Equilibrado (fácil + alguma profundidade)",
-      "detailed": "Detalhado e profundo",
-      "expert": "Nível especialista (técnico)",
-      "step_by_step": "Guia passo-a-passo",
-      "concept_first": "Explicação de conceitos primeiro",
-      "real_world": "Exemplos do mundo real",
-      "problem_solving": "Foco na resolução de problemas",
-      "slow": "Lento e minucioso",
-      "moderate": "Moderado",
-      "fast": "Ritmo acelerado",
-      "adaptive": "Adaptável (baseado no meu progresso)",
-      "real_life": "Exemplos da vida real",
-      "technical": "Exemplos técnicos",
-      "visual": "Visual / baseado em diagramas",
-      "minimal": "Exemplos mínimos",
-      "concepts": "Conceitos e teoria",
-      "practical": "Aplicações práticas",
-      "coding": "Programação / resolução de problemas",
-      "exams": "Preparação para exames"
+      "switch_careers": "Mudar de Carreira",
+      "upskill_work": "Aprimorar Habilidades",
+      "personal_interest": "Interesse Pessoal",
+      "get_certified": "Obter Certificado",
+      "ai": "Inteligência Artificial",
+      "web_dev": "Desenvolvimento Web",
+      "data_science": "Ciência de Dados",
+      "cloud": "Computação em Nuvem",
+      "cybersecurity": "Cibersegurança",
+      "mobile_apps": "Aplicativos Móveis",
+      "beginner": "Iniciante",
+      "basics": "Noções Básicas",
+      "intermediate": "Intermediário",
+      "advanced": "Avançado",
+      "1_2_hours": "1-2 horas",
+      "3_5_hours": "3-5 horas",
+      "6_10_hours": "6-10 horas",
+      "10_plus_hours": "10+ horas",
+      "videos": "Videoaulas",
+      "projects": "Projetos Práticos",
+      "articles": "Leitura de Artigos",
+      "live_classes": "Aulas ao Vivo"
     }
+  },
+  "certificates": {
+    "title": "Meus Certificados",
+    "subtitle": "Acompanhe suas conquistas e baixe certificados",
+    "loading": "Carregando certificados...",
+    "enrolled_courses": "Cursos Matriculados",
+    "courses_completed": "Cursos Concluídos",
+    "certificates_earned": "Certificados Obtidos",
+    "in_progress": "Em Andamento",
+    "no_courses_title": "Nenhum curso matriculado ainda",
+    "no_courses_desc": "Matricule-se em cursos e conclua-os para ganhar seus certificados!",
+    "browse_courses": "Explorar Cursos",
+    "progress": "Progresso",
+    "lessons": "aulas",
+    "completed_badge": "CONCLUÍDO",
+    "complete_to_earn": "Conclua este curso para ganhar seu certificado",
+    "continue_learning": "Continuar Aprendendo",
+    "download": "Baixar Certificado",
+    "generating": "Gerando..."
   }
 }

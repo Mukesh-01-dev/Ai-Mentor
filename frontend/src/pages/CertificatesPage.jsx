@@ -11,9 +11,11 @@ import {
 } from "lucide-react";
 import API_BASE_URL from "../lib/api";
 import { useAuth } from "../context/AuthContext";
+import { useTranslation } from "react-i18next";
 
 const CertificatesPage = () => {
   const { user } = useAuth();
+  const { t } = useTranslation();
 
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -90,10 +92,10 @@ const CertificatesPage = () => {
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-[#2D3436] dark:text-white">
-                  My Certificates
+                  {t("certificates.title")}
                 </h1>
                 <p className="text-[#2D3436]/60 dark:text-gray-400 text-sm mt-0.5">
-                  Track your achievements and download certificates
+                  {t("certificates.subtitle")}
                 </p>
               </div>
             </div>
@@ -104,7 +106,7 @@ const CertificatesPage = () => {
               <div className="flex flex-col items-center gap-3">
                 <div className="w-10 h-10 border-3 border-amber-500/30 border-t-amber-500 rounded-full animate-spin" />
                 <span className="text-[#2D3436]/60 dark:text-gray-400 text-sm">
-                  Loading certificates...
+                  {t("certificates.loading")}
                 </span>
               </div>
             </div>
@@ -114,28 +116,28 @@ const CertificatesPage = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
                 {[
                   {
-                    label: "Enrolled Courses",
+                    label: t("certificates.enrolled_courses"),
                     value: stats.totalEnrolled,
                     icon: <BookOpen className="w-5 h-5 text-[#00bea3]" />,
                     bg: "bg-[#00bea3]/10 dark:bg-[#00bea3]/20",
                     color: "text-[#00bea3]",
                   },
                   {
-                    label: "Courses Completed",
+                    label: t("certificates.courses_completed"),
                     value: stats.completed,
                     icon: <CheckCircle className="w-5 h-5 text-[#28A745]" />,
                     bg: "bg-[#28A745]/10 dark:bg-[#28A745]/20",
                     color: "text-[#28A745]",
                   },
                   {
-                    label: "Certificates Earned",
+                    label: t("certificates.certificates_earned"),
                     value: stats.certificatesEarned,
                     icon: <Award className="w-5 h-5 text-amber-500" />,
                     bg: "bg-amber-500/10 dark:bg-amber-500/20",
                     color: "text-amber-500",
                   },
                   {
-                    label: "In Progress",
+                    label: t("certificates.in_progress"),
                     value: stats.inProgress,
                     icon: <Clock className="w-5 h-5 text-blue-500" />,
                     bg: "bg-blue-500/10 dark:bg-blue-500/20",
@@ -170,17 +172,17 @@ const CertificatesPage = () => {
                     <Award className="w-10 h-10 text-amber-500" />
                   </div>
                   <h3 className="text-xl font-bold text-[#2D3436] dark:text-gray-200 mb-2">
-                    No courses enrolled yet
+                    {t("certificates.no_courses_title")}
                   </h3>
                   <p className="text-[#2D3436]/60 dark:text-gray-400 mb-6 max-w-md mx-auto">
-                    Enroll in courses and complete them to earn your certificates!
+                    {t("certificates.no_courses_desc")}
                   </p>
                   <Link
                     to="/courses"
                     className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-500 to-yellow-500 text-white font-semibold rounded-xl hover:from-amber-600 hover:to-yellow-600 transition-all shadow-lg hover:shadow-xl"
                   >
                     <BookOpen className="w-5 h-5" />
-                    Browse Courses
+                    {t("certificates.browse_courses")}
                     <ChevronRight className="w-4 h-4" />
                   </Link>
                 </div>
@@ -200,7 +202,7 @@ const CertificatesPage = () => {
                         <div className="absolute top-4 right-4 z-10">
                           <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-amber-500 to-yellow-500 text-white text-xs font-bold rounded-full shadow-lg">
                             <CheckCircle className="w-3.5 h-3.5" />
-                            COMPLETED
+                            {t("certificates.completed_badge")}
                           </div>
                         </div>
                       )}
@@ -240,7 +242,7 @@ const CertificatesPage = () => {
                         <div className="mb-4">
                           <div className="flex justify-between text-sm mb-1.5">
                             <span className="text-[#2D3436]/60 dark:text-gray-400 font-medium">
-                              Progress
+                              {t("certificates.progress")}
                             </span>
                             <span
                               className={`font-bold ${
@@ -282,7 +284,7 @@ const CertificatesPage = () => {
                           <div className="flex items-center gap-1 mt-1.5 text-xs text-[#2D3436]/50 dark:text-gray-500">
                             <FileText className="w-3 h-3" />
                             {course.completedLessons}/{course.totalLessons}{" "}
-                            lessons
+                            {t("certificates.lessons")}
                           </div>
                         </div>
 
@@ -303,12 +305,12 @@ const CertificatesPage = () => {
                               {downloadingId === course.courseId ? (
                                 <>
                                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                  Generating...
+                                  {t("certificates.generating")}
                                 </>
                               ) : (
                                 <>
                                   <Download className="w-5 h-5" />
-                                  Download Certificate
+                                  {t("certificates.download")}
                                 </>
                               )}
                             </button>
@@ -316,13 +318,13 @@ const CertificatesPage = () => {
                         ) : (
                           <div className="text-center py-2">
                             <p className="text-sm text-[#2D3436]/50 dark:text-gray-500 mb-2">
-                              Complete this course to earn your certificate
+                              {t("certificates.complete_to_earn")}
                             </p>
                             <Link
                               to={`/learning/${course.courseId}`}
                               className="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 transition-colors"
                             >
-                              Continue Learning
+                              {t("certificates.continue_learning")}
                               <ChevronRight className="w-4 h-4" />
                             </Link>
                           </div>

@@ -5,6 +5,7 @@ import Notifications from "../models/Notification.js";
 import jwt from "jsonwebtoken";
 import cloudinary from "../config/cloudinary.js";
 import fs from "fs";
+import { ensureProfileCompleteness, formatFullName } from "../utils/userUtils.js";
 
 // Generate JWT Token
 const generateToken = (id) => {
@@ -47,6 +48,7 @@ const registerUser = async (req, res) => {
       avatar_url: user.avatar_url,
       isProfileComplete: user.isProfileComplete,
       purchasedCourses: user.purchasedCourses,
+      isNewUser: true,
       token: generateToken(user.id),
     });
   } catch (error) {
@@ -55,20 +57,7 @@ const registerUser = async (req, res) => {
   }
 };
 
-const ensureProfileCompleteness = async (user) => {
-  const isComplete = Boolean(
-    user.firstName?.trim() &&
-    user.lastName?.trim() &&
-    user.bio?.trim() &&
-    user.avatar_url?.trim() &&
-    (user.googleId ? user.password?.trim() : true)
-  );
-
-  if (user.isProfileComplete !== isComplete) {
-    user.isProfileComplete = isComplete;
-    await user.save();
-  }
-};
+// Centralized logic moved to userUtils.js
 
 // @desc Login user
 const loginUser = async (req, res) => {
@@ -98,6 +87,7 @@ const loginUser = async (req, res) => {
       googleId: user.googleId,
       hasPassword: !!user.password,
       purchasedCourses: user.purchasedCourses,
+      isNewUser: false,
       token: generateToken(user.id),
     });
   } catch (error) {
@@ -454,7 +444,7 @@ const updateUserProfile = async (req, res) => {
     // Update text fields
     user.firstName = req.body.firstName ?? user.firstName;
     user.lastName = req.body.lastName ?? user.lastName;
-    user.name = `${user.firstName} ${user.lastName}`.trim();
+    user.name = formatFullName(user.firstName, user.lastName);
     user.email = req.body.email ?? user.email;
     user.bio = req.body.bio ?? user.bio;
 
@@ -568,7 +558,7 @@ const completeProfile = async (req, res) => {
       user.lastName = lastName;
     }
     if (user.firstName || user.lastName) {
-      user.name = `${user.firstName || ''} ${user.lastName || ''}`.trim();
+      user.name = formatFullName(user.firstName, user.lastName);
     }
     if (password && password.length >= 6 && !!user.googleId) {
       user.password = password; // strictly handled by beforeSave hook!

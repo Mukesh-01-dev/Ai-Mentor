@@ -33,22 +33,25 @@ const ValidationItem = ({ label, met }) => (
 const CompleteProfilePage = () => {
   const { user, updateUser } = useAuth();
   const navigate = useNavigate();
+  
+  // Graceful redirect: If profile is already complete, don't show the form
+  useEffect(() => {
+    if (user?.isProfileComplete) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [user, navigate]);
 
   const isGoogleUser = user?.isGoogleUser || !!user?.googleId;
 
-  // Decide dynamically which fields to show
-  // 1. Show names if they are missing in the database OR if this is the first-time login
-  const showFirstName = !user?.firstName || user?.firstName?.trim() === "";
-  const showLastName = !user?.lastName || user?.lastName?.trim() === "";
-  const showNameFields = showFirstName || showLastName || user?.isNewUser;
-  
-  // 2. Show password input ONLY for Google users who don't have a local password set yet
-  const showPasswordField = isGoogleUser && !user?.hasPassword;
-  
-  // 3. Show Bio/Avatar 
-  const showBioField = !user?.bio || user?.bio?.trim() === "";
-  // Show avatar field only if missing in the database OR if this is the first-time login
-  const showAvatarField = !user?.avatar_url || user?.avatar_url?.trim() === "" || user?.isNewUser;
+  // Dynamic visibility logic:
+  // 1. New Google Users: Show all fields (Names, Password, Bio, Avatar) for verification
+  // 2. New Email Users: Only show missing setup (Avatar, Bio) as they already set names/password
+  // 3. Existing Users: Only show whatever is missing in the database
+  const showNameFields =
+    (isGoogleUser && user?.isNewUser) || !user?.firstName?.trim() || !user?.lastName?.trim();
+  const showPasswordField = isGoogleUser && (user?.isNewUser || !user?.hasPassword);
+  const showBioField = user?.isNewUser || !user?.bio?.trim();
+  const showAvatarField = user?.isNewUser || !user?.avatar_url?.trim();
 
   /* ─── Form state ─── */
   const [firstName, setFirstName] = useState(user?.firstName || "");

@@ -137,11 +137,11 @@ const Header = () => {
 
   return (
     <>
-      <header className="bg-card/80 backdrop-blur-xl border-b border-border/50 px-6 py-4 fixed top-0 left-0 right-0 w-full z-[100]">
+      <header className="bg-card/80 backdrop-blur-xl border-b border-border/50 px-3 md:px-6 py-3 md:py-4 fixed top-0 left-0 right-0 w-full z-[100]">
         <div className="flex items-center justify-between w-full">
 
           {/* Mobile Menu & Logo */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2 md:space-x-4">
             <button
               className="lg:hidden p-2 rounded-xl bg-card border border-border hover:bg-canvas-alt transition-all"
               onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -154,7 +154,7 @@ const Header = () => {
               <img
                 src="/upto.png"
                 alt="UptoSkills Logo"
-                className="h-10 w-auto"
+                className="h-8 md:h-10 w-auto"
               />
             </div>
           </div>
@@ -163,13 +163,13 @@ const Header = () => {
 
 
           {/* Action Buttons & Profile */}
-          <div className="flex items-center space-x-5">
+          <div className="flex items-center space-x-1.5 md:space-x-5">
             <ThemeToggle />
 
             <div className="relative" ref={notificationRef}>
               <div
                 onClick={() => setNotifOpen(!notifOpen)}
-                className="relative cursor-pointer p-2.5 hover:bg-canvas-alt rounded-xl transition-all group"
+                className="relative cursor-pointer p-1.5 md:p-2.5 hover:bg-canvas-alt rounded-xl transition-all group"
               >
                 <Bell className="w-5 h-5 text-muted group-hover:rotate-12 transition-transform" />
                 {unreadCount > 0 && (
@@ -240,20 +240,16 @@ const Header = () => {
             <div className="relative" ref={dropdownRef}>
               <button
                 onClick={toggleDropdown}
-                className="flex items-center space-x-3 p-1 pr-3 rounded-2xl hover:bg-canvas-alt transition-all border border-transparent hover:border-border group"
+                className="flex items-center space-x-2 md:space-x-3 p-1 md:pr-3 rounded-2xl hover:bg-canvas-alt transition-all border border-transparent hover:border-border group"
               >
                 <div className="relative">
                   <img
-                    src={user?.avatar_url || ( (user?.isGoogleUser || !!user?.googleId) ? `https://api.dicebear.com/8.x/initials/svg?seed=${encodeURIComponent(`${user?.firstName || ""} ${user?.lastName || ""}`.trim() || user?.name || displayName)}` : "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'/%3E%3Ccircle cx='12' cy='7' r='4'/%3E%3C/svg%3E") }
+                    src={user?.avatar_url || `https://api.dicebear.com/8.x/initials/svg?seed=${encodeURIComponent(`${user?.firstName || ""} ${user?.lastName || ""}`.trim() || user?.name || displayName)}`}
                     className="w-9 h-9 rounded-xl shadow-md border border-border/50 group-hover:border-teal-500 transition-all object-cover"
                     alt="Avatar"
                     onError={(e) => {
-                      if (user?.isGoogleUser || !!user?.googleId) {
-                        const seed = encodeURIComponent(`${user?.firstName || ""} ${user?.lastName || ""}`.trim() || user?.name || displayName);
-                        e.target.src = `https://api.dicebear.com/8.x/initials/svg?seed=${seed}`;
-                      } else {
-                        e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'/%3E%3Ccircle cx='12' cy='7' r='4'/%3E%3C/svg%3E";
-                      }
+                      const seed = encodeURIComponent(`${user?.firstName || ""} ${user?.lastName || ""}`.trim() || user?.name || displayName);
+                      e.target.src = `https://api.dicebear.com/8.x/initials/svg?seed=${seed}`;
                     }}
                   />
                   <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 border-2 border-card rounded-full" />
@@ -267,16 +263,12 @@ const Header = () => {
                   <div className="p-6 bg-gradient-to-br from-teal-500/10 via-blue-500/5 to-transparent border-b border-border/50">
                     <div className="flex items-center space-x-4 mb-4">
                       <img
-                        src={user?.avatar_url || ( (user?.isGoogleUser || !!user?.googleId) ? `https://api.dicebear.com/8.x/initials/svg?seed=${encodeURIComponent(`${user?.firstName || ""} ${user?.lastName || ""}`.trim() || user?.name || displayName)}` : "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'/%3E%3Ccircle cx='12' cy='7' r='4'/%3E%3C/svg%3E") }
+                        src={user?.avatar_url || `https://api.dicebear.com/8.x/initials/svg?seed=${encodeURIComponent(`${user?.firstName || ""} ${user?.lastName || ""}`.trim() || user?.name || displayName)}`}
                         className="w-14 h-14 rounded-2xl shadow-xl border-2 border-white dark:border-slate-800 object-cover"
                         alt="User"
                         onError={(e) => {
-                          if (user?.isGoogleUser || !!user?.googleId) {
-                            const seed = encodeURIComponent(`${user?.firstName || ""} ${user?.lastName || ""}`.trim() || user?.name || displayName);
-                            e.target.src = `https://api.dicebear.com/8.x/initials/svg?seed=${seed}`;
-                          } else {
-                            e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'/%3E%3Ccircle cx='12' cy='7' r='4'/%3E%3C/svg%3E";
-                          }
+                          const seed = encodeURIComponent(`${user?.firstName || ""} ${user?.lastName || ""}`.trim() || user?.name || displayName);
+                          e.target.src = `https://api.dicebear.com/8.x/initials/svg?seed=${seed}`;
                         }}
                       />
                       <div className="min-w-0">
