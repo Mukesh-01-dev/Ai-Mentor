@@ -18,11 +18,10 @@ const CoursesPage = () => {
   const [myCourses, setMyCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-
   const [showEnrollPopup, setShowEnrollPopup] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState(null);
 
-  // ── NEW: filter state ──
+  /* ================= FILTER STATE ================= */
   const [filters, setFilters] = useState({
     level: "",
     category: "",
@@ -36,17 +35,14 @@ const CoursesPage = () => {
     const fetchCourses = async () => {
       try {
         const token = localStorage.getItem("token");
-
         const [exploreRes, myRes] = await Promise.all([
           fetch(`${API_BASE_URL}/api/courses`),
           fetch(`${API_BASE_URL}/api/courses/my-courses`, {
             headers: { Authorization: `Bearer ${token}` },
           }),
         ]);
-
         const exploreData = await exploreRes.json();
         const myData = myRes.ok ? await myRes.json() : [];
-
         setExploreCourses(exploreData);
         setMyCourses(myData);
       } catch (error) {
@@ -55,7 +51,6 @@ const CoursesPage = () => {
         setLoading(false);
       }
     };
-
     fetchCourses();
   }, []);
 
@@ -88,14 +83,12 @@ const CoursesPage = () => {
           courseTitle: selectedCourse.title,
         }),
       });
-
       const [exploreRes, myRes] = await Promise.all([
         fetch(`${API_BASE_URL}/api/courses`),
         fetch(`${API_BASE_URL}/api/courses/my-courses`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
       ]);
-
       setExploreCourses(await exploreRes.json());
       setMyCourses(await myRes.json());
       setShowEnrollPopup(false);
@@ -109,41 +102,32 @@ const CoursesPage = () => {
   /* ================= FILTER LOGIC ================= */
   const applyFilters = (courses) => {
     return courses.filter((course) => {
-      // Level / difficulty
       if (
         filters.level &&
         course.level?.toLowerCase() !== filters.level.toLowerCase()
-      )
-        return false;
+      ) return false;
 
-      // Category
       if (
         filters.category &&
         course.category?.toLowerCase() !== filters.category.toLowerCase()
-      )
-        return false;
+      ) return false;
 
-      // Price
       if (filters.price) {
         const price = parseFloat(course.priceValue ?? course.price ?? 0);
         if (filters.price === "Free" && price > 0) return false;
         if (filters.price === "Paid" && price === 0) return false;
       }
 
-      // Rating
       if (filters.rating && course.rating) {
         const minRating = parseFloat(filters.rating);
         if (parseFloat(course.rating) < minRating) return false;
       }
 
-      // Duration
       if (filters.duration && course.duration) {
         const dur = parseFloat(course.duration);
         if (filters.duration === "< 2 hours" && dur >= 2) return false;
-        if (filters.duration === "2–5 hours" && (dur < 2 || dur > 5))
-          return false;
-        if (filters.duration === "5–10 hours" && (dur < 5 || dur > 10))
-          return false;
+        if (filters.duration === "2–5 hours" && (dur < 2 || dur > 5)) return false;
+        if (filters.duration === "5–10 hours" && (dur < 5 || dur > 10)) return false;
         if (filters.duration === "> 10 hours" && dur <= 10) return false;
       }
 
@@ -187,7 +171,7 @@ const CoursesPage = () => {
   return (
     <>
       {/* ══════ HERO ══════ */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-teal-700 via-teal-600 to-teal-800 pt-16 pb-12 px-4 sm:px-8">
+      <div className="relative bg-gradient-to-br from-teal-700 via-teal-600 to-teal-800 pt-16 pb-12 px-4 sm:px-8">
         <div
           className="absolute inset-0 opacity-10"
           style={{
@@ -196,7 +180,6 @@ const CoursesPage = () => {
             backgroundSize: "40px 40px",
           }}
         />
-
         <div className="relative z-10 max-w-5xl mx-auto space-y-6">
           {/* User info row */}
           <div className="flex items-center space-x-5">
@@ -205,9 +188,7 @@ const CoursesPage = () => {
                 user?.avatar_url ||
                 (user?.isGoogleUser || !!user?.googleId
                   ? `https://api.dicebear.com/8.x/initials/svg?seed=${encodeURIComponent(
-                    user?.name ||
-                    user?.email?.split("@")[0] ||
-                    "User"
+                    user?.name || user?.email?.split("@")[0] || "User"
                   )}`
                   : `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2394a3b8'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E`)
               }
@@ -240,12 +221,9 @@ const CoursesPage = () => {
             </div>
           </div>
 
-          {/* ── Nav + Filter + Search row ── */}
+          {/* Nav + Filter + Search row */}
           <div className="flex items-center justify-between gap-3 flex-wrap">
-
-            {/* LEFT: Tab buttons + Filter */}
             <div className="flex items-center gap-3 flex-wrap">
-              {/* Enrolled Courses tab */}
               <button
                 onClick={() => setActiveTab("my-courses")}
                 className={`flex items-center gap-2 px-6 py-2.5 rounded-full font-semibold text-sm transition-all ${activeTab === "my-courses"
@@ -257,7 +235,6 @@ const CoursesPage = () => {
                 Enrolled Courses
               </button>
 
-              {/* Explore Courses tab */}
               <button
                 onClick={() => setActiveTab("explore")}
                 className={`flex items-center gap-2 px-6 py-2.5 rounded-full font-semibold text-sm transition-all ${activeTab === "explore"
@@ -269,7 +246,6 @@ const CoursesPage = () => {
                 {t("courses.explore")}
               </button>
 
-              {/* Filter button — only visible on Explore tab */}
               {activeTab === "explore" && (
                 <CourseFilter
                   filters={filters}
@@ -287,7 +263,6 @@ const CoursesPage = () => {
               )}
             </div>
 
-            {/* RIGHT: Search bar */}
             <div className="relative group w-60 hidden md:block">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50 group-focus-within:text-teal-300 transition-colors w-4 h-4" />
               <input
@@ -306,7 +281,7 @@ const CoursesPage = () => {
       <main className="flex-1 p-8">
         <div className="max-w-7xl mx-auto space-y-10">
 
-          {/* ── MY COURSES ── */}
+          {/* MY COURSES */}
           {activeTab === "my-courses" && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {filteredMyCourses.length === 0 && (
@@ -320,7 +295,6 @@ const CoursesPage = () => {
                 const hasStarted =
                   progress?.completedLessons?.length > 0 ||
                   progress?.currentLesson != null;
-
                 return (
                   <div
                     key={course.id}
@@ -351,16 +325,14 @@ const CoursesPage = () => {
             </div>
           )}
 
-          {/* ── EXPLORE COURSES ── */}
+          {/* EXPLORE COURSES */}
           {activeTab === "explore" && (
             <div>
-              {/* Header row */}
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
                   <h2 className="text-xl font-bold text-main">
                     Explore Courses
                   </h2>
-                  {/* Result count badge */}
                   <span className="text-sm text-muted bg-gray-100 px-3 py-1 rounded-full">
                     {filteredExploreCourses.length} course
                     {filteredExploreCourses.length !== 1 ? "s" : ""}
@@ -371,8 +343,6 @@ const CoursesPage = () => {
                     )}
                   </span>
                 </div>
-
-                {/* Scroll arrows */}
                 <div className="flex items-center gap-2">
                   <button
                     onClick={scrollLeft}
@@ -389,7 +359,6 @@ const CoursesPage = () => {
                 </div>
               </div>
 
-              {/* Horizontal scroll row */}
               <div
                 ref={scrollRef}
                 className="flex gap-6 overflow-x-auto pb-4 scroll-smooth"
@@ -438,7 +407,6 @@ const CoursesPage = () => {
                           {course.rating}
                         </div>
                       </div>
-
                       <div className="p-4 space-y-3">
                         <h3 className="text-sm font-semibold text-main line-clamp-2">
                           {course.title}
@@ -454,9 +422,7 @@ const CoursesPage = () => {
                             <span className="font-bold text-green-600">₹0</span>
                           </div>
                           <button
-                            onClick={() =>
-                              navigate(`/course-preview/${course.id}`)
-                            }
+                            onClick={() => navigate(`/course-preview/${course.id}`)}
                             className="px-4 py-2 rounded-lg bg-[#2DD4BF] text-white text-xs font-semibold hover:bg-teal-500 transition-colors"
                           >
                             {t("common.enroll")}
@@ -472,7 +438,7 @@ const CoursesPage = () => {
         </div>
       </main>
 
-      {/* ══════ ENROLL POPUP ══════ */}
+      {/* ENROLL POPUP */}
       {showEnrollPopup && selectedCourse && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-white w-full max-w-md rounded-2xl p-6 relative">
@@ -492,10 +458,9 @@ const CoursesPage = () => {
               {selectedCourse.category} • {selectedCourse.level}
             </p>
             <div className="flex justify-between items-center mt-4">
-              <span className="line-through text-slate-400">
+              <span className="text-lg font-bold text-green-600">
                 {selectedCourse.price}
               </span>
-              <span className="text-lg font-bold text-green-600">₹0</span>
             </div>
             <button
               onClick={handleEnroll}
