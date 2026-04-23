@@ -1,5 +1,6 @@
 import express from "express";
 import {
+    getUnreadCount,
     getNotifications,
     markAsRead,
     markAllAsRead,
@@ -8,7 +9,7 @@ import {
 import { protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
-
+router.get("/unread-count", protect, getUnreadCount);
 router.get("/", protect, getNotifications);
 router.patch("/read-all", protect, markAllAsRead);
 router.delete("/clear", protect, clearAll);

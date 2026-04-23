@@ -81,6 +81,17 @@ const CertificatesPage = () => {
   };
   const courses = data?.courses || [];
 
+  if (loading) {
+    return (
+      <main className="flex-1 p-4 md:p-6 lg:p-8 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
+          <p className="text-muted">{t("certificates.loading")}</p>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="flex-1 overflow-x-hidden overflow-y-auto bg-canvas-alt p-6">
       <div className="max-w-7xl mx-auto space-y-8">
@@ -100,17 +111,6 @@ const CertificatesPage = () => {
               </div>
             </div>
           </div>
-
-          {loading ? (
-            <div className="flex items-center justify-center h-64">
-              <div className="flex flex-col items-center gap-3">
-                <div className="w-10 h-10 border-3 border-amber-500/30 border-t-amber-500 rounded-full animate-spin" />
-                <span className="text-[#2D3436]/60 dark:text-gray-400 text-sm">
-                  {t("certificates.loading")}
-                </span>
-              </div>
-            </div>
-          ) : (
             <>
               {/* Stats Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
@@ -335,7 +335,6 @@ const CertificatesPage = () => {
                 </div>
               )}
             </>
-          )}
       </div>
     </main>
   );

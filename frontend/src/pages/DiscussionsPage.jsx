@@ -883,8 +883,9 @@ const DiscussionsPage = () => {
 
                 {/* grid of discussion cards */}
                 {coursePostsLoading ? (
-                  <div className="text-center py-12 text-muted">
-                    {t("discussions.loading")}
+                  <div className="text-center py-12">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
+                    <p className="text-muted">{t("discussions.loading")}</p>
                   </div>
                 ) : coursePosts.length === 0 ? (
                   <div className="text-center py-12 text-muted">
@@ -1063,8 +1064,9 @@ const DiscussionsPage = () => {
                   {/* panel messages */}
                   <div className="flex-1 overflow-y-auto p-4 space-y-4">
                     {panelLoading ? (
-                      <div className="text-center py-8 text-muted text-sm">
-                        {t("common.loading")}
+                      <div className="text-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto mb-3"></div>
+                        <p className="text-muted text-sm">{t("common.loading")}</p>
                       </div>
                     ) : panelPosts.length === 0 ? (
                       <div className="text-center py-8 text-muted text-sm">
@@ -1723,8 +1725,9 @@ const DiscussionsPage = () => {
 
                 {/* Global Posts */}
                 {globalLoading ? (
-                  <div className="text-center py-12 text-muted">
-                    {t("discussions.loading")}
+                  <div className="text-center py-12">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
+                    <p className="text-muted">{t("discussions.loading")}</p>
                   </div>
                 ) : globalPosts.length === 0 ? (
                   <div className="text-center py-12 text-muted">
@@ -2354,4 +2357,3 @@ const DiscussionsPage = () => {
 };
 
 export default DiscussionsPage;
-

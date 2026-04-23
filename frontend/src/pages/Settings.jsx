@@ -164,6 +164,7 @@ export default function Settings() {
     appearance: { theme: "light", language: "en" },
   });
   const [loading, setLoading] = useState(false);
+  const [pageLoading, setPageLoading] = useState(true);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [profilepopup, setProfilePopup] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -569,6 +570,17 @@ export default function Settings() {
       default:                  return null;
     }
   };
+
+  if (pageLoading) {
+    return (
+      <main className="flex-1 p-4 md:p-6 lg:p-8 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
+          <p className="text-muted">Loading settings...</p>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <>

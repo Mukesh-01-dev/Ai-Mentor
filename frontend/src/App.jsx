@@ -22,19 +22,18 @@ const CertificatesPage = lazy(() => import("./pages/CertificatesPage"));
 const Success = lazy(() => import("./pages/Success"));
 import CompleteProfilePage from "./pages/CompleteProfilePage";
 import "./App.css";
-// Redirects from the root path based on authentication status.
+
+// Redirect from root
 const RootRedirect = () => {
   const { isAuthenticated, user } = useAuth();
   if (!isAuthenticated) return <Navigate to="/login" replace />;
-  // Redirect to onboarding if profile is incomplete
   return <Navigate to={user?.isProfileComplete ? "/dashboard" : "/complete-profile"} replace />;
 };
 
-// Prevents authenticated users from accessing public-only pages like login/signup.
+// Public routes (block logged-in users)
 const PublicRoutes = () => {
   const { isAuthenticated, user } = useAuth();
   if (!isAuthenticated) return <Outlet />;
-  // Redirect to onboarding if profile is incomplete
   return <Navigate to={user?.isProfileComplete ? "/dashboard" : "/complete-profile"} replace />;
 };
 
@@ -42,10 +41,11 @@ const App = () => {
   return (
     <Suspense fallback={<LoadingSpinner />}>
       <Routes>
-        {/* Redirect from root */}
+
+        {/* Root redirect */}
         <Route path="/" element={<RootRedirect />} />
 
-        {/* Public routes that logged-in users should not see */}
+        {/* Public routes */}
         <Route element={<PublicRoutes />}>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignUpPage />} />
@@ -53,7 +53,7 @@ const App = () => {
           <Route path="/reset-password/:token" element={<ResetPassword />} />
         </Route>
 
-        {/* Protected Routes with shared Header + Sidebar layout */}
+        {/* Protected routes */}
         <Route element={<ProtectedRoute />}>
           {/* Complete Profile Route */}
           <Route path="/complete-profile" element={<CompleteProfilePage />} />
@@ -72,6 +72,7 @@ const App = () => {
 
         {/* Other public routes */}
         <Route path="/course-preview/:courseId" element={<CoursePreview />} />
+
       </Routes>
     </Suspense>
   );

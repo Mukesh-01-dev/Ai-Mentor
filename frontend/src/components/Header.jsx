@@ -40,8 +40,6 @@ const Header = () => {
     if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
     return `${Math.floor(diffInSeconds / 86400)}d ago`;
   };
-
-  // Fetch Notifications
   const loadNotifications = useCallback(async () => {
     if (!user) return;
     try {
@@ -64,6 +62,21 @@ const Header = () => {
     loadNotifications();
     // Optional: Set up polling or websocket here
   }, [loadNotifications]);
+
+  useEffect(() => {
+    const handleRefresh = () => {
+      loadNotifications();
+    };
+
+    window.addEventListener("refreshNotifications", handleRefresh);
+
+    return () => {
+      window.removeEventListener("refreshNotifications", handleRefresh);
+    };
+  }, [loadNotifications]);
+
+
+  // Fetch Notifications
 
   const unreadCount = notifications.filter(n => n.unread).length;
 
@@ -192,10 +205,16 @@ const Header = () => {
                     <div className="flex flex-col items-end gap-1">
                       <button
                         onClick={markAllRead}
-                        className="text-[10px] font-black text-teal-600 dark:text-teal-400 hover:text-teal-500 transition-colors uppercase tracking-wider"
+                        disabled={unreadCount === 0}
+                        className={`text-[10px] font-black uppercase tracking-wider transition-colors
+    ${unreadCount === 0
+                            ? "text-gray-400 cursor-not-allowed opacity-50"
+                            : "text-teal-600 dark:text-teal-400 hover:text-teal-500"
+                          }`}
                       >
                         Mark all read
                       </button>
+
                       {notifications.length > 0 && (
                         <button
                           onClick={clearAll}
@@ -219,7 +238,10 @@ const Header = () => {
                         <NotificationItem
                           key={notif.id}
                           notification={notif}
-                          onClick={(n) => markAsRead(n.id)}
+                          onClick={(n) => {
+                            markAsRead(n.id);
+                          }}
+
                         />
                       ))
                     ) : (

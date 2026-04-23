@@ -184,6 +184,7 @@ const CoursesPage = () => {
 
   if (loading) return <div>Loading...</div>;
 
+
   return (
     <>
       {/* ══════ HERO ══════ */}
@@ -510,4 +511,6 @@ const CoursesPage = () => {
   );
 };
 
+
 export default CoursesPage;
+
