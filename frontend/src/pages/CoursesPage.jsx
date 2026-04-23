@@ -19,24 +19,6 @@ const CoursesPage = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const [filters, setFilters] = useState({ category: [], level: [], price: [] });
-  const [showFilters, setShowFilters] = useState(false);
-
-  const toggleFilter = (field, value) => {
-    setFilters(prev => {
-      const current = prev[field];
-      if (current.includes(value)) {
-        return { ...prev, [field]: current.filter(item => item !== value) };
-      } else {
-        return { ...prev, [field]: [...current, value] };
-      }
-    });
-  };
-
-  const getActiveFilterCount = () => {
-    return filters.category.length + filters.level.length + filters.price.length;
-  };
-
   const [showEnrollPopup, setShowEnrollPopup] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState(null);
 
@@ -205,7 +187,7 @@ const CoursesPage = () => {
   return (
     <>
       {/* ══════ HERO ══════ */}
-      <div className="relative bg-gradient-to-br from-teal-700 via-teal-600 to-teal-800 pt-16 pb-12 px-4 sm:px-8">
+      <div className="relative overflow-hidden bg-gradient-to-br from-teal-700 via-teal-600 to-teal-800 pt-16 pb-12 px-4 sm:px-8">
         <div
           className="absolute inset-0 opacity-10"
           style={{
@@ -313,7 +295,7 @@ const CoursesPage = () => {
                 placeholder={t("header.search_placeholder")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-black/30 border border-white/20 rounded-full text-sm text-white placeholder-white/50 focus:ring-2 focus:ring-teal-400/30 focus:border-teal-400 transition-all outline-none shadow-inner"
+                className="w-full pl-10 pr-4 py-2.5 bg-black/30 border border-white/20 rounded-full text-sm text-white placeholder-white/50 focus:ring-2 focus:ring-teal-400/30 focus:border-teal-400 transition-all outline-none"
               />
             </div>
           </div>
@@ -510,9 +492,10 @@ const CoursesPage = () => {
               {selectedCourse.category} • {selectedCourse.level}
             </p>
             <div className="flex justify-between items-center mt-4">
-              <span className="text-lg font-bold text-green-600">
+              <span className="line-through text-slate-400">
                 {selectedCourse.price}
               </span>
+              <span className="text-lg font-bold text-green-600">₹0</span>
             </div>
             <button
               onClick={handleEnroll}
