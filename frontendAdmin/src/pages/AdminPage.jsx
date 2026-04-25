@@ -14,6 +14,8 @@ const NAV = [
 ];
 
 const NEW_COURSE = { title: "", category: "", level: "Beginner", priceValue: "", image: "" };
+const formatCurrency = (amount) => `INR ${Number(amount || 0).toLocaleString("en-IN")}`;
+const REPORT_PAGE_LIMIT = 10;
 
 const Metric = ({ label, value }) => (
   <article className="rounded-xl border border-border bg-card p-4">
@@ -64,6 +66,19 @@ export default function AdminPage() {
   const [courses, setCourses] = useState([]);
   const [users, setUsers] = useState([]);
   const [reports, setReports] = useState([]);
+  const [reportPage, setReportPage] = useState(1);
+  const [reportMeta, setReportMeta] = useState({ page: 1, totalPages: 1, total: 0, limit: REPORT_PAGE_LIMIT });
+  const [reportLoading, setReportLoading] = useState(false);
+  const [reportFilters, setReportFilters] = useState({
+    status: "pending",
+    reason: "all",
+    contentType: "all",
+    search: "",
+  });
+  const [enrollmentStats, setEnrollmentStats] = useState(null);
+  const [enrollmentList, setEnrollmentList] = useState([]);
+  const [recentPayments, setRecentPayments] = useState([]);
+  const [topCourses, setTopCourses] = useState([]);
   const [learning, setLearning] = useState({});
 
   const [courseForm, setCourseForm] = useState(NEW_COURSE);
@@ -91,23 +106,46 @@ export default function AdminPage() {
 
   const notify = (msg) => { setToast(msg); setTimeout(() => setToast(""), 2200); };
 
+  const fetchReports = async (page = 1, customFilters = reportFilters) => {
+    setReportLoading(true);
+    try {
+      const params = new URLSearchParams({
+        page: String(page),
+        limit: String(REPORT_PAGE_LIMIT),
+        status: customFilters.status,
+        reason: customFilters.reason,
+        contentType: customFilters.contentType,
+      });
+
+      if (customFilters.search.trim()) {
+        params.set("search", customFilters.search.trim());
+      }
+
+      const response = await callApi(`/community/reports?${params.toString()}`);
+      setReports(response?.data || []);
+      setReportMeta(response?.meta || { page: 1, totalPages: 1, total: 0, limit: REPORT_PAGE_LIMIT });
+      return response;
+    } catch (e) {
+      setError(e.message);
+      setReports([]);
+      setReportMeta({ page: 1, totalPages: 1, total: 0, limit: REPORT_PAGE_LIMIT });
+      return null;
+    } finally {
+      setReportLoading(false);
+    }
+  };
+
   const fetchAll = async () => {
     setBusy(true); setError("");
     try {
-      const [c, u, r] = await Promise.all([
+      const [c, u, stats, list, recent, top] = await Promise.all([
         callApi("/courses"),
         callApi("/admin/users"),
-        callApi("/admin/enrollments?type=stats"),
-        callApi("/admin/enrollments?type=list&limit=50"),
-        callApi("/admin/enrollments?type=recent&limit=20"),
-        callApi("/admin/enrollments?type=top-courses&limit=5"),
+        callApi("/admin/complaints"), // Now includes both complaints and reports
       ]);
       setCourses(c || []);
       setUsers(u || []);
-      setEnrollmentStats(stats?.data || null);
-      setEnrollmentList(list?.data || []);
-      setRecentPayments(recent?.data || []);
-      setTopCourses(top?.data || []);
+      setReports(r || []); // This now contains both complaints and reports
     } catch (e) {
       setError(e.message);
     } finally {
@@ -116,8 +154,16 @@ export default function AdminPage() {
   };
 
   useEffect(() => {
-    if (token && user?.role === "admin" || user?.role === "superAdmin") fetchAll();
+    if (token && (user?.role === "admin" || user?.role === "superAdmin")) {
+      fetchAll();
+    }
   }, []);
+
+  useEffect(() => {
+    if (token && (user?.role === "admin" || user?.role === "superAdmin")) {
+      fetchReports(reportPage, reportFilters);
+    }
+  }, [reportPage, reportFilters.status, reportFilters.reason, reportFilters.contentType, reportFilters.search]);
 
   useEffect(() => {
     if (!manageCourse) return;
@@ -139,24 +185,13 @@ export default function AdminPage() {
   if (!token) return <GateCard title="Admin login required" body="Please login first." />;
   if (user?.role !== "admin" && user?.role !== "superAdmin") return <GateCard title="Access denied" body="Admin role is required for this panel." />;
 
-  const enrollmentRows = users.flatMap((u) => (u.purchasedCourses || []).map((p) => {
-    const course = courses.find((c) => Number(c.id) === Number(p.courseId));
-    return {
-      id: `${u.id}-${p.courseId}-${p.purchaseDate || ""}`,
-      user: u.name,
-      email: u.email,
-      course: p.courseTitle || course?.title || `Course ${p.courseId}`,
-      amount: Number(course?.priceValue || 0),
-      date: p.purchaseDate,
-    };
-  }));
-
   const summary = {
     courses: courses.length,
     users: users.length,
-    enrollments: enrollmentRows.length,
-    reports: reports.length,
-    revenue: enrollmentRows.reduce((a, b) => a + b.amount, 0),
+    enrollments: enrollmentStats?.totalEnrollments ?? enrollmentList.length,
+    reports: reportMeta.total,
+    revenue: enrollmentStats?.totalRevenue ?? 0,
+    activeUsers: enrollmentStats?.activeUsers ?? 0,
   };
 
   const navTo = (id) => { navigate(`/${id}`); setMobileNav(false); };
@@ -206,24 +241,22 @@ export default function AdminPage() {
 
   const deleteUser = async (userId) => {
     if (!window.confirm("Delete this user?")) return;
-    try { setBusy(true); await callApi(`/api/admin/users/${userId}`, { method: "DELETE" }); notify("User deleted"); await fetchAll(); }
+    try { setBusy(true); await callApi(`/admin/users/${userId}`, { method: "DELETE" }); notify("User deleted"); await fetchAll(); }
     catch (e) { setError(e.message); } finally { setBusy(false); }
   };
 
-  const reportAction = async (id, action) => {
+  const reportAction = async (id, action, type) => {
     try {
       setBusy(true);
-      await callApi(`/community/reports/${id}`, { method: "PUT", body: JSON.stringify({ action }) });
-      notify(`Report ${action}`);
-      const response = await fetchReports(reportPage, reportFilters);
-      if (response?.meta && response.meta.page > response.meta.totalPages && response.meta.totalPages > 0) {
-        setReportPage(response.meta.totalPages);
+      if (type === "report") {
+        await callApi(`/admin/complaints/${id}/moderate`, { method: "PUT", body: JSON.stringify({ action }) });
+      } else {
+        await callApi(`/admin/complaints/${id}/status`, { method: "PUT", body: JSON.stringify({ status: action }) });
       }
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setBusy(false);
+      notify(`${type === "report" ? "Report" : "Complaint"} ${action}`);
+      await fetchAll();
     }
+    catch (e) { setError(e.message); } finally { setBusy(false); }
   };
 
   const activeLearning = manageCourse ? learning[manageCourse.id] : null;
@@ -330,7 +363,7 @@ export default function AdminPage() {
               <Metric label="Courses" value={summary.courses} />
               <Metric label="Users" value={summary.users} />
               <Metric label="Enrollments" value={summary.enrollments} />
-              <Metric label="Revenue" value={summary.revenue} />
+              <Metric label="Revenue" value={formatCurrency(summary.revenue)} />
               <Metric label="Reports" value={summary.reports} />
             </div>
           )}
@@ -374,10 +407,12 @@ export default function AdminPage() {
           {page === "enrollments" && (
             <DataTable
               headers={["User", "Course", "Amount", "Date"]}
-              rows={enrollmentRows.map((r) => (
-                <tr key={r.id} className="border-t border-border">
-                  <td className="px-3 py-2"><div>{r.user}</div><div className="text-xs text-muted">{r.email}</div></td>
-                  <td className="px-3 py-2">{r.course}</td><td className="px-3 py-2">{r.amount}</td><td className="px-3 py-2">{r.date ? new Date(r.date).toLocaleDateString() : "-"}</td>
+              rows={enrollmentList.map((r) => (
+                <tr key={`${r.email}-${r.courseTitle}-${r.purchaseDate}`} className="border-t border-border">
+                  <td className="px-3 py-2"><div>{r.userName}</div><div className="text-xs text-muted">{r.email}</div></td>
+                  <td className="px-3 py-2">{r.courseTitle}</td>
+                  <td className="px-3 py-2">{formatCurrency(r.amount)}</td>
+                  <td className="px-3 py-2">{r.purchaseDate ? new Date(r.purchaseDate).toLocaleDateString() : "-"}</td>
                 </tr>
               ))}
               empty="No enrollments"
@@ -385,60 +420,155 @@ export default function AdminPage() {
           )}
 
           {page === "payments" && (
-            <DataTable
-              headers={["User", "Course", "Amount", "Date"]}
-              rows={enrollmentRows.map((r) => (
-                <tr key={`${r.id}-p`} className="border-t border-border">
-                  <td className="px-3 py-2">{r.user}</td><td className="px-3 py-2">{r.course}</td><td className="px-3 py-2">+ {r.amount}</td><td className="px-3 py-2">{r.date ? new Date(r.date).toLocaleDateString() : "-"}</td>
-                </tr>
-              ))}
-              empty="No payments"
-            />
+            <div className="space-y-4">
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <Metric label="Total Revenue" value={formatCurrency(summary.revenue)} />
+                <Metric label="Total Enrollments" value={summary.enrollments} />
+                <Metric label="Active Users (7d)" value={summary.activeUsers} />
+                <Metric label="Top Courses" value={topCourses.length} />
+              </div>
+              <DataTable
+                headers={["User", "Course", "Amount", "Date"]}
+                rows={recentPayments.map((r, idx) => (
+                  <tr key={`${r.email}-${r.courseTitle}-${r.purchaseDate}-${idx}`} className="border-t border-border">
+                    <td className="px-3 py-2">{r.userName}</td>
+                    <td className="px-3 py-2">{r.courseTitle}</td>
+                    <td className="px-3 py-2 text-emerald-700">+ {formatCurrency(r.amount)}</td>
+                    <td className="px-3 py-2">{r.purchaseDate ? new Date(r.purchaseDate).toLocaleDateString() : "-"}</td>
+                  </tr>
+                ))}
+                empty="No recent payments"
+              />
+              <DataTable
+                headers={["Course", "Purchases"]}
+                rows={topCourses.map((item) => (
+                  <tr key={item.courseId} className="border-t border-border">
+                    <td className="px-3 py-2">{item.courseTitle}</td>
+                    <td className="px-3 py-2">{item.totalPurchases}</td>
+                  </tr>
+                ))}
+                empty="No top course data"
+              />
+            </div>
           )}
 
           {page === "reports" && (
-            <div className="space-y-3">
+            <div className="space-y-4">
+              <div className="grid gap-2 rounded-xl border border-border bg-card p-3 md:grid-cols-5">
+                <select
+                  className="rounded border border-border bg-input px-2 py-2 text-sm"
+                  value={reportFilters.status}
+                  onChange={(e) => {
+                    setReportPage(1);
+                    setReportFilters((prev) => ({ ...prev, status: e.target.value }));
+                  }}
+                >
+                  <option value="pending">Pending</option>
+                  <option value="resolved">Resolved</option>
+                  <option value="all">All Status</option>
+                </select>
+                <select
+                  className="rounded border border-border bg-input px-2 py-2 text-sm"
+                  value={reportFilters.reason}
+                  onChange={(e) => {
+                    setReportPage(1);
+                    setReportFilters((prev) => ({ ...prev, reason: e.target.value }));
+                  }}
+                >
+                  <option value="all">All Reasons</option>
+                  <option value="spam">Spam</option>
+                  <option value="harassment">Harassment</option>
+                  <option value="inappropriate">Inappropriate</option>
+                  <option value="misinformation">Misinformation</option>
+                  <option value="other">Other</option>
+                </select>
+                <select
+                  className="rounded border border-border bg-input px-2 py-2 text-sm"
+                  value={reportFilters.contentType}
+                  onChange={(e) => {
+                    setReportPage(1);
+                    setReportFilters((prev) => ({ ...prev, contentType: e.target.value }));
+                  }}
+                >
+                  <option value="all">All Content</option>
+                  <option value="post">Posts</option>
+                  <option value="reply">Replies</option>
+                </select>
+                <input
+                  className="rounded border border-border bg-input px-2 py-2 text-sm md:col-span-2"
+                  placeholder="Search reason/description..."
+                  value={reportFilters.search}
+                  onChange={(e) => {
+                    setReportPage(1);
+                    setReportFilters((prev) => ({ ...prev, search: e.target.value }));
+                  }}
+                />
+              </div>
+
+              {reportLoading && <p className="text-xs text-muted">Loading reports...</p>}
+
               {reports.map((r) => {
                 const reply = r.replyId ? (r.post?.replies || []).find((x) => String(x.id) === String(r.replyId)) : null;
-                const isResolved = r.status === "resolved";
+                const isReport = r.type === "report";
                 return (
                   <article key={r.id} className="rounded-xl border border-border bg-card p-4">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <p className="text-sm font-semibold">{r.replyId ? "Reported reply" : "Reported post"}</p>
-                      <div className="flex items-center gap-2 text-xs">
-                        <span className={`rounded-full px-2 py-1 ${isResolved ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
-                          {r.status}
-                        </span>
-                        {r.action && <span className="rounded-full bg-slate-100 px-2 py-1 text-slate-700">Action: {r.action}</span>}
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <p className="text-sm font-semibold">
+                          {isReport ? (r.replyId ? "Reported comment" : "Reported post") : "Complaint"}
+                        </p>
+                        <p className="text-xs text-muted">
+                          {isReport ? (
+                            <>
+                              Reporter: {r.user?.name} ({r.user?.email}) | Reason: {r.reason}
+                            </>
+                          ) : (
+                            <>
+                              User: {r.user?.name} ({r.user?.email}) | Priority: {r.priority}
+                            </>
+                          )}
+                        </p>
                       </div>
+                      <span className={`text-xs px-2 py-1 rounded ${isReport ? "bg-red-100 text-red-700" : "bg-blue-100 text-blue-700"}`}>
+                        {isReport ? "REPORT" : "COMPLAINT"}
+                      </span>
                     </div>
+                    <p className="mt-2 rounded bg-canvas-alt p-2 text-sm">
+                      {isReport ? (reply?.text || r.post?.content || "-") : r.message}
+                    </p>
+                    {isReport && r.post?.author && (
+                      <p className="mt-1 text-xs text-muted">Author: {r.post.author.name}</p>
+                    )}
+                    <div className="mt-3 flex gap-2 flex-wrap">
+                      {isReport ? (
+                        <>
+                          <button className="rounded border border-amber-300 px-2 py-1 text-xs text-amber-700" onClick={() => reportAction(r.id, "hidden", "report")}>Hide</button>
+                          <button className="rounded border border-red-300 px-2 py-1 text-xs text-red-700" onClick={() => reportAction(r.id, "deleted", "report")}>Delete</button>
+                          <button className="rounded border border-border px-2 py-1 text-xs" onClick={() => reportAction(r.id, "dismissed", "report")}>Dismiss</button>
+                        </>
+                      ) : (
+                        <>
+                          <button className="rounded border border-border px-2 py-1 text-xs" onClick={() => reportAction(r.id, "open", "complaint")}>Open</button>
+                          <button className="rounded border border-border px-2 py-1 text-xs" onClick={() => reportAction(r.id, "in_progress", "complaint")}>In Progress</button>
+                          <button className="rounded border border-border px-2 py-1 text-xs" onClick={() => reportAction(r.id, "resolved", "complaint")}>Resolved</button>
+                          <button className="rounded border border-red-300 px-2 py-1 text-xs text-red-700" onClick={() => reportAction(r.id, "closed", "complaint")}>Close</button>
+                        </>
+                      )}
+                    </div>
+                    <p className="mt-1 text-xs text-muted">Reporter: {r.reporter?.name} ({r.reporter?.email}) | Reason: {r.reason}</p>
+                    {r.description && <p className="mt-1 text-xs text-muted">Description: {r.description}</p>}
+                    <p className="mt-2 rounded bg-canvas-alt p-2 text-sm">{reply?.text || r.post?.content || "Content unavailable"}</p>
+                    {!isResolved && (
+                      <div className="mt-3 flex gap-2">
+                        <button className="rounded border border-amber-300 px-2 py-1 text-xs text-amber-700" onClick={() => reportAction(r.id, "hidden")}>Hide</button>
+                        <button className="rounded border border-red-300 px-2 py-1 text-xs text-red-700" onClick={() => reportAction(r.id, "deleted")}>Delete</button>
+                        <button className="rounded border border-border px-2 py-1 text-xs" onClick={() => reportAction(r.id, "dismissed")}>Dismiss</button>
+                      </div>
+                    )}
                   </article>
                 );
               })}
-
-              {!reports.length && !reportLoading && (
-                <p className="rounded-xl border border-border bg-card p-4 text-sm text-muted">No reports found for current filters.</p>
-              )}
-
-              <div className="flex items-center justify-between rounded-xl border border-border bg-card p-3 text-sm">
-                <p className="text-muted">Page {reportMeta.page} of {reportMeta.totalPages} | Total {reportMeta.total}</p>
-                <div className="flex gap-2">
-                  <button
-                    className="rounded border border-border px-3 py-1 disabled:cursor-not-allowed disabled:opacity-50"
-                    onClick={() => setReportPage((p) => Math.max(1, p - 1))}
-                    disabled={reportMeta.page <= 1 || reportLoading}
-                  >
-                    Prev
-                  </button>
-                  <button
-                    className="rounded border border-border px-3 py-1 disabled:cursor-not-allowed disabled:opacity-50"
-                    onClick={() => setReportPage((p) => Math.min(reportMeta.totalPages, p + 1))}
-                    disabled={reportMeta.page >= reportMeta.totalPages || reportLoading}
-                  >
-                    Next
-                  </button>
-                </div>
-              </div>
+              {!reports.length && <p className="rounded-xl border border-border bg-card p-4 text-sm text-muted">No complaints or reports.</p>}
             </div>
           )}
         </section>
