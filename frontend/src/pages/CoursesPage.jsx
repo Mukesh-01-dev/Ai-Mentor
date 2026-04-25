@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Star, X, BookOpen, Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { Star, X, BookOpen, Search, ChevronLeft, ChevronRight, MessageSquareText } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import API_BASE_URL from "../lib/api";
@@ -8,6 +8,7 @@ import { useTranslation } from "react-i18next";
 const CoursesPage = () => {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState("my-courses");
+  const [rating, setRating] = useState(0);
   const { user } = useAuth();
   const navigate = useNavigate();
   const scrollRef = useRef(null);
@@ -194,6 +195,121 @@ const CoursesPage = () => {
       return matchesCategory && matchesLevel && matchesPrice;
     });
 
+  const StarRating = ({ value, onChange }) => {
+    const [hover, setHover] = useState(0);
+
+    return (
+      <div className="flex gap-1">
+        {[1, 2, 3, 4, 5].map((star) => {
+          const active = star <= (hover || value);
+
+          return (
+            <button
+              key={star}
+              onClick={() => onChange(star)}
+              onMouseEnter={() => setHover(star)}
+              onMouseLeave={() => setHover(0)}
+              className={`text-lg transition-all duration-150 transform ${active ? "text-yellow-400 scale-110" : "text-gray-500"
+                } hover:scale-125`}
+            >
+              ★
+            </button>
+          );
+        })}
+      </div>
+    );
+  };
+
+  const ReviewModal = ({ isOpen, onClose, review, setReview, onSubmit }) => {
+    if (!isOpen) return null;
+
+    return (
+      <div className="fixed z-50 inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center">
+        <div className="bg-card p-5 rounded-2xl w-[400px] space-y-4
+        transform transition-all duration-200 scale-95 animate-in fade-in zoom-in-95">
+
+          <h2 className="text-lg font-semibold">Write a Review</h2>
+
+          <textarea
+            value={review}
+            onChange={(e) => setReview(e.target.value)}
+            placeholder="Optional..."
+            className="w-full p-3 rounded-lg border border-border bg-transparent focus:outline-none focus:ring-2 focus:ring-[#2DD4BF]/50 transition"
+          />
+
+          <div className="flex justify-end gap-2">
+            <button
+              onClick={onClose}
+              className="px-3 py-1 rounded-lg hover:bg-white/10 transition"
+            >
+              Cancel
+            </button>
+
+            <button
+              onClick={onSubmit}
+              className="bg-[#2DD4BF] px-4 py-2 rounded-lg text-white
+              hover:brightness-110 active:scale-95 transition"
+            >
+              Submit
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const RatingSection = ({ courseId }) => {
+    const [rating, setRating] = useState(0);
+    const [review, setReview] = useState("");
+    const [open, setOpen] = useState(false);
+
+    const handleSubmit = () => {
+      if (!rating) {
+        alert("Rating is required");
+        return;
+      }
+
+      console.log({
+        courseId,
+        rating,
+        review,
+      });
+
+      setOpen(false);
+    };
+
+    return (
+      <div className="flex items-center gap-5 space-y-0">
+        <StarRating value={rating} onChange={setRating} />
+
+        <>
+          <button
+            onClick={() => {
+              if (!rating) return;
+              setOpen(true);
+            }}
+            disabled={!rating}
+            className={`p-2 rounded-lg transition-all duration-200 ${rating
+              ? "text-gray-200 hover:text-white hover:bg-white/10 active:scale-90"
+              : "text-gray-500 cursor-not-allowed"
+              }`}
+            title="Add review"
+          >
+            <MessageSquareText size={16} />
+          </button>
+
+          <ReviewModal
+            isOpen={open}
+            onClose={() => setOpen(false)}
+            review={review}
+            setReview={setReview}
+            onSubmit={handleSubmit}
+          />
+        </>
+      </div>
+    );
+  };
+
   if (loading) return <div>Loading...</div>
   return (
     <>
@@ -245,8 +361,8 @@ const CoursesPage = () => {
                 <button
                   onClick={() => setActiveTab("my-courses")}
                   className={`flex-1 basis-0 min-w-0 flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-6 py-2.5 rounded-full font-semibold text-xs sm:text-sm transition-all ${activeTab === "my-courses"
-                      ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/30"
-                      : "bg-black/30 text-white hover:bg-black/40"
+                    ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/30"
+                    : "bg-black/30 text-white hover:bg-black/40"
                     }`}
                 >
                   <BookOpen className="w-4 h-4 shrink-0 hidden sm:block" />
@@ -256,8 +372,8 @@ const CoursesPage = () => {
                 <button
                   onClick={() => setActiveTab("explore")}
                   className={`flex-1 basis-0 min-w-0 flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-6 py-2.5 rounded-full font-semibold text-xs sm:text-sm transition-all ${activeTab === "explore"
-                      ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/30"
-                      : "bg-black/30 text-white hover:bg-black/40"
+                    ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/30"
+                    : "bg-black/30 text-white hover:bg-black/40"
                     }`}
                 >
                   <Search className="w-4 h-4 shrink-0 hidden sm:block" />
@@ -274,8 +390,8 @@ const CoursesPage = () => {
                   <button
                     onClick={() => setShowFilters(!showFilters)}
                     className={`relative flex items-center justify-center flex-shrink-0 w-10 h-10 sm:w-auto sm:px-5 sm:py-2.5 rounded-full border text-sm font-semibold transition-all duration-300 shadow-xl ${showFilters || getActiveFilterCount() > 0
-                        ? "bg-gradient-to-r from-teal-500/80 to-cyan-500/80 border-transparent text-white shadow-teal-500/20"
-                        : "bg-black/40 border-white/20 text-white hover:bg-black/60 hover:border-white/40 backdrop-blur-md"
+                      ? "bg-gradient-to-r from-teal-500/80 to-cyan-500/80 border-transparent text-white shadow-teal-500/20"
+                      : "bg-black/40 border-white/20 text-white hover:bg-black/60 hover:border-white/40 backdrop-blur-md"
                       }`}
                   >
                     <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
@@ -325,8 +441,8 @@ const CoursesPage = () => {
                               <button
                                 onClick={() => setFilters({ ...filters, category: [] })}
                                 className={`px-4 py-2 text-xs rounded-xl font-bold transition-all duration-300 ${filters.category.length === 0
-                                    ? "bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-lg shadow-teal-500/25 scale-[1.03]"
-                                    : "bg-teal-900/30 text-teal-100 hover:bg-teal-500/20 border border-teal-500/30"
+                                  ? "bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-lg shadow-teal-500/25 scale-[1.03]"
+                                  : "bg-teal-900/30 text-teal-100 hover:bg-teal-500/20 border border-teal-500/30"
                                   }`}
                               >
                                 {t("courses.all_categories")}
@@ -336,8 +452,8 @@ const CoursesPage = () => {
                                   key={cat}
                                   onClick={() => toggleFilter("category", cat)}
                                   className={`px-4 py-2 text-xs rounded-xl font-bold transition-all duration-300 ${filters.category.includes(cat)
-                                      ? "bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-lg shadow-teal-500/25 scale-[1.03]"
-                                      : "bg-teal-900/30 text-teal-100 hover:bg-teal-500/20 border border-teal-500/30"
+                                    ? "bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-lg shadow-teal-500/25 scale-[1.03]"
+                                    : "bg-teal-900/30 text-teal-100 hover:bg-teal-500/20 border border-teal-500/30"
                                     }`}
                                 >
                                   {cat}
@@ -353,8 +469,8 @@ const CoursesPage = () => {
                               <button
                                 onClick={() => setFilters({ ...filters, level: [] })}
                                 className={`px-4 py-2 text-xs rounded-xl font-bold transition-all duration-300 ${filters.level.length === 0
-                                    ? "bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-lg shadow-teal-500/25 scale-[1.03]"
-                                    : "bg-teal-900/30 text-teal-100 hover:bg-teal-500/20 border border-teal-500/30"
+                                  ? "bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-lg shadow-teal-500/25 scale-[1.03]"
+                                  : "bg-teal-900/30 text-teal-100 hover:bg-teal-500/20 border border-teal-500/30"
                                   }`}
                               >
                                 {t("courses.any_level")}
@@ -364,8 +480,8 @@ const CoursesPage = () => {
                                   key={lvl}
                                   onClick={() => toggleFilter("level", lvl)}
                                   className={`px-4 py-2 text-xs rounded-xl font-bold transition-all duration-300 ${filters.level.includes(lvl)
-                                      ? "bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-lg shadow-teal-500/25 scale-[1.03]"
-                                      : "bg-teal-900/30 text-teal-100 hover:bg-teal-500/20 border border-teal-500/30"
+                                    ? "bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-lg shadow-teal-500/25 scale-[1.03]"
+                                    : "bg-teal-900/30 text-teal-100 hover:bg-teal-500/20 border border-teal-500/30"
                                     }`}
                                 >
                                   {lvl}
@@ -381,8 +497,8 @@ const CoursesPage = () => {
                               <button
                                 onClick={() => setFilters({ ...filters, price: [] })}
                                 className={`flex-1 py-2 text-xs rounded-xl font-bold transition-all duration-300 ${filters.price.length === 0
-                                    ? "bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-lg shadow-teal-500/25 scale-[1.03]"
-                                    : "bg-teal-900/30 text-teal-100 hover:bg-teal-500/20 border border-teal-500/30"
+                                  ? "bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-lg shadow-teal-500/25 scale-[1.03]"
+                                  : "bg-teal-900/30 text-teal-100 hover:bg-teal-500/20 border border-teal-500/30"
                                   }`}
                               >
                                 {t("courses.any_price")}
@@ -392,8 +508,8 @@ const CoursesPage = () => {
                                   key={p}
                                   onClick={() => toggleFilter("price", p)}
                                   className={`flex-1 py-2 text-xs rounded-xl font-bold transition-all duration-300 ${filters.price.includes(p)
-                                      ? "bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-lg shadow-teal-500/25 scale-[1.03]"
-                                      : "bg-teal-900/30 text-teal-100 hover:bg-teal-500/20 border border-teal-500/30"
+                                    ? "bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-lg shadow-teal-500/25 scale-[1.03]"
+                                    : "bg-teal-900/30 text-teal-100 hover:bg-teal-500/20 border border-teal-500/30"
                                     }`}
                                 >
                                   {p}
@@ -472,6 +588,12 @@ const CoursesPage = () => {
                       <h3 className="text-lg font-semibold text-main">
                         {course.title}
                       </h3>
+
+                      {/* {hasStarted && (
+                        <RatingSection courseId={course.id} />
+                      )} */}
+                      <RatingSection courseId={course.id} />
+
                       <p className="text-sm text-slate-400">{course.lessons}</p>
                       <button
                         onClick={() => navigate(`/learning/${course.id}`)}
