@@ -221,7 +221,7 @@ const Header = ({ title, onMenuClick, searchQuery = "", onSearchChange }) => {
                   <div className="p-3 text-left">
                     <button
                       onClick={() => {
-                        navigate("/");
+                        navigate("/dashboard");
                         setDropdownOpen(false);
                       }}
                       className="flex items-center w-full px-4 py-3.5 text-xs font-bold text-main hover:bg-teal-500 hover:text-white rounded-[1.2rem] transition-all group"
@@ -230,7 +230,7 @@ const Header = ({ title, onMenuClick, searchQuery = "", onSearchChange }) => {
                     </button>
                     <button
                       onClick={() => {
-                        navigate("/");
+                        navigate("/dashboard");
                         setDropdownOpen(false);
                       }}
                       className="flex items-center w-full px-4 py-3.5 text-xs font-bold text-main hover:bg-teal-500 hover:text-white rounded-[1.2rem] transition-all group mt-1"

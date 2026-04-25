@@ -5,56 +5,38 @@ import {
   getAdminProfile,
   deleteAdmin,
   logoutAdmin,
-  getAllAdmins,
-  getDashboardSummary,
   getAllEnrollments,
   getAllPayments,
   getAllCourses,
-  getAllUsers,
-  deleteUser,
-  updateUserRole,
-  getAllComplaints,
-  updateComplaintStatus,
+  getAllUsers
 } from "../controllers/adminController.js";
-import { getAllComplaintsAndReports, moderateReport } from "../controllers/complaintController.js";
-import { addCourse, updateCourse, deleteCourse, addModules, addLessons, updateLessonVideo, addSubtopics } from "../controllers/courseController.js";
-import { protectAdmin, superAdminOnly, anyAdmin } from "../middleware/adminAuthMiddleware.js";
+import { protectAdmin, superAdminOnly } from "../middleware/adminAuthMiddleware.js";
+import { protect, admin } from "../middleware/authMiddleware.js";
+import {
+  listUsersForAdmin,
+  updateUserRoleByAdmin,
+  deleteUserByAdmin,
+} from "../controllers/userController.js";
 
 const router = express.Router();
 
 router.post("/login", loginAdmin);
+router.post("/register", protectAdmin, superAdminOnly, registerAdmin);
 router.get("/profile", protectAdmin, getAdminProfile);
 router.post("/logout", protectAdmin, logoutAdmin);
-
-router.get("/dashboard", protectAdmin, anyAdmin, getDashboardSummary);
-
-router.get("/users", protectAdmin, anyAdmin, getAllUsers);
-router.put("/users/:id/role", protectAdmin, anyAdmin, updateUserRole);
-router.delete("/users/:id", protectAdmin, anyAdmin, deleteUser);
-
-router.get("/enrollments", protectAdmin, anyAdmin, getAllEnrollments);
-router.get("/payments", protectAdmin, anyAdmin, getAllPayments);
-
-router.get("/courses", protectAdmin, anyAdmin, getAllCourses);
-router.post("/courses", protectAdmin, anyAdmin, addCourse);
-router.put("/courses/:id", protectAdmin, anyAdmin, updateCourse);
-router.delete("/courses/:id", protectAdmin, anyAdmin, deleteCourse);
-router.post("/courses/:courseId/modules", protectAdmin, anyAdmin, addModules);
-router.post("/courses/:courseId/modules/:moduleId/lessons", protectAdmin, anyAdmin, addLessons);
-router.put("/courses/:courseId/lessons/:lessonId/video", protectAdmin, anyAdmin, updateLessonVideo);
-router.post("/courses/:courseId/subtopics", protectAdmin, anyAdmin, addSubtopics);
-
-// Unified complaints and reports endpoint
-router.get("/complaints", protectAdmin, anyAdmin, getAllComplaintsAndReports);
-router.put("/complaints/:id/status", protectAdmin, anyAdmin, updateComplaintStatus);
-router.put("/complaints/:id/moderate", protectAdmin, anyAdmin, moderateReport);
-
-router.post("/register", protectAdmin, superAdminOnly, registerAdmin);
-router.get("/admins", protectAdmin, superAdminOnly, getAllAdmins);
-router.post("/admins", protectAdmin, superAdminOnly, registerAdmin);
-router.delete("/admins/:id", protectAdmin, superAdminOnly, deleteAdmin);
-
-// Backward-compatible legacy endpoint
 router.delete("/:id", protectAdmin, superAdminOnly, deleteAdmin);
+router.get("/enrollments", protect, admin, getAllEnrollments);
+// router.get("/payments", protectAdmin, getAllPayments);
+// router.get("/courses", protectAdmin, getAllCourses);
+// router.get("/users", protectAdmin, getAllUsers);
+
+// User admin management via user-role based auth (shared with course/community admin APIs)
+router.get("/users", protect, admin, listUsersForAdmin);
+router.put("/users/:id/role", protect, admin, updateUserRoleByAdmin);
+router.delete("/users/:id", protect, admin, deleteUserByAdmin);
+router.get("/enrollments", protectAdmin, getAllEnrollments);
+router.get("/payments", protectAdmin, getAllPayments);
+router.get("/courses", protectAdmin, getAllCourses);
+router.get("/users", protectAdmin, getAllUsers);
 
 export default router;

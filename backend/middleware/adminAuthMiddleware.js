@@ -1,7 +1,6 @@
 // backend/middleware/adminAuthMiddleware.js
 import jwt from "jsonwebtoken";
 import Admin from "../models/Admin.js";
-const ADMIN_TOKEN_TYPE = "admin";
 
 const protectAdmin = async (req, res, next) => {
   let token;
@@ -12,13 +11,7 @@ const protectAdmin = async (req, res, next) => {
   ) {
     try {
       token = req.headers.authorization.split(" ")[1];
-      if (!process.env.JWT_SECRET) {
-        return res.status(500).json({ message: "JWT secret not configured" });
-      }
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      if (decoded?.type !== ADMIN_TOKEN_TYPE) {
-        return res.status(401).json({ message: "Invalid admin token" });
-      }
 
       const admin = await Admin.findByPk(decoded.id, {
         attributes: { exclude: ["password"] },

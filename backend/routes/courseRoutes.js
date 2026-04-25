@@ -6,7 +6,6 @@ import {
   getStatsCards,
   getMyCourses,
   addCourse,
-  updateCourse,
   deleteCourse,
   updateLessonVideo,
   addSubtopics,
@@ -37,7 +36,6 @@ router.route("/:id").get(getCourseById);
 
 // ADMIN (PROTECTED + ADMIN ONLY)
 router.route("/").post(protect, admin, addCourse);
-router.route("/:id").put(protect, admin, updateCourse);
 router.route("/:id").delete(protect, admin, deleteCourse);
 router.route("/:courseId/modules").post(protect, admin, addModules);
 router.route("/:courseId/modules/:moduleId/lessons").post(protect, admin, addLessons);
