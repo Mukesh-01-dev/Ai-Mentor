@@ -4,6 +4,8 @@ export const NAV_ITEMS = [
   ["users", "Users"],
   ["enrollments", "Enrollments"],
   ["payments", "Payments"],
+  ["complaints", "Complaints"],
+  ["admins", "Admins"],
 ];
 
 export const PAGE_TITLES = {
@@ -12,4 +14,6 @@ export const PAGE_TITLES = {
   users: "Manage Users",
   enrollments: "Enrollments",
   payments: "Payments",
+  complaints: "Complaints",
+  admins: "Admin Management",
 };

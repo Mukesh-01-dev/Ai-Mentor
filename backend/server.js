@@ -15,9 +15,11 @@ import aiRoutes from "./routes/aiRoutes.js";
 import communityRoutes from "./routes/communityRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
+import complaintRoutes from "./routes/complaintRoutes.js";
 import "./models/CommunityPost.js";
 import "./models/Notification.js";
 import "./models/Report.js";
+import "./models/Complaint.js";
 import "./models/modelAssociations.js";
 dotenv.config();
 
@@ -57,6 +59,7 @@ app.use("/api/ai", aiRoutes);
 app.use("/api/community", communityRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/complaints", complaintRoutes);
 
 // Global error handler
 app.use((err, req, res, next) => {

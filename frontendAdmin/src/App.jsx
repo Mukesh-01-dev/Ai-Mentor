@@ -1,39 +1,36 @@
-import { Navigate, Outlet, Route, Routes, useLocation } from "react-router-dom";
-import AdminPage from "./pages/AdminPage";
-import LoginPage from "./pages/LoginPage";
+import { useMemo, useState } from "react";
+import Header from "./components/Header";
+import AdminSidebar from "./components/layout/AdminSidebar";
+import { PAGE_TITLES } from "./constants/adminNavigation";
+import DashboardPage from "./pages/DashboardPage";
+import CoursesPage from "./pages/CoursesPage";
+import UsersPage from "./pages/UsersPage";
+import EnrollmentsPage from "./pages/EnrollmentsPage";
+import PaymentsPage from "./pages/PaymentsPage";
+import ComplaintsPage from "./pages/ComplaintsPage";
+import AdminsPage from "./pages/AdminsPage";
+import { adminRequest, getAdminSession } from "./lib/adminApi";
 
-const isAdminRole = (role) => role === "admin" || role === "superAdmin";
-
-const getStoredUser = () => {
-  try {
-    const raw = localStorage.getItem("user");
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
+const PAGE_COMPONENTS = {
+  dashboard: DashboardPage,
+  courses: CoursesPage,
+  users: UsersPage,
+  enrollments: EnrollmentsPage,
+  payments: PaymentsPage,
+  complaints: ComplaintsPage,
+  admins: AdminsPage,
 };
 
-function RequireAdminAuth() {
-  const token = localStorage.getItem("token");
-  const user = getStoredUser();
-  const location = useLocation();
+function App() {
+  const [page, setPage] = useState("dashboard");
+  const [mobileNav, setMobileNav] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  if (!token) {
-    return <Navigate to="/login" replace state={{ from: location.pathname }} />;
-  }
-
-  if (!isAdminRole(user?.role)) {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    return <Navigate to="/login" replace />;
-  }
-
-  return <Outlet />;
-}
-
-function PublicOnly() {
-  const token = localStorage.getItem("token");
-  const user = getStoredUser();
+  const { user } = getAdminSession();
+  const title = useMemo(() => PAGE_TITLES[page] ?? PAGE_TITLES.dashboard, [page]);
+  const CurrentPage = PAGE_COMPONENTS[page] ?? DashboardPage;
 
   if (token && isAdminRole(user?.role)) {
     return <Navigate to="/dashboard" replace />;
@@ -44,23 +41,41 @@ function PublicOnly() {
 
 function App() {
   return (
-    <Routes>
-      <Route element={<PublicOnly />}>
-        <Route path="/login" element={<LoginPage />} />
-      </Route>
+    <div className="min-h-screen bg-canvas-alt text-main">
+      <AdminSidebar
+        page={page}
+        onPageChange={(nextPage) => {
+          setPage(nextPage);
+          setSearchQuery("");
+        }}
+        mobileOpen={mobileNav}
+        onMobileClose={() => setMobileNav(false)}
+        collapsed={sidebarCollapsed}
+        onToggleCollapsed={() => setSidebarCollapsed((prev) => !prev)}
+      />
 
-      <Route element={<RequireAdminAuth />}>
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/dashboard" element={<AdminPage />} />
-        <Route path="/courses" element={<AdminPage />} />
-        <Route path="/users" element={<AdminPage />} />
-        <Route path="/enrollments" element={<AdminPage />} />
-        <Route path="/payments" element={<AdminPage />} />
-        <Route path="/reports" element={<AdminPage />} />
-      </Route>
+      <main className={`min-h-screen transition-all duration-300 ${sidebarCollapsed ? "lg:ml-24" : "lg:ml-80"}`}>
+        <Header
+          title={title}
+          onMenuClick={() => setMobileNav(true)}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+        />
 
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        <section className="p-4 md:p-8">
+          <div className="rounded-2xl bg-card border border-border overflow-hidden shadow-[0_2px_8px_rgba(26,26,26,0.06)]">
+            <CurrentPage
+              api={adminRequest}
+              user={user}
+              isSuperAdmin={user?.role === "superAdmin"}
+              searchQuery={searchQuery}
+              refreshKey={refreshKey}
+              triggerRefresh={() => setRefreshKey((prev) => prev + 1)}
+            />
+          </div>
+        </section>
+      </main>
+    </div>
   );
 }
 

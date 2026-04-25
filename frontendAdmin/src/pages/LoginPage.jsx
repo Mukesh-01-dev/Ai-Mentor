@@ -33,7 +33,7 @@ const LoginPage = () => {
 
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data));
-      navigate("/dashboard", { replace: true });
+      navigate("/", { replace: true });
     } catch (err) {
       setError(err.message || "Unable to login");
     } finally {

@@ -5,7 +5,9 @@ import {
   CreditCard,
   GraduationCap,
   LayoutDashboard,
+  ShieldAlert,
   Settings,
+  UserCog,
   Users,
   X,
 } from "lucide-react";
@@ -17,6 +19,8 @@ const ICONS = {
   users: Users,
   enrollments: GraduationCap,
   payments: CreditCard,
+  complaints: ShieldAlert,
+  admins: UserCog,
 };
 
 function AdminSidebar({

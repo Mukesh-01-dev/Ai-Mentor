@@ -1,90 +1,200 @@
-import Admin from "../models/Admin.js";
 import jwt from "jsonwebtoken";
+import { Op } from "sequelize";
+import Admin from "../models/Admin.js";
 import User from "../models/User.js";
 import Course from "../models/Course.js";
+import Complaint from "../models/Complaint.js";
 
-const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
+const ADMIN_TOKEN_TYPE = "admin";
+
+const generateToken = (id) =>
+  jwt.sign({ id, type: ADMIN_TOKEN_TYPE }, process.env.JWT_SECRET, {
     expiresIn: "30d",
   });
+
+const toInt = (value, fallback) => {
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) ? parsed : fallback;
 };
 
-// @desc    Register a new Admin (restricted to superAdmin)
-// @route   POST /api/admin/register
-// @access  Private/SuperAdmin
-const registerAdmin = async (req, res) => {
-  const { name, email, password, role } = req.body;
+const normalizePurchased = (value) => (Array.isArray(value) ? value : []);
+
+const mapCourseById = (courses) => {
+  const result = {};
+  for (const course of courses) {
+    result[String(course.id)] = course;
+  }
+  return result;
+};
+
+const flattenEnrollments = (users, courseMap) => {
+  const rows = [];
+
+  for (const user of users) {
+    const purchasedCourses = normalizePurchased(user.purchasedCourses);
+    for (let idx = 0; idx < purchasedCourses.length; idx += 1) {
+      const purchase = purchasedCourses[idx];
+      if (!purchase || typeof purchase !== "object") continue;
+
+      const courseId = Number(purchase.courseId);
+      if (!Number.isFinite(courseId)) continue;
+
+      const course = courseMap[String(courseId)];
+      const amount = Number(
+        purchase.amount ??
+          purchase.priceValue ??
+          course?.priceValue ??
+          0
+      );
+      const progressPercent = Number(
+        purchase.progress?.progressPercent ??
+          purchase.progress?.percent ??
+          (normalizePurchased(purchase.progress?.completedLessons).length > 0
+            ? 25
+            : 0)
+      );
+
+      const status =
+        purchase.status ||
+        (progressPercent >= 100 ? "completed" : progressPercent > 0 ? "in_progress" : "active");
+
+      rows.push({
+        enrollmentId: `${user.id}-${courseId}-${purchase.purchaseDate || idx}`,
+        userId: user.id,
+        userName: user.name,
+        email: user.email,
+        courseId,
+        courseTitle:
+          purchase.courseTitle || course?.title || `Course ${courseId}`,
+        purchaseDate: purchase.purchaseDate || null,
+        amount: Number.isFinite(amount) ? amount : 0,
+        currency: purchase.currency || course?.currency || "INR",
+        paymentStatus: purchase.paymentStatus || "paid",
+        paymentMethod: purchase.paymentMethod || null,
+        transactionId: purchase.transactionId || purchase.orderId || null,
+        progressPercent: Number.isFinite(progressPercent) ? progressPercent : 0,
+        status,
+      });
+    }
+  }
+
+  rows.sort((a, b) => new Date(b.purchaseDate || 0) - new Date(a.purchaseDate || 0));
+  return rows;
+};
+
+const sanitizeAdmin = (admin) => ({
+  id: admin.id,
+  name: admin.name,
+  email: admin.email,
+  role: admin.role,
+  createdAt: admin.createdAt,
+});
+
+const loginAdmin = async (req, res) => {
+  const { email, password } = req.body || {};
 
   try {
-    const adminExists = await Admin.findOne({ where: { email } });
-    if (adminExists) {
-      return res.status(400).json({ message: "Admin already exists" });
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email and password are required" });
+    }
+
+    const admin = await Admin.findOne({ where: { email } });
+    if (!admin || !(await admin.matchPassword(password))) {
+      return res.status(401).json({ message: "Invalid email or password" });
+    }
+
+    return res.json({
+      ...sanitizeAdmin(admin),
+      token: generateToken(admin.id),
+    });
+  } catch (error) {
+    console.error("LOGIN ADMIN ERROR:", error.message);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+const logoutAdmin = async (_req, res) => {
+  res.json({ message: "Logged out successfully. Please clear the JWT on client side." });
+};
+
+const getAdminProfile = async (req, res) => {
+  if (!req.admin) {
+    return res.status(404).json({ message: "Admin not found" });
+  }
+  return res.json(sanitizeAdmin(req.admin));
+};
+
+const registerAdmin = async (req, res) => {
+  const { name, email, password, role } = req.body || {};
+
+  try {
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: "name, email and password are required" });
+    }
+
+    const safeRole = role === "superAdmin" ? "superAdmin" : "admin";
+    const existingAdmin = await Admin.findOne({ where: { email } });
+    if (existingAdmin) {
+      return res.status(409).json({ message: "Admin already exists with this email" });
     }
 
     const admin = await Admin.create({
-      name,
-      email,
+      name: String(name).trim(),
+      email: String(email).trim().toLowerCase(),
       password,
-      role: role || "admin",
+      role: safeRole,
     });
 
-    res.status(201).json({
-      id: admin.id,
-      name: admin.name,
-      email: admin.email,
-      role: admin.role,
+    return res.status(201).json({
+      success: true,
+      data: sanitizeAdmin(admin),
     });
   } catch (error) {
     console.error("REGISTER ADMIN ERROR:", error.message);
-    res.status(500).json({ message: "Server Error" });
+    return res.status(500).json({ message: "Server error" });
   }
 };
 
-// @desc    Login Admin
-// @route   POST /api/admin/login
-// @access  Public
-const loginAdmin = async (req, res) => {
-  const { email, password } = req.body;
-
+const getAllAdmins = async (req, res) => {
   try {
-    const admin = await Admin.findOne({ where: { email } });
+    const page = Math.max(toInt(req.query.page, 1), 1);
+    const limit = Math.min(Math.max(toInt(req.query.limit, 10), 1), 100);
+    const search = String(req.query.search || "").trim();
+    const role = String(req.query.role || "").trim();
 
-    if (admin && (await admin.matchPassword(password))) {
-      res.json({
-        id: admin.id,
-        name: admin.name,
-        email: admin.email,
-        role: admin.role,
-        token: generateToken(admin.id),
-      });
-    } else {
-      res.status(401).json({ message: "Invalid email or password" });
+    const where = {};
+    if (search) {
+      where[Op.or] = [
+        { name: { [Op.iLike]: `%${search}%` } },
+        { email: { [Op.iLike]: `%${search}%` } },
+      ];
     }
-  } catch (error) {
-    console.error("LOGIN ADMIN ERROR:", error.message);
-    res.status(500).json({ message: "Server Error" });
-  }
-};
+    if (role === "admin" || role === "superAdmin") {
+      where.role = role;
+    }
 
-// @desc    Get Current Admin Profile
-// @route   GET /api/admin/profile
-// @access  Private
-const getAdminProfile = async (req, res) => {
-  if (req.admin) {
-    res.json({
-      id: req.admin.id,
-      name: req.admin.name,
-      email: req.admin.email,
-      role: req.admin.role,
+    const { rows, count } = await Admin.findAndCountAll({
+      where,
+      attributes: { exclude: ["password"] },
+      order: [["createdAt", "DESC"]],
+      offset: (page - 1) * limit,
+      limit,
     });
-  } else {
-    res.status(404).json({ message: "Admin not found" });
+
+    return res.json({
+      success: true,
+      page,
+      limit,
+      total: count,
+      totalPages: Math.ceil(count / limit),
+      data: rows.map(sanitizeAdmin),
+    });
+  } catch (error) {
+    console.error("GET ADMINS ERROR:", error.message);
+    return res.status(500).json({ message: "Server error" });
   }
 };
 
-// @desc    Delete an Admin (restricted to superAdmin)
-// @route   DELETE /api/admin/:id
-// @access  Private/SuperAdmin
 const deleteAdmin = async (req, res) => {
   const { id } = req.params;
 
@@ -94,442 +204,307 @@ const deleteAdmin = async (req, res) => {
       return res.status(404).json({ message: "Admin not found" });
     }
 
-    // prevent superAdmin from deleting themselves
     if (adminToDelete.id === req.admin.id) {
       return res.status(400).json({ message: "You cannot delete yourself" });
     }
 
     await adminToDelete.destroy();
-    res.json({ message: "Admin removed" });
+    return res.json({ success: true, message: "Admin removed" });
   } catch (error) {
     console.error("DELETE ADMIN ERROR:", error.message);
-    res.status(500).json({ message: "Server Error" });
+    return res.status(500).json({ message: "Server error" });
   }
 };
 
-// @desc    Logout Admin / Clear Cookie (if using cookies)
-// @route   POST /api/admin/logout
-// @access  Private
-const logoutAdmin = async (req, res) => {
-  res.json({ message: "Logged out successfully. Please remove your token on the client side." });
+const getDashboardSummary = async (_req, res) => {
+  try {
+    const [users, courses, complaints] = await Promise.all([
+      User.findAll({ attributes: ["id", "name", "email", "createdAt", "purchasedCourses"] }),
+      Course.findAll({ attributes: ["id", "title", "priceValue", "currency"] }),
+      Complaint.findAll({ attributes: ["id", "status", "createdAt"], order: [["createdAt", "DESC"]], limit: 30 }),
+    ]);
+
+    const courseMap = mapCourseById(courses);
+    const enrollments = flattenEnrollments(users, courseMap);
+
+    const recentUsers = [...users]
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .slice(0, 8)
+      .map((u) => ({ id: u.id, name: u.name, email: u.email, createdAt: u.createdAt }));
+
+    const recentEnrollments = enrollments.slice(0, 8);
+    const recentPayments = enrollments.slice(0, 8).map((row) => ({
+      paymentId: row.enrollmentId,
+      userName: row.userName,
+      email: row.email,
+      courseTitle: row.courseTitle,
+      amount: row.amount,
+      currency: row.currency,
+      purchaseDate: row.purchaseDate,
+      status: row.paymentStatus,
+    }));
+
+    const monthlyMap = {};
+    const now = new Date();
+    for (let i = 5; i >= 0; i -= 1) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      monthlyMap[key] = { label: d.toLocaleString("en-US", { month: "short" }), enrollments: 0, revenue: 0 };
+    }
+
+    for (const row of enrollments) {
+      if (!row.purchaseDate) continue;
+      const d = new Date(row.purchaseDate);
+      if (Number.isNaN(d.getTime())) continue;
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      if (!monthlyMap[key]) continue;
+      monthlyMap[key].enrollments += 1;
+      monthlyMap[key].revenue += Number(row.amount || 0);
+    }
+
+    const charts = Object.values(monthlyMap);
+    const paymentsTotal = enrollments.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+    const pendingComplaints = complaints.filter((c) => c.status !== "resolved").length;
+
+    return res.json({
+      success: true,
+      data: {
+        stats: {
+          totalUsers: users.length,
+          totalCourses: courses.length,
+          totalEnrollments: enrollments.length,
+          totalPayments: paymentsTotal,
+          totalComplaints: complaints.length,
+          pendingComplaints,
+        },
+        recent: {
+          users: recentUsers,
+          enrollments: recentEnrollments,
+          payments: recentPayments,
+        },
+        charts,
+      },
+    });
+  } catch (error) {
+    console.error("DASHBOARD SUMMARY ERROR:", error.message);
+    return res.status(500).json({ message: "Server error" });
+  }
 };
 
-//
+const getAllUsers = async (req, res) => {
+  try {
+    const page = Math.max(toInt(req.query.page, 1), 1);
+    const limit = Math.min(Math.max(toInt(req.query.limit, 10), 1), 100);
+    const search = String(req.query.search || "").trim();
+    const role = String(req.query.role || "").trim();
+
+    const where = {};
+    if (search) {
+      where[Op.or] = [
+        { name: { [Op.iLike]: `%${search}%` } },
+        { email: { [Op.iLike]: `%${search}%` } },
+      ];
+    }
+    if (role) {
+      where.role = role;
+    }
+
+    const { rows, count } = await User.findAndCountAll({
+      where,
+      attributes: ["id", "name", "email", "role", "purchasedCourses", "createdAt"],
+      order: [["createdAt", "DESC"]],
+      offset: (page - 1) * limit,
+      limit,
+    });
+
+    const data = rows.map((user) => ({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      purchasedCoursesCount: normalizePurchased(user.purchasedCourses).length,
+      createdAt: user.createdAt,
+    }));
+
+    return res.json({
+      success: true,
+      page,
+      limit,
+      total: count,
+      totalPages: Math.ceil(count / limit),
+      data,
+    });
+  } catch (error) {
+    console.error("GET USERS ERROR:", error.message);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+const deleteUser = async (req, res) => {
+  try {
+    const user = await User.findByPk(req.params.id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    await user.destroy();
+    return res.json({ success: true, message: "User deleted successfully" });
+  } catch (error) {
+    console.error("DELETE USER ERROR:", error.message);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+const updateUserRole = async (req, res) => {
+  try {
+    const { role } = req.body || {};
+    if (!["user", "admin", "superAdmin"].includes(role)) {
+      return res.status(400).json({ message: "Invalid role" });
+    }
+
+    if (role === "superAdmin" && req.admin.role !== "superAdmin") {
+      return res.status(403).json({ message: "Only super admin can assign superAdmin role" });
+    }
+
+    const user = await User.findByPk(req.params.id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    user.role = role;
+    await user.save();
+
+    return res.json({
+      success: true,
+      message: "User role updated",
+      data: { id: user.id, role: user.role },
+    });
+  } catch (error) {
+    console.error("UPDATE USER ROLE ERROR:", error.message);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+const getAllCourses = async (req, res) => {
+  try {
+    const page = Math.max(toInt(req.query.page, 1), 1);
+    const limit = Math.min(Math.max(toInt(req.query.limit, 10), 1), 100);
+    const search = String(req.query.search || "").trim();
+    const category = String(req.query.category || "").trim();
+
+    const where = {};
+    if (search) {
+      where[Op.or] = [
+        { title: { [Op.iLike]: `%${search}%` } },
+        { category: { [Op.iLike]: `%${search}%` } },
+      ];
+    }
+    if (category) where.category = category;
+
+    const { rows, count } = await Course.findAndCountAll({
+      where,
+      order: [["createdAt", "DESC"]],
+      offset: (page - 1) * limit,
+      limit,
+    });
+
+    return res.json({
+      success: true,
+      page,
+      limit,
+      total: count,
+      totalPages: Math.ceil(count / limit),
+      data: rows,
+    });
+  } catch (error) {
+    console.error("GET COURSES ERROR:", error.message);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
 const getAllEnrollments = async (req, res) => {
   try {
-    const { type = "stats" } = req.query;
+    const page = Math.max(toInt(req.query.page, 1), 1);
+    const limit = Math.min(Math.max(toInt(req.query.limit, 10), 1), 100);
+    const search = String(req.query.search || "").trim().toLowerCase();
+    const courseId = Number(req.query.courseId);
+    const userId = String(req.query.userId || "").trim();
+    const status = String(req.query.status || "").trim();
 
-    // 👉 Fetch required data
-    const users = await User.findAll({
-      attributes: ["id", "purchasedCourses", "email", "name"],
+    const [users, courses] = await Promise.all([
+      User.findAll({ attributes: ["id", "name", "email", "purchasedCourses"] }),
+      Course.findAll({ attributes: ["id", "title", "priceValue", "currency"] }),
+    ]);
+
+    const rows = flattenEnrollments(users, mapCourseById(courses)).filter((row) => {
+      if (Number.isFinite(courseId) && row.courseId !== courseId) return false;
+      if (userId && row.userId !== userId) return false;
+      if (status && row.status !== status) return false;
+      if (!search) return true;
+
+      const haystack = `${row.userName} ${row.email} ${row.courseTitle}`.toLowerCase();
+      return haystack.includes(search);
     });
 
-    const courses = await Course.findAll({
-      attributes: ["id", "priceValue", "title"],
+    const total = rows.length;
+    const data = rows.slice((page - 1) * limit, page * limit);
+
+    return res.json({
+      success: true,
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+      data,
     });
-
-    // 👉 Create course price map
-    const coursePriceMap = {};
-    courses.forEach(course => {
-      coursePriceMap[course.id] = course.priceValue || 0;
-    });
-
-    //stats start
-    if (type === "stats") {
-      let totalEnrollments = 0;
-      let totalRevenue = 0;
-      let activeUsersSet = new Set();
-
-      const now = new Date();
-      const activeThresholdDays = 7;
-
-      users.forEach(user => {
-        const purchased = user.purchasedCourses || [];
-
-        if (purchased.length > 0) {
-          purchased.forEach(course => {
-            totalEnrollments++;
-
-            // 💰 Revenue
-            totalRevenue += coursePriceMap[course.courseId] || 0;
-
-            // ⚡ Active Users (lastWatched within 7 days)
-            if (course.progress?.lastWatched) {
-              const lastWatched = new Date(course.progress.lastWatched);
-              const diffDays =
-                (now - lastWatched) / (1000 * 60 * 60 * 24);
-
-              if (diffDays <= activeThresholdDays) {
-                activeUsersSet.add(user.id);
-              }
-            }
-          });
-        }
-      });
-
-      return res.status(200).json({
-        success: true,
-        data: {
-          totalEnrollments,
-          totalUsers: users.length,
-          activeUsers: activeUsersSet.size,
-          totalRevenue,
-        },
-      });
-    }
-    //stats ends
-
-    //list
-    if (type === "list") {
-      const page = parseInt(req.query.page) || 1;
-      const limit = Math.min(parseInt(req.query.limit) || 10, 50);
-
-      let enrollments = [];
-
-      users.forEach(user => {
-        const purchased = user.purchasedCourses || [];
-
-        purchased.forEach(course => {
-          enrollments.push({
-            userName: user.name,
-            email: user.email,
-            courseTitle: course.courseTitle,
-            purchaseDate: course.purchaseDate,
-            amount: coursePriceMap[course.courseId] || 0,
-          });
-        });
-      });
-
-      // 👉 Sort by latest purchase
-      enrollments.sort(
-        (a, b) => new Date(b.purchaseDate) - new Date(a.purchaseDate)
-      );
-
-      const total = enrollments.length;
-
-      const start = (page - 1) * limit;
-      const paginatedData = enrollments.slice(start, start + limit);
-
-      return res.status(200).json({
-        success: true,
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-        data: paginatedData,
-      });
-    }
-    //list ends
-
-    //recent starts
-    if (type === "recent") {
-      const limit = Math.min(parseInt(req.query.limit) || 10, 20);
-
-      let enrollments = [];
-
-      users.forEach(user => {
-        const purchased = user.purchasedCourses || [];
-
-        purchased.forEach(course => {
-          enrollments.push({
-            userName: user.name,
-            email: user.email,
-            courseTitle: course.courseTitle,
-            purchaseDate: course.purchaseDate,
-            amount: coursePriceMap[course.courseId] || 0,
-          });
-        });
-      });
-
-      // 🔥 Sort latest first
-      enrollments.sort(
-        (a, b) => new Date(b.purchaseDate) - new Date(a.purchaseDate)
-      );
-
-      return res.status(200).json({
-        success: true,
-        count: Math.min(limit, enrollments.length),
-        data: enrollments.slice(0, limit),
-      });
-    }
-    //recent ends 
-
-    //top courses start
-    if (type === "top-courses") {
-      const limit = Math.min(parseInt(req.query.limit) || 5, 10);
-
-      const courseCountMap = {};
-
-      // Step 1 & 2: Count frequency
-      users.forEach(user => {
-        const purchased = user.purchasedCourses || [];
-
-        purchased.forEach(course => {
-          if (!courseCountMap[course.courseId]) {
-            courseCountMap[course.courseId] = 0;
-          }
-          courseCountMap[course.courseId]++;
-        });
-      });
-
-      // Step 3: Convert to array
-      let result = Object.keys(courseCountMap).map(courseId => ({
-        courseId: Number(courseId),
-        totalPurchases: courseCountMap[courseId],
-      }));
-
-      // Step 4: Add course title
-      result = result.map(item => ({
-        ...item,
-        courseTitle: courses.find(c => c.id === item.courseId)?.title || "Unknown",
-      }));
-
-      // Step 5: Sort
-      result.sort((a, b) => b.totalPurchases - a.totalPurchases);
-
-      return res.status(200).json({
-        success: true,
-        count: Math.min(limit, result.length),
-        data: result.slice(0, limit),
-      });
-    }
-    //top courses ends
-
-    //user id starts
-    if (type === "user") {
-      const { userId } = req.query;
-
-      if (!userId) {
-        return res.status(400).json({
-          success: false,
-          message: "userId is required",
-        });
-      }
-
-      const user = await User.findByPk(userId);
-
-      if (!user) {
-        return res.status(404).json({
-          success: false,
-          message: "User not found",
-        });
-      }
-
-      const purchased = user.purchasedCourses || [];
-
-      let totalSpent = 0;
-
-      const enrollments = purchased.map(course => {
-        const amount = coursePriceMap[course.courseId] || 0;
-        totalSpent += amount;
-
-        return {
-          courseId: course.courseId,
-          courseTitle: course.courseTitle,
-          purchaseDate: course.purchaseDate,
-          amount,
-          progressPercent: course.progress?.progressPercent || 0,
-          lastWatched: course.progress?.lastWatched || null,
-        };
-      });
-
-      return res.status(200).json({
-        success: true,
-        data: {
-          user: {
-            id: user.id,
-            name: user.name,
-            email: user.email,
-          },
-          totalCoursesPurchased: enrollments.length,
-          totalSpent,
-          enrollments,
-        },
-      });
-    }
-    //user id ends
-
-    //course starts
-    if (type === "course") {
-      const { courseId } = req.query;
-
-      if (!courseId) {
-        return res.status(400).json({
-          success: false,
-          message: "courseId is required",
-        });
-      }
-
-      const course = courses.find(c => c.id == courseId);
-
-      if (!course) {
-        return res.status(404).json({
-          success: false,
-          message: "Course not found",
-        });
-      }
-
-      let totalEnrollments = 0;
-      let activeUsersSet = new Set();
-
-      const now = new Date();
-      const activeThresholdDays = 7;
-
-      let usersList = [];
-
-      users.forEach(user => {
-        const purchased = user.purchasedCourses || [];
-
-        purchased.forEach(c => {
-          if (c.courseId == courseId) {
-            totalEnrollments++;
-
-            usersList.push({
-              userName: user.name,
-              email: user.email,
-              purchaseDate: c.purchaseDate,
-              progressPercent: c.progress?.progressPercent || 0,
-            });
-
-            if (c.progress?.lastWatched) {
-              const lastWatched = new Date(c.progress.lastWatched);
-              const diffDays =
-                (now - lastWatched) / (1000 * 60 * 60 * 24);
-
-              if (diffDays <= activeThresholdDays) {
-                activeUsersSet.add(user.id);
-              }
-            }
-          }
-        });
-      });
-
-      return res.status(200).json({
-        success: true,
-        data: {
-          course: {
-            id: course.id,
-            title: course.title,
-            price: course.priceValue,
-          },
-          totalEnrollments,
-          activeUsers: activeUsersSet.size,
-          users: usersList,
-        },
-      });
-    }
-    //course ends
-
-    // fallback
-    res.status(400).json({
-      success: false,
-      message: "Invalid type parameter",
-    });
-
   } catch (error) {
-    console.error("ENROLLMENTS ERROR:", error.message);
-    res.status(500).json({
-      success: false,
-      message: "Server Error",
-    });
+    console.error("GET ENROLLMENTS ERROR:", error.message);
+    return res.status(500).json({ message: "Server error" });
   }
 };
 
 const getAllPayments = async (req, res) => {
   try {
-    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
-    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 10, 1), 100);
+    const page = Math.max(toInt(req.query.page, 1), 1);
+    const limit = Math.min(Math.max(toInt(req.query.limit, 10), 1), 100);
     const search = String(req.query.search || "").trim().toLowerCase();
+    const status = String(req.query.status || "").trim();
+    const courseId = Number(req.query.courseId);
+    const userId = String(req.query.userId || "").trim();
 
-    const users = await User.findAll({
-      attributes: ["id", "name", "email", "purchasedCourses"],
+    const [users, courses] = await Promise.all([
+      User.findAll({ attributes: ["id", "name", "email", "purchasedCourses"] }),
+      Course.findAll({ attributes: ["id", "title", "priceValue", "currency"] }),
+    ]);
+
+    const payments = flattenEnrollments(users, mapCourseById(courses)).filter((row) => {
+      if (Number.isFinite(courseId) && row.courseId !== courseId) return false;
+      if (userId && row.userId !== userId) return false;
+      if (status && row.paymentStatus !== status) return false;
+
+      if (!search) return true;
+      const haystack = `${row.userName} ${row.email} ${row.courseTitle} ${row.transactionId || ""}`.toLowerCase();
+      return haystack.includes(search);
     });
-
-    const courses = await Course.findAll({
-      attributes: ["id", "title", "priceValue", "currency"],
-    });
-
-    const courseMap = {};
-    courses.forEach((course) => {
-      courseMap[String(course.id)] = {
-        title: course.title,
-        priceValue: Number(course.priceValue || 0),
-        currency: course.currency || "INR",
-      };
-    });
-
-    let payments = [];
-
-    users.forEach((user) => {
-      const purchased = Array.isArray(user.purchasedCourses)
-        ? user.purchasedCourses
-        : [];
-
-      purchased.forEach((item, index) => {
-        if (!item || typeof item !== "object") {
-          return;
-        }
-
-        const parsedCourseId = Number(item.courseId);
-        if (!Number.isFinite(parsedCourseId)) {
-          return;
-        }
-
-        const courseId = parsedCourseId;
-        const courseInfo = courseMap[String(courseId)] || {};
-        const rawAmount = item.amount ?? courseInfo.priceValue ?? 0;
-        const parsedAmount = Number(rawAmount);
-        const amount = Number.isFinite(parsedAmount) ? parsedAmount : 0;
-        const purchaseDate = item.purchaseDate || null;
-
-        payments.push({
-          paymentId: `${user.id}-${courseId}-${purchaseDate || index}`,
-          userId: user.id,
-          userName: user.name,
-          email: user.email,
-          courseId,
-          courseTitle:
-            item.courseTitle || courseInfo.title || `Course ${item.courseId}`,
-          amount,
-          currency: item.currency || courseInfo.currency || "INR",
-          status: item.paymentStatus || "paid",
-          paymentMethod: item.paymentMethod || null,
-          transactionId: item.transactionId || item.orderId || null,
-          purchaseDate,
-        });
-      });
-    });
-
-    if (search) {
-      payments = payments.filter((payment) => {
-        const text = [
-          payment.userName,
-          payment.email,
-          payment.courseTitle,
-          payment.transactionId,
-        ]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase();
-
-        return text.includes(search);
-      });
-    }
-
-    payments.sort(
-      (a, b) => new Date(b.purchaseDate || 0) - new Date(a.purchaseDate || 0)
-    );
 
     const total = payments.length;
-    const totalAmount = payments.reduce(
-      (sum, payment) => sum + Number(payment.amount || 0),
-      0
-    );
+    const totalAmount = payments.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+    const data = payments.slice((page - 1) * limit, page * limit).map((row) => ({
+      paymentId: row.enrollmentId,
+      userId: row.userId,
+      userName: row.userName,
+      email: row.email,
+      courseId: row.courseId,
+      courseTitle: row.courseTitle,
+      amount: row.amount,
+      currency: row.currency,
+      status: row.paymentStatus,
+      paymentMethod: row.paymentMethod,
+      transactionId: row.transactionId,
+      purchaseDate: row.purchaseDate,
+    }));
 
-    const start = (page - 1) * limit;
-    const data = payments.slice(start, start + limit);
-
-    return res.status(200).json({
+    return res.json({
       success: true,
       page,
       limit,
@@ -543,46 +518,78 @@ const getAllPayments = async (req, res) => {
     });
   } catch (error) {
     console.error("GET PAYMENTS ERROR:", error.message);
-    res.status(500).json({
-      success: false,
-      message: "Server Error",
-    });
+    return res.status(500).json({ message: "Server error" });
   }
 };
 
-const getAllCourses = async (req, res) => {
+const getAllComplaints = async (req, res) => {
   try {
-    const courses = await Course.findAll();
-    res.status(200).json({
-      success: true,
-      data: courses,
-    });
-  } catch (error) { 
-    console.error("GET COURSES ERROR:", error.message);
-    res.status(500).json({
-      success: false,
-      message: "Server Error",
-    });
-  }
-}
+    const page = Math.max(toInt(req.query.page, 1), 1);
+    const limit = Math.min(Math.max(toInt(req.query.limit, 10), 1), 100);
+    const status = String(req.query.status || "").trim();
+    const search = String(req.query.search || "").trim();
+    const priority = String(req.query.priority || "").trim();
 
-const getAllUsers = async (req, res) => {
-  try {
-    const users = await User.findAll({
-      attributes: ["id", "name", "email", "purchasedCourses", "createdAt"],
+    const where = {};
+    if (status) where.status = status;
+    if (priority) where.priority = priority;
+    if (search) {
+      where[Op.or] = [
+        { subject: { [Op.iLike]: `%${search}%` } },
+        { message: { [Op.iLike]: `%${search}%` } },
+      ];
+    }
+
+    const { rows, count } = await Complaint.findAndCountAll({
+      where,
+      include: [{ model: User, as: "user", attributes: ["id", "name", "email"] }],
+      order: [["createdAt", "DESC"]],
+      offset: (page - 1) * limit,
+      limit,
     });
-    res.status(200).json({ 
+
+    return res.json({
       success: true,
-      data: users,
+      page,
+      limit,
+      total: count,
+      totalPages: Math.ceil(count / limit),
+      data: rows,
     });
   } catch (error) {
-    console.error("GET USERS ERROR:", error.message);
-    res.status(500).json({
-      success: false,
-      message: "Server Error",
-    });
+    console.error("GET COMPLAINTS ERROR:", error.message);
+    return res.status(500).json({ message: "Server error" });
   }
-}
+};
+
+const updateComplaintStatus = async (req, res) => {
+  try {
+    const complaint = await Complaint.findByPk(req.params.id);
+    if (!complaint) {
+      return res.status(404).json({ message: "Complaint not found" });
+    }
+
+    const { status, adminNotes, resolution } = req.body || {};
+    const allowedStatus = ["open", "in_progress", "resolved", "closed"];
+    if (status && !allowedStatus.includes(status)) {
+      return res.status(400).json({ message: "Invalid status" });
+    }
+
+    if (status) complaint.status = status;
+    if (typeof adminNotes === "string") complaint.adminNotes = adminNotes.trim();
+    if (typeof resolution === "string") complaint.resolution = resolution.trim();
+    if (status === "resolved") {
+      complaint.resolvedAt = new Date();
+      complaint.resolvedByAdminId = req.admin.id;
+    }
+
+    await complaint.save();
+    return res.json({ success: true, data: complaint });
+  } catch (error) {
+    console.error("UPDATE COMPLAINT STATUS ERROR:", error.message);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
 
 export {
   registerAdmin,
@@ -590,8 +597,15 @@ export {
   getAdminProfile,
   deleteAdmin,
   logoutAdmin,
+  getAllAdmins,
+  getDashboardSummary,
   getAllEnrollments,
   getAllPayments,
   getAllCourses,
   getAllUsers,
+  deleteUser,
+  updateUserRole,
+  getAllComplaints,
+  updateComplaintStatus,
+  ADMIN_TOKEN_TYPE,
 };
