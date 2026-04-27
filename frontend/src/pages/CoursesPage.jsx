@@ -207,7 +207,7 @@ const CoursesPage = () => {
   return (
     <>
       {/* ══════ HERO ══════ */}
-      <div className="relative bg-gradient-to-br from-teal-700 via-teal-600 to-teal-800 pt-16 pb-12 px-4 sm:px-8">
+      <div className="relative overflow-hidden bg-gradient-to-br from-teal-700 via-teal-600 to-teal-800 pt-10 sm:pt-12 lg:pt-16 pb-8 sm:pb-10 lg:pb-12 px-4 sm:px-6 lg:px-8">
         <div
           className="absolute inset-0 opacity-10"
           style={{
@@ -217,14 +217,14 @@ const CoursesPage = () => {
           }}
         />
         <div className="relative z-10 max-w-5xl mx-auto space-y-6">
-          <div className="flex items-center space-x-5">
+          <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-5 text-center sm:text-left">
             <img
               src={user?.avatar_url || (user?.isGoogleUser || !!user?.googleId
                 ? `https://api.dicebear.com/8.x/initials/svg?seed=${encodeURIComponent(user?.name || user?.email?.split('@')[0] || 'User')}`
                 : `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2394a3b8'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E`
               )}
               alt="Profile"
-              className={`w-20 h-20 rounded-full border-3 border-white/80 object-cover shadow-lg ${!user?.avatar_url && !(user?.isGoogleUser || !!user?.googleId) ? 'p-3 bg-white/20' : ''}`}
+              className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full border-3 border-white/80 object-cover shadow-lg ${!user?.avatar_url && !(user?.isGoogleUser || !!user?.googleId) ? 'p-2 sm:p-3 bg-white/20' : ''}`}
               onError={(e) => {
                 const isGoogle = user?.isGoogleUser || !!user?.googleId;
                 const fallback = isGoogle
@@ -235,7 +235,7 @@ const CoursesPage = () => {
               }}
             />
             <div>
-              <h1 className="text-3xl sm:text-4xl font-extrabold text-white">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white">
                 {user?.name || (user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : user?.email?.split('@')[0] || 'User')}
               </h1>
               <p className="text-teal-100 text-sm sm:text-base mt-1">
@@ -441,12 +441,12 @@ const CoursesPage = () => {
         </div>
       </div>
 
-      <main className="flex-1 p-8">
+      <main className="flex-1 p-4 sm:p-6 lg:p-8">
         <div className="max-w-7xl mx-auto space-y-10">
 
           {/* ================= MY COURSES ================= */}
           {activeTab === "my-courses" && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
               {myCourses.length === 0 && (
                 <p className="text-slate-500">
                   {t("courses.not_enrolled")}
@@ -520,7 +520,7 @@ const CoursesPage = () => {
               {/* Horizontal Scroll Row */}
               <div
                 ref={scrollRef}
-                className="flex gap-6 overflow-x-auto pb-4 scroll-smooth"
+                className="flex gap-4 sm:gap-6 overflow-x-auto pb-4 scroll-smooth"
                 style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
               >
                 <style>{`div::-webkit-scrollbar { display: none; }`}</style>
@@ -532,7 +532,7 @@ const CoursesPage = () => {
                 {filteredExploreCourses.map((course) => (
                   <div
                     key={course.id}
-                    className="bg-card rounded-3xl border border-border overflow-hidden shadow-sm flex-shrink-0 w-64"
+                    className="bg-card rounded-3xl border border-border overflow-hidden shadow-sm flex-shrink-0 w-[82vw] max-w-72 sm:w-64"
                   >
                     <div className="relative h-40">
                       <img
@@ -579,7 +579,7 @@ const CoursesPage = () => {
       {/* ================= ENROLL POPUP ================= */}
       {showEnrollPopup && selectedCourse && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white w-full max-w-md rounded-2xl p-6 relative">
+          <div className="bg-white w-full max-w-md rounded-2xl p-4 sm:p-6 relative mx-4">
             <button
               onClick={() => setShowEnrollPopup(false)}
               className="absolute top-4 right-4"
