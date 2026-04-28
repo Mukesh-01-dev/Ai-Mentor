@@ -9,8 +9,8 @@
             "id": "what-is-react",
             "title": "What is React?",
             "duration": "12 min",
-            "completed": false,
-            "playing": true,
+            "completed": true,
+            "playing": false,
             "type": "video",
             "youtubeUrl": "https://www.youtube.com/watch?v=LX4JUscM9Sk&pp=ygUNd2hhdCBpcyByZWFjdA%3D%3D"
           },
@@ -27,7 +27,7 @@
             "id": "setup-react",
             "title": "Setup React",
             "duration": "8 min",
-            "completed": false,
+            "completed": true,
             "playing": false,
             "type": "document"
           }
@@ -41,7 +41,7 @@
             "id": "creating-components",
             "title": "Creating Components",
             "duration": "18 min",
-            "completed": false,
+            "completed": true,
             "playing": false,
             "type": "video",
             "youtubeUrl": "https://www.youtube.com/watch?v=d5ooYpXioqE&pp=ygUbY3JlYXRpbmcgY29tcG9uZW50IGluIHJlYWN0"
@@ -50,7 +50,7 @@
             "id": "props-basics",
             "title": "Props Basics",
             "duration": "14 min",
-            "completed": false,
+            "completed": true,
             "playing": false,
             "type": "video",
             "youtubeUrl": "https://www.youtube.com/watch?v=uvEAvxWvwOs&t=56s&pp=ygUMcHJvcHMgYmFzaWNz"
@@ -59,7 +59,7 @@
             "id": "prop-types-default-props",
             "title": "PropTypes and Default Props",
             "duration": "12 min",
-            "completed": false,
+            "completed": true,
             "playing": false,
             "type": "video",
             "youtubeUrl": "https://www.youtube.com/watch?v=_cuFjX96mk0&pp=ygUKcHJvcHN0eXBlcw%3D%3D"
@@ -74,7 +74,7 @@
             "id": "state-management",
             "title": "State Management",
             "duration": "20 min",
-            "completed": false,
+            "completed": true,
             "playing": false,
             "type": "video",
             "youtubeUrl": "https://www.youtube.com/watch?v=UbLYdbOPLe8&pp=ygUcc3RhdGUgYW5kIGxpZmVjeWNsZSByZWFjdCBqcw%3D%3D"
@@ -83,7 +83,7 @@
             "id": "lifecycle-methods",
             "title": "Lifecycle Methods",
             "duration": "16 min",
-            "completed": false,
+            "completed": true,
             "playing": false,
             "type": "video",
             "youtubeUrl": "https://www.youtube.com/watch?v=qnN_FuFNq2g&pp=ygUdbGlmZWN5Y2xlIG1ldGhvZHMgaW4gcmVhY3QganM%3D"
@@ -92,7 +92,7 @@
             "id": "lifting-state-up",
             "title": "Lifting State Up",
             "duration": "15 min",
-            "completed": false,
+            "completed": true,
             "playing": false,
             "type": "video",
             "youtubeUrl": "https://www.youtube.com/watch?v=Z4hN0WZbASk&pp=ygUZbGlmdGluZyBzdGF0ZSB1cCByZWFjdCBqcw%3D%3D"
@@ -107,7 +107,7 @@
             "id": "intro-to-hooks",
             "title": "Introduction to Hooks",
             "duration": "12 min",
-            "completed": false,
+            "completed": true,
             "playing": false,
             "type": "video",
             "youtubeUrl": "https://www.youtube.com/watch?v=TNhaISOUy6Q"
@@ -116,7 +116,7 @@
             "id": "usestate-hook",
             "title": "Using useState Hook",
             "duration": "18 min",
-            "completed": false,
+            "completed": true,
             "playing": false,
             "type": "video",
             "youtubeUrl": "https://www.youtube.com/watch?v=O6P86uwfdR0"
@@ -125,7 +125,7 @@
             "id": "useeffect-hook",
             "title": "Using useEffect Hook",
             "duration": "20 min",
-            "completed": false,
+            "completed": true,
             "playing": false,
             "type": "video",
             "youtubeUrl": "https://www.youtube.com/watch?v=0ZJgIjIuY7U"
@@ -140,7 +140,7 @@
             "id": "handling-events",
             "title": "Handling Events in React",
             "duration": "14 min",
-            "completed": false,
+            "completed": true,
             "playing": false,
             "type": "video",
             "youtubeUrl": "https://www.youtube.com/watch?v=cXkwFjBrWfk&pp=ygUYaGFuZGxpbmcgZXZlbnRzIHJlYWN0IGpz"
@@ -149,7 +149,7 @@
             "id": "controlled-components",
             "title": "Controlled Components",
             "duration": "16 min",
-            "completed": false,
+            "completed": true,
             "playing": false,
             "type": "video",
             "youtubeUrl": "https://www.youtube.com/watch?v=yzqUCV3qPX0&pp=ygUeY29udHJvbGxlZCBjb21wb25lbnRzIHJlYWN0IGpz"
@@ -158,7 +158,7 @@
             "id": "form-validation",
             "title": "Basic Form Validation",
             "duration": "12 min",
-            "completed": false,
+            "completed": true,
             "playing": false,
             "type": "document"
           }
@@ -172,7 +172,7 @@
             "id": "intro-to-react-router",
             "title": "Introduction to React Router",
             "duration": "15 min",
-            "completed": false,
+            "completed": true,
             "playing": false,
             "type": "video",
             "youtubeUrl": "https://www.youtube.com/watch?v=ZP8QyCIUeIA&pp=ygUVcmVhY3Qgcm91dGVyIHJlYWN0IGpz"
@@ -181,7 +181,7 @@
             "id": "dynamic-routing",
             "title": "Dynamic Routing and URL Params",
             "duration": "17 min",
-            "completed": false,
+            "completed": true,
             "playing": false,
             "type": "video",
             "youtubeUrl": "https://www.youtube.com/watch?v=Ul3y1LXxzdU"
@@ -256,7 +256,7 @@
             "title": "Deploying a React App",
             "duration": "14 min",
             "completed": false,
-            "playing": false,
+            "playing": true,
             "type": "document"
           }
         ]
@@ -265,14 +265,14 @@
     "course": {
       "title": "React Fundamentals",
       "subtitle": "Complete Course",
-      "logo": "/AI_Tutor_New_UI/Dashboard/logo.png",
-      "progress": 25
+      "logo": "AI_Tutor_New_UI/Dashboard/react_fundamentals_logo.png",
+      "progress": 75
     },
     "currentLesson": {
-      "id": "what-is-react",
-      "title": "What is React?",
-      "module": "Module 1: Introduction to React",
-      "youtubeUrl": "https://www.youtube.com/watch?v=LX4JUscM9Sk",
+      "id": "deployment-guide",
+      "title": "Deploying a React App",
+      "module": "Module 8: API Calls and Deployment",
+      "youtubeUrl": "",
       "content": {
         "introduction": "React is a popular JavaScript library for building user interfaces, particularly for web applications. This course covers the fundamentals of React, including components, state management, and more.",
         "keyConcepts": [
@@ -312,9 +312,10 @@
             "id": "python-intro",
             "title": "Introduction to Python",
             "duration": "15 min",
-            "completed": false,
-            "playing": true,
-            "type": "video"
+            "completed": true,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=_uQrJ0TkZlc"
           },
           {
             "id": "data-types",
@@ -322,37 +323,67 @@
             "duration": "12 min",
             "completed": true,
             "playing": false,
-            "type": "video"
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=Z1Yd7upQsXY"
           },
           {
             "id": "control-structures",
             "title": "Control Structures",
             "duration": "18 min",
-            "completed": false,
+            "completed": true,
             "playing": false,
             "type": "document"
+          },
+          {
+            "id": "functions-modules",
+            "title": "Functions and Modules",
+            "duration": "14 min",
+            "completed": true,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=NE97ylAnrz4"
           }
         ]
       },
       {
         "id": "module-2",
-        "title": "Module 2: AI Libraries in Python",
+        "title": "Module 2: Data Manipulation with Python",
         "lessons": [
           {
             "id": "numpy-intro",
             "title": "NumPy for Data Handling",
             "duration": "20 min",
-            "completed": false,
+            "completed": true,
             "playing": false,
-            "type": "video"
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=QUT1VHiLmmI"
           },
           {
             "id": "pandas-basics",
             "title": "Pandas for Data Analysis",
             "duration": "22 min",
-            "completed": false,
+            "completed": true,
             "playing": false,
-            "type": "video"
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=ZyhVh-qRZPA"
+          },
+          {
+            "id": "data-cleaning",
+            "title": "Data Cleaning with Pandas",
+            "duration": "18 min",
+            "completed": true,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=ZQPXlE5bTfc"
+          },
+          {
+            "id": "visualization-matplotlib",
+            "title": "Data Visualization with Matplotlib",
+            "duration": "16 min",
+            "completed": true,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=3Xc3CAQYyB4"
           }
         ]
       },
@@ -364,9 +395,10 @@
             "id": "ml-basics",
             "title": "Machine Learning Basics",
             "duration": "25 min",
-            "completed": false,
+            "completed": true,
             "playing": false,
-            "type": "video"
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=ukzFI9rgwfU"
           },
           {
             "id": "supervised-learning",
@@ -374,7 +406,81 @@
             "duration": "28 min",
             "completed": false,
             "playing": false,
-            "type": "video"
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=MmR9e8r25hE"
+          },
+          {
+            "id": "unsupervised-learning",
+            "title": "Unsupervised Learning",
+            "duration": "24 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=7xRsR1VzW-s"
+          },
+          {
+            "id": "model-evaluation",
+            "title": "Model Evaluation Techniques",
+            "duration": "20 min",
+            "completed": false,
+            "playing": true,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=Kdsp6soqA7o"
+          }
+        ]
+      },
+      {
+        "id": "module-4",
+        "title": "Module 4: Advanced Python for AI",
+        "lessons": [
+          {
+            "id": "feature-engineering",
+            "title": "Feature Engineering",
+            "duration": "22 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=Vw2gx3vB29U"
+          },
+          {
+            "id": "pipeline-ml",
+            "title": "Building ML Pipelines",
+            "duration": "19 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=uR8K5vYYN2s"
+          },
+          {
+            "id": "hyperparameter-tuning",
+            "title": "Hyperparameter Tuning",
+            "duration": "21 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=5nYqK-HaoKY"
+          }
+        ]
+      },
+      {
+        "id": "module-5",
+        "title": "Module 5: Real-world AI Projects",
+        "lessons": [
+          {
+            "id": "project-regression",
+            "title": "Regression Project",
+            "duration": "25 min",
+            "completed": false,
+            "playing": false,
+            "type": "document"
+          },
+          {
+            "id": "project-classification",
+            "title": "Classification Project",
+            "duration": "27 min",
+            "completed": false,
+            "playing": false,
+            "type": "document"
           }
         ]
       }
@@ -382,14 +488,14 @@
     "course": {
       "title": "Python For AI",
       "subtitle": "Master Python for Artificial Intelligence",
-      "logo": "/AI_Tutor_New_UI/Dashboard/python_for_ai_logo.png",
+      "logo": "AI_Tutor_New_UI/Dashboard/python_for_ai_logo.png",
       "progress": 50
     },
     "currentLesson": {
-      "id": "python-intro",
-      "title": "Introduction to Python",
-      "module": "Module 1: Python Basics for AI",
-      "youtubeUrl": "https://www.youtube.com/watch?v=_uQrJ0TkZlc",
+      "id": "model-evaluation",
+      "title": "Model Evaluation Techniques",
+      "module": "Module 3: Machine Learning with Scikit-learn",
+      "youtubeUrl": "https://www.youtube.com/watch?v=Kdsp6soqA7o",
       "content": {
         "introduction": "Python is the go-to language for AI and machine learning. This course teaches Python fundamentals tailored for AI applications, from basic syntax to advanced libraries.",
         "keyConcepts": [
@@ -429,9 +535,10 @@
             "id": "ai-ethics-intro",
             "title": "Introduction to AI Ethics",
             "duration": "14 min",
-            "completed": false,
-            "playing": true,
-            "type": "video"
+            "completed": true,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=5rE_LPSvTFY"
           },
           {
             "id": "ethical-principles",
@@ -439,15 +546,8 @@
             "duration": "16 min",
             "completed": true,
             "playing": false,
-            "type": "video"
-          },
-          {
-            "id": "case-studies",
-            "title": "Case Studies",
-            "duration": "20 min",
-            "completed": false,
-            "playing": false,
-            "type": "document"
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=PoEjJqjW7Nw"
           }
         ]
       },
@@ -459,17 +559,19 @@
             "id": "bias-types",
             "title": "Types of Bias in AI",
             "duration": "18 min",
-            "completed": false,
+            "completed": true,
             "playing": false,
-            "type": "video"
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=59bMh59JQDo"
           },
           {
             "id": "detecting-bias",
             "title": "Detecting and Mitigating Bias",
             "duration": "22 min",
-            "completed": false,
+            "completed": true,
             "playing": false,
-            "type": "video"
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=1R6iEpIXj6g"
           }
         ]
       },
@@ -481,17 +583,18 @@
             "id": "fairness",
             "title": "Ensuring Fairness",
             "duration": "19 min",
-            "completed": false,
+            "completed": true,
             "playing": false,
-            "type": "video"
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=Q7xR0QyX8Qs"
           },
           {
             "id": "transparency",
             "title": "Transparency and Accountability",
             "duration": "21 min",
-            "completed": false,
+            "completed": true,
             "playing": false,
-            "type": "video"
+            "type": "document"
           }
         ]
       }
@@ -499,14 +602,14 @@
     "course": {
       "title": "AI Ethics & Bias",
       "subtitle": "Understanding Ethical AI Practices",
-      "logo": "/AI_Tutor_New_UI/Dashboard/data_analytics.png",
+      "logo": "AI_Tutor_New_UI/Dashboard/data_analytics.png",
       "progress": 100
     },
     "currentLesson": {
-      "id": "ai-ethics-intro",
-      "title": "Introduction to AI Ethics",
-      "module": "Module 1: Ethics in AI",
-      "youtubeUrl": "https://www.youtube.com/watch?v=5rE_LPSvTFY",
+      "id": "transparency",
+      "title": "Transparency and Accountability",
+      "module": "Module 3: Responsible AI Development",
+      "youtubeUrl": "",
       "content": {
         "introduction": "AI Ethics and Bias explores the moral implications of artificial intelligence, focusing on fairness, accountability, and responsible development of AI systems.",
         "keyConcepts": [
@@ -546,8 +649,8 @@
             "id": "what-is-postgresql",
             "title": "What is PostgreSQL?",
             "duration": "12 min",
-            "completed": false,
-            "playing": true,
+            "completed": true,
+            "playing": false,
             "type": "video",
             "youtubeUrl": "https://www.youtube.com/watch?v=qw--VYLpxG4"
           },
@@ -555,7 +658,7 @@
             "id": "installing-postgresql",
             "title": "Installing PostgreSQL",
             "duration": "10 min",
-            "completed": false,
+            "completed": true,
             "playing": false,
             "type": "video",
             "youtubeUrl": "https://www.youtube.com/watch?v=xaWlS9HtWYw"
@@ -564,7 +667,7 @@
             "id": "postgresql-architecture",
             "title": "PostgreSQL Architecture",
             "duration": "14 min",
-            "completed": false,
+            "completed": true,
             "playing": false,
             "type": "video",
             "youtubeUrl": "https://www.youtube.com/watch?v=2jshzBvNW9o"
@@ -573,7 +676,7 @@
             "id": "setting-up-environment",
             "title": "Setting Up Your Environment",
             "duration": "9 min",
-            "completed": false,
+            "completed": true,
             "playing": false,
             "type": "video",
             "youtubeUrl": "https://www.youtube.com/watch?v=T8R1_nOGTex"
@@ -588,7 +691,7 @@
             "id": "creating-databases",
             "title": "Creating Databases",
             "duration": "11 min",
-            "completed": false,
+            "completed": true,
             "playing": false,
             "type": "video",
             "youtubeUrl": "https://www.youtube.com/watch?v=HpD4Mf-QS64"
@@ -597,7 +700,7 @@
             "id": "creating-tables",
             "title": "Creating Tables",
             "duration": "13 min",
-            "completed": false,
+            "completed": true,
             "playing": false,
             "type": "video",
             "youtubeUrl": "https://www.youtube.com/watch?v=Y4cLdMUvwAE"
@@ -606,7 +709,7 @@
             "id": "insert-update-delete",
             "title": "Insert Update Delete",
             "duration": "15 min",
-            "completed": false,
+            "completed": true,
             "playing": false,
             "type": "video",
             "youtubeUrl": "https://www.youtube.com/watch?v=RhAAjy_iP5w"
@@ -615,7 +718,7 @@
             "id": "select-queries",
             "title": "Select Queries",
             "duration": "14 min",
-            "completed": false,
+            "completed": true,
             "playing": false,
             "type": "video",
             "youtubeUrl": "https://www.youtube.com/watch?v=eMJk4ysfAfE"
@@ -624,7 +727,7 @@
             "id": "filtering-sorting",
             "title": "Filtering and Sorting Data",
             "duration": "12 min",
-            "completed": false,
+            "completed": true,
             "playing": false,
             "type": "video",
             "youtubeUrl": "https://www.youtube.com/watch?v=0nwcqv4vjV8"
@@ -639,7 +742,7 @@
             "id": "joins",
             "title": "Joins",
             "duration": "16 min",
-            "completed": false,
+            "completed": true,
             "playing": false,
             "type": "video",
             "youtubeUrl": "https://www.youtube.com/watch?v=2vXlKNl7QAI"
@@ -648,7 +751,7 @@
             "id": "aggregate-functions",
             "title": "Aggregate Functions",
             "duration": "11 min",
-            "completed": false,
+            "completed": true,
             "playing": false,
             "type": "video",
             "youtubeUrl": "https://www.youtube.com/watch?v=mFhqLZ1xpnQ"
@@ -657,7 +760,7 @@
             "id": "group-by-having",
             "title": "Group By and Having",
             "duration": "13 min",
-            "completed": false,
+            "completed": true,
             "playing": false,
             "type": "video",
             "youtubeUrl": "https://www.youtube.com/watch?v=_aYKvWbkqrE"
@@ -666,7 +769,7 @@
             "id": "subqueries",
             "title": "Subqueries and Nested Queries",
             "duration": "15 min",
-            "completed": false,
+            "completed": true,
             "playing": false,
             "type": "video",
             "youtubeUrl": "https://www.youtube.com/watch?v=8C4i--d5z3s"
@@ -681,7 +784,7 @@
             "id": "indexes",
             "title": "Indexes",
             "duration": "12 min",
-            "completed": false,
+            "completed": true,
             "playing": false,
             "type": "video",
             "youtubeUrl": "https://www.youtube.com/watch?v=fsG1XaZEUhQ"
@@ -690,7 +793,7 @@
             "id": "query-optimization",
             "title": "Query Optimization",
             "duration": "14 min",
-            "completed": false,
+            "completed": true,
             "playing": false,
             "type": "video",
             "youtubeUrl": "https://www.youtube.com/watch?v=P5NKmlQQ7tE"
@@ -699,7 +802,7 @@
             "id": "explain-analyze",
             "title": "EXPLAIN and ANALYZE",
             "duration": "13 min",
-            "completed": false,
+            "completed": true,
             "playing": false,
             "type": "video",
             "youtubeUrl": "https://www.youtube.com/watch?v=WF5-LKdB-Jo"
@@ -708,7 +811,7 @@
             "id": "performance-tuning",
             "title": "Performance Tuning",
             "duration": "16 min",
-            "completed": false,
+            "completed": true,
             "playing": false,
             "type": "video",
             "youtubeUrl": "https://www.youtube.com/watch?v=ghTaVCWXgfI"
@@ -723,7 +826,7 @@
             "id": "views-and-functions",
             "title": "Views and Virtual Tables",
             "duration": "18 min",
-            "completed": false,
+            "completed": true,
             "playing": false,
             "type": "video",
             "youtubeUrl": "https://www.youtube.com/watch?v=AGMnArz6HhY"
@@ -732,7 +835,7 @@
             "id": "stored-procedures",
             "title": "Stored Procedures",
             "duration": "16 min",
-            "completed": false,
+            "completed": true,
             "playing": false,
             "type": "video",
             "youtubeUrl": "https://www.youtube.com/watch?v=m9Gh0TUedjI"
@@ -741,7 +844,7 @@
             "id": "triggers",
             "title": "Triggers",
             "duration": "14 min",
-            "completed": false,
+            "completed": true,
             "playing": false,
             "type": "video",
             "youtubeUrl": "https://www.youtube.com/watch?v=bNPWpHKTJVE"
@@ -751,7 +854,7 @@
             "title": "User Defined Functions",
             "duration": "13 min",
             "completed": false,
-            "playing": false,
+            "playing": true,
             "type": "video",
             "youtubeUrl": "https://www.youtube.com/watch?v=3FZWQNIBHpw"
           }
@@ -962,14 +1065,14 @@
     "course": {
       "title": "PostgreSQL",
       "subtitle": "Learn PostgreSQL Database Fundamentals and SQL Operations",
-      "logo": "AI_Tutor_New_UI/Dashboard/full_stack_web_dev.png",
-      "progress": 0
+      "logo": "AI_Tutor_New_UI/Dashboard/postgresql.png",
+      "progress": 60
     },
     "currentLesson": {
-      "id": "what-is-postgresql",
-      "title": "What is PostgreSQL?",
-      "module": "Module 1: Introduction to PostgreSQL",
-      "youtubeUrl": "",
+      "id": "user-defined-functions",
+      "title": "User Defined Functions",
+      "module": "Module 5: Views and Functions",
+      "youtubeUrl": "https://www.youtube.com/watch?v=3FZWQNIBHpw",
       "content": {
         "introduction": "PostgreSQL is a powerful, open-source relational database system known for its reliability, robustness, and rich feature set. Learn the fundamentals of PostgreSQL database management and SQL operations.",
         "keyConcepts": [
@@ -1008,8 +1111,8 @@
             "id": "what-is-mongodb",
             "title": "What is MongoDB?",
             "duration": "12 min",
-            "completed": false,
-            "playing": true,
+            "completed": true,
+            "playing": false,
             "type": "video",
             "youtubeUrl": "https://www.youtube.com/watch?v=-56x56UppqQ"
           },
@@ -1017,7 +1120,7 @@
             "id": "nosql-vs-sql",
             "title": "NoSQL vs SQL",
             "duration": "15 min",
-            "completed": false,
+            "completed": true,
             "playing": false,
             "type": "video",
             "youtubeUrl": "https://www.youtube.com/watch?v=Q7c7zF7W9n8"
@@ -1032,7 +1135,7 @@
             "id": "install-mongodb",
             "title": "Installing MongoDB",
             "duration": "10 min",
-            "completed": false,
+            "completed": true,
             "playing": false,
             "type": "video",
             "youtubeUrl": "https://www.youtube.com/watch?v=FwMwO8pXfq0"
@@ -1041,7 +1144,7 @@
             "id": "collections-documents",
             "title": "Collections & Documents",
             "duration": "14 min",
-            "completed": false,
+            "completed": true,
             "playing": false,
             "type": "video",
             "youtubeUrl": "https://www.youtube.com/watch?v=ofme2o29ngU"
@@ -1056,7 +1159,7 @@
             "id": "insert-data",
             "title": "Insert Data",
             "duration": "18 min",
-            "completed": false,
+            "completed": true,
             "playing": false,
             "type": "video",
             "youtubeUrl": "https://www.youtube.com/watch?v=ExcRbA7fy_A"
@@ -1065,7 +1168,7 @@
             "id": "read-data",
             "title": "Read Data",
             "duration": "16 min",
-            "completed": false,
+            "completed": true,
             "playing": false,
             "type": "video",
             "youtubeUrl": "https://www.youtube.com/watch?v=2QQGWYe7IDU"
@@ -1074,25 +1177,57 @@
             "id": "update-delete",
             "title": "Update & Delete",
             "duration": "20 min",
-            "completed": false,
+            "completed": true,
             "playing": false,
             "type": "video",
             "youtubeUrl": "https://www.youtube.com/watch?v=HcW5Ue7hV7E"
           }
         ]
+      },
+      {
+        "id": "module-4",
+        "title": "Module 4: Advanced MongoDB",
+        "lessons": [
+          {
+            "id": "indexing-aggregation",
+            "title": "Indexing and Aggregation",
+            "duration": "22 min",
+            "completed": true,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=OQIdkU8_hrI"
+          },
+          {
+            "id": "mongoose-odm",
+            "title": "Mongoose ODM for Node.js",
+            "duration": "19 min",
+            "completed": true,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=DZBGEVgL2eE"
+          },
+          {
+            "id": "replication-sharding",
+            "title": "Replication and Sharding",
+            "duration": "21 min",
+            "completed": true,
+            "playing": false,
+            "type": "document"
+          }
+        ]
       }
     ],
     "course": {
-      "title": "MongoDB Basics",
+      "title": "MongoDB Fundamentals",
       "subtitle": "NoSQL Database for Beginners",
-      "logo": "/AI_Tutor_New_UI/Dashboard/mongodb.png",
-      "progress": 0
+      "logo": "/AI_Tutor_New_UI/Dashboard/MongoDB.png",
+      "progress": 100
     },
     "currentLesson": {
-      "id": "what-is-mongodb",
-      "title": "What is MongoDB?",
-      "module": "Module 1: Introduction to MongoDB",
-      "youtubeUrl": "https://www.youtube.com/watch?v=-56x56UppqQ",
+      "id": "replication-sharding",
+      "title": "Replication and Sharding",
+      "module": "Module 4: Advanced MongoDB",
+      "youtubeUrl": "",
       "content": {
         "introduction": "MongoDB is a NoSQL database that stores data in flexible, JSON-like documents. It is widely used for scalable and modern web applications.",
         "keyConcepts": [
@@ -1113,6 +1248,1104 @@
           {
             "title": "Collections",
             "description": "Groups of documents similar to tables in SQL.",
+            "borderColor": "border-[#22D3EE]",
+            "bgColor": "bg-[#1F2937]",
+            "textColor": "text-white",
+            "descriptionColor": "text-[#D1D5DB]"
+          }
+        ]
+      }
+    }
+  },
+  "6": {
+    "modules": [
+      {
+        "id": "module-1",
+        "title": "Module 1: Java Fundamentals",
+        "lessons": [
+          {
+            "id": "java-intro",
+            "title": "Introduction to Java",
+            "duration": "15 min",
+            "completed": true,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=eIrMbAQSU34"
+          },
+          {
+            "id": "jvm-setup",
+            "title": "Setting up JVM and IDE",
+            "duration": "12 min",
+            "completed": true,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=jj4b0hNWXKQ"
+          },
+          {
+            "id": "variables-data-types",
+            "title": "Variables and Data Types",
+            "duration": "14 min",
+            "completed": true,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=gtQJXzi3Yns"
+          },
+          {
+            "id": "operators-expressions",
+            "title": "Operators and Expressions",
+            "duration": "13 min",
+            "completed": true,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=WQ8oEZVesPM"
+          }
+        ]
+      },
+      {
+        "id": "module-2",
+        "title": "Module 2: Control Flow and Arrays",
+        "lessons": [
+          {
+            "id": "conditional-statements",
+            "title": "Conditional Statements",
+            "duration": "16 min",
+            "completed": true,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=IsLQgnbSGb8"
+          },
+          {
+            "id": "loops",
+            "title": "Loops in Java",
+            "duration": "18 min",
+            "completed": true,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=oOrpCrmSJNQ"
+          },
+          {
+            "id": "arrays",
+            "title": "Arrays and Enhanced For Loop",
+            "duration": "14 min",
+            "completed": true,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=ZP0QfWK03AQ"
+          }
+        ]
+      },
+      {
+        "id": "module-3",
+        "title": "Module 3: Object-Oriented Programming",
+        "lessons": [
+          {
+            "id": "classes-objects",
+            "title": "Classes and Objects",
+            "duration": "20 min",
+            "completed": true,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=IUqKuGNasd8"
+          },
+          {
+            "id": "inheritance",
+            "title": "Inheritance",
+            "duration": "18 min",
+            "completed": true,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=Zs342ePFvRI"
+          },
+          {
+            "id": "polymorphism",
+            "title": "Polymorphism",
+            "duration": "16 min",
+            "completed": true,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=jhDUxynEQRI"
+          },
+          {
+            "id": "encapsulation-abstraction",
+            "title": "Encapsulation and Abstraction",
+            "duration": "15 min",
+            "completed": true,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=pTB30a4ATwQ"
+          }
+        ]
+      },
+      {
+        "id": "module-4",
+        "title": "Module 4: Exception Handling and Collections",
+        "lessons": [
+          {
+            "id": "exception-handling",
+            "title": "Exception Handling",
+            "duration": "19 min",
+            "completed": true,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=W-N2otg2tfU"
+          },
+          {
+            "id": "collections-framework",
+            "title": "Collections Framework",
+            "duration": "22 min",
+            "completed": false,
+            "playing": true,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=sz6ZfQXRFgk"
+          },
+          {
+            "id": "arraylist-linkedlist",
+            "title": "ArrayList and LinkedList",
+            "duration": "18 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=5d6KWsPTH-E"
+          }
+        ]
+      },
+      {
+        "id": "module-5",
+        "title": "Module 5: Advanced Java Concepts",
+        "lessons": [
+          {
+            "id": "multithreading",
+            "title": "Multithreading",
+            "duration": "24 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=TCd8QPH-6JM"
+          },
+          {
+            "id": "file-io",
+            "title": "File I/O",
+            "duration": "17 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=Un0l_yHUE6U"
+          },
+          {
+            "id": "jdbc",
+            "title": "JDBC Database Connectivity",
+            "duration": "21 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=3Or4C8g6t_s"
+          },
+          {
+            "id": "lambda-streams",
+            "title": "Lambda Expressions and Streams",
+            "duration": "20 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=tj5sLSFjVj4"
+          }
+        ]
+      },
+      {
+        "id": "module-6",
+        "title": "Module 6: Building Real-World Applications",
+        "lessons": [
+          {
+            "id": "gui-swing",
+            "title": "GUI with Swing",
+            "duration": "25 min",
+            "completed": false,
+            "playing": false,
+            "type": "document"
+          },
+          {
+            "id": "unit-testing",
+            "title": "Unit Testing with JUnit",
+            "duration": "18 min",
+            "completed": false,
+            "playing": false,
+            "type": "document"
+          }
+        ]
+      }
+    ],
+    "course": {
+      "title": "Java Programming Mastery",
+      "subtitle": "Complete Java Course for Beginners to Advanced",
+      "logo": "/AI_Tutor_New_UI/Dashboard/java.png",
+      "progress": 65
+    },
+    "currentLesson": {
+      "id": "collections-framework",
+      "title": "Collections Framework",
+      "module": "Module 4: Exception Handling and Collections",
+      "youtubeUrl": "https://www.youtube.com/watch?v=sz6ZfQXRFgk",
+      "content": {
+        "introduction": "Java is a powerful, object-oriented programming language used for building cross-platform applications. This course covers everything from basics to advanced topics.",
+        "keyConcepts": [
+          {
+            "title": "Object-Oriented Programming",
+            "description": "Encapsulation, inheritance, polymorphism, and abstraction in Java.",
+            "borderColor": "border-[#60A5FA]",
+            "bgColor": "bg-white",
+            "textColor": "text-black"
+          },
+          {
+            "title": "Collections Framework",
+            "description": "Data structures like ArrayList, HashMap, and more.",
+            "borderColor": "border-[#C084FC]",
+            "bgColor": "bg-white",
+            "textColor": "text-black"
+          },
+          {
+            "title": "Multithreading",
+            "description": "Concurrent programming in Java.",
+            "borderColor": "border-[#22D3EE]",
+            "bgColor": "bg-[#1F2937]",
+            "textColor": "text-white",
+            "descriptionColor": "text-[#D1D5DB]"
+          }
+        ]
+      }
+    }
+  },
+  "7": {
+    "modules": [
+      {
+        "id": "module-1",
+        "title": "Module 1: C++ Fundamentals for DSA",
+        "lessons": [
+          {
+            "id": "cpp-intro",
+            "title": "Introduction to C++",
+            "duration": "14 min",
+            "completed": true,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=ZzaPdXTrSb8"
+          },
+          {
+            "id": "cpp-setup",
+            "title": "Setting up C++ Environment",
+            "duration": "10 min",
+            "completed": true,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=DMWD7wfhgNY"
+          },
+          {
+            "id": "variables-data-types",
+            "title": "Variables and Data Types",
+            "duration": "13 min",
+            "completed": true,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=5FvN8ITk2Vw"
+          },
+          {
+            "id": "operators-control-flow",
+            "title": "Operators and Control Flow",
+            "duration": "16 min",
+            "completed": true,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=WR29n8fzDUs"
+          }
+        ]
+      },
+      {
+        "id": "module-2",
+        "title": "Module 2: Functions and Arrays",
+        "lessons": [
+          {
+            "id": "functions",
+            "title": "Functions in C++",
+            "duration": "15 min",
+            "completed": true,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=9DrWq0Bk9JI"
+          },
+          {
+            "id": "arrays-cpp",
+            "title": "Arrays and Pointers",
+            "duration": "18 min",
+            "completed": true,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=zuegQmMdy8M"
+          },
+          {
+            "id": "dynamic-memory",
+            "title": "Dynamic Memory Allocation",
+            "duration": "14 min",
+            "completed": false,
+            "playing": true,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=8jLOx1hD3_o"
+          }
+        ]
+      },
+      {
+        "id": "module-3",
+        "title": "Module 3: Data Structures in C++",
+        "lessons": [
+          {
+            "id": "linked-lists",
+            "title": "Linked Lists Implementation",
+            "duration": "22 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=HKfj0l7ndbc"
+          },
+          {
+            "id": "stacks-queues",
+            "title": "Stacks and Queues",
+            "duration": "19 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=YB1tUR1UZfw"
+          },
+          {
+            "id": "trees-binary-trees",
+            "title": "Trees and Binary Trees",
+            "duration": "25 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=5oXkUdBZ9Iw"
+          },
+          {
+            "id": "graphs",
+            "title": "Graphs and Traversals",
+            "duration": "28 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=CIWfTfoWIQk"
+          }
+        ]
+      },
+      {
+        "id": "module-4",
+        "title": "Module 4: Algorithms and Problem Solving",
+        "lessons": [
+          {
+            "id": "sorting-algos",
+            "title": "Sorting Algorithms",
+            "duration": "24 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=3aTfQvs-Q50"
+          },
+          {
+            "id": "searching-algos",
+            "title": "Searching Algorithms",
+            "duration": "16 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=9n2V3gYvKkE"
+          },
+          {
+            "id": "recursion",
+            "title": "Recursion and Backtracking",
+            "duration": "21 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=Mv9NEXX1VHc"
+          },
+          {
+            "id": "dynamic-programming",
+            "title": "Dynamic Programming Basics",
+            "duration": "26 min",
+            "completed": false,
+            "playing": false,
+            "type": "document"
+          }
+        ]
+      },
+      {
+        "id": "module-5",
+        "title": "Module 5: Advanced DSA Topics",
+        "lessons": [
+          {
+            "id": "hash-tables",
+            "title": "Hash Tables and Maps",
+            "duration": "18 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=2ZLl8GAk1X4"
+          },
+          {
+            "id": "heaps-priority-queues",
+            "title": "Heaps and Priority Queues",
+            "duration": "17 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=HqPJF2L5h9U"
+          },
+          {
+            "id": "tries",
+            "title": "Tries and Advanced Trees",
+            "duration": "20 min",
+            "completed": false,
+            "playing": false,
+            "type": "document"
+          }
+        ]
+      }
+    ],
+    "course": {
+      "title": "C++ for DSA",
+      "subtitle": "Master Data Structures and Algorithms with C++",
+      "logo": "/AI_Tutor_New_UI/Dashboard/cpp.png",
+      "progress": 40
+    },
+    "currentLesson": {
+      "id": "dynamic-memory",
+      "title": "Dynamic Memory Allocation",
+      "module": "Module 2: Functions and Arrays",
+      "youtubeUrl": "https://www.youtube.com/watch?v=8jLOx1hD3_o",
+      "content": {
+        "introduction": "C++ is a high-performance language widely used for system programming and competitive coding. This course focuses on using C++ to implement data structures and algorithms.",
+        "keyConcepts": [
+          {
+            "title": "Pointers and Memory",
+            "description": "Understanding memory management in C++.",
+            "borderColor": "border-[#60A5FA]",
+            "bgColor": "bg-white",
+            "textColor": "text-black"
+          },
+          {
+            "title": "STL",
+            "description": "Standard Template Library for DSA.",
+            "borderColor": "border-[#C084FC]",
+            "bgColor": "bg-white",
+            "textColor": "text-black"
+          },
+          {
+            "title": "Algorithm Design",
+            "description": "Efficient problem-solving techniques.",
+            "borderColor": "border-[#22D3EE]",
+            "bgColor": "bg-[#1F2937]",
+            "textColor": "text-white",
+            "descriptionColor": "text-[#D1D5DB]"
+          }
+        ]
+      }
+    }
+  },
+  "8": {
+    "modules": [
+      {
+        "id": "module-1",
+        "title": "Module 1: Cybersecurity Fundamentals",
+        "lessons": [
+          {
+            "id": "cybersecurity-intro",
+            "title": "Introduction to Cybersecurity",
+            "duration": "16 min",
+            "completed": true,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=bPVaOlJ6ln0"
+          },
+          {
+            "id": "threat-landscape",
+            "title": "Understanding Threat Landscape",
+            "duration": "14 min",
+            "completed": true,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=5kO1sxgQr6s"
+          }
+        ]
+      },
+      {
+        "id": "module-2",
+        "title": "Module 2: Network Security",
+        "lessons": [
+          {
+            "id": "network-basics",
+            "title": "Network Security Basics",
+            "duration": "18 min",
+            "completed": true,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=5BhzYq8I2Rs"
+          },
+          {
+            "id": "firewalls-ids",
+            "title": "Firewalls and IDS/IPS",
+            "duration": "20 min",
+            "completed": true,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=6G14N5RcB44"
+          },
+          {
+            "id": "vpn-secure-comms",
+            "title": "VPN and Secure Communications",
+            "duration": "17 min",
+            "completed": true,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=wNP9WTxDHBU"
+          }
+        ]
+      },
+      {
+        "id": "module-3",
+        "title": "Module 3: Cryptography and Authentication",
+        "lessons": [
+          {
+            "id": "cryptography-basics",
+            "title": "Cryptography Basics",
+            "duration": "22 min",
+            "completed": true,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=6-CmY0eAN2s"
+          },
+          {
+            "id": "authentication-methods",
+            "title": "Authentication and Authorization",
+            "duration": "18 min",
+            "completed": true,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=QzXTGZJhCQU"
+          },
+          {
+            "id": "pki-ssl",
+            "title": "PKI and SSL/TLS",
+            "duration": "16 min",
+            "completed": true,
+            "playing": false,
+            "type": "document"
+          }
+        ]
+      },
+      {
+        "id": "module-4",
+        "title": "Module 4: Security Operations and Compliance",
+        "lessons": [
+          {
+            "id": "incident-response",
+            "title": "Incident Response",
+            "duration": "19 min",
+            "completed": true,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=7rR6v7cYTtw"
+          },
+          {
+            "id": "compliance-standards",
+            "title": "Compliance and Standards",
+            "duration": "15 min",
+            "completed": true,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=v1-1T-kuE-8"
+          },
+          {
+            "id": "security-awareness",
+            "title": "Security Awareness Training",
+            "duration": "12 min",
+            "completed": true,
+            "playing": false,
+            "type": "document"
+          }
+        ]
+      }
+    ],
+    "course": {
+      "title": "Cybersecurity Basics",
+      "subtitle": "Protect Systems and Networks from Cyber Threats",
+      "logo": "/AI_Tutor_New_UI/Dashboard/security.png",
+      "progress": 100
+    },
+    "currentLesson": {
+      "id": "security-awareness",
+      "title": "Security Awareness Training",
+      "module": "Module 4: Security Operations and Compliance",
+      "youtubeUrl": "",
+      "content": {
+        "introduction": "This course introduces essential cybersecurity concepts, including threat detection, encryption, network security, and best practices to protect digital assets.",
+        "keyConcepts": [
+          {
+            "title": "Confidentiality",
+            "description": "Ensuring data is accessible only to authorized users.",
+            "borderColor": "border-[#60A5FA]",
+            "bgColor": "bg-white",
+            "textColor": "text-black"
+          },
+          {
+            "title": "Integrity",
+            "description": "Maintaining accuracy and trustworthiness of data.",
+            "borderColor": "border-[#C084FC]",
+            "bgColor": "bg-white",
+            "textColor": "text-black"
+          },
+          {
+            "title": "Availability",
+            "description": "Ensuring reliable access to data for authorized users.",
+            "borderColor": "border-[#22D3EE]",
+            "bgColor": "bg-[#1F2937]",
+            "textColor": "text-white",
+            "descriptionColor": "text-[#D1D5DB]"
+          }
+        ]
+      }
+    }
+  },
+  "9": {
+    "modules": [
+      {
+        "id": "module-1",
+        "title": "Module 1: Cloud Computing Concepts",
+        "lessons": [
+          {
+            "id": "cloud-intro",
+            "title": "What is Cloud Computing?",
+            "duration": "14 min",
+            "completed": true,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=M988_fsOSWo"
+          },
+          {
+            "id": "deployment-models",
+            "title": "Deployment Models",
+            "duration": "12 min",
+            "completed": true,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=5ps5O8vY4dk"
+          },
+          {
+            "id": "service-models",
+            "title": "IaaS, PaaS, SaaS",
+            "duration": "16 min",
+            "completed": true,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=k3V7TQdK4OQ"
+          }
+        ]
+      },
+      {
+        "id": "module-2",
+        "title": "Module 2: Major Cloud Providers",
+        "lessons": [
+          {
+            "id": "aws-basics",
+            "title": "AWS Fundamentals",
+            "duration": "18 min",
+            "completed": true,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=ulprqHHWlng"
+          },
+          {
+            "id": "azure-basics",
+            "title": "Microsoft Azure Basics",
+            "duration": "16 min",
+            "completed": true,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=U2nXX0aT5Rk"
+          },
+          {
+            "id": "gcp-basics",
+            "title": "Google Cloud Platform",
+            "duration": "15 min",
+            "completed": true,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=18jIz41j9og"
+          }
+        ]
+      },
+      {
+        "id": "module-3",
+        "title": "Module 3: Core Cloud Services",
+        "lessons": [
+          {
+            "id": "compute-services",
+            "title": "Compute Services (EC2, VM, Compute Engine)",
+            "duration": "22 min",
+            "completed": true,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=ZlWvJSgTut0"
+          },
+          {
+            "id": "storage-services",
+            "title": "Storage Services (S3, Blob, Cloud Storage)",
+            "duration": "20 min",
+            "completed": false,
+            "playing": true,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=J0J4RpQmOEY"
+          },
+          {
+            "id": "networking-services",
+            "title": "Networking (VPC, Load Balancers)",
+            "duration": "19 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=7aJK7rZ4oZA"
+          }
+        ]
+      },
+      {
+        "id": "module-4",
+        "title": "Module 4: Cloud Deployment and Management",
+        "lessons": [
+          {
+            "id": "serverless",
+            "title": "Serverless Computing",
+            "duration": "18 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=EOgfO0TZDYY"
+          },
+          {
+            "id": "devops-tools",
+            "title": "DevOps in Cloud (CI/CD, Terraform)",
+            "duration": "21 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=RhUx_Zvq3uI"
+          },
+          {
+            "id": "monitoring-cost",
+            "title": "Monitoring and Cost Management",
+            "duration": "17 min",
+            "completed": false,
+            "playing": false,
+            "type": "document"
+          }
+        ]
+      },
+      {
+        "id": "module-5",
+        "title": "Module 5: Real-World Cloud Projects",
+        "lessons": [
+          {
+            "id": "web-app-deployment",
+            "title": "Deploying a Web App on AWS",
+            "duration": "24 min",
+            "completed": false,
+            "playing": false,
+            "type": "document"
+          },
+          {
+            "id": "data-pipeline",
+            "title": "Building a Data Pipeline in Cloud",
+            "duration": "26 min",
+            "completed": false,
+            "playing": false,
+            "type": "document"
+          }
+        ]
+      }
+    ],
+    "course": {
+      "title": "Cloud Computing Essentials",
+      "subtitle": "Master AWS, Azure, and GCP Fundamentals",
+      "logo": "/AI_Tutor_New_UI/Dashboard/cloud.png",
+      "progress": 55
+    },
+    "currentLesson": {
+      "id": "storage-services",
+      "title": "Storage Services (S3, Blob, Cloud Storage)",
+      "module": "Module 3: Core Cloud Services",
+      "youtubeUrl": "https://www.youtube.com/watch?v=J0J4RpQmOEY",
+      "content": {
+        "introduction": "This course covers the fundamentals of cloud computing, including major providers, core services, deployment models, and best practices for scalable infrastructure.",
+        "keyConcepts": [
+          {
+            "title": "Elasticity",
+            "description": "Automatically scaling resources based on demand.",
+            "borderColor": "border-[#60A5FA]",
+            "bgColor": "bg-white",
+            "textColor": "text-black"
+          },
+          {
+            "title": "Pay-as-you-go",
+            "description": "Cost-effective pricing model for cloud services.",
+            "borderColor": "border-[#C084FC]",
+            "bgColor": "bg-white",
+            "textColor": "text-black"
+          },
+          {
+            "title": "Global Infrastructure",
+            "description": "Data centers and regions worldwide for low latency.",
+            "borderColor": "border-[#22D3EE]",
+            "bgColor": "bg-[#1F2937]",
+            "textColor": "text-white",
+            "descriptionColor": "text-[#D1D5DB]"
+          }
+        ]
+      }
+    }
+  },
+  "10": {
+    "modules": [
+      {
+        "id": "module-1",
+        "title": "Module 1: Data Science Fundamentals",
+        "lessons": [
+          {
+            "id": "ds-intro",
+            "title": "Introduction to Data Science",
+            "duration": "15 min",
+            "completed": true,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=X3paOmcrTjQ"
+          },
+          {
+            "id": "python-essentials",
+            "title": "Python Essentials for Data Science",
+            "duration": "20 min",
+            "completed": true,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=Z1Yd7upQsXY"
+          },
+          {
+            "id": "statistics-basics",
+            "title": "Statistics and Probability",
+            "duration": "22 min",
+            "completed": true,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=xxpc-HPKN28"
+          }
+        ]
+      },
+      {
+        "id": "module-2",
+        "title": "Module 2: Data Wrangling and Visualization",
+        "lessons": [
+          {
+            "id": "pandas-deep",
+            "title": "Pandas for Data Manipulation",
+            "duration": "25 min",
+            "completed": true,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=ZyhVh-qRZPA"
+          },
+          {
+            "id": "data-cleaning",
+            "title": "Data Cleaning Techniques",
+            "duration": "18 min",
+            "completed": true,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=ZQPXlE5bTfc"
+          },
+          {
+            "id": "visualization-seaborn",
+            "title": "Data Visualization with Seaborn",
+            "duration": "20 min",
+            "completed": true,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=0FZ1lEouNEE"
+          }
+        ]
+      },
+      {
+        "id": "module-3",
+        "title": "Module 3: Machine Learning Basics",
+        "lessons": [
+          {
+            "id": "ml-overview",
+            "title": "Machine Learning Overview",
+            "duration": "19 min",
+            "completed": true,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=ukzFI9rgwfU"
+          },
+          {
+            "id": "linear-regression",
+            "title": "Linear Regression",
+            "duration": "21 min",
+            "completed": true,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=7ArmBVF2dCs"
+          },
+          {
+            "id": "logistic-regression",
+            "title": "Logistic Regression",
+            "duration": "18 min",
+            "completed": true,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=yIYKR4sgzI8"
+          },
+          {
+            "id": "decision-trees",
+            "title": "Decision Trees and Random Forest",
+            "duration": "23 min",
+            "completed": true,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=7VeUPuFGJHk"
+          }
+        ]
+      },
+      {
+        "id": "module-4",
+        "title": "Module 4: Advanced Machine Learning",
+        "lessons": [
+          {
+            "id": "svm-knn",
+            "title": "SVM and K-Nearest Neighbors",
+            "duration": "20 min",
+            "completed": true,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=Y6RRHrZ0pWw"
+          },
+          {
+            "id": "clustering",
+            "title": "Clustering Algorithms",
+            "duration": "19 min",
+            "completed": false,
+            "playing": true,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=4b5d3muPQmA"
+          },
+          {
+            "id": "pca",
+            "title": "Dimensionality Reduction with PCA",
+            "duration": "17 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=FgakZw6K1QQ"
+          }
+        ]
+      },
+      {
+        "id": "module-5",
+        "title": "Module 5: Model Evaluation and Deployment",
+        "lessons": [
+          {
+            "id": "model-evaluation",
+            "title": "Model Evaluation Metrics",
+            "duration": "18 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=Kdsp6soqA7o"
+          },
+          {
+            "id": "cross-validation",
+            "title": "Cross-Validation and Hyperparameter Tuning",
+            "duration": "20 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=5nYqK-HaoKY"
+          },
+          {
+            "id": "model-deployment",
+            "title": "Deploying ML Models with Flask",
+            "duration": "22 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=9f-GarcDY58"
+          }
+        ]
+      },
+      {
+        "id": "module-6",
+        "title": "Module 6: Big Data and Capstone Project",
+        "lessons": [
+          {
+            "id": "big-data-intro",
+            "title": "Introduction to Big Data (Hadoop, Spark)",
+            "duration": "24 min",
+            "completed": false,
+            "playing": false,
+            "type": "video",
+            "youtubeUrl": "https://www.youtube.com/watch?v=Hl8xG86cV4Q"
+          },
+          {
+            "id": "sql-databases",
+            "title": "SQL for Data Science",
+            "duration": "16 min",
+            "completed": false,
+            "playing": false,
+            "type": "document"
+          },
+          {
+            "id": "capstone-project",
+            "title": "Capstone Project: End-to-End Data Science",
+            "duration": "30 min",
+            "completed": false,
+            "playing": false,
+            "type": "document"
+          }
+        ]
+      }
+    ],
+    "course": {
+      "title": "Data Science Bootcamp",
+      "subtitle": "Complete Data Science and Machine Learning Training",
+      "logo": "/AI_Tutor_New_UI/Dashboard/data_science.png",
+      "progress": 50
+    },
+    "currentLesson": {
+      "id": "clustering",
+      "title": "Clustering Algorithms",
+      "module": "Module 4: Advanced Machine Learning",
+      "youtubeUrl": "https://www.youtube.com/watch?v=4b5d3muPQmA",
+      "content": {
+        "introduction": "This comprehensive bootcamp covers the entire data science pipeline: Python, statistics, machine learning, model deployment, and real-world projects.",
+        "keyConcepts": [
+          {
+            "title": "Data Wrangling",
+            "description": "Cleaning and preparing data for analysis.",
+            "borderColor": "border-[#60A5FA]",
+            "bgColor": "bg-white",
+            "textColor": "text-black"
+          },
+          {
+            "title": "Machine Learning",
+            "description": "Supervised and unsupervised learning algorithms.",
+            "borderColor": "border-[#C084FC]",
+            "bgColor": "bg-white",
+            "textColor": "text-black"
+          },
+          {
+            "title": "Model Deployment",
+            "description": "Putting models into production.",
             "borderColor": "border-[#22D3EE]",
             "bgColor": "bg-[#1F2937]",
             "textColor": "text-white",
