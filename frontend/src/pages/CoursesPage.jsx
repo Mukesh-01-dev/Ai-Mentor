@@ -254,7 +254,7 @@ const CoursesPage = () => {
   return (
     <>
       {/* ══════ HERO ══════ */}
-      <div className="relative bg-gradient-to-br from-teal-700 via-teal-600 to-teal-800 pt-16 pb-12 px-4 sm:px-8">
+      <div className="relative overflow-hidden bg-gradient-to-br from-teal-700 via-teal-600 to-teal-800 pt-10 sm:pt-12 lg:pt-16 pb-8 sm:pb-10 lg:pb-12 px-4 sm:px-6 lg:px-8">
         <div
           className="absolute inset-0 opacity-10"
           style={{
@@ -264,7 +264,7 @@ const CoursesPage = () => {
           }}
         />
         <div className="relative z-10 max-w-5xl mx-auto space-y-6">
-          <div className="flex items-center space-x-5">
+          <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-5 text-center sm:text-left">
             <img
               src={
                 user?.avatar_url ||
@@ -548,11 +548,11 @@ const CoursesPage = () => {
         </div>
       </div>
 
-      <main className="flex-1 p-8">
+      <main className="flex-1 p-4 sm:p-6 lg:p-8">
         <div className="max-w-7xl mx-auto space-y-10">
           {/* ================= MY COURSES ================= */}
           {activeTab === "my-courses" && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
               {myCourses.length === 0 && (
                 <p className="text-slate-500">{t("courses.not_enrolled")}</p>
               )}
@@ -626,7 +626,7 @@ const CoursesPage = () => {
               {/* Horizontal Scroll Row */}
               <div
                 ref={scrollRef}
-                className="flex gap-6 overflow-x-auto pb-4 scroll-smooth"
+                className="flex gap-4 sm:gap-6 overflow-x-auto pb-4 scroll-smooth"
                 style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
               >
                 <style>{`div::-webkit-scrollbar { display: none; }`}</style>
@@ -638,7 +638,7 @@ const CoursesPage = () => {
                 {filteredExploreCourses.map((course) => (
                   <div
                     key={course.id}
-                    className="bg-card rounded-3xl border border-border overflow-hidden shadow-sm flex-shrink-0 w-64"
+                    className="bg-card rounded-3xl border border-border overflow-hidden shadow-sm flex-shrink-0 w-[82vw] max-w-72 sm:w-64"
                   >
                     <div className="relative h-40">
                       <img
@@ -686,7 +686,7 @@ const CoursesPage = () => {
       {/* ================= ENROLL POPUP ================= */}
       {showEnrollPopup && selectedCourse && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white w-full max-w-md rounded-2xl p-6 relative">
+          <div className="bg-white w-full max-w-md rounded-2xl p-4 sm:p-6 relative mx-4">
             <button
               onClick={() => setShowEnrollPopup(false)}
               className="absolute top-4 right-4"
