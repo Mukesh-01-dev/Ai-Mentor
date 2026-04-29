@@ -1221,19 +1221,7 @@ export default function Learning() {
                 </button>
               </div>
 
-              {/* Lesson Content */}
-              <div className="bg-card rounded-lg p-8 shadow-sm border border-border">
-                <h1 className="text-3xl font-semibold text-main mb-6 leading-tight">
-                  <span className="text-blue-600">{currentLesson?.title}</span>
-                </h1>
-                {(generatedTextContent || currentLesson?.content?.introduction) && (
-                  <div className="prose prose-lg max-w-none">
-                    <p className="text-muted leading-relaxed">
-                      {generatedTextContent || currentLesson.content.introduction}
-                    </p>
-                  </div>
-                )}
-              </div>
+              
             </div>
           </div>
 
