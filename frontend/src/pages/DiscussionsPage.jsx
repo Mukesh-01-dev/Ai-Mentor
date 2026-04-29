@@ -111,6 +111,7 @@ const DiscussionsPage = () => {
   const [panelReplyingTo, setPanelReplyingTo] = useState(null);
   const [panelReplyInputText, setPanelReplyInputText] = useState("");
   const [allCourses, setAllCourses] = useState([]);
+  const [panelRequiresEnrollment, setPanelRequiresEnrollment] = useState(false);
 
   // Global community state
   const [globalPosts, setGlobalPosts] = useState([]);
@@ -251,14 +252,33 @@ const DiscussionsPage = () => {
   const fetchPanelPosts = useCallback(
     async (courseId, sort) => {
       setPanelLoading(true);
+      setPanelRequiresEnrollment(false);
       try {
         const q = sort === "Popular" ? "?sort=popular" : "";
         const res = await fetch(`/api/community/course/${courseId}${q}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
+
+        if (res.status === 403) {
+          try {
+            const data = await res.json();
+            if (data.requiresEnrollment) {
+              setPanelRequiresEnrollment(true);
+              setPanelPosts([]);
+              return;
+            }
+          } catch {
+            // If JSON parsing fails, still show enrollment message for 403
+            setPanelRequiresEnrollment(true);
+            setPanelPosts([]);
+            return;
+          }
+        }
+
         if (!res.ok) throw new Error();
         setPanelPosts(await res.json());
-      } catch {
+      } catch (error) {
+        console.error("Error fetching panel posts:", error);
         setPanelPosts([]);
       } finally {
         setPanelLoading(false);
@@ -1063,7 +1083,28 @@ const DiscussionsPage = () => {
 
                   {/* panel messages */}
                   <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                    {panelLoading ? (
+                    {panelRequiresEnrollment ? (
+                      <div className="flex flex-col items-center justify-center h-full py-12">
+                        <div className="text-center space-y-4">
+                          <div className="inline-flex items-center justify-center w-16 h-16 bg-orange-500/20 rounded-full">
+                            <BookOpen className="w-8 h-8 text-orange-500" />
+                          </div>
+                          <div>
+                            <h3 className="font-semibold text-main mb-2">Enroll to Access Community</h3>
+                            <p className="text-sm text-muted mb-4">
+                              You must be enrolled in <span className="font-medium">{selectedCourse.courseName}</span> to view and participate in discussions.
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => navigate(`/courses`, { state: { activeTab: "explore" } })}
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors font-medium"
+                          >
+                            Explore Courses
+                            <ArrowRight className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ) : panelLoading ? (
                       <div className="text-center py-8">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto mb-3"></div>
                         <p className="text-muted text-sm">{t("common.loading")}</p>
