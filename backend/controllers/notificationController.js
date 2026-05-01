@@ -3,6 +3,21 @@ import Notification from "../models/Notification.js";
 // @desc    Get user notifications
 // @route   GET /api/notifications
 // @access  Private
+export const getUnreadCount = async (req, res) => {
+    try {
+        const count = await Notification.count({
+            where: {
+                userId: req.user.id,
+                unread: true,
+            },
+        });
+
+        res.status(200).json({ count });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 export const getNotifications = async (req, res) => {
     try {
         const notifications = await Notification.findAll({

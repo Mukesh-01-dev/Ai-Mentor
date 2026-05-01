@@ -14,7 +14,8 @@
     "learning": "学習",
     "watched": "視聴済み動画",
     "admin": "管理パネル",
-    "account": "アカウント"
+    "account": "アカウント",
+    "certificates": "証明書"
   },
   "common": {
     "cancel": "キャンセル",
@@ -35,7 +36,9 @@
       "notifications": "通知",
       "password_security": "パスワードとセキュリティ",
       "appearance": "外観",
-      "language": "言語"
+      "language": "言語",
+      "contactus": "サポートに連絡",
+      "delete_account": "アカウントを削除"
     },
     "profile": {
       "title": "プロフィール設定",
@@ -88,6 +91,12 @@
       "subtitle": "インターフェースの言語を選択してください",
       "interface_language": "インターフェース言語",
       "updated": "言語設定が正常に更新されました！"
+    },
+    "contactus": {
+      "title": "サポートに連絡",
+      "subtitle": "通常24時間以内にご返答いたします。",
+      "subject": "件名",
+      "message": "メッセージ"
     }
   },
   "dashboard": {
@@ -113,7 +122,14 @@
     "design": "デザイン",
     "beginner": "初心者",
     "intermediate": "中級",
-    "advanced": "上級"
+    "advanced": "上級",
+    "no_courses_search": "検索に一致するコースがありません。",
+    "no_courses_enrolled": "まだコースに登録していません。",
+    "browse_courses": "コースを探す",
+    "continue_learning": "学習を続ける",
+    "continue": "続ける",
+    "view": "表示",
+    "enroll": "登録する"
   },
   "courses": {
     "title": "ラーニングハブ",
@@ -123,7 +139,20 @@
     "not_enrolled": "まだコースに登録していません。",
     "lessons": "レッスン",
     "loading": "コースを読み込み中...",
-    "confirm_enrollment": "受講申し込みを確認"
+    "confirm_enrollment": "受講申し込みを確認",
+    "enrolled_courses": "受講中のコース",
+    "enrolled_short": "受講中",
+    "explore_short": "探す",
+    "filters": "フィルター",
+    "apply_filters": "フィルターを適用",
+    "clear_all": "すべてクリア",
+    "category": "カテゴリ",
+    "skill_level": "スキルレベル",
+    "pricing": "価格",
+    "any_level": "すべてのレベル",
+    "any_price": "すべての価格",
+    "all_categories": "すべてのカテゴリ",
+    "no_match_filters": "現在の検索またはフィルターに一致する登録済みコースはありません。"
   },
   "learning": {
     "loading": "読み込み中...",
@@ -265,46 +294,77 @@
     "signup": "サインアップ",
     "email": "メール",
     "password": "パスワード",
-    "logout": "ログアウト"
+    "logout": "ログアウト",
+    "logout_confirm_title": "ログアウト",
+    "logout_confirm_msg": "本当にログアウトしますか？",
+    "cancel": "キャンセル"
   },
   "preferences": {
-    "nav_title": "AI チューター設定",
-    "modal_title": "AI チューターをパーソナライズ",
-    "modal_subtitle": "あなたの学習スタイルに合わせて解説を調整するお手伝いをします。",
-    "settings_modal_subtitle": "AIチューターの解説、ペース、および例の参照を調整します。",
-    "save_continue": "保存して続行",
-    "save_changes": "変更を保存",
+    "nav_title": "設定",
+    "modal_title": "体験をパーソナライズ",
+    "modal_subtitle": "始めるための5つの簡単な質問です",
+    "settings_modal_subtitle": "あなたに最も適した学習方法に合わせて設定してください。",
+    "save_continue": "次へ →",
+    "save_changes": "完了",
     "save_success": "設定が正常に更新されました",
-    "extra_title": "6. 追加設定（オプション）",
-    "extra_placeholder": "例: アニメーションを好む、動画を短くする、コード例に集中する",
+    "step_of": "{{current}} / {{total}}",
+    "next": "次へ →",
+    "back": "← 戻る",
+    "finish": "完了",
+    "skip_for_now": "今はスキップする — 後で設定します",
     "questions": {
-      "explanation_type": "1. どのようなタイプの解説を好みますか？",
-      "learning_style": "2. どのような学習スタイルが適していますか？",
-      "teaching_pace": "3. どのような授業ペースを好みますか？",
-      "example_type": "4. 解説での「例え」はどのようなものを好みますか？",
-      "focus_area": "5. AI は動画内で何にもっと焦点を当てるべきですか？"
+      "learning_goal": "主な学習目標は何ですか？",
+      "interested_topics": "最も興味のあるトピックはどれですか？",
+      "experience_level": "経験はどのくらいありますか？",
+      "weekly_commitment": "週に何時間学習できますか？",
+      "learning_style": "希望する学習スタイルは何ですか？"
+    },
+    "hints": {
+      "select_one": "いずれかのオプションを選択",
+      "select_multiple": "該当するものをすべて選択"
     },
     "options": {
-      "simple": "シンプル＆初心者向け",
-      "balanced": "バランス（分かりやすさ＋少し深掘り）",
-      "detailed": "詳細で深掘り",
-      "expert": "エキスパートレベル（専門的）",
-      "step_by_step": "ステップ・バイ・ステップのガイド",
-      "concept_first": "概念優先の解説",
-      "real_world": "現実世界に基づいた例",
-      "problem_solving": "問題解決フォーカス",
-      "slow": "ゆっくり＆丁寧",
-      "moderate": "適度",
-      "fast": "ハイペース",
-      "adaptive": "適応型（進行状況に応じて）",
-      "real_life": "実生活の例",
-      "technical": "専門的な例",
-      "visual": "視覚・図を中心としたもの",
-      "minimal": "最小限の例",
-      "concepts": "概念と理論",
-      "practical": "実践的応用",
-      "coding": "コーディング／問題解決",
-      "exams": "試験対策"
+      "switch_careers": "キャリアの変更",
+      "upskill_work": "スキルアップ",
+      "personal_interest": "個人的な興味",
+      "get_certified": "資格取得",
+      "ai": "人工知能",
+      "web_dev": "ウェブ開発",
+      "data_science": "データサイエンス",
+      "cloud": "クラウドコンピューティング",
+      "cybersecurity": "サイバーセキュリティ",
+      "mobile_apps": "モバイルアプリ",
+      "beginner": "初心者",
+      "basics": "少しの基礎",
+      "intermediate": "中級",
+      "advanced": "上級",
+      "1_2_hours": "1～2時間",
+      "3_5_hours": "3～5時間",
+      "6_10_hours": "6～10時間",
+      "10_plus_hours": "10時間以上",
+      "videos": "ビデオ講義",
+      "projects": "実践的なプロジェクト",
+      "articles": "記事を読む",
+      "live_classes": "ライブクラス"
     }
+  },
+  "certificates": {
+    "title": "マイ証明書",
+    "subtitle": "実績を追跡して証明書をダウンロード",
+    "loading": "証明書を読み込み中...",
+    "enrolled_courses": "受講中のコース",
+    "courses_completed": "修了コース",
+    "certificates_earned": "取得済み証明書",
+    "in_progress": "進行中",
+    "no_courses_title": "まだコースに登録していません",
+    "no_courses_desc": "コースに登録して修了し、証明書を取得しましょう！",
+    "browse_courses": "コースを探す",
+    "progress": "進捗",
+    "lessons": "レッスン",
+    "completed_badge": "修了",
+    "complete_to_earn": "このコースを修了して証明書を取得してください",
+    "continue_learning": "学習を続ける",
+    "download": "証明書をダウンロード",
+    "generating": "生成中..."
   }
 }

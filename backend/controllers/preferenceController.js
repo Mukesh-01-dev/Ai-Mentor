@@ -31,27 +31,25 @@ export const createPreferences = async (req, res) => {
     }
 
     const {
-      explanation_type,
-      learning_style,
-      teaching_pace,
-      example_type,
-      focus_area,
-      extra_preferences
+      learning_goal,
+      interested_topics,
+      experience_level,
+      weekly_commitment,
+      learning_style
     } = req.body;
 
     // Validate required fields
-    if (!explanation_type || !learning_style || !teaching_pace || !example_type || !focus_area) {
+    if (!learning_goal || !interested_topics || !experience_level || !weekly_commitment || !learning_style) {
       return res.status(400).json({ message: "All required fields must be provided" });
     }
 
     const preferences = await Preference.create({
       user_id: userId,
-      explanation_type,
-      learning_style,
-      teaching_pace,
-      example_type,
-      focus_area,
-      extra_preferences
+      learning_goal,
+      interested_topics,
+      experience_level,
+      weekly_commitment,
+      learning_style
     });
 
     res.status(201).json(preferences);
@@ -73,25 +71,23 @@ export const updatePreferences = async (req, res) => {
     }
 
     const {
-      explanation_type,
-      learning_style,
-      teaching_pace,
-      example_type,
-      focus_area,
-      extra_preferences
+      learning_goal,
+      interested_topics,
+      experience_level,
+      weekly_commitment,
+      learning_style
     } = req.body;
 
     // Validate required fields
-    if (!explanation_type || !learning_style || !teaching_pace || !example_type || !focus_area) {
+    if (!learning_goal || !interested_topics || !experience_level || !weekly_commitment || !learning_style) {
       return res.status(400).json({ message: "All required fields must be provided" });
     }
 
-    preferences.explanation_type = explanation_type;
+    preferences.learning_goal = learning_goal;
+    preferences.interested_topics = interested_topics;
+    preferences.experience_level = experience_level;
+    preferences.weekly_commitment = weekly_commitment;
     preferences.learning_style = learning_style;
-    preferences.teaching_pace = teaching_pace;
-    preferences.example_type = example_type;
-    preferences.focus_area = focus_area;
-    preferences.extra_preferences = extra_preferences !== undefined ? extra_preferences : preferences.extra_preferences;
 
     await preferences.save();
 

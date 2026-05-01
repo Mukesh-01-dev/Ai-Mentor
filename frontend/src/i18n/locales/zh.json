@@ -14,7 +14,8 @@
     "learning": "学习",
     "watched": "已观看视频",
     "admin": "管理面板",
-    "account": "账户"
+    "account": "账户",
+    "certificates": "证书"
   },
   "common": {
     "cancel": "取消",
@@ -35,7 +36,9 @@
       "notifications": "通知",
       "password_security": "密码与安全",
       "appearance": "外观",
-      "language": "语言"
+      "language": "语言",
+      "contactus": "联系支持",
+      "delete_account": "删除我的账户"
     },
     "profile": {
       "title": "个人资料设置",
@@ -88,6 +91,12 @@
       "subtitle": "选择您的首选界面语言",
       "interface_language": "界面语言",
       "updated": "语言设置更新成功！"
+    },
+    "contactus": {
+      "title": "联系支持",
+      "subtitle": "我们通常在24小时内回复。",
+      "subject": "主题",
+      "message": "消息"
     }
   },
   "dashboard": {
@@ -113,7 +122,14 @@
     "design": "设计",
     "beginner": "初级",
     "intermediate": "中级",
-    "advanced": "高级"
+    "advanced": "高级",
+    "no_courses_search": "没有课程符合您的搜索。",
+    "no_courses_enrolled": "您尚未报名任何课程。",
+    "browse_courses": "浏览课程",
+    "continue_learning": "继续学习",
+    "continue": "继续",
+    "view": "查看",
+    "enroll": "报名"
   },
   "courses": {
     "title": "学习中心",
@@ -123,7 +139,20 @@
     "not_enrolled": "您尚未报名任何课程。",
     "lessons": "课时",
     "loading": "正在加载课程...",
-    "confirm_enrollment": "确认报名"
+    "confirm_enrollment": "确认报名",
+    "enrolled_courses": "已报名课程",
+    "enrolled_short": "已报名",
+    "explore_short": "探索",
+    "filters": "筛选",
+    "apply_filters": "应用筛选",
+    "clear_all": "清除全部",
+    "category": "分类",
+    "skill_level": "技能等级",
+    "pricing": "定价",
+    "any_level": "任意级别",
+    "any_price": "任意价格",
+    "all_categories": "所有分类",
+    "no_match_filters": "没有已报名的课程与您当前的搜索或筛选条件匹配。"
   },
   "learning": {
     "loading": "加载中...",
@@ -265,46 +294,77 @@
     "signup": "注册",
     "email": "电子邮件",
     "password": "密码",
-    "logout": "退出登录"
+    "logout": "退出登录",
+    "logout_confirm_title": "退出登录",
+    "logout_confirm_msg": "确定要退出登录吗？",
+    "cancel": "取消"
   },
   "preferences": {
-    "nav_title": "AI 导师偏好",
-    "modal_title": "个性化您的 AI 导师",
-    "modal_subtitle": "帮助我们调整解释，以匹配您的学习风格。",
-    "settings_modal_subtitle": "定制您的 AI 导师的解释、节奏和示例参考。",
-    "save_continue": "保存并继续",
-    "save_changes": "保存更改",
-    "save_success": "偏好设置升级成功",
-    "extra_title": "6. 额外偏好（可选）",
-    "extra_placeholder": "例如：偏好动画、短视频、专注于代码示例",
+    "nav_title": "偏好设置",
+    "modal_title": "個性化您的体验",
+    "modal_subtitle": "只需5个简单问题即可开始",
+    "settings_modal_subtitle": "根据您最佳的学习方式定制体验。",
+    "save_continue": "下一步 →",
+    "save_changes": "完成",
+    "save_success": "偏好已成功更新",
+    "step_of": "{{current}} / {{total}}",
+    "next": "下一步 →",
+    "back": "← 返回",
+    "finish": "完成",
+    "skip_for_now": "暂时跳过 — 以後再说",
     "questions": {
-      "explanation_type": "1. 您偏好哪种类型的解释？",
-      "learning_style": "2. 哪种学习风格最适合您？",
-      "teaching_pace": "3. 您偏好怎样的教学节奏？",
-      "example_type": "4. 您喜欢解释中包含怎样的示例？",
-      "focus_area": "5. AI 在视频中应更多关注什么？"
+      "learning_goal": "您的主要学习目标是什么？",
+      "interested_topics": "您对哪些主题最感兴趣？",
+      "experience_level": "您有多少相关经验？",
+      "weekly_commitment": "您每周可以投入多少小时？",
+      "learning_style": "您首选的学习方式是什么？"
+    },
+    "hints": {
+      "select_one": "选择一个选项",
+      "select_multiple": "选择所有适用的项"
     },
     "options": {
-      "simple": "简单 & 适合初学者",
-      "balanced": "平衡型（简单 + 一些深度）",
-      "detailed": "详细且深入",
-      "expert": "专家级（技术性）",
-      "step_by_step": "逐步指导",
-      "concept_first": "概念优先的解释",
-      "real_world": "实际世界的例子",
-      "problem_solving": "问题解决导向",
-      "slow": "缓慢且详尽",
-      "moderate": "适中",
-      "fast": "快节奏",
-      "adaptive": "自适应（基于我的进度）",
-      "real_life": "现实生活示例",
-      "technical": "技术型示例",
-      "visual": "视觉 / 图表导向",
-      "minimal": "极简示例",
-      "concepts": "概念与理论",
-      "practical": "实际应用",
-      "coding": "编程 / 解决问题",
-      "exams": "考试准备"
+      "switch_careers": "转行",
+      "upskill_work": "提升工作技能",
+      "personal_interest": "个人兴趣",
+      "get_certified": "获取认证",
+      "ai": "人工智能",
+      "web_dev": "Web 开发",
+      "data_science": "数据科学",
+      "cloud": "云计算",
+      "cybersecurity": "网络安全",
+      "mobile_apps": "移动应用程序",
+      "beginner": "零基础初学者",
+      "basics": "一些基础知识",
+      "intermediate": "中级",
+      "advanced": "高级",
+      "1_2_hours": "1-2 小时",
+      "3_5_hours": "3-5 小时",
+      "6_10_hours": "6-10 小时",
+      "10_plus_hours": "10 小时以上",
+      "videos": "视频课程",
+      "projects": "实践项目",
+      "articles": "阅读文章",
+      "live_classes": "直播课程"
     }
+  },
+  "certificates": {
+    "title": "我的证书",
+    "subtitle": "追踪您的成就并下载证书",
+    "loading": "正在加载证书...",
+    "enrolled_courses": "已报名课程",
+    "courses_completed": "已完成课程",
+    "certificates_earned": "已获得证书",
+    "in_progress": "进行中",
+    "no_courses_title": "尚未报名任何课程",
+    "no_courses_desc": "报名并完成课程以获得您的证书！",
+    "browse_courses": "浏览课程",
+    "progress": "进度",
+    "lessons": "课时",
+    "completed_badge": "已完成",
+    "complete_to_earn": "完成此课程以获得您的证书",
+    "continue_learning": "继续学习",
+    "download": "下载证书",
+    "generating": "生成中..."
   }
 }

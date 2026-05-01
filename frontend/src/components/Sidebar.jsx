@@ -75,7 +75,7 @@ const Sidebar = ({ activePage = "dashboard" }) => {
         </div>
       )}
 
-      <div className={`fixed lg:fixed top-18.5 left-0 z-[70] bg-card/70 backdrop-blur-2xl border-r border-border/50 transform transition-all duration-500 ease-out lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"} ${sidebarCollapsed ? "lg:w-24" : "lg:w-80"} w-80 h-[calc(100vh-4rem)] overflow-visible`}>
+      <div className={`fixed lg:fixed top-18.5 left-0 z-[70] bg-card/70 backdrop-blur-2xl border-r border-border/80 transform transition-all duration-500 ease-out lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"} ${sidebarCollapsed ? "lg:w-24" : "lg:w-80"} w-80 h-[calc(100vh-4rem)] overflow-visible`}>
 
         <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} className="hidden lg:flex absolute -right-5 top-8 w-10 h-10 bg-card border border-border rounded-xl items-center justify-center hover:bg-teal-500 hover:text-white transition-all shadow-xl z-80">
           <ChevronRight className={`w-5 h-5 transition-transform duration-500 ${sidebarCollapsed ? "" : "rotate-180"}`} />
@@ -86,9 +86,9 @@ const Sidebar = ({ activePage = "dashboard" }) => {
             {navigationItems.map((item) => {
               const isActive = activePage === item.id;
               return (
-                <div key={item.id} onClick={() => navigate(item.path)} className={`group relative flex items-center px-4 py-4 rounded-3xl cursor-pointer transition-all duration-300 ${sidebarCollapsed ? "justify-center" : ""} ${isActive ? "bg-teal-500 text-white shadow-xl shadow-teal-500/30" : "text-muted hover:bg-canvas-alt"}`}>
-                  <img src={item.icon} alt={item.label} className={`w-5 h-5 shrink-0 transition-transform group-hover:scale-110 ${isActive ? "brightness-0 invert" : ""}`} />
-                  {!sidebarCollapsed && <span className={`ml-4 text-sm font-black uppercase tracking-tight ${isActive ? "text-white" : ""}`}>{t(`nav.${item.id}`)}</span>}
+                <div key={item.id} onClick={() => { navigate(item.path); setSidebarCollapsed(true); }} className={`group relative flex items-center px-4 py-4 rounded-3xl cursor-pointer transition-all duration-300 ${sidebarCollapsed ? "justify-center" : ""} ${isActive ? "bg-teal-500 text-white shadow-xl shadow-teal-500/30" : "hover:bg-canvas-alt"}`}>
+                  <img src={item.icon} alt={item.label} className={`w-5 h-5 shrink-0 transition-transform group-hover:scale-110 ${isActive ? "brightness-0 invert" : "opacity-80"}`} />
+                  {!sidebarCollapsed && <span className={`ml-4 text-sm font-black uppercase tracking-tight ${isActive ? "text-white" : ""}`} style={isActive ? {} : { color: '#b2b2b3' }}>{t(`nav.${item.id}`)}</span>}
                   {sidebarCollapsed && (
                     <div className="absolute left-full ml-6 px-4 py-2 bg-slate-900 text-white text-[10px] font-black rounded-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-all shadow-2xl z-50 uppercase tracking-widest">{t(`nav.${item.id}`)}</div>
                   )}
@@ -104,17 +104,12 @@ const Sidebar = ({ activePage = "dashboard" }) => {
             <div className={`absolute bottom-full mb-6 left-4 right-4 bg-card/95 backdrop-blur-2xl border border-border/50 rounded-[2.5rem] shadow-[0_-20px_80px_rgba(0,0,0,0.3)] overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300 z-90 ${sidebarCollapsed ? "w-52 -left-2" : ""}`}>
               <div className="p-6 border-b border-border/50 bg-linear-to-tr from-teal-500/10 to-transparent text-center">
                  <img 
-                   src={user?.avatar_url || ( (user?.isGoogleUser || !!user?.googleId) ? `https://api.dicebear.com/8.x/initials/svg?seed=${encodeURIComponent(`${user?.firstName || ""} ${user?.lastName || ""}`.trim() || user?.name || displayName)}` : "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'/%3E%3Ccircle cx='12' cy='7' r='4'/%3E%3C/svg%3E" ) } 
-                   className={`w-16 h-16 rounded-3xl mx-auto mb-3 shadow-2xl border-2 border-card object-cover ${!user?.avatar_url && !(user?.isGoogleUser || !!user?.googleId) ? 'p-3 bg-canvas-alt' : ''}`} 
+                   src={user?.avatar_url || `https://api.dicebear.com/8.x/initials/svg?seed=${encodeURIComponent(`${user?.firstName || ""} ${user?.lastName || ""}`.trim() || user?.name || displayName)}`} 
+                   className="w-16 h-16 rounded-3xl mx-auto mb-3 shadow-2xl border-2 border-card object-cover" 
                    alt="User" 
                    onError={(e) => {
-                     if (user?.isGoogleUser || !!user?.googleId) {
-                        const seed = encodeURIComponent(`${user?.firstName || ""} ${user?.lastName || ""}`.trim() || user?.name || displayName);
-                        e.target.src = `https://api.dicebear.com/8.x/initials/svg?seed=${seed}`;
-                     } else {
-                        e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'/%3E%3Ccircle cx='12' cy='7' r='4'/%3E%3C/svg%3E";
-                        e.target.classList.add('p-3', 'bg-canvas-alt');
-                     }
+                     const seed = encodeURIComponent(`${user?.firstName || ""} ${user?.lastName || ""}`.trim() || user?.name || displayName);
+                     e.target.src = `https://api.dicebear.com/8.x/initials/svg?seed=${seed}`;
                    }}
                  />
                  <h4 className="text-xs font-black text-main uppercase tracking-tighter">{displayName}</h4>
@@ -128,27 +123,22 @@ const Sidebar = ({ activePage = "dashboard" }) => {
 
           <div
             onClick={() => setProfilePopupOpen(!profilePopupOpen)}
-            className={`cursor-pointer group relative p-0.5 rounded-4xl bg-linear-to-br from-teal-500/30 via-blue-500/20 to-transparent transition-all duration-500 shadow-lg hover:shadow-teal-500/10 ${profilePopupOpen ? 'ring-2 ring-teal-500' : ''}`}
+            className={`cursor-pointer group relative p-0.5 rounded-4xl bg-linear-to-br from-teal-500/20 via-blue-500/10 to-transparent transition-all duration-500 shadow-lg hover:shadow-teal-500/5 ${profilePopupOpen ? 'ring-2 ring-teal-500/50' : 'ring-1 ring-white/5'}`}
           >
-            <div className={`bg-card dark:bg-slate-900 rounded-[1.9rem] transition-all duration-300 ${sidebarCollapsed ? 'p-1' : 'p-4 flex items-center'}`}>
+            <div className={`bg-card dark:bg-[#0a0f1e] rounded-[1.9rem] transition-all duration-300 ${sidebarCollapsed ? 'p-1' : 'p-4 flex items-center'}`}>
               <img 
-                src={user?.avatar_url || ( (user?.isGoogleUser || !!user?.googleId) ? `https://api.dicebear.com/8.x/initials/svg?seed=${encodeURIComponent(`${user?.firstName || ""} ${user?.lastName || ""}`.trim() || user?.name || displayName)}` : "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'/%3E%3Ccircle cx='12' cy='7' r='4'/%3E%3C/svg%3E" ) } 
-                className={`${sidebarCollapsed ? 'w-12 h-12' : 'w-10 h-10'} rounded-[1.2rem] shadow-md border-2 border-white dark:border-slate-800 transition-all object-cover ${!user?.avatar_url && !(user?.isGoogleUser || !!user?.googleId) ? 'p-2 bg-canvas-alt' : ''}`} 
+                src={user?.avatar_url || `https://api.dicebear.com/8.x/initials/svg?seed=${encodeURIComponent(`${user?.firstName || ""} ${user?.lastName || ""}`.trim() || user?.name || displayName)}`} 
+                className={`${sidebarCollapsed ? 'w-12 h-12' : 'w-10 h-10'} rounded-[1.2rem] shadow-md border-2 border-white dark:border-slate-800 transition-all object-cover`} 
                 alt="Avatar" 
                 onError={(e) => {
-                  if (user?.isGoogleUser || !!user?.googleId) {
-                    const seed = encodeURIComponent(`${user?.firstName || ""} ${user?.lastName || ""}`.trim() || user?.name || displayName);
-                    e.target.src = `https://api.dicebear.com/8.x/initials/svg?seed=${seed}`;
-                  } else {
-                    e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'/%3E%3Ccircle cx='12' cy='7' r='4'/%3E%3C/svg%3E";
-                    e.target.classList.add('p-2', 'bg-canvas-alt');
-                  }
+                  const seed = encodeURIComponent(`${user?.firstName || ""} ${user?.lastName || ""}`.trim() || user?.name || displayName);
+                  e.target.src = `https://api.dicebear.com/8.x/initials/svg?seed=${seed}`;
                 }}
               />
               {!sidebarCollapsed && (
                 <div className="ml-3 flex-1 min-w-0">
-                  <div className="text-[11px] font-black text-main truncate uppercase tracking-tight">{displayName}</div>
-                  <div className="text-[9px] text-muted font-bold opacity-50 uppercase tracking-widest mt-0.5">{t("nav.account")}</div>
+                  <div className="text-[11px] font-black truncate uppercase tracking-tight" style={{ color: '#a3a2a3' }}>{displayName}</div>
+                  <div className="text-[9px] font-bold uppercase tracking-widest mt-0.5" style={{ color: '#a3a2a3' }}>{t("nav.account")}</div>
                 </div>
               )}
             </div>

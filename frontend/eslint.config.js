@@ -12,11 +12,11 @@ export default defineConfig([
       'react-hooks': reactHooks,
       'react-refresh': reactRefresh,
     },
-    extends: [
-      js.configs.recommended,
-      reactHooks.configs.recommended,
-      reactRefresh.configs.vite,
-    ],
+    // extends: [
+    //   js.configs.recommended,
+    //   reactHooks.configs.recommended,
+    //   reactRefresh.configs.vite,
+    // ],
     languageOptions: {
       ecmaVersion: 2020,
       globals: {

@@ -93,9 +93,15 @@ const startServer = async () => {
   try {
     await connectDB();
 
-    await sequelize.sync({ alter: true });
-    console.log("✅ Database models synced");
+    const isDevelopment = process.env.NODE_ENV !== "production";
+    const syncOptions = isDevelopment ? { alter: true } : {};
 
+    await sequelize.sync(syncOptions);
+    console.log(
+      isDevelopment
+        ? "✅ Database models synced with schema auto-alter enabled (development)"
+        : "✅ Database models synced",
+    );
     app.listen(PORT, () => {
       console.log(`🚀 Server running on http://localhost:${PORT}`);
     });

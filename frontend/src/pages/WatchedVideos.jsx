@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { useSidebar } from "../context/SidebarContext";
 import {
   Search,
   Bell,
@@ -18,7 +17,6 @@ import API_BASE_URL from "../lib/api";
 const WatchedVideos = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { sidebarOpen, setSidebarOpen, sidebarCollapsed, setSidebarCollapsed } = useSidebar();
   const [searchQuery, setSearchQuery] = useState("");
   const [courseFilter, setCourseFilter] = useState("All Courses");
   const [statusFilter, setStatusFilter] = useState("All Status");

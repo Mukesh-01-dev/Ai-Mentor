@@ -14,7 +14,8 @@
     "learning": "التعلم",
     "watched": "مقاطع مشاهدة",
     "admin": "لوحة الإدارة",
-    "account": "الحساب"
+    "account": "الحساب",
+    "certificates": "الشهادات"
   },
   "common": {
     "cancel": "إلغاء",
@@ -35,7 +36,9 @@
       "notifications": "الإشعارات",
       "password_security": "كلمة المرور والأمان",
       "appearance": "المظهر",
-      "language": "اللغة"
+      "language": "اللغة",
+      "contactus": "الدعم الفني",
+      "delete_account": "حذف حسابي"
     },
     "profile": {
       "title": "إعدادات الملف الشخصي",
@@ -88,6 +91,12 @@
       "subtitle": "اختر لغتك المفضلة للواجهة",
       "interface_language": "لغة الواجهة",
       "updated": "تم تحديث إعدادات اللغة بنجاح!"
+    },
+    "contactus": {
+      "title": "تواصل مع الدعم",
+      "subtitle": "نرد عادةً في غضون 24 ساعة.",
+      "subject": "الموضوع",
+      "message": "الرسالة"
     }
   },
   "dashboard": {
@@ -113,7 +122,14 @@
     "design": "التصميم",
     "beginner": "مبتدئ",
     "intermediate": "متوسط",
-    "advanced": "متقدم"
+    "advanced": "متقدم",
+    "no_courses_search": "لا توجد دورات تطابق بحثك.",
+    "no_courses_enrolled": "لم تنضم إلى أي دورات بعد.",
+    "browse_courses": "تصفح الدورات",
+    "continue_learning": "مواصلة التعلم",
+    "continue": "متابعة",
+    "view": "عرض",
+    "enroll": "التسجيل"
   },
   "courses": {
     "title": "مركز التعلم",
@@ -123,7 +139,20 @@
     "not_enrolled": "لم تسجل في أي دورة بعد.",
     "lessons": "درس",
     "loading": "جاري تحميل الدورات...",
-    "confirm_enrollment": "تأكيد التسجيل"
+    "confirm_enrollment": "تأكيد التسجيل",
+    "enrolled_courses": "الدورات المسجل فيها",
+    "enrolled_short": "مسجل",
+    "explore_short": "استكشاف",
+    "filters": "فلاتر",
+    "apply_filters": "تطبيق الفلاتر",
+    "clear_all": "مسح الكل",
+    "category": "الفئة",
+    "skill_level": "مستوى المهارة",
+    "pricing": "التسعير",
+    "any_level": "أي مستوى",
+    "any_price": "أي سعر",
+    "all_categories": "جميع الفئات",
+    "no_match_filters": "لا توجد دورات مسجلة تطابق بحثك أو فلاترك الحالية."
   },
   "learning": {
     "loading": "جاري التحميل...",
@@ -265,46 +294,77 @@
     "signup": "إنشاء حساب",
     "email": "البريد الإلكتروني",
     "password": "كلمة المرور",
-    "logout": "تسجيل الخروج"
+    "logout": "تسجيل الخروج",
+    "logout_confirm_title": "تسجيل الخروج",
+    "logout_confirm_msg": "هل أنت متأكد أنك تريد تسجيل الخروج؟",
+    "cancel": "إلغاء"
   },
   "preferences": {
-    "nav_title": "تفضيلات المعلم الذكي",
-    "modal_title": "تخصيص المعلم الذكي الخاص بك",
-    "modal_subtitle": "ساعدنا في تكييف التفسيرات لتتناسب مع أسلوب التعلم الخاص بك.",
-    "settings_modal_subtitle": "قم بتكييف شروحات المعلم الذكي الخاص بك، وتيرته، ومراجع الأمثلة.",
-    "save_continue": "حفظ ومتابعة",
-    "save_changes": "حفظ التغييرات",
+    "nav_title": "التفضيلات",
+    "modal_title": "إضفاء الطابع الشخصي على تجربتك",
+    "modal_subtitle": "إليك 5 أسئلة سريعة للبدء",
+    "settings_modal_subtitle": "قم بتخصيص تجربة التعلم الخاصة بك لتتناسب مع الطريقة الأفضل لتعلمك.",
+    "save_continue": "التالي →",
+    "save_changes": "إنهاء",
     "save_success": "تم تحديث التفضيلات بنجاح",
-    "extra_title": "6. تفضيلات إضافية (اختياري)",
-    "extra_placeholder": "على سبيل المثال: أفضل الرسوم المتحركة، أشرطة الفيديو القصيرة، والتركيز على التعليمات البرمجية",
+    "step_of": "{{current}} / {{total}}",
+    "next": "التالي →",
+    "back": "← رجوع",
+    "finish": "إنهاء",
+    "skip_for_now": "تخطي الآن — سأقوم بإعداد هذا لاحقًا",
     "questions": {
-      "explanation_type": "1. ما نوع التفسيرات التي تفضلها؟",
-      "learning_style": "2. ما هو أسلوب التعلم الأنسب لك؟",
-      "teaching_pace": "3. ما هي وتيرة التدريس التي تفضلها؟",
-      "example_type": "4. كيف تفضل أن تكون الأمثلة في التفسيرات؟",
-      "focus_area": "5. ما الذي يجب أن يركز عليه الذكاء الاصطناعي بشكل أكبر في مقاطع الفيديو؟"
+      "learning_goal": "ما هو هدفك الرئيسي من التعلم؟",
+      "interested_topics": "ما هي المواضيع التي تهمك أكثر؟",
+      "experience_level": "ما هو مستوى خبرتك؟",
+      "weekly_commitment": "كم عدد الساعات التي يمكنك تخصيصها أسبوعيًا؟",
+      "learning_style": "ما هو أسلوب التعلم المفضل لديك؟"
+    },
+    "hints": {
+      "select_one": "اختر خيارًا واحدًا",
+      "select_multiple": "حدد كل ما ينطبق"
     },
     "options": {
-      "simple": "بسيطة ومناسبة للمبتدئين",
-      "balanced": "متوازنة (سهلة + بعض العمق)",
-      "detailed": "مفصلة ومتعمقة",
-      "expert": "مستوى خبير (تقني)",
-      "step_by_step": "إرشادات خطوة بخطوة",
-      "concept_first": "شرح المفهوم أولاً",
-      "real_world": "أمثلة من العالم الحقيقي",
-      "problem_solving": "التركيز على حل المشكلات",
-      "slow": "بطيئة وشاملة",
-      "moderate": "معتدلة",
-      "fast": "سريعة الوتيرة",
-      "adaptive": "قابلة للتكيف (بناءً على تقدمي)",
-      "real_life": "أمثلة من الحياة الواقعية",
-      "technical": "أمثلة تقنية",
-      "visual": "مرئية / تعتمد على الرسوم البيانية",
-      "minimal": "أمثلة في حدها الأدنى",
-      "concepts": "المفاهيم والنظريات",
-      "practical": "تطبيقات عملية",
-      "coding": "البرمجة / حل المشكلات",
-      "exams": "التحضير للامتحانات"
+      "switch_careers": "تغيير المهنة",
+      "upskill_work": "صقل المهارات في العمل",
+      "personal_interest": "اهتمام شخصي",
+      "get_certified": "الحصول على شهادة",
+      "ai": "الذكاء الاصطناعي",
+      "web_dev": "تطوير الويب",
+      "data_science": "علم البيانات",
+      "cloud": "الحوسبة السحابية",
+      "cybersecurity": "الأمن السيبراني",
+      "mobile_apps": "تطبيقات الهاتف الذكي",
+      "beginner": "مبتدئ تمامًا",
+      "basics": "بعض الأساسيات",
+      "intermediate": "متوسط",
+      "advanced": "متقدم",
+      "1_2_hours": "1-2 ساعات",
+      "3_5_hours": "3-5 ساعات",
+      "6_10_hours": "6-10 ساعات",
+      "10_plus_hours": "10+ ساعات",
+      "videos": "محاضرات فيديو",
+      "projects": "مشاريع عملية",
+      "articles": "قراءة مقالات",
+      "live_classes": "فصول مباشرة"
     }
+  },
+  "certificates": {
+    "title": "شهاداتي",
+    "subtitle": "تتبع إنجازاتك وتنزيل الشهادات",
+    "loading": "جارٍ تحميل الشهادات...",
+    "enrolled_courses": "الدورات المسجل فيها",
+    "courses_completed": "الدورات المكتملة",
+    "certificates_earned": "الشهادات المكتسبة",
+    "in_progress": "قيد التقدم",
+    "no_courses_title": "لم تنضم إلى أي دورات بعد",
+    "no_courses_desc": "سجّل في الدورات وأكملها لتحصل على شهاداتك!",
+    "browse_courses": "تصفح الدورات",
+    "progress": "التقدم",
+    "lessons": "دروس",
+    "completed_badge": "مكتمل",
+    "complete_to_earn": "أكمل هذه الدورة للحصول على شهادتك",
+    "continue_learning": "مواصلة التعلم",
+    "download": "تنزيل الشهادة",
+    "generating": "جارٍ الإنشاء..."
   }
 }

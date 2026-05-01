@@ -1,9 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 
-import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { useNavigate, useParams} from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { useSidebar } from "../context/SidebarContext";
 import { getAIVideo } from "../service/aiService";
 import VideoPlayer from "../components/video/VideoPlayer";
 import AITranscript from "../components/video/AITranscript";
@@ -28,15 +27,15 @@ import {
 } from "lucide-react";
 
 // Sanitize filename to match backend logic: remove [\\/:*?"<>|], replace spaces with _
-function sanitizeFilename(name) {
-  return name.replace(/[\\/:*?"<>|]/g, "").replace(/\s+/g, "_");
-}
+// function sanitizeFilename(name) {
+//   return name.replace(/[\\/:*?"<>|]/g, "").replace(/\s+/g, "_");
+// }
 
-const getYouTubeVideoId = (url) => {
-  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-  const match = url.match(regExp);
-  return match && match[2].length === 11 ? match[2] : null;
-};
+// const getYouTubeVideoId = (url) => {
+//   const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+//   const match = url.match(regExp);
+//   return match && match[2].length === 11 ? match[2] : null;
+// };
 
 export default function Learning() {
 
@@ -45,12 +44,9 @@ export default function Learning() {
   const navigate = useNavigate();
   const { id: courseId } = useParams();
   const { user, updateUser } = useAuth();
-  const { sidebarOpen, setSidebarOpen, sidebarCollapsed, setSidebarCollapsed } = useSidebar();
   const [learningData, setLearningData] = useState(null)
   const [expandedModule, setExpandedModule] = useState(null);
-  const [searchQuery, setSearchQuery] = useState("");
   const [celebritySearch, setCelebritySearch] = useState("");
-  const [activeTab, setActiveTab] = useState("transcript");
   const [isCelebrityModalOpen, setIsCelebrityModalOpen] = useState(false);
 
   // Captions state
@@ -76,7 +72,6 @@ export default function Learning() {
   const [currentTime, setCurrentTime] = useState(0);
   const [isNavigating, setIsNavigating] = useState(false);
   const [aiVideoUrl, setAiVideoUrl] = useState(null);
-  const [aiTranscript, setAiTranscript] = useState(null);
   const [isAIVideoLoading, setIsAIVideoLoading] = useState(false);
   const [generatedTextContent, setGeneratedTextContent] = useState("");
 
@@ -239,6 +234,7 @@ export default function Learning() {
           setLearningData(null);
         }
       } catch (error) {
+        console.log(error);
         setLearningData(null);
       }
     };
@@ -303,6 +299,7 @@ export default function Learning() {
         console.log(`✅ Parsed ${cues.length} captions from VTT`);
         setCaptions(cues);
       } catch (err) {
+        console.log(err);
         setCaptions([]);
       }
     };
@@ -880,7 +877,8 @@ export default function Learning() {
     <>
         {/* Breadcrumb */}
         <div className="bg-card border-b border-border px-6 py-3 grid grid-flow-col-dense">
-          <div className="flex items-center gap-2 text-sm text-muted mt-2">
+         <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-muted mt-2">
+
             <button
               onClick={() => navigate("/")}
               className="hover:text-blue-600 transition-colors"
@@ -920,9 +918,11 @@ export default function Learning() {
 
         {/* Content Selector with AI Button */}
         <div className="bg-card border-b border-border px-6 py-3">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+
             {/* Custom Dropdown for Modules and Lessons */}
-            <div className="relative min-w-95 max-w-125 flex items-center">
+            <div className="relative w-full sm:max-w-md flex items-center">
+
               <span className="text-main font-semibold mr-3">{t("learning.contents")}</span>
               <div className="relative w-full">
                 <div
@@ -953,7 +953,7 @@ export default function Learning() {
                   <ChevronDown className="w-5 h-5 text-muted ml-2" />
                 </div>
                 {/* Dropdown Panel */}
-                <div className="absolute left-0 mt-2 w-full bg-white dark:bg-gray-900 border border-border rounded-2xl shadow-xl z-50 max-h-96 overflow-y-auto min-w-95" style={{ display: expandedModule ? 'block' : 'none' }}>
+                <div className="absolute left-0 mt-2 w-full sm:w-[400px] bg-white dark:bg-gray-900 border border-border rounded-2xl shadow-xl z-50 max-h-96 overflow-y-auto" style={{ display: expandedModule ? 'block' : 'none' }}>
                   {modules && modules.map((module, mIdx) => (
                     <div key={module.id || `module-${mIdx + 1}`}
                       className="border-b border-border last:border-b-0"
@@ -1010,7 +1010,8 @@ export default function Learning() {
                   progressPercent,
                 });
                 return (
-                  <div className="w-2/4 mt-0 mb-0 ml-auto mr-auto">
+                  <div className="w-full sm:w-1/2 mx-auto">
+
                     <div className="w-full bg-border rounded-full h-2 ">
                       <div
                         className="bg-primary h-2 rounded-full"
@@ -1025,11 +1026,13 @@ export default function Learning() {
               })()}
             </div>
 
-            <div className="flex items-center gap-3 w-full max-w-max ml-auto">
+            <div className="flex items-center justify-end sm:justify-start w-full">
+
               {/* AI Celebrity Button */}
               <button
                 onClick={() => setIsCelebrityModalOpen(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-linear-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all shadow-sm hover:shadow-md"
+                className="flex items-center gap-2 px-3 py-2 sm:px-4 bg-linear-to-r from-purple-600 to-blue-600 text-white rounded-lg text-xs sm:text-sm"
+
               >
                 <Sparkles className="w-4 h-4" />
                 <span className="text-sm font-medium">{t("learning.select_ai_voiceover")}</span>
@@ -1218,19 +1221,7 @@ export default function Learning() {
                 </button>
               </div>
 
-              {/* Lesson Content */}
-              <div className="bg-card rounded-lg p-8 shadow-sm border border-border">
-                <h1 className="text-3xl font-semibold text-main mb-6 leading-tight">
-                  <span className="text-blue-600">{currentLesson?.title}</span>
-                </h1>
-                {(generatedTextContent || currentLesson?.content?.introduction) && (
-                  <div className="prose prose-lg max-w-none">
-                    <p className="text-muted leading-relaxed">
-                      {generatedTextContent || currentLesson.content.introduction}
-                    </p>
-                  </div>
-                )}
-              </div>
+              
             </div>
           </div>
 
