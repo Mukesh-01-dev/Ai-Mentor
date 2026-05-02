@@ -54,10 +54,9 @@ const App = () => {
           <Route path="/watchedvideos" element={<WatchedVideos />} />
           <Route path="/learning/:id" element={<LearningPage />} />
         </Route>
+        {/* Course preview - protected but without sidebar layout */}
+        <Route path="/course-preview/:courseId" element={<CoursePreview />} />
       </Route>
-
-      {/* Other public routes */}
-      <Route path="/course-preview/:courseId" element={<CoursePreview />} />
     </Routes>
   );
 };
