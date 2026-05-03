@@ -6,6 +6,8 @@ import jwt from "jsonwebtoken";
 import cloudinary from "../config/cloudinary.js";
 import fs from "fs";
 import { ensureProfileCompleteness, formatFullName } from "../utils/userUtils.js";
+import { createNotification } from "./notificationController.js";
+
 
 // Generate JWT Token
 const generateToken = (id) => {
@@ -207,6 +209,12 @@ const purchaseCourse = async (req, res) => {
     user.changed("purchasedCourses", true);
 
     await user.save();
+    await createNotification(user.id, {
+      title: "Course Enrolled 🎉",
+      message: `You successfully enrolled in ${courseTitle || "a course"}`,
+      type: "course",
+      metadata: { courseId },
+    });
 
     res.status(200).json({
       message: "Course enrolled successfully",
@@ -520,8 +528,8 @@ const deleteAccount = async (req, res) => {
     });
   } catch (error) {
     console.error("Delete Account Error", error);
-    res.status(500).json({message: "Failed to delete account"}); 
-  } 
+    res.status(500).json({ message: "Failed to delete account" });
+  }
 }
 // Complete first-time user profile onboarding
 // Google users: firstName, lastName, password (required), bio, avatar
@@ -596,9 +604,9 @@ const completeProfile = async (req, res) => {
       if (!user.avatar_url) missingFields.push("Profile Photo");
       if (user.googleId && !user.password) missingFields.push("Password");
 
-      return res.status(400).json({ 
+      return res.status(400).json({
         message: `Profile is still incomplete. Missing: ${missingFields.join(", ")}`,
-        missingFields 
+        missingFields
       });
     }
 

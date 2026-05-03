@@ -178,7 +178,6 @@ button{
 .wizard-progress-bar {
   transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
-
 /* Selected option highlight pulse */
 @keyframes option-select {
   0% { transform: scale(1); }
