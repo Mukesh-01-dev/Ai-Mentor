@@ -5,7 +5,6 @@ import { useAuth } from "../context/AuthContext";
 import API_BASE_URL from "../lib/api";
 import { Play, ChevronDown, ChevronUp, X } from "lucide-react";
 import toast from "react-hot-toast";
-
 /* safe getter */
 function safeGet(obj, path, fallback = undefined) {
   if (!obj || !path) return fallback;
@@ -16,17 +15,13 @@ function safeGet(obj, path, fallback = undefined) {
     fallback
   );
 }
-
 /* build candidate URLs for an image path */
 function buildImageCandidates(imagePath) {
   const placeholder = "/ui/course-hero-placeholder.jpg";
   if (!imagePath) return [placeholder];
-
   const p = String(imagePath).trim();
   if (!p) return [placeholder];
-
   const candidates = [];
-
   // if absolute http(s) or protocol-relative
   if (
     p.startsWith("http://") ||
@@ -44,47 +39,37 @@ function buildImageCandidates(imagePath) {
     // try common uploads folder
     candidates.push(`${API_BASE_URL}/uploads/${p}`);
   }
-
   // finally fallback placeholder
   candidates.push(placeholder);
   return candidates;
 }
-
 export default function CoursePreview() {
   const { courseId } = useParams();
   const navigate = useNavigate();
   const { user, fetchUserProfile } = useAuth();
-
   const [courseMeta, setCourseMeta] = useState(null);
   const [learningData, setLearningData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
   const [isPurchasing, setIsPurchasing] = useState(false);
-
   // module collapse
   const [openModules, setOpenModules] = useState({});
   const [allExpanded, setAllExpanded] = useState(false);
-
   // modal for enrollment
   const [showEnrollPopup, setShowEnrollPopup] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState(null);
-
   // hero image src handling
   const [heroSrc, setHeroSrc] = useState("/ui/course-hero-placeholder.jpg");
   const heroCandidatesRef = useRef([]);
   const heroIndexRef = useRef(0);
-
   // instructor image candidates + state (brand-first)
   const [instructorSrc, setInstructorSrc] = useState("/ui/avatar-4.png");
   const instructorCandidatesRef = useRef([]);
   const instructorIndexRef = useRef(0);
-
   // trust badge candidates + state (brand-first)
   const [trustSrc, setTrustSrc] = useState("/ui/trust-badge.png");
   const trustCandidatesRef = useRef([]);
   const trustIndexRef = useRef(0);
-
   // fetch meta & learning (use API_BASE_URL)
   useEffect(() => {
     let cancelled = false;
@@ -94,22 +79,17 @@ export default function CoursePreview() {
       try {
         const metaUrl = `${API_BASE_URL}/api/courses/${courseId}`;
         const learnUrl = `${API_BASE_URL}/api/courses/${courseId}/learning`;
-
         const [metaRes, learnRes] = await Promise.all([
           fetch(metaUrl),
           fetch(learnUrl),
         ]);
-
         if (!metaRes.ok) throw new Error("Failed to fetch course meta");
         if (!learnRes.ok) throw new Error("Failed to fetch course learning");
-
         const meta = await metaRes.json();
         const learning = await learnRes.json();
-
         if (!cancelled) {
           setCourseMeta(meta || {});
           setLearningData(learning || {});
-
           // init module open state
           const mods = Array.isArray(learning?.modules)
             ? learning.modules
@@ -121,7 +101,6 @@ export default function CoursePreview() {
             return acc;
           }, {});
           setOpenModules(init);
-
           // prepare hero image candidates & initial src
           const heroPath = safeGet(
             meta,
@@ -132,7 +111,6 @@ export default function CoursePreview() {
           heroCandidatesRef.current = heroCandidates;
           heroIndexRef.current = 0;
           setHeroSrc(heroCandidates[0] || "/ui/course-hero-placeholder.jpg");
-
           // prepare instructor image candidates: brand-first then backend candidates
           const brandInstructorPaths = [
             "/AI_Tutor_New_UI/Course_Preview/Mascot.jpeg",
@@ -151,7 +129,6 @@ export default function CoursePreview() {
           setInstructorSrc(
             instructorCandidatesRef.current[0] || "/ui/avatar-4.png",
           );
-
           // prepare trust badge candidates (brand-first)
           const brandTrustPaths = [
             "/AI_Tutor_New_UI/Course_Preview/US.png",
@@ -174,24 +151,11 @@ export default function CoursePreview() {
         if (!cancelled) setLoading(false);
       }
     };
-
     fetchAll();
     return () => {
       cancelled = true;
     };
   }, [courseId]);
-
-  // redirect if purchased (keeps behaviour of redirecting to /courses)
-  useEffect(() => {
-    if (!user || !courseId) return;
-    const purchased =
-      Array.isArray(user.purchasedCourses) &&
-      user.purchasedCourses.some(
-        (c) => Number(c.courseId) === Number(courseId),
-      );
-    if (purchased) navigate(`/courses`, { replace: true });
-  }, [user, courseId, navigate]);
-
   // image error handlers: cycle through candidates
   const handleHeroError = () => {
     const candidates = heroCandidatesRef.current || [];
@@ -201,7 +165,6 @@ export default function CoursePreview() {
       setHeroSrc(candidates[nextIndex]);
     }
   };
-
   const handleInstructorError = (ev) => {
     const candidates = instructorCandidatesRef.current || [];
     const nextIndex = instructorIndexRef.current + 1;
@@ -212,7 +175,6 @@ export default function CoursePreview() {
       setInstructorSrc(candidates[nextIndex]);
     }
   };
-
   const handleTrustError = (ev) => {
     const candidates = trustCandidatesRef.current || [];
     const nextIndex = trustIndexRef.current + 1;
@@ -222,7 +184,6 @@ export default function CoursePreview() {
       setTrustSrc(candidates[nextIndex]);
     }
   };
-
   // toggle single module
   const toggleModule = (id) => {
     setOpenModules((prev) => {
@@ -233,7 +194,6 @@ export default function CoursePreview() {
       return next;
     });
   };
-
   const toggleAll = () => {
     setOpenModules((prev) => {
       const keys = Object.keys(prev);
@@ -242,7 +202,6 @@ export default function CoursePreview() {
       return next;
     });
   };
-
   // open modal for enrollment
   const openEnrollModal = () => {
     if (!user) {
@@ -250,69 +209,62 @@ export default function CoursePreview() {
       return;
     }
     const title = safeGet(courseMeta, "title", safeGet(learningData, "course.title", "Course"));
-    
+
     const img = heroSrc;
     const category = safeGet(courseMeta, "category", "");
     const level = safeGet(courseMeta, "level", "");
-const priceValue = safeGet(courseMeta, "priceValue", 0);
-   setSelectedCourse({
-  id: Number(courseId),
-  title,
-  image: img,
-  category,
-  level,
-  priceValue, // ✅ store numeric
-});
+    const priceValue = safeGet(courseMeta, "priceValue", 0);
+    setSelectedCourse({
+      id: Number(courseId),
+      title,
+      image: img,
+      category,
+      level,
+      priceValue, // ✅ store numeric
+    });
     setShowEnrollPopup(true);
   };
-
   // confirm enrollment from modal -> purchase and redirect to /courses
-const handlePayment = async () => {
-  if (!selectedCourse || isPurchasing) return;
-
-  const token = localStorage.getItem("token");
-
-  // safely extract price
-  const priceValue = Number(
-    selectedCourse.priceValue ??
-    selectedCourse.price?.replace("₹", "") ??
-    0
-  );
-
-  // FREE COURSE FLOW
-  if (priceValue === 0) {
-    try {
-      setIsPurchasing(true);
-
-      const res = await fetch(`${API_BASE_URL}/api/users/purchase-course`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          courseId: selectedCourse.id,
-          courseTitle: selectedCourse.title,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        if (data.message === "Already enrolled") {
-          toast.success("Already enrolled!");
+  const handlePayment = async () => {
+    if (!selectedCourse || isPurchasing) return;
+    const token = localStorage.getItem("token");
+    // safely extract price
+    const priceValue = Number(
+      selectedCourse.priceValue ??
+      selectedCourse.price?.replace("₹", "") ??
+      0
+    );
+    // FREE COURSE FLOW
+    if (priceValue === 0) {
+      try {
+        setIsPurchasing(true);
+        const res = await fetch(`${API_BASE_URL}/api/users/purchase-course`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            courseId: selectedCourse.id,
+            courseTitle: selectedCourse.title,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          if (data.message === "Already enrolled") {
+            toast.success("Already enrolled!");
+          } else {
+            throw new Error(data.message || "Enrollment failed");
+          }
         } else {
-          throw new Error(data.message || "Enrollment failed");
-        }
-      } else {
         toast.success("Course enrolled successfully!");
+        // ✅ Notify Header to refetch notifications (updates unread count instantly) for free courses!
+        window.dispatchEvent(new Event("refreshNotifications"));
       }
 
       await fetchUserProfile();
 
-      navigate("/courses", {
-        state: { activeTab: "my-courses" },
-      });
+      navigate(`/learning/${selectedCourse.id}`);
     } catch (err) {
       console.error(err);
       toast.error(err.message || "Enrollment failed");
@@ -322,39 +274,35 @@ const handlePayment = async () => {
 
     return;
   }
-
-  // PAID COURSE FLOW
-  try {
-    setIsPurchasing(true);
-
-    const res = await fetch(`${API_BASE_URL}/api/payment/create-checkout-session`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        course: {
-          id: selectedCourse.id,
-          title: selectedCourse.title,
-          priceValue,
+    // PAID COURSE FLOW
+    try {
+      setIsPurchasing(true);
+      const res = await fetch(`${API_BASE_URL}/api/payment/create-checkout-session`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-      }),
-    });
-
-    const data = await res.json();
-
-    if (data.url) {
-      window.location.href = data.url;
-    } else {
-      throw new Error("Payment failed");
+        body: JSON.stringify({
+          course: {
+            id: selectedCourse.id,
+            title: selectedCourse.title,
+            priceValue,
+          },
+        }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error("Payment failed");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Payment error");
+      setIsPurchasing(false);
     }
-  } catch (err) {
-    console.error(err);
-    toast.error("Payment error");
-    setIsPurchasing(false);
-  }
-};
+  };
   if (loading) {
     return (
       <div className="min-h-screen bg-canvas flex items-center justify-center">
@@ -365,7 +313,6 @@ const handlePayment = async () => {
       </div>
     );
   }
-
   if (error || (!courseMeta && !learningData)) {
     return (
       <div className="min-h-screen bg-canvas flex items-center justify-center">
@@ -380,15 +327,14 @@ const handlePayment = async () => {
       </div>
     );
   }
-
   // derive fields safely
-const title =
-  safeGet(courseMeta, "title") ||
-  safeGet(learningData, "course.title") ||
-  "";
+  const title =
+    safeGet(courseMeta, "title") ||
+    safeGet(learningData, "course.title") ||
+    "";
   if (!title) {
-  console.error("❌ Course title missing!");
-}
+    console.error("❌ Course title missing!");
+  }
   const subtitle = safeGet(learningData, "course.subtitle", safeGet(courseMeta, "subtitle", ""));
   const instructorName = safeGet(courseMeta, "instructor", "Instructor");
   const rating = safeGet(courseMeta, "rating", 4.8);
@@ -402,7 +348,6 @@ const title =
     "duration",
     safeGet(courseMeta, "totalDuration", "15.5h"),
   );
-
   const priceDisplay = safeGet(
     courseMeta,
     "price",
@@ -415,7 +360,6 @@ const title =
     "priceOriginal",
     safeGet(courseMeta, "price", "7000"),
   );
-
   const whatYouWillLearn = Array.isArray(
     safeGet(courseMeta, "whatYouWillLearn", null),
   )
@@ -423,33 +367,28 @@ const title =
     : Array.isArray(safeGet(learningData, "course.keyTakeaways", null))
       ? safeGet(learningData, "course.keyTakeaways", [])
       : [
-          "Understand core concepts and practical workflows",
-          "Build real-world projects and examples",
-          "Apply industry tools and best practices",
-        ];
-
+        "Understand core concepts and practical workflows",
+        "Build real-world projects and examples",
+        "Apply industry tools and best practices",
+      ];
   const modules = Array.isArray(safeGet(learningData, "modules", null))
     ? safeGet(learningData, "modules", [])
     : Array.isArray(safeGet(courseMeta, "modules", null))
       ? safeGet(courseMeta, "modules", [])
       : [];
-
   const features = Array.isArray(safeGet(courseMeta, "features", null))
     ? safeGet(courseMeta, "features", [])
     : [
-        { text: "Lifetime access" },
-        { text: "Access on mobile and desktop" },
-        { text: "Certificate of completion" },
-      ];
-
+      { text: "Lifetime access" },
+      { text: "Access on mobile and desktop" },
+      { text: "Certificate of completion" },
+    ];
   const isPurchased =
     Array.isArray(user?.purchasedCourses) &&
     user.purchasedCourses.some((c) => Number(c.courseId) === Number(courseId));
-
   return (
     <div className="min-h-screen bg-canvas text-main">
       <Header />
-
       <main className="max-w-[1280px] mx-auto px-4 py-8 lg:py-16 mt-6">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* LEFT: details */}
@@ -468,12 +407,10 @@ const title =
                       AI-Generated Content
                     </span>
                   </div>
-
                   <h1 className="text-2xl lg:text-4xl font-bold text-main leading-tight">
                     {title}
                   </h1>
                   <p className="text-muted mt-2">{subtitle}</p>
-
                   <div className="flex items-center gap-3 mt-4">
                     {/* instructor image: brand-first + backend fallback; maintain proportions */}
                     <img
@@ -491,14 +428,13 @@ const title =
                         Last updated{" "}
                         {safeGet(courseMeta, "updatedAt", "—")
                           ? new Date(
-                              safeGet(courseMeta, "updatedAt", Date.now()),
-                            ).toLocaleDateString()
+                            safeGet(courseMeta, "updatedAt", Date.now()),
+                          ).toLocaleDateString()
                           : "—"}
                       </div>
                     </div>
                   </div>
                 </div>
-
                 {/* stats + what you'll learn */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
                   <div className="bg-card p-4 rounded-lg text-center shadow-sm">
@@ -506,14 +442,12 @@ const title =
                     <div className="text-xl font-semibold">{rating}</div>
                     <div className="text-xs text-muted">12,847 reviews</div>
                   </div>
-
                   <div className="bg-card p-4 rounded-lg text-center shadow-sm">
                     <div className="text-purple-400 font-semibold text-xl">
                       {students}
                     </div>
                     <div className="text-xs text-muted">Students enrolled</div>
                   </div>
-
                   <div className="bg-card p-4 rounded-lg text-center shadow-sm">
                     <div className="text-sky-400 font-semibold text-xl">
                       {duration}
@@ -521,7 +455,6 @@ const title =
                     <div className="text-xs text-muted">Total content</div>
                   </div>
                 </div>
-
                 <div className="bg-card rounded-xl p-6 border border-border mt-6 shadow-[0_8px_24px_rgba(15,23,42,0.03)]">
                   <h3 className="text-lg font-semibold mb-4">
                     What you'll learn
@@ -551,7 +484,6 @@ const title =
                     ))}
                   </div>
                 </div>
-
                 {/* Curriculum */}
                 <div className="mt-6">
                   <div className="flex items-center justify-between mb-3">
@@ -563,7 +495,6 @@ const title =
                       {allExpanded ? "Collapse all" : "Expand all"}
                     </button>
                   </div>
-
                   <div className="space-y-3">
                     {modules.length === 0 ? (
                       <div className="text-sm text-muted">
@@ -606,11 +537,11 @@ const title =
                                     return acc + (m ? Number(m[0]) : 0);
                                   }, 0) > 0
                                     ? `${lessons.reduce((acc, l) => {
-                                        const m = (
-                                          safeGet(l, "duration", "") || ""
-                                        ).match(/\d+/);
-                                        return acc + (m ? Number(m[0]) : 0);
-                                      }, 0)}m`
+                                      const m = (
+                                        safeGet(l, "duration", "") || ""
+                                      ).match(/\d+/);
+                                      return acc + (m ? Number(m[0]) : 0);
+                                    }, 0)}m`
                                     : ""}
                                 </div>
                                 {isOpen ? (
@@ -620,7 +551,6 @@ const title =
                                 )}
                               </div>
                             </button>
-
                             {isOpen && (
                               <div className="mt-3 space-y-2">
                                 {lessons.map((lesson) => {
@@ -672,7 +602,6 @@ const title =
                                           </div>
                                         </div>
                                       </div>
-
                                       <div className="flex items-center gap-3">
                                         <div className="text-xs text-muted">
                                           {lduration}
@@ -701,7 +630,6 @@ const title =
                 </div>
               </div>
             </div>
-
             {/* long description */}
             <div className="mt-6 bg-card rounded-xl p-6 shadow-[0_8px_24px_rgba(15,23,42,0.03)]">
               <h3 className="text-lg font-semibold mb-3 text-main">
@@ -724,7 +652,6 @@ const title =
               </div>
             </div>
           </div>
-
           {/* RIGHT: image (top) then Buy Now (below) */}
           <div className="lg:col-span-4 flex flex-col items-stretch">
             <div className="bg-card rounded-xl overflow-hidden shadow-md mb-6">
@@ -735,7 +662,6 @@ const title =
                 onError={handleHeroError}
               />
             </div>
-
             <div className="bg-card rounded-xl p-6 shadow-[0_10px_30px_rgba(15,23,42,0.06)] mb-6 border border-border">
               <div className="text-center mb-4">
                 <div className="text-sm text-muted mb-1">Lifetime access</div>
@@ -746,7 +672,6 @@ const title =
                   ₹{priceOriginal}
                 </div>
               </div>
-
               {safeGet(courseMeta, "countdown", null) ? (
                 <div className="bg-[#FFF7ED] text-[#B45309] text-center p-3 rounded-md mb-4">
                   Sale ends in: {safeGet(courseMeta, "countdown.hours", 0)}h{" "}
@@ -754,7 +679,6 @@ const title =
                   {safeGet(courseMeta, "countdown.seconds", 0)}s
                 </div>
               ) : null}
-
               {isPurchased ? (
                 <button
                   onClick={() => navigate(`/learning/${courseId}`)}
@@ -771,7 +695,6 @@ const title =
                   {isPurchasing ? "Processing..." : "Buy Now"}
                 </button>
               )}
-
               <div className="mt-4 space-y-3 text-sm text-muted">
                 {features.map((f, i) => (
                   <div key={i} className="flex items-start gap-3">
@@ -795,7 +718,6 @@ const title =
                 ))}
               </div>
             </div>
-
             {/* trust card (uses US brand image first) */}
             <div className="bg-card rounded-xl p-4 shadow-[0_8px_24px_rgba(15,23,42,0.03)] text-sm text-muted border border-border">
               <div className="flex items-center gap-3">
@@ -814,47 +736,40 @@ const title =
           </div>
         </div>
       </main>
-
       {/* ENROLL CONFIRM POPUP (same style as CoursesPage) */}
       {showEnrollPopup && selectedCourse && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-        <div className="bg-card w-full max-w-md rounded-2xl p-6 pt-10 relative border border-border">
-  <button
-    onClick={() => setShowEnrollPopup(false)}
-    className="absolute top-3 right-4 z-20 text-black text-lg font-bold"
-  >
-    <X size={20} />
-  </button>
-
-  <img
-    src={selectedCourse.image}
-    alt={selectedCourse.title}
-    className="w-full h-40 object-cover rounded-xl mb-4"
-  />
-
-  <h2 className="text-xl font-bold text-main">
-    {selectedCourse.title}
-  </h2>
-
-
+          <div className="bg-card w-full max-w-md rounded-2xl p-6 pt-10 relative border border-border">
+            <button
+              onClick={() => setShowEnrollPopup(false)}
+              className="absolute top-3 right-4 z-20 text-black text-lg font-bold"
+            >
+              <X size={20} />
+            </button>
+            <img
+              src={selectedCourse.image}
+              alt={selectedCourse.title}
+              className="w-full h-40 object-cover rounded-xl mb-4"
+            />
+            <h2 className="text-xl font-bold text-main">
+              {selectedCourse.title}
+            </h2>
             <p className="text-sm text-muted mt-1">
               {selectedCourse.category} • {selectedCourse.level}
             </p>
-
             <div className="flex justify-between items-center mt-4">
               <span className="line-through text-muted">{selectedCourse.price}</span>
-            <span className="text-lg font-bold text-green-600">
-  {selectedCourse.price}
-</span>
+              <span className="text-lg font-bold text-green-600">
+                {selectedCourse.price}
+              </span>
             </div>
-
-          <button
-  onClick={handlePayment}
-  disabled={isPurchasing}
-  className="w-full mt-6 py-3 rounded-xl bg-primary text-white font-semibold disabled:opacity-50"
->
-  {isPurchasing ? "Processing..." : "Confirm Enrollment"}
-</button>
+            <button
+              onClick={handlePayment}
+              disabled={isPurchasing}
+              className="w-full mt-6 py-3 rounded-xl bg-primary text-white font-semibold disabled:opacity-50"
+            >
+              {isPurchasing ? "Processing..." : "Confirm Enrollment"}
+            </button>
           </div>
         </div>
       )}

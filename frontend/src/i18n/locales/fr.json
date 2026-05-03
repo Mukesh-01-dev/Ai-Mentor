@@ -14,7 +14,8 @@
     "learning": "Apprentissage",
     "watched": "Vidéos Regardées",
     "admin": "Panneau Admin",
-    "account": "Compte"
+    "account": "Compte",
+    "certificates": "Certificats"
   },
   "common": {
     "cancel": "Annuler",
@@ -35,7 +36,9 @@
       "notifications": "Notifications",
       "password_security": "Mot de Passe et Sécurité",
       "appearance": "Apparence",
-      "language": "Langue"
+      "language": "Langue",
+      "contactus": "Contacter le support",
+      "delete_account": "Supprimer mon compte"
     },
     "profile": {
       "title": "Paramètres du Profil",
@@ -88,6 +91,12 @@
       "subtitle": "Choisissez votre langue préférée pour l'interface",
       "interface_language": "Langue de l'Interface",
       "updated": "Paramètres de langue mis à jour avec succès !"
+    },
+    "contactus": {
+      "title": "Contacter le support",
+      "subtitle": "Nous répondons généralement dans les 24 heures.",
+      "subject": "Sujet",
+      "message": "Message"
     }
   },
   "dashboard": {
@@ -113,7 +122,14 @@
     "design": "Design",
     "beginner": "Debutant",
     "intermediate": "Intermediaire",
-    "advanced": "Avance"
+    "advanced": "Avance",
+    "no_courses_search": "Aucun cours ne correspond à votre recherche.",
+    "no_courses_enrolled": "Vous n'êtes inscrit à aucun cours pour l'instant.",
+    "browse_courses": "Parcourir les Cours",
+    "continue_learning": "Continuer l'Apprentissage",
+    "continue": "Continuer",
+    "view": "Voir",
+    "enroll": "S'inscrire"
   },
   "courses": {
     "title": "Centre d'Apprentissage",
@@ -123,7 +139,20 @@
     "not_enrolled": "Vous n'êtes inscrit à aucun cours pour l'instant.",
     "lessons": "leçons",
     "loading": "Chargement des cours...",
-    "confirm_enrollment": "Confirmer l'Inscription"
+    "confirm_enrollment": "Confirmer l'Inscription",
+    "enrolled_courses": "Cours Inscrits",
+    "enrolled_short": "Inscrit",
+    "explore_short": "Explorer",
+    "filters": "Filtres",
+    "apply_filters": "Appliquer les Filtres",
+    "clear_all": "Tout Effacer",
+    "category": "Catégorie",
+    "skill_level": "Niveau de Compétence",
+    "pricing": "Tarification",
+    "any_level": "Tout Niveau",
+    "any_price": "Tout Prix",
+    "all_categories": "Toutes les Catégories",
+    "no_match_filters": "Aucun cours inscrit ne correspond à votre recherche ou vos filtres actuels."
   },
   "learning": {
     "loading": "Chargement...",
@@ -265,46 +294,77 @@
     "signup": "Inscription",
     "email": "E-mail",
     "password": "Mot de Passe",
-    "logout": "Déconnexion"
+    "logout": "Déconnexion",
+    "logout_confirm_title": "Déconnexion",
+    "logout_confirm_msg": "Êtes-vous sûr de vouloir vous déconnecter?",
+    "cancel": "Annuler"
   },
   "preferences": {
-    "nav_title": "Préférences du Tuteur IA",
-    "modal_title": "Personnalisez votre Tuteur IA",
-    "modal_subtitle": "Aidez-nous à adapter les explications à votre style d'apprentissage.",
-    "settings_modal_subtitle": "Adaptez les explications, le rythme et les références d'exemples de votre tuteur IA.",
-    "save_continue": "Enregistrer et Continuer",
-    "save_changes": "Enregistrer les modifications",
+    "nav_title": "Préférences",
+    "modal_title": "Personnalisez votre expérience",
+    "modal_subtitle": "Juste 5 questions rapides pour commencer",
+    "settings_modal_subtitle": "Adaptez votre expérience d'apprentissage à votre façon d'apprendre.",
+    "save_continue": "Suivant →",
+    "save_changes": "Terminer",
     "save_success": "Préférences mises à jour avec succès",
-    "extra_title": "6. Préférences Supplémentaires (Optionnel)",
-    "extra_placeholder": "Ex : préfère les animations, vidéos courtes, exemples de code",
+    "step_of": "{{current}} / {{total}}",
+    "next": "Suivant →",
+    "back": "← Retour",
+    "finish": "Terminer",
+    "skip_for_now": "Ignorer pour le moment — Je configurerai ça plus tard",
     "questions": {
-      "explanation_type": "1. Quel type d'explications préférez-vous ?",
-      "learning_style": "2. Quel style d'apprentissage vous convient le mieux ?",
-      "teaching_pace": "3. Quel rythme d'enseignement préférez-vous ?",
-      "example_type": "4. Comment préférez-vous les exemples dans les explications ?",
-      "focus_area": "5. Sur quoi l'IA devrait-elle se concentrer davantage dans les vidéos ?"
+      "learning_goal": "Quel est votre principal objectif d'apprentissage ?",
+      "interested_topics": "Quels sujets vous intéressent le plus ?",
+      "experience_level": "Quel est votre niveau d'expérience ?",
+      "weekly_commitment": "Combien d'heures par semaine pouvez-vous consacrer ?",
+      "learning_style": "Quel est votre style d'apprentissage préféré ?"
+    },
+    "hints": {
+      "select_one": "Sélectionnez une option",
+      "select_multiple": "Sélectionnez toutes les réponses."
     },
     "options": {
-      "simple": "Simple et adapté aux débutants",
-      "balanced": "Équilibré (facile + profondeur)",
-      "detailed": "Détaillé et approfondi",
-      "expert": "Niveau expert (technique)",
-      "step_by_step": "Accompagnement pas à pas",
-      "concept_first": "Explications conceptuelles d'abord",
-      "real_world": "Exemples concrets",
-      "problem_solving": "Axé sur la résolution de problèmes",
-      "slow": "Lent et approfondi",
-      "moderate": "Modéré",
-      "fast": "Rythme soutenu",
-      "adaptive": "Adaptatif (basé sur mes progrès)",
-      "real_life": "Exemples de la vie réelle",
-      "technical": "Exemples techniques",
-      "visual": "Visuel / à base de diagrammes",
-      "minimal": "Exemples minimaux",
-      "concepts": "Concepts et théorie",
-      "practical": "Applications pratiques",
-      "coding": "Codage / résolution de problèmes",
-      "exams": "Préparation aux examens"
+      "switch_careers": "Changement de carrière",
+      "upskill_work": "Perfectionnement prof.",
+      "personal_interest": "Intérêt personnel",
+      "get_certified": "Obtenir une certification",
+      "ai": "Intelligence Artificielle",
+      "web_dev": "Développement Web",
+      "data_science": "Science des données",
+      "cloud": "Cloud Computing",
+      "cybersecurity": "Cybersécurité",
+      "mobile_apps": "Applications mobiles",
+      "beginner": "Débutant complet",
+      "basics": "Quelques bases",
+      "intermediate": "Intermédiaire",
+      "advanced": "Avancé",
+      "1_2_hours": "1-2 heures",
+      "3_5_hours": "3-5 heures",
+      "6_10_hours": "6-10 heures",
+      "10_plus_hours": "Plus de 10 heures",
+      "videos": "Cours en vidéo",
+      "projects": "Projets pratiques",
+      "articles": "Lecture d'articles",
+      "live_classes": "Cours en direct"
     }
+  },
+  "certificates": {
+    "title": "Mes Certificats",
+    "subtitle": "Suivez vos réalisations et téléchargez vos certificats",
+    "loading": "Chargement des certificats...",
+    "enrolled_courses": "Cours Inscrits",
+    "courses_completed": "Cours Terminés",
+    "certificates_earned": "Certificats Obtenus",
+    "in_progress": "En cours",
+    "no_courses_title": "Aucun cours inscrit pour l'instant",
+    "no_courses_desc": "Inscrivez-vous à des cours et terminez-les pour gagner vos certificats!",
+    "browse_courses": "Parcourir les Cours",
+    "progress": "Progression",
+    "lessons": "leçons",
+    "completed_badge": "TERMINÉ",
+    "complete_to_earn": "Terminez ce cours pour obtenir votre certificat",
+    "continue_learning": "Continuer l'Apprentissage",
+    "download": "Télécharger le Certificat",
+    "generating": "Génération..."
   }
 }

@@ -14,7 +14,8 @@
     "learning": "Aprendizaje",
     "watched": "Videos Vistos",
     "admin": "Panel de Admin",
-    "account": "Cuenta"
+    "account": "Cuenta",
+    "certificates": "Certificados"
   },
   "common": {
     "cancel": "Cancelar",
@@ -35,7 +36,9 @@
       "notifications": "Notificaciones",
       "password_security": "Contraseña y Seguridad",
       "appearance": "Apariencia",
-      "language": "Idioma"
+      "language": "Idioma",
+      "contactus": "Contactar Soporte",
+      "delete_account": "Eliminar Mi Cuenta"
     },
     "profile": {
       "title": "Configuración de Perfil",
@@ -88,6 +91,12 @@
       "subtitle": "Elige tu idioma preferido para la interfaz",
       "interface_language": "Idioma de la Interfaz",
       "updated": "¡Configuración de idioma actualizada!"
+    },
+    "contactus": {
+      "title": "Contactar Soporte",
+      "subtitle": "Normalmente respondemos en 24 horas.",
+      "subject": "Asunto",
+      "message": "Mensaje"
     }
   },
   "dashboard": {
@@ -113,7 +122,14 @@
     "design": "Diseño",
     "beginner": "Principiante",
     "intermediate": "Intermedio",
-    "advanced": "Avanzado"
+    "advanced": "Avanzado",
+    "no_courses_search": "Ningún curso coincide con tu búsqueda.",
+    "no_courses_enrolled": "Aún no te has inscrito en ningún curso.",
+    "browse_courses": "Explorar Cursos",
+    "continue_learning": "Continuar Aprendiendo",
+    "continue": "Continuar",
+    "view": "Ver",
+    "enroll": "Inscribirse"
   },
   "courses": {
     "title": "Centro de Aprendizaje",
@@ -123,7 +139,20 @@
     "not_enrolled": "Aún no estás inscrito en ningún curso.",
     "lessons": "lecciones",
     "loading": "Cargando cursos...",
-    "confirm_enrollment": "Confirmar Inscripción"
+    "confirm_enrollment": "Confirmar Inscripción",
+    "enrolled_courses": "Cursos Inscritos",
+    "enrolled_short": "Inscrito",
+    "explore_short": "Explorar",
+    "filters": "Filtros",
+    "apply_filters": "Aplicar Filtros",
+    "clear_all": "Limpiar Todo",
+    "category": "Categoría",
+    "skill_level": "Nivel de Habilidad",
+    "pricing": "Precio",
+    "any_level": "Cualquier Nivel",
+    "any_price": "Cualquier Precio",
+    "all_categories": "Todas las Categorías",
+    "no_match_filters": "Ningún curso inscrito coincide con tu búsqueda o filtros actuales."
   },
   "learning": {
     "loading": "Cargando...",
@@ -265,46 +294,77 @@
     "signup": "Registrarse",
     "email": "Correo Electrónico",
     "password": "Contraseña",
-    "logout": "Cerrar Sesión"
+    "logout": "Cerrar Sesión",
+    "logout_confirm_title": "Cerrar sesión",
+    "logout_confirm_msg": "¿Estás seguro de que quieres cerrar sesión?",
+    "cancel": "Cancelar"
   },
   "preferences": {
-    "nav_title": "Preferencias del Tutor IA",
-    "modal_title": "Personaliza tu Tutor de IA",
-    "modal_subtitle": "Ayúdanos a adaptar las explicaciones a tu estilo de aprendizaje.",
-    "settings_modal_subtitle": "Adapta las explicaciones, el ritmo y las referencias de ejemplos de tu tutor de IA.",
-    "save_continue": "Guardar y Continuar",
-    "save_changes": "Guardar Cambios",
+    "nav_title": "Preferencias",
+    "modal_title": "Personaliza tu experiencia",
+    "modal_subtitle": "Solo 5 preguntas rápidas para comenzar",
+    "settings_modal_subtitle": "Adapta tu experiencia de aprendizaje a tu forma de aprender.",
+    "save_continue": "Siguiente →",
+    "save_changes": "Finalizar",
     "save_success": "Preferencias actualizadas con éxito",
-    "extra_title": "6. Preferencias Extras (Opcional)",
-    "extra_placeholder": "Ej. prefiero animaciones, videos cortos, ejemplos de código",
+    "step_of": "{{current}} / {{total}}",
+    "next": "Siguiente →",
+    "back": "← Atrás",
+    "finish": "Finalizar",
+    "skip_for_now": "Omitir por ahora — Lo configuraré después",
     "questions": {
-      "explanation_type": "1. ¿Qué tipo de explicaciones prefieres?",
-      "learning_style": "2. ¿Qué estilo de aprendizaje funciona mejor para ti?",
-      "teaching_pace": "3. ¿Qué ritmo de enseñanza prefieres?",
-      "example_type": "4. ¿Cómo prefieres los ejemplos en las explicaciones?",
-      "focus_area": "5. ¿En qué debería enfocarse más la IA en los videos?"
+      "learning_goal": "¿Cuál es tu principal objetivo de aprendizaje?",
+      "interested_topics": "¿Qué temas te interesan más?",
+      "experience_level": "¿Cuánta experiencia tienes?",
+      "weekly_commitment": "¿Cuántas horas por semana puedes dedicar?",
+      "learning_style": "¿Cuál es tu estilo de aprendizaje preferido?"
+    },
+    "hints": {
+      "select_one": "Selecciona una opción",
+      "select_multiple": "Selecciona todas las que apliquen"
     },
     "options": {
-      "simple": "Simple y para principiantes",
-      "balanced": "Equilibrado (fácil + algo de profundidad)",
-      "detailed": "Detallado y profundo",
-      "expert": "Nivel experto (técnico)",
-      "step_by_step": "Guía paso a paso",
-      "concept_first": "Explicación de conceptos primero",
-      "real_world": "Ejemplos del mundo real",
-      "problem_solving": "Enfoque en resolución de problemas",
-      "slow": "Lento y minucioso",
-      "moderate": "Moderado",
-      "fast": "Ritmo rápido",
-      "adaptive": "Adaptable (según mi progreso)",
-      "real_life": "Ejemplos de la vida real",
-      "technical": "Ejemplos técnicos",
-      "visual": "Visual / diagramas",
-      "minimal": "Ejemplos mínimos",
-      "concepts": "Conceptos y teoría",
-      "practical": "Aplicaciones prácticas",
-      "coding": "Programación / solución de problemas",
-      "exams": "Preparación de exámenes"
+      "switch_careers": "Cambio de carrera",
+      "upskill_work": "Mejorar habilidades",
+      "personal_interest": "Interés personal",
+      "get_certified": "Obtener certificación",
+      "ai": "Inteligencia Artificial",
+      "web_dev": "Desarrollo Web",
+      "data_science": "Ciencia de Datos",
+      "cloud": "Computación en la nube",
+      "cybersecurity": "Ciberseguridad",
+      "mobile_apps": "Aplicaciones móviles",
+      "beginner": "Principiante absoluto",
+      "basics": "Conceptos básicos",
+      "intermediate": "Intermedio",
+      "advanced": "Avanzado",
+      "1_2_hours": "1-2 horas",
+      "3_5_hours": "3-5 horas",
+      "6_10_hours": "6-10 horas",
+      "10_plus_hours": "10+ horas",
+      "videos": "Clases en video",
+      "projects": "Proyectos prácticos",
+      "articles": "Lectura de artículos",
+      "live_classes": "Clases en vivo"
     }
+  },
+  "certificates": {
+    "title": "Mis Certificados",
+    "subtitle": "Rastrea tus logros y descarga certificados",
+    "loading": "Cargando certificados...",
+    "enrolled_courses": "Cursos Inscritos",
+    "courses_completed": "Cursos Completados",
+    "certificates_earned": "Certificados Obtenidos",
+    "in_progress": "En Progreso",
+    "no_courses_title": "Aún no estás inscrito en ningún curso",
+    "no_courses_desc": "¡Inscríbete en cursos y complítalos para obtener tus certificados!",
+    "browse_courses": "Explorar Cursos",
+    "progress": "Progreso",
+    "lessons": "lecciones",
+    "completed_badge": "COMPLETADO",
+    "complete_to_earn": "Completa este curso para obtener tu certificado",
+    "continue_learning": "Continuar Aprendiendo",
+    "download": "Descargar Certificado",
+    "generating": "Generando..."
   }
 }

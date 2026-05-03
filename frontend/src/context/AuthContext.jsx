@@ -38,10 +38,23 @@ export const AuthProvider = ({ children }) => {
 
   const login = (userData) => {
     setIsAuthenticated(true);
-    setUser(userData);
-    // Ensure token is extracted correctly from the response object
-    localStorage.setItem('token', userData.token);
-    localStorage.setItem('user', JSON.stringify(userData));
+    
+    // Normalize user data to ensure all required fields exist
+    const newUser = {
+      ...userData,
+      token: userData.token || localStorage.getItem("token"),
+      avatar_url: userData.avatar_url || null,
+      isProfileComplete: userData.isProfileComplete ?? false,
+      isGoogleUser: (userData.isGoogleUser || !!userData.googleId) ?? false,
+      googleId: userData.googleId ?? null,
+      hasPassword: userData.hasPassword ?? false,
+    };
+
+    setUser(newUser);
+    localStorage.setItem('token', newUser.token);
+    localStorage.setItem('user', JSON.stringify(newUser));
+    // Clear skip flags on every login to ensure onboarding triggers correctly
+    localStorage.removeItem("preferencesSkipped");
   };
 
   const fetchUserProfile = useCallback(async () => {

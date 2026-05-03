@@ -42,23 +42,36 @@ const NotificationItem = ({ notification, onClick }) => {
 
     return (
         <div
-            onClick={() => onClick(notification)}
-            className={`group relative flex items-start gap-4 p-4 hover:bg-canvas-alt transition-all cursor-pointer border-b border-border/50 last:border-0 ${unread ? 'bg-teal-500/[0.02]' : ''}`}
+            onClick={() => {
+                if (!unread) return;
+                onClick(notification);
+            }}
+
+            className={`group relative flex items-start gap-4 p-4 hover:bg-canvas-alt transition-all cursor-pointer border-b border-border/50 last:border-0
+${unread ? "bg-teal-500/5 border-l-4 border-teal-500" : ""}`}
         >
             {/* Unread Indicator */}
             {unread && (
                 <div className="absolute left-1 top-1/2 -translate-y-1/2 w-1 h-8 bg-teal-500 rounded-full" />
             )}
 
+
             {/* Icon */}
-            <div className={`mt-1 flex-shrink-0 w-10 h-10 rounded-2xl ${getBgColor(type)} flex items-center justify-center group-hover:scale-110 transition-transform`}>
+            <div className="relative mt-1 flex-shrink-0 w-10 h-10 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+
                 {getIcon(type)}
+
+                {unread && (
+                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-teal-500 rounded-full animate-pulse" />
+                )}
+
             </div>
+
 
             {/* Content */}
             <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-1">
-                    <h5 className={`text-sm font-bold truncate ${unread ? 'text-main' : 'text-muted'}`}>
+                    <h5 className={`text-sm truncate ${unread ? 'text-main font-extrabold' : 'text-muted font-medium'}`}>
                         {title}
                     </h5>
                     <div className="flex items-center text-[10px] text-muted font-medium whitespace-nowrap">
