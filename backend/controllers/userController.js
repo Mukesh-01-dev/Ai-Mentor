@@ -60,7 +60,6 @@ const ensureProfileCompleteness = async (user) => {
     user.firstName?.trim() &&
     user.lastName?.trim() &&
     user.bio?.trim() &&
-    user.avatar_url?.trim() &&
     (user.googleId ? user.password?.trim() : true)
   );
 

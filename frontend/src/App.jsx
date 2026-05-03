@@ -53,6 +53,7 @@ const App = () => {
           <Route path="/reset-password/:token" element={<ResetPassword />} />
         </Route>
 
+        <Route path="/complete-profile" element={<CompleteProfilePage />} />
         {/* Protected Routes with shared Header + Sidebar layout */}
         <Route element={<ProtectedRoute />}>
           <Route element={<DashboardLayout />}>
