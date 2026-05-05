@@ -193,7 +193,9 @@ const CoursesPage = () => {
   }
 
   const filteredExploreCourses = exploreCourses
-    .filter((course) => !myCourses.some((c) => c.id === course.id))
+    .filter((course) =>
+      !myCourses.some((c) => String(c.id) === String(course.id))
+    )
     .filter((course) => {
       if (searchQuery.trim() !== "") {
         return course.title.toLowerCase().includes(searchQuery.toLowerCase());
@@ -254,7 +256,7 @@ const CoursesPage = () => {
   return (
     <>
       {/* ══════ HERO ══════ */}
-      <div className="relative bg-gradient-to-br from-teal-700 via-teal-600 to-teal-800 pt-16 pb-12 px-4 sm:px-8">
+      <div className="relative bg-gradient-to-br from-teal-700 via-teal-600 to-teal-800 pt-10 sm:pt-12 lg:pt-16 pb-8 sm:pb-10 lg:pb-12 px-4 sm:px-6 lg:px-8">
         <div
           className="absolute inset-0 opacity-10"
           style={{
@@ -264,7 +266,7 @@ const CoursesPage = () => {
           }}
         />
         <div className="relative z-10 max-w-5xl mx-auto space-y-6">
-          <div className="flex items-center space-x-5">
+          <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-5 text-center sm:text-left">
             <img
               src={
                 user?.avatar_url ||
@@ -548,11 +550,16 @@ const CoursesPage = () => {
         </div>
       </div>
 
-      <main className="flex-1 p-8">
+      <main className="flex-1 p-4 sm:p-6 lg:p-8">
         <div className="max-w-7xl mx-auto space-y-10">
           {/* ================= MY COURSES ================= */}
           {activeTab === "my-courses" && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-4 auto-rows-fr
+">
+
+
+
+
               {myCourses.length === 0 && (
                 <p className="text-slate-500">{t("courses.not_enrolled")}</p>
               )}
@@ -574,7 +581,11 @@ const CoursesPage = () => {
                 return (
                   <div
                     key={course.id}
-                    className="bg-card rounded-3xl border border-border overflow-hidden shadow-sm"
+                    className="
+    bg-card rounded-3xl border border-border overflow-hidden shadow-sm 
+    flex flex-col h-full
+   w-full
+  "
                   >
                     <img
                       src={course.image}
@@ -607,16 +618,17 @@ const CoursesPage = () => {
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-bold text-main">Explore Courses</h2>
                 {/* Prev / Next Buttons */}
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 md:hidden">
+
                   <button
                     onClick={scrollLeft}
-                    className="p-2 rounded-full bg-card border border-border hover:bg-teal-50 hover:border-teal-400 transition-all shadow-sm"
+                    className="p-2 rounded-full bg-card border border-border hover:bg-teal-500/10 hover:border-teal-500/50 dark:hover:bg-teal-500/20 dark:hover:border-teal-500/40 transition-all shadow-sm"
                   >
                     <ChevronLeft className="w-5 h-5 text-main" />
                   </button>
                   <button
                     onClick={scrollRight}
-                    className="p-2 rounded-full bg-card border border-border hover:bg-teal-50 hover:border-teal-400 transition-all shadow-sm"
+                    className="p-2 rounded-full bg-card border border-border hover:bg-teal-500/10 hover:border-teal-500/50 dark:hover:bg-teal-500/20 dark:hover:border-teal-500/40 transition-all shadow-sm"
                   >
                     <ChevronRight className="w-5 h-5 text-main" />
                   </button>
@@ -626,10 +638,12 @@ const CoursesPage = () => {
               {/* Horizontal Scroll Row */}
               <div
                 ref={scrollRef}
-                className="flex gap-6 overflow-x-auto pb-4 scroll-smooth"
-                style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+                className="flex gap-4 overflow-x-auto pb-4 no-scrollbar snap-x snap-mandatory"
               >
-                <style>{`div::-webkit-scrollbar { display: none; }`}</style>
+
+
+
+
 
                 {filteredExploreCourses.length === 0 && (
                   <p className="text-slate-500">{t("courses.no_courses")}</p>
@@ -638,9 +652,19 @@ const CoursesPage = () => {
                 {filteredExploreCourses.map((course) => (
                   <div
                     key={course.id}
-                    className="bg-card rounded-3xl border border-border overflow-hidden shadow-sm flex-shrink-0 w-64"
+                    className="
+      min-w-[220px] sm:min-w-[260px] md:min-w-[280px]
+    snap-start
+    bg-card rounded-3xl border border-border overflow-hidden shadow-sm
+    flex flex-col
+"
+
+
+
+
                   >
-                    <div className="relative h-40">
+                    <div className="relative h-32 sm:h-40">
+
                       <img
                         src={course.image}
                         className="w-full h-full object-cover"
@@ -652,19 +676,28 @@ const CoursesPage = () => {
                       </div>
                     </div>
 
-                    <div className="p-4 space-y-3">
-                      <h3 className="text-sm font-semibold text-main line-clamp-2">
-                        {course.title}
-                      </h3>
-                      <p className="text-xs text-muted">
-                        {course.lessons} lessons • {course.level}
-                      </p>
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <span className="font-bold text-green-600">
-                            {course.price}
-                          </span>
-                        </div>
+                    <div className="p-3 sm:p-4 flex flex-col flex-1 justify-between">
+
+
+                      {/* Top content (same as My Courses) */}
+                      <div className="space-y-2 min-h-[72px]">
+                        <h3 className="text-sm font-semibold text-main line-clamp-2">
+                          {course.title}
+                        </h3>
+
+                        <p className="text-xs text-muted">
+                          {course.lessons} lessons • {course.level}
+                        </p>
+                      </div>
+
+                      {/* Bottom content */}
+                      <div className="mt-4 flex justify-between items-center">
+                        <span className="font-bold text-green-600">
+                          {course?.priceValue === 0
+                            ? "Free"
+                            : `₹${course?.priceValue || 0}`}
+                        </span>
+
                         <button
                           onClick={() =>
                             navigate(`/course-preview/${course.id}`)
@@ -674,7 +707,9 @@ const CoursesPage = () => {
                           {t("common.enroll")}
                         </button>
                       </div>
+
                     </div>
+
                   </div>
                 ))}
               </div>
@@ -686,7 +721,7 @@ const CoursesPage = () => {
       {/* ================= ENROLL POPUP ================= */}
       {showEnrollPopup && selectedCourse && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white w-full max-w-md rounded-2xl p-6 relative">
+          <div className="bg-white w-full max-w-md rounded-2xl p-4 sm:p-6 relative mx-4">
             <button
               onClick={() => setShowEnrollPopup(false)}
               className="absolute top-4 right-4"
@@ -704,7 +739,7 @@ const CoursesPage = () => {
             </p>
             <div className="flex justify-between items-center mt-4">
               <span className="text-lg font-bold text-green-600">
-                {selectedCourse.price}
+                {selectedCourse.priceValue > 0 ? `₹${selectedCourse.priceValue}` : "Free"}
               </span>
             </div>
             <button

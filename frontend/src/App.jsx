@@ -68,10 +68,10 @@ const App = () => {
             <Route path="/learning/:id" element={<LearningPage />} />
             <Route path="/success" element={<Success />} />
           </Route>
+          <Route path="/course-preview/:courseId" element={<CoursePreview />} />
         </Route>
 
-        {/* Other public routes */}
-        <Route path="/course-preview/:courseId" element={<CoursePreview />} />
+
 
       </Routes>
     </Suspense>
