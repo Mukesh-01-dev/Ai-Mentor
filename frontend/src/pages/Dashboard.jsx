@@ -78,6 +78,25 @@ const Dashboard = () => {
     fetchAllData();
   }, []);
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const slider = document.getElementById("courseSlider");
+      if (!slider) return;
+
+      const scrollStep = 300;
+
+      const maxScroll = slider.scrollWidth - slider.clientWidth;
+
+      if (slider.scrollLeft + scrollStep >= maxScroll) {
+        slider.scrollTo({ left: 0, behavior: "smooth" });
+      } else {
+        slider.scrollBy({ left: scrollStep, behavior: "smooth" });
+      }
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   const calculateStats = () => {
     console.log("Calculating stats with user:", user);
     console.log("coursesData:", coursesData);
@@ -340,7 +359,7 @@ const Dashboard = () => {
       />
       <div className="max-w-7xl pt-16 mx-auto space-y-8">
         {/* Stats Cards */}
-        <div className="grid grid-cols-1  sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {dynamicStatsCards.map((card, index) => {
             const statLabelKeys = [
               "ongoing_courses",
@@ -373,8 +392,7 @@ const Dashboard = () => {
         </div>
 
         <div className="grid grid-cols-1 gap-8">
-          {/* Popular Courses */}
-
+          {/* Popular Courses - RESPONSIVE (3 cards on mobile, content shrinks) */}
           <div>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-main">
@@ -409,51 +427,50 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* Slider */}
+            {/* Slider - responsive gap, padding, and card scaling */}
             <div
               id="courseSlider"
-              className="flex gap-6 overflow-x-auto pb-4 scroll-smooth"
+              className="flex gap-2 sm:gap-4 md:gap-6 overflow-x-auto pb-4 scroll-smooth scrollbar-hide px-2 sm:px-4 md:px-6"
             >
               {coursesData.allCourses.slice(0, 10).map((course, index) => (
                 <div
                   key={index}
-                  className="bg-card rounded-xl border border-border w-64 flex-shrink-0 shadow-sm"
+                  className="bg-card rounded-xl border border-border w-[32%] flex-shrink-0 shadow-sm transition-all duration-200 hover:shadow-md"
                 >
-                  {/* Image */}
-                  <div className="relative h-40">
+                  {/* Image - responsive height */}
+                  <div className="relative h-20 sm:h-28 md:h-36 lg:h-40">
                     <img
                       src={course.image}
                       alt={course.title}
                       className="w-full h-full object-cover rounded-t-xl"
                     />
-
-                    {/* Rating */}
-                    <div className="absolute bottom-2 right-2 bg-black/70 px-2 py-1 rounded-full flex items-center gap-1">
-                      <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
-                      <span className="text-xs text-white font-semibold">
+                    {/* Rating - smaller on mobile */}
+                    <div className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 bg-black/70 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full flex items-center gap-0.5 sm:gap-1">
+                      <Star className="w-2 h-2 sm:w-3 sm:h-3 text-yellow-400 fill-yellow-400" />
+                      <span className="text-[10px] sm:text-xs text-white font-semibold">
                         {course.rating}
                       </span>
                     </div>
                   </div>
 
-                  {/* Content */}
-                  <div className="p-4 space-y-2">
-                    <h3 className="text-sm font-semibold text-main line-clamp-2">
+                  {/* Card content - responsive padding and text sizes */}
+                  <div className="p-2 sm:p-3 md:p-4 space-y-1 sm:space-y-2">
+                    <h3 className="text-[11px] sm:text-sm font-semibold text-main line-clamp-2 leading-tight">
                       {course.title}
                     </h3>
 
-                    <p className="text-xs text-muted">
+                    <p className="text-[9px] sm:text-xs text-muted truncate">
                       {course.lessons} • {course.level}
                     </p>
 
-                    <div className="flex justify-between items-center mt-2">
-                      <span className="font-bold text-green-500">
+                    <div className="flex justify-between items-center mt-1 sm:mt-2">
+                      <span className="font-bold text-green-500 text-sm sm:text-base">
                         {course.price}
                       </span>
 
                       <button
                         onClick={() => navigate(`/course-preview/${course.id}`)}
-                        className="px-3 py-1.5 text-xs bg-teal-500 text-white rounded-lg hover:bg-teal-600"
+                        className="px-2 py-1 sm:px-3 sm:py-1.5 text-[10px] sm:text-xs bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition whitespace-nowrap"
                       >
                         {t("dashboard.enroll")}
                       </button>
@@ -464,7 +481,7 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* My Courses Table */}
+          {/* My Courses Table (unchanged) */}
           <div className="xl:col-span-2 flex flex-col">
             <h2 className="text-xl font-bold text-main mb-6">
               {t("dashboard.my_courses")}
@@ -593,70 +610,55 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* Continue Learning */}
-            {
-              filteredContinueLearning.length !== 0 ? (
-                <div>
-                  <h2 className="text-xl font-bold text-main mt-6 mb-6">
-                    {t("dashboard.continue_learning")}
-                  </h2>
-                  <div className="space-y-4">
-                    {filteredContinueLearning.map((item, index) => (
-                      <div
-                        key={index}
-                        className="bg-card rounded-xl p-4 border border-border shadow-sm hover:shadow-md transition-shadow"
-                      >
-                        <div className="flex items-center">
-                          <Link
-                            to={`/course-preview/${item.id}`}
-                            className="flex items-center flex-1"
-                          >
-                            <img
-                              src={item.image}
-                              alt={item.title}
-                              className="w-12 h-12 rounded-lg mr-4"
-                            />
-                            <div className="flex-1">
-                              <h3 className="font-medium text-main mb-1 hover:text-teal-600">
-                                {item.title}
-                              </h3>
-                              <p className="text-sm text-muted mb-2">
-                                {item.lesson}
-                              </p>
-                              <div className="w-full bg-border rounded-full h-2 mb-2">
-                                <div
-                                  className={`h-2 rounded-full ${item.progressColor}`}
-                                  style={{ width: `${item.progress}%` }}
-                                ></div>
-                              </div>
+            {/* Continue Learning (unchanged) */}
+            {filteredContinueLearning.length !== 0 ? (
+              <div>
+                <h2 className="text-xl font-bold text-main mt-6 mb-6">
+                  {t("dashboard.continue_learning")}
+                </h2>
+                <div className="space-y-4">
+                  {filteredContinueLearning.map((item, index) => (
+                    <div
+                      key={index}
+                      className="bg-card rounded-xl p-4 border border-border shadow-sm hover:shadow-md transition-shadow"
+                    >
+                      <div className="flex items-center">
+                        <Link
+                          to={`/course-preview/${item.id}`}
+                          className="flex items-center flex-1"
+                        >
+                          <img
+                            src={item.image}
+                            alt={item.title}
+                            className="w-12 h-12 rounded-lg mr-4"
+                          />
+                          <div className="flex-1">
+                            <h3 className="font-medium text-main mb-1 hover:text-teal-600">
+                              {item.title}
+                            </h3>
+                            <p className="text-sm text-muted mb-2">
+                              {item.lesson}
+                            </p>
+                            <div className="w-full bg-border rounded-full h-2 mb-2">
+                              <div
+                                className={`h-2 rounded-full ${item.progressColor}`}
+                                style={{ width: `${item.progress}%` }}
+                              ></div>
                             </div>
-                          </Link>
-                          <Link
-                            to={`/learning/${item.id}`}
-                            className="ml-4 px-4 py-2 bg-teal-500 text-white text-sm font-medium rounded-lg hover:bg-teal-600"
-                          >
-                            {t("dashboard.continue")}
-                          </Link>
-                        </div>
+                          </div>
+                        </Link>
+                        <Link
+                          to={`/learning/${item.id}`}
+                          className="ml-4 px-4 py-2 bg-teal-500 text-white text-sm font-medium rounded-lg hover:bg-teal-600"
+                        >
+                          {t("dashboard.continue")}
+                        </Link>
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  ))}
                 </div>
-              ) : null
-              // <div className="p-6  text-muted">
-              //   <p>
-              //     {normalizedSearchQuery
-              //       ? "No in-progress courses match your search."
-              //       : "Start Learning to get your progress tracked!"}
-              //   </p>
-              //   <button
-              //     className="mt-4 px-4 py-2 bg-teal-500 text-white text-sm font-medium rounded-lg hover:bg-teal-600"
-              //     onClick={() => navigate("/courses")}
-              //   >
-              //     My Courses
-              //   </button>
-              // </div>
-            }
+              </div>
+            ) : null}
           </div>
         </div>
       </div>
