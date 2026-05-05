@@ -7,6 +7,8 @@ import cloudinary from "../config/cloudinary.js";
 import fs from "fs";
 import { ensureProfileCompleteness, formatFullName } from "../utils/userUtils.js";
 import { createNotification } from "./notificationController.js";
+import sendEmail from "../utils/sendEmail.js";
+import { getEnrollmentEmailTemplate } from "../templates/enrollmentEmailTemplate.js";
 
 
 // Generate JWT Token
@@ -215,6 +217,27 @@ const purchaseCourse = async (req, res) => {
       type: "course",
       metadata: { courseId },
     });
+
+    // Send Confirmation Email
+    try {
+      const courseLink = `${process.env.FRONTEND_URL}/learning/${courseId}`;
+      const emailHtml = getEnrollmentEmailTemplate(
+        user.firstName || user.name,
+        courseTitle || "your new course",
+        courseLink
+      );
+
+      await sendEmail({
+        email: user.email,
+        subject: `Enrollment Confirmed: ${courseTitle || "New Course"}`,
+        message: `You have successfully enrolled in ${courseTitle || "a new course"}. Start learning at ${courseLink}`,
+        html: emailHtml,
+      });
+      console.log(`✅ Enrollment email sent to ${user.email}`);
+    } catch (emailError) {
+      console.error("❌ Failed to send enrollment email:", emailError.message);
+      // We don't want to fail the whole enrollment if email fails
+    }
 
     res.status(200).json({
       message: "Course enrolled successfully",
