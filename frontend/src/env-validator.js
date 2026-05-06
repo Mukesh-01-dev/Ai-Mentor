@@ -1,4 +1,15 @@
-// env-validator.js — run this before any Firebase / Stripe init
+/**
+ * env-validator.js
+ *
+ * Runtime guard — secondary safety net that runs in the browser bundle.
+ * The PRIMARY validation is done at dev-server / build startup inside
+ * vite.config.js, which calls process.exit(1) before the browser loads.
+ *
+ * If a variable is somehow missing at runtime, this throws an Error whose
+ * message appears in the terminal (HMR output / build log) and the browser
+ * DevTools console — NOT as a styled error page on the website.
+ */
+
 const REQUIRED_ENV_VARS = [
   { key: "VITE_API_BASE_URL",                 hint: "Backend server URL (e.g. http://localhost:5000)" },
   { key: "VITE_FIREBASE_API_KEY",             hint: "Firebase API key" },
@@ -19,54 +30,29 @@ const PLACEHOLDER_PATTERNS = [
   /^xxx/i,
 ];
 
-function isPlaceholder(value) {
-  return PLACEHOLDER_PATTERNS.some((re) => re.test(value.trim()));
-}
-
 const missing = [];
-const invalid = [];
+const placeholders = [];
 
 for (const { key, hint } of REQUIRED_ENV_VARS) {
   const value = import.meta.env[key];
-  if (!value) {
+  if (!value || value.trim() === "") {
     missing.push(key);
-  } else if (isPlaceholder(value)) {
-    invalid.push(`${key} still has a placeholder value — replace it with your real ${hint}`);
+  } else if (PLACEHOLDER_PATTERNS.some((re) => re.test(value.trim()))) {
+    placeholders.push(`${key} (hint: ${hint})`);
   }
 }
 
-let errorMessage = null;
-
 if (missing.length > 0) {
-  errorMessage = `[Config] Missing env variable(s) in .env: ${missing.join(", ")} — copy .env.example to .env and fill in the values.`;
-} else if (invalid.length > 0) {
-  errorMessage = `[Config] ${invalid[0]}`;
+  // Throw — surfaces in terminal HMR output; nothing renders in the browser UI
+  throw new Error(
+    `[Env] Missing variable(s): ${missing.join(", ")}. ` +
+    `Copy .env.example → .env, fill in the values, then restart the dev server.`
+  );
 }
 
-if (errorMessage) {
-  // Print clearly in the terminal
-  console.error("\n\x1b[31m" + errorMessage + "\x1b[0m\n");
-
-  // Show in the browser instead of a blank/crashed page
-  document.getElementById("root").innerHTML = `
-    <div style="
-      font-family: monospace;
-      background: #1a1a1a;
-      color: #ff4d4d;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 2rem;
-      box-sizing: border-box;
-    ">
-      <div>
-        <div style="font-size:1.1rem; font-weight:bold; margin-bottom:0.5rem;">Environment Setup Error</div>
-        <div style="color:#fff;">${errorMessage}</div>
-      </div>
-    </div>
-  `;
-
-  // Stop the rest of the app from loading
-  throw new Error(errorMessage);
+if (placeholders.length > 0) {
+  throw new Error(
+    `[Env] Placeholder value(s) detected: ${placeholders.join("; ")}. ` +
+    `Replace them with real credentials in your .env file.`
+  );
 }
