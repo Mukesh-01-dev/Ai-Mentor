@@ -123,6 +123,7 @@ const DiscussionsPage = () => {
     useState("All Categories");
   const [globalContent, setGlobalContent] = useState("");
   const [globalCategory, setGlobalCategory] = useState("");
+  const [categoryError, setCategoryError] = useState(false);
   const [expandedGlobalPost, setExpandedGlobalPost] = useState(null);
   const [globalReplyText, setGlobalReplyText] = useState("");
 
@@ -809,7 +810,12 @@ const DiscussionsPage = () => {
   // Post in global
   const handleGlobalPost = async (e) => {
     e.preventDefault();
-    if (!globalContent.trim() || !globalCategory) return;
+    if (!globalCategory) {
+      setCategoryError(true);
+      setTimeout(() => setCategoryError(false), 600);
+      return;
+    }
+    if (!globalContent.trim()) return;
     try {
       const newPost = await createPost({
         type: "global",
@@ -830,6 +836,17 @@ const DiscussionsPage = () => {
 
   return (
     <>
+      <style>{`
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          15% { transform: translateX(-6px); }
+          30% { transform: translateX(6px); }
+          45% { transform: translateX(-5px); }
+          60% { transform: translateX(5px); }
+          75% { transform: translateX(-3px); }
+          90% { transform: translateX(3px); }
+        }
+      `}</style>
       <div className="relative overflow-hidden bg-linear-to-br from-teal-700 via-teal-600 to-teal-800 pt-16 pb-12 px-4 sm:px-8">
         {/* grid pattern overlay */}
         <div
@@ -1834,43 +1851,54 @@ const DiscussionsPage = () => {
                 </div>
                 <div className="flex items-center justify-between mt-3 flex-wrap gap-3">
                   <div className="flex items-center gap-3">
-                    <div className="relative">
-                      <select
-                        value={globalCategory}
-                        onChange={(e) => setGlobalCategory(e.target.value)}
-                        className="
+                    <div className="relative flex flex-col">
+                      <div className="relative">
+                        <select
+                          value={globalCategory}
+                          onChange={(e) => {
+                            setGlobalCategory(e.target.value);
+                            if (e.target.value) setCategoryError(false);
+                          }}
+                          className={`
     appearance-none
     pl-4 pr-10 py-2
-    bg-[#ff6d34]
-    hover:bg-[#e65f2c]
-    text-white
     font-semibold
     rounded-lg
     shadow-md
-    border border-[#ff6d34]
+    border
     focus:outline-none
     focus:ring-2
-    focus:ring-[#00bea3]
     cursor-pointer
     transition
     duration-200
-  "
-                      >
-                        <option value="" className="bg-white text-[#2D3436]">
-                          Select Category *
-                        </option>
-
-                        {GLOBAL_CATEGORIES.map((c) => (
-                          <option
-                            key={c}
-                            value={c}
-                            className="bg-white text-[#2D3436]"
-                          >
-                            {c}
+    ${categoryError
+      ? "bg-red-500 hover:bg-red-600 text-white border-red-400 focus:ring-red-400 animate-[shake_0.5s_ease-in-out]"
+      : "bg-[#ff6d34] hover:bg-[#e65f2c] text-white border-[#ff6d34] focus:ring-[#00bea3]"
+    }
+  `}
+                          style={categoryError ? { animation: "shake 0.5s ease-in-out" } : {}}
+                        >
+                          <option value="" className="bg-white text-[#2D3436]">
+                            Select Category *
                           </option>
-                        ))}
-                      </select>
-                      <ChevronDown className="w-4 h-4 text-white/80 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+
+                          {GLOBAL_CATEGORIES.map((c) => (
+                            <option
+                              key={c}
+                              value={c}
+                              className="bg-white text-[#2D3436]"
+                            >
+                              {c}
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDown className="w-4 h-4 text-white/80 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      </div>
+                      {categoryError && (
+                        <span className="text-red-400 text-xs mt-1 font-medium flex items-center gap-1">
+                          ⚠ Please select a category
+                        </span>
+                      )}
                     </div>
                     <span
                       className={`text-sm ${
@@ -1884,7 +1912,7 @@ const DiscussionsPage = () => {
                   </div>
                   <button
                     type="submit"
-                    disabled={!globalContent.trim() || !globalCategory}
+                    disabled={!globalContent.trim()}
                     className="px-6 py-2.5 bg-linear-to-r from-orange-500 to-red-500 text-white font-semibold rounded-lg hover:opacity-90 transition-opacity flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Send className="w-4 h-4" />
