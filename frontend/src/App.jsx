@@ -4,6 +4,7 @@ import { useAuth } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import DashboardLayout from "./components/DashboardLayout";
 import LoadingSpinner from "./components/common/LoadingSpinner";
+import Support from "./pages/support";
 
 // Lazy Loading 
 const LoginPage = lazy(() => import("./pages/LoginPage"));
@@ -67,6 +68,8 @@ const App = () => {
             <Route path="/watchedvideos" element={<WatchedVideos />} />
             <Route path="/learning/:id" element={<LearningPage />} />
             <Route path="/success" element={<Success />} />
+
+            <Route path="/support" element={<Support />} />
           </Route>
           <Route path="/course-preview/:courseId" element={<CoursePreview />} />
         </Route>

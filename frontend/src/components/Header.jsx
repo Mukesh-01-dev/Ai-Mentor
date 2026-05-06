@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
-import { Bell, Menu, X, User, Settings, LogOut, ShieldCheck } from "lucide-react";
+import { Bell, Menu, X, User, Settings, LogOut, ShieldCheck,Info } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import ThemeToggle from "../components/common/ThemeToggle";
@@ -302,7 +302,16 @@ const Header = () => {
                     <button onClick={() => { navigate("/settings"); setDropdownOpen(false); }} className="flex items-center w-full px-4 py-3.5 text-xs font-bold text-main hover:bg-teal-500 hover:text-white rounded-[1.2rem] transition-all group mt-1">
                       <Settings className="mr-3 w-4 h-4 group-hover:rotate-45 transition-transform" /> {t("nav.settings")}
                     </button>
-
+                    <button
+                      onClick={() => {
+                        navigate("/support");
+                        setDropdownOpen(false);
+                      }}
+                      className="flex items-center w-full px-4 py-3.5 text-xs font-bold text-main hover:bg-teal-500 hover:text-white rounded-[1.2rem] transition-all group mt-1"
+                    >
+                      <Info className="mr-3 w-4 h-4 group-hover:scale-110 transition-transform" />
+                      Support 
+                    </button>
                     <div className="my-2 border-t border-border/50 mx-2" />
 
                     <button onClick={handleLogout} className="flex items-center w-full px-4 py-3.5 text-xs font-black text-red-500 hover:bg-red-500 hover:text-white rounded-[1.2rem] transition-all group">
