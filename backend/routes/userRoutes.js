@@ -20,6 +20,7 @@ import {
   getUserProfile,
   updateUserProfile,
   purchaseCourse,
+  updateCourseFeedback,
   updateCourseProgress,
   getWatchedVideos,
   getUserSettings,
@@ -62,6 +63,8 @@ router.route("/profile")
 router.put("/change-password", protect, validate(changePasswordSchema), changePassword);
 
 router.post("/purchase-course", protect, validate(purchaseCourseSchema), purchaseCourse);
+
+router.put("/course-feedback", protect, updateCourseFeedback);
 
 router.put("/course-progress", protect, validate(courseProgressSchema), updateCourseProgress);
 

@@ -218,6 +218,67 @@ const purchaseCourse = async (req, res) => {
   }
 };
 
+
+const updateCourseFeedback = async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: "Not authorized" });
+    }
+
+    const { courseId, rating, feedback } = req.body;
+
+    // 🔒 Validation
+    if (!courseId) {
+      return res.status(400).json({ message: "Course ID is required" });
+    }
+
+    if (rating && (rating < 1 || rating > 5)) {
+      return res.status(400).json({ message: "Rating must be between 1 and 5" });
+    }
+
+    const user = await User.findByPk(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const purchasedCourses = user.purchasedCourses || [];
+
+    // 🎯 Find the course index
+    const courseIndex = purchasedCourses.findIndex(
+      (c) => Number(c.courseId) === Number(courseId)
+    );
+
+    if (courseIndex === -1) {
+      return res.status(404).json({ message: "Course not found in purchases" });
+    }
+
+    // ✏️ Update rating + feedback
+    purchasedCourses[courseIndex] = {
+      ...purchasedCourses[courseIndex],
+      rating: rating ?? purchasedCourses[courseIndex].rating,
+      feedback: feedback ?? purchasedCourses[courseIndex].feedback,
+    };
+
+    // 💾 Save back
+    user.purchasedCourses = purchasedCourses;
+
+    // ⚠️ REQUIRED for Sequelize JSON
+    user.changed("purchasedCourses", true);
+
+    await user.save();
+
+    return res.status(200).json({
+      message: "Feedback updated successfully",
+      updatedCourse: purchasedCourses[courseIndex],
+      purchasedCourses: user.purchasedCourses,
+    });
+  } catch (error) {
+    console.error("UPDATE FEEDBACK ERROR:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+
 // @desc Update progress
 const updateCourseProgress = async (req, res) => {
   try {
@@ -520,8 +581,8 @@ const deleteAccount = async (req, res) => {
     });
   } catch (error) {
     console.error("Delete Account Error", error);
-    res.status(500).json({message: "Failed to delete account"}); 
-  } 
+    res.status(500).json({ message: "Failed to delete account" });
+  }
 }
 // Complete first-time user profile onboarding
 // Google users: firstName, lastName, password (required), bio, avatar
@@ -596,9 +657,9 @@ const completeProfile = async (req, res) => {
       if (!user.avatar_url) missingFields.push("Profile Photo");
       if (user.googleId && !user.password) missingFields.push("Password");
 
-      return res.status(400).json({ 
+      return res.status(400).json({
         message: `Profile is still incomplete. Missing: ${missingFields.join(", ")}`,
-        missingFields 
+        missingFields
       });
     }
 
@@ -629,6 +690,7 @@ export {
   loginUser,
   getUserProfile,
   purchaseCourse,
+  updateCourseFeedback,
   updateCourseProgress,
   getUserSettings,
   getWatchedVideos,

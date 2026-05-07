@@ -4,14 +4,16 @@ import { useAuth } from "../context/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import API_BASE_URL from "../lib/api";
 import { useTranslation } from "react-i18next";
+import { RatingSection } from "../components/Rating";
 
 const CoursesPage = () => {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState("my-courses");
-  const [rating, setRating] = useState(0);
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const navigate = useNavigate();
   const scrollRef = useRef(null);
+
+  console.log("User data in CoursesPage:", user);
 
   /* ================= STATE ================= */
   const [exploreCourses, setExploreCourses] = useState([]);
@@ -195,120 +197,9 @@ const CoursesPage = () => {
       return matchesCategory && matchesLevel && matchesPrice;
     });
 
-  const StarRating = ({ value, onChange }) => {
-    const [hover, setHover] = useState(0);
-
-    return (
-      <div className="flex gap-1">
-        {[1, 2, 3, 4, 5].map((star) => {
-          const active = star <= (hover || value);
-
-          return (
-            <button
-              key={star}
-              onClick={() => onChange(star)}
-              onMouseEnter={() => setHover(star)}
-              onMouseLeave={() => setHover(0)}
-              className={`text-lg transition-all duration-150 transform ${active ? "text-yellow-400 scale-110" : "text-gray-500"
-                } hover:scale-125`}
-            >
-              ★
-            </button>
-          );
-        })}
-      </div>
-    );
-  };
-
-  const ReviewModal = ({ isOpen, onClose, review, setReview, onSubmit }) => {
-    if (!isOpen) return null;
-
-    return (
-      <div className="fixed z-50 inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center">
-        <div className="bg-card p-5 rounded-2xl w-[400px] space-y-4
-        transform transition-all duration-200 scale-95 animate-in fade-in zoom-in-95">
-
-          <h2 className="text-lg font-semibold">Write a Review</h2>
-
-          <textarea
-            value={review}
-            onChange={(e) => setReview(e.target.value)}
-            placeholder="Optional..."
-            className="w-full p-3 rounded-lg border border-border bg-transparent focus:outline-none focus:ring-2 focus:ring-[#2DD4BF]/50 transition"
-          />
-
-          <div className="flex justify-end gap-2">
-            <button
-              onClick={onClose}
-              className="px-3 py-1 rounded-lg hover:bg-white/10 transition"
-            >
-              Cancel
-            </button>
-
-            <button
-              onClick={onSubmit}
-              className="bg-[#2DD4BF] px-4 py-2 rounded-lg text-white
-              hover:brightness-110 active:scale-95 transition"
-            >
-              Submit
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  const RatingSection = ({ courseId }) => {
-    const [rating, setRating] = useState(0);
-    const [review, setReview] = useState("");
-    const [open, setOpen] = useState(false);
-
-    const handleSubmit = () => {
-      if (!rating) {
-        alert("Rating is required");
-        return;
-      }
-
-      console.log({
-        courseId,
-        rating,
-        review,
-      });
-
-      setOpen(false);
-    };
-
-    return (
-      <div className="flex items-center gap-5 space-y-0">
-        <StarRating value={rating} onChange={setRating} />
-
-        <>
-          <button
-            onClick={() => {
-              if (!rating) return;
-              setOpen(true);
-            }}
-            disabled={!rating}
-            className={`p-2 rounded-lg transition-all duration-200 ${rating
-              ? "text-gray-200 hover:text-white hover:bg-white/10 active:scale-90"
-              : "text-gray-500 cursor-not-allowed"
-              }`}
-            title="Add review"
-          >
-            <MessageSquareText size={16} />
-          </button>
-
-          <ReviewModal
-            isOpen={open}
-            onClose={() => setOpen(false)}
-            review={review}
-            setReview={setReview}
-            onSubmit={handleSubmit}
-          />
-        </>
-      </div>
-    );
-  };
+  // console.log("Filtered Explore Courses:", filteredExploreCourses);
+  console.log("Filtered My Courses:", filteredMyCourses);
+  console.log("My Courses:", myCourses);
 
   if (loading) return <div>Loading...</div>
   return (
@@ -574,6 +465,8 @@ const CoursesPage = () => {
                   (progress?.completedLessons?.length > 0) ||
                   (progress?.currentLesson != null);
 
+                const hasCompletedAtLeastOneLesson =
+                  (progress?.completedLessons?.length || 0) > 0;
                 return (
                   <div
                     key={course.id}
@@ -589,10 +482,40 @@ const CoursesPage = () => {
                         {course.title}
                       </h3>
 
-                      {/* {hasStarted && (
-                        <RatingSection courseId={course.id} />
+                      <RatingSection
+                        courseId={course.id}
+                        existingRating={purchasedEntry?.rating || 0}
+                        existingFeedback={purchasedEntry?.feedback || ""}
+                        onUpdate={(updatedCourse) => {
+                          const updatedCourses = user.purchasedCourses.map(c =>
+                            Number(c.courseId) === Number(updatedCourse.courseId)
+                              ? updatedCourse
+                              : c
+                          );
+
+                          updateUser({
+                            purchasedCourses: updatedCourses
+                          });
+                        }}
+                      />
+                      {/* {hasCompletedAtLeastOneLesson && (
+                        <RatingSection
+                          courseId={course.id}
+                          existingRating={purchasedEntry?.rating || 0}
+                          existingFeedback={purchasedEntry?.feedback || ""}
+                          onUpdate={(updatedCourse) => {
+                            const updatedCourses = (user.purchasedCourses || []).map(c =>
+                              Number(c.courseId) === Number(updatedCourse.courseId)
+                                ? updatedCourse
+                                : c
+                            );
+
+                            updateUser({
+                              purchasedCourses: updatedCourses
+                            });
+                          }}
+                        />
                       )} */}
-                      <RatingSection courseId={course.id} />
 
                       <p className="text-sm text-slate-400">{course.lessons}</p>
                       <button
