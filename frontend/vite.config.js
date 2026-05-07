@@ -11,7 +11,7 @@ const REQUIRED_ENV_VARS = [
   { key: "VITE_FIREBASE_STORAGE_BUCKET",      hint: "Firebase storage bucket (e.g. your-project.appspot.com)" },
   { key: "VITE_FIREBASE_MESSAGING_SENDER_ID", hint: "Firebase messaging sender ID" },
   { key: "VITE_FIREBASE_APP_ID",              hint: "Firebase app ID" },
-  { key: "VITE_STRIPE_PUBLISHABLE_KEY",       hint: "Stripe publishable key (starts with pk_test_ or pk_live_)" },
+
 ];
 
 const PLACEHOLDER_PATTERNS = [

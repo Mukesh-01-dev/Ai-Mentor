@@ -1,14 +1,3 @@
-/**
- * env-validator.js
- *
- * Runtime guard — secondary safety net that runs in the browser bundle.
- * The PRIMARY validation is done at dev-server / build startup inside
- * vite.config.js, which calls process.exit(1) before the browser loads.
- *
- * If a variable is somehow missing at runtime, this throws an Error whose
- * message appears in the terminal (HMR output / build log) and the browser
- * DevTools console — NOT as a styled error page on the website.
- */
 
 const REQUIRED_ENV_VARS = [
   { key: "VITE_API_BASE_URL",                 hint: "Backend server URL (e.g. http://localhost:5000)" },
@@ -18,7 +7,7 @@ const REQUIRED_ENV_VARS = [
   { key: "VITE_FIREBASE_STORAGE_BUCKET",      hint: "Firebase storage bucket (e.g. your-project.appspot.com)" },
   { key: "VITE_FIREBASE_MESSAGING_SENDER_ID", hint: "Firebase messaging sender ID" },
   { key: "VITE_FIREBASE_APP_ID",              hint: "Firebase app ID" },
-  { key: "VITE_STRIPE_PUBLISHABLE_KEY",       hint: "Stripe publishable key (starts with pk_)" },
+
 ];
 
 const PLACEHOLDER_PATTERNS = [
