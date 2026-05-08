@@ -79,45 +79,47 @@ const Dashboard = () => {
     console.log("Calculating stats with user:", user);
     console.log("coursesData:", coursesData);
 
-    if (
-      !user?.purchasedCourses ||
-      !coursesData.statsCards ||
-      coursesData.statsCards.length < 4
-    ) {
-      return [
-        {
-          icon: <Play className="w-5 h-5 text-blue-600" />,
-          value: "0",
-          label: "Ongoing Courses",
-          change: "+0%",
-          bgColor: "bg-blue-50",
-          iconBg: "bg-blue-100",
-        },
-        {
-          icon: <CheckCircle className="w-5 h-5 text-green-600" />,
-          value: "0",
-          label: "Completed",
-          change: "+0",
-          bgColor: "bg-green-50",
-          iconBg: "bg-green-100",
-        },
-        {
-          icon: <Award className="w-5 h-5 text-purple-600" />,
-          value: "0",
-          label: "Certificates",
-          change: "+0",
-          bgColor: "bg-purple-50",
-          iconBg: "bg-purple-100",
-        },
-        {
-          icon: <Clock className="w-5 h-5 text-orange-600" />,
-          value: "0h",
-          label: "Hours Spent",
-          change: "+0h",
-          bgColor: "bg-orange-50",
-          iconBg: "bg-orange-100",
-        },
-      ];
+    const defaultCards = [
+      {
+        icon: <Play className="w-5 h-5 text-blue-600" />,
+        value: "0",
+        label: "Ongoing Courses",
+        change: "+0%",
+        bgColor: "bg-blue-50",
+        iconBg: "bg-blue-100",
+      },
+      {
+        icon: <CheckCircle className="w-5 h-5 text-green-600" />,
+        value: "0",
+        label: "Completed",
+        change: "+0",
+        bgColor: "bg-green-50",
+        iconBg: "bg-green-100",
+      },
+      {
+        icon: <Award className="w-5 h-5 text-purple-600" />,
+        value: "0",
+        label: "Certificates",
+        change: "+0",
+        bgColor: "bg-purple-50",
+        iconBg: "bg-purple-100",
+      },
+      {
+        icon: <Clock className="w-5 h-5 text-orange-600" />,
+        value: "0h",
+        label: "Hours Spent",
+        change: "+0h",
+        bgColor: "bg-orange-50",
+        iconBg: "bg-orange-100",
+      },
+    ];
+
+    const baseCards = coursesData.statsCards?.length === 4 
+      ? coursesData.statsCards 
+      : defaultCards;
+
+    if (!user?.purchasedCourses) {
+      return baseCards;
     }
 
     let coursesInProgress = 0;
@@ -142,7 +144,7 @@ const Dashboard = () => {
 
         if (completedLessons === totalLessons && totalLessons > 0) {
           completedCourses++;
-        } else if (completedLessons > 0) {
+        } else {
           coursesInProgress++;
         }
       }
@@ -150,19 +152,19 @@ const Dashboard = () => {
 
     const result = [
       {
-        ...coursesData.statsCards[0],
+        ...baseCards[0],
         value: coursesInProgress.toString(),
       },
       {
-        ...coursesData.statsCards[1],
+        ...baseCards[1],
         value: completedCourses.toString(),
       },
       {
-        ...coursesData.statsCards[2],
+        ...baseCards[2],
         value: certificates.toString(),
       },
       {
-        ...coursesData.statsCards[3],
+        ...baseCards[3],
         value: `${totalHours}h`,
       },
     ];
