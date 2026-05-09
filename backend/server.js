@@ -18,6 +18,7 @@ import communityRoutes from "./routes/communityRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import certificateRoutes from "./routes/certificateRoutes.js";
 import paymentRoutes from "./routes/payment.js";
+import webhookRoutes from "./routes/webhook.js"; // Re-added webhook import
 import preferenceRoutes from "./routes/preferenceRoutes.js";
 import contactUsRoutes from "./routes/contactus.js"; // ✅ fixed import
 
@@ -59,6 +60,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/courses", courseRoutes);
 app.use("/api/payment", paymentRoutes);
+app.use("/api", webhookRoutes); // Re-added webhook route mounting (as /api/webhook)
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/sidebar", sidebarRoutes);
 app.use("/api/ai", aiRoutes);

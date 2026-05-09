@@ -1,6 +1,10 @@
 import express from "express";
 import Stripe from "stripe";
 import User from "../models/User.js";
+import sendEmail from "../utils/sendEmail.js";
+import { getEnrollmentEmailTemplate } from "../templates/enrollmentEmailTemplate.js";
+import { escapeHtml } from "../utils/userUtils.js";
+import { createNotification } from "../controllers/notificationController.js";
 
 const router = express.Router();
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
@@ -30,6 +34,7 @@ router.post(
       const session = event.data.object;
 
       const courseId = session.metadata.courseId;
+      const courseTitle = session.metadata.courseTitle;
       const userId = session.metadata.userId;
 
       try {
@@ -51,6 +56,7 @@ router.post(
         if (!alreadyPurchased) {
           purchased.push({
             courseId: Number(courseId),
+            courseTitle: courseTitle || "Course",
             purchasedAt: new Date(),
             progress: {
               completedLessons: [],
@@ -59,9 +65,57 @@ router.post(
           });
 
           user.purchasedCourses = purchased;
+          user.changed("purchasedCourses", true);
           await user.save();
 
           console.log("✅ Course added after payment:", courseId);
+
+          // ✅ SEND ENROLLMENT EMAIL (NON-BLOCKING)
+          try {
+            const frontendUrl = process.env.FRONTEND_URL;
+            
+            // Validation of courseLink (Requirement 6)
+            let courseLink;
+            if (!frontendUrl) {
+              console.warn("⚠️ FRONTEND_URL not set, using fallback for email link");
+              courseLink = `http://localhost:5173/learning/${courseId}`;
+            } else {
+              courseLink = `${frontendUrl}/learning/${courseId}`;
+            }
+
+            const emailHtml = getEnrollmentEmailTemplate(
+              escapeHtml(user.firstName || user.name || "Student"),
+              escapeHtml(courseTitle || "your new course"),
+              courseLink
+            );
+
+            await sendEmail({
+              email: user.email,
+              subject: `Enrollment Confirmed: ${courseTitle || "Your Course"}`,
+              html: emailHtml,
+            });
+
+            console.log("📧 Enrollment email sent successfully to:", user.email);
+          } catch (emailError) {
+            // Log full error object (stack trace) for debugging SMTP/network issues
+            console.error("❌ Failed to send enrollment email from webhook:", emailError);
+
+            // ✅ Log to database for audit trail
+            try {
+              await createNotification(userId, {
+                title: "⚠️ Email Delivery Issue",
+                message: `We couldn't send your enrollment confirmation email for ${courseTitle || "your course"}.`,
+                type: "alert",
+                metadata: {
+                  errorMessage: emailError.message,
+                  stack: emailError.stack,
+                  courseId: courseId,
+                },
+              });
+            } catch (notificationError) {
+              console.error("❌ Failed to create email failure notification in webhook:", notificationError);
+            }
+          }
         } else {
           console.log("⚠️ Course already purchased:", courseId);
         }

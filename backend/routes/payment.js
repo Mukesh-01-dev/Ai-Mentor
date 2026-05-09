@@ -1,5 +1,6 @@
 import express from "express";
 import Stripe from "stripe";
+import { protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
@@ -7,7 +8,7 @@ const router = express.Router();
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 // ✅ CREATE CHECKOUT SESSION
-router.post("/create-checkout-session", async (req, res) => {
+router.post("/create-checkout-session", protect, async (req, res) => {
   try {
     const { course } = req.body;
 
@@ -55,6 +56,7 @@ router.post("/create-checkout-session", async (req, res) => {
       metadata: {
         courseId: course.id.toString(),
         courseTitle: course.title,
+        userId: req.user.id.toString(), // Added userId from auth middleware
       },
 
       success_url: successUrl,

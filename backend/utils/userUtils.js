@@ -20,7 +20,7 @@ export const ensureProfileCompleteness = async (user) => {
     user.isProfileComplete = isComplete;
     await user.save();
   }
-  
+
   return isComplete;
 };
 
@@ -33,3 +33,20 @@ export const ensureProfileCompleteness = async (user) => {
 export const formatFullName = (firstName, lastName) => {
   return `${firstName || ""} ${lastName || ""}`.trim();
 };
+
+/**
+ * Escapes HTML special characters to prevent XSS.
+ * @param {string} unsafe 
+ * @returns {string}
+ */
+export const escapeHtml = (unsafe) => {
+  if (!unsafe) return "";
+  return unsafe
+    .toString()
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+};
+

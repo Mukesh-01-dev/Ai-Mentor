@@ -5,8 +5,10 @@ import Notifications from "../models/Notification.js";
 import jwt from "jsonwebtoken";
 import cloudinary from "../config/cloudinary.js";
 import fs from "fs";
-import { ensureProfileCompleteness, formatFullName } from "../utils/userUtils.js";
+import { ensureProfileCompleteness, formatFullName, escapeHtml } from "../utils/userUtils.js";
 import { createNotification } from "./notificationController.js";
+import sendEmail from "../utils/sendEmail.js";
+import { getEnrollmentEmailTemplate } from "../templates/enrollmentEmailTemplate.js";
 
 
 // Generate JWT Token
@@ -215,6 +217,53 @@ const purchaseCourse = async (req, res) => {
       type: "course",
       metadata: { courseId },
     });
+
+    // ✅ SEND ENROLLMENT EMAIL (NON-BLOCKING)
+    try {
+      const frontendUrl = process.env.FRONTEND_URL;
+      
+      // Validation of courseLink (Requirement 6)
+      let courseLink;
+      if (!frontendUrl) {
+        console.warn("⚠️ FRONTEND_URL not set, using fallback for email link");
+        courseLink = `http://localhost:5173/learning/${courseId}`;
+      } else {
+        courseLink = `${frontendUrl}/learning/${courseId}`;
+      }
+
+      const emailHtml = getEnrollmentEmailTemplate(
+        escapeHtml(user.firstName || user.name || "Student"), // XSS Protection (Requirement 5)
+        escapeHtml(courseTitle || "your new course"),
+        courseLink
+      );
+
+      await sendEmail({
+        email: user.email,
+        subject: `Enrollment Confirmed: ${courseTitle || "Your Course"}`,
+        html: emailHtml,
+      });
+
+      console.log("📧 Enrollment email sent successfully to:", user.email);
+    } catch (emailError) {
+      // Log full error stack as recommended in review
+      console.error("❌ Failed to send enrollment email:", emailError);
+
+      // ✅ Log to database for audit trail (Notification)
+      try {
+        await createNotification(user.id, {
+          title: "⚠️ Email Delivery Issue",
+          message: `We couldn't send your enrollment confirmation email for ${courseTitle || "your course"}. Please contact support if needed.`,
+          type: "alert",
+          metadata: { 
+            errorMessage: emailError.message,
+            stack: emailError.stack,
+            courseId: courseId
+          }
+        });
+      } catch (notificationError) {
+        console.error("❌ Failed to create email failure notification:", notificationError);
+      }
+    }
 
     res.status(200).json({
       message: "Course enrolled successfully",
