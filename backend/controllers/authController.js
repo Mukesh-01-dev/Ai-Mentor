@@ -1,106 +1,141 @@
 import crypto from "crypto";
-import User from "../models/User.js";
+import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { Op } from "sequelize";
+
+import User from "../models/User.js";
 import sendEmail from "../utils/sendEmail.js";
 
+/* ================= TOKEN ================= */
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: "30d",
   });
 };
 
+/* ================= REGISTER ================= */
 const register = async (req, res) => {
-  const { name, email, password } = req.body;
-
   try {
-    const userExists = await User.findOne({ where: { email } });
-    if (userExists) {
-      return res.status(400).json({ message: "User already exists" });
+    const { name, email, password } = req.body;
+
+    console.log("👉 REGISTER BODY:", req.body);
+
+    if (!name || !email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "All fields are required",
+      });
     }
 
+    const existingUser = await User.findOne({ where: { email } });
+
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: "User already exists",
+      });
+    }
+
+    // ❗ DO NOT HASH HERE (handled by Sequelize hook)
     const user = await User.create({
       name,
       email,
       password,
     });
 
-    res.status(201).json({
-      id: user.id,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      bio: user.bio,
-      purchasedCourses: user.purchasedCourses,
+    return res.status(201).json({
+      success: true,
       token: generateToken(user.id),
-    });
-  } catch (error) {
-    console.error("Register Error:", error);
-    res.status(500).json({ message: "Server Error" });
-  }
-};
-
-const login = async (req, res) => {
-  const { email, password } = req.body;
-
-  try {
-    console.log("Login attempt for email:", email);
-    const user = await User.findOne({ where: { email } });
-
-    if (!user) {
-      console.log("User not found in DB.");
-      return res.status(401).json({ message: "Invalid email or password" });
-    }
-
-    const isMatch = await user.matchPassword(password);
-    console.log("Password match result:", isMatch);
-
-    if (user && user.password && isMatch) {
-      console.log("Login successful!");
-      res.json({
+      user: {
         id: user.id,
-        firstName: user.firstName,
-        lastName: user.lastName,
         name: user.name,
         email: user.email,
         role: user.role,
-        bio: user.bio,
-        purchasedCourses: user.purchasedCourses,
-        token: generateToken(user.id),
-      });
+        isProfileComplete: user.isProfileComplete,
+      },
+    });
 
-      import("../controllers/notificationController.js")
-        .then(({ createNotification }) => {
-          createNotification(user.id, {
-            title: "New Login Detected",
-            message: `A new login was detected for your account at ${new Date().toLocaleString()}.`,
-            type: "security",
-          });
-        })
-        .catch((error) => {
-          console.error("Failed to load notificationController or send login notification:", error);
-        });
-    } else {
-      console.log("Login failed: password mismatch.");
-      res.status(401).json({ message: "Invalid email or password" });
-    }
   } catch (error) {
-    console.error("Login Error:", error);
-    res.status(500).json({ message: "Server Error" });
+    console.error("❌ Register Error:", error);
+    return res.status(500).json({ success: false, message: "Server Error" });
   }
 };
 
+/* ================= LOGIN (FINAL FIXED + DEBUG) ================= */
+const login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    console.log("👉 LOGIN BODY:", req.body);
+
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Email and password are required",
+      });
+    }
+
+    const user = await User.findOne({ where: { email } });
+
+    if (!user || !user.password) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid credentials",
+      });
+    }
+
+    // 🔥 DEBUG LOGS (IMPORTANT)
+    console.log("🔐 RAW INPUT PASSWORD:", JSON.stringify(password));
+    console.log("🗄 DB PASSWORD:", user.password);
+
+    // 🔥 FIX: trim input password
+    const cleanPassword = password.trim();
+
+    const isMatch = await bcrypt.compare(cleanPassword, user.password);
+
+    console.log("✅ BCRYPT RESULT:", isMatch);
+
+    if (!isMatch) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid credentials",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      token: generateToken(user.id),
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        isProfileComplete: user.isProfileComplete,
+      },
+    });
+
+  } catch (error) {
+    console.error("❌ Login Error:", error);
+    return res.status(500).json({ success: false, message: "Server Error" });
+  }
+};
+
+/* ================= GOOGLE LOGIN ================= */
 const googleLogin = async (req, res) => {
   try {
     const { idToken } = req.body;
+
+    if (!idToken) {
+      return res.status(400).json({
+        success: false,
+        message: "Token missing",
+      });
+    }
 
     const payload = JSON.parse(
       Buffer.from(idToken.split(".")[1], "base64").toString()
     );
 
-    const uid = payload.sub;
     const email = payload.email;
     const name = payload.name || email.split("@")[0];
 
@@ -110,38 +145,37 @@ const googleLogin = async (req, res) => {
       user = await User.create({
         name,
         email,
-        googleId: uid,
-        role: "user",
+        password: null,
       });
     }
 
-    const token = generateToken(user.id);
-
-    res.json({
-      id: user.id,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      bio: user.bio,
-      purchasedCourses: user.purchasedCourses,
-      token,
+    return res.json({
+      success: true,
+      token: generateToken(user.id),
+      user,
     });
+
   } catch (error) {
-    console.error("Google login error:", error);
-    res.status(500).json({ message: "Google login failed" });
+    console.error("❌ Google Login Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Google login failed",
+    });
   }
 };
 
+/* ================= FORGOT PASSWORD ================= */
 const forgotPassword = async (req, res) => {
-  const { email } = req.body;
-
   try {
+    const { email } = req.body;
+
     const user = await User.findOne({ where: { email } });
 
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
     }
 
     const resetToken = crypto.randomBytes(20).toString("hex");
@@ -157,41 +191,25 @@ const forgotPassword = async (req, res) => {
 
     const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
 
-    const message = `You are receiving this email because you (or someone else) has requested the reset of a password. Please make a POST request to: \n\n ${resetUrl}`;
+    await sendEmail({
+      email: user.email,
+      subject: "Password Reset",
+      message: resetUrl,
+    });
 
-    const html = `
-      <h1>Password Reset Request</h1>
-      <p>You are receiving this email because you (or someone else) has requested the reset of a password for your account.</p>
-      <p>Please click on the link below to reset your password:</p>
-      <a href="${resetUrl}" clicktracking=off>${resetUrl}</a>
-      <p>If you did not request this, please ignore this email and your password will remain unchanged.</p>
-    `;
+    return res.json({
+      success: true,
+      message: "Reset email sent",
+    });
 
-    try {
-      await sendEmail({
-        email: user.email,
-        subject: "Password Reset Token",
-        message,
-        html,
-      });
-
-      res.status(200).json({ message: "Email sent" });
-    } catch (err) {
-      console.error("Email could not be sent", err);
-      user.resetPasswordToken = null;
-      user.resetPasswordExpires = null;
-      await user.save();
-      return res.status(500).json({ message: "Email could not be sent" });
-    }
   } catch (error) {
-    console.error("Forgot Password Error:", error);
-    res.status(500).json({ message: "Server Error" });
+    console.error("❌ Forgot Password Error:", error);
+    return res.status(500).json({ success: false, message: "Server error" });
   }
 };
 
+/* ================= RESET PASSWORD ================= */
 const resetPassword = async (req, res) => {
-  const { password } = req.body;
-
   try {
     const hashedToken = crypto
       .createHash("sha256")
@@ -206,31 +224,26 @@ const resetPassword = async (req, res) => {
     });
 
     if (!user) {
-      return res.status(400).json({ message: "Invalid or expired token" });
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or expired token",
+      });
     }
 
-    user.set("password", password);
+    user.password = req.body.password; // hook will hash it
     user.resetPasswordToken = null;
     user.resetPasswordExpires = null;
 
     await user.save();
 
-    import("../controllers/notificationController.js")
-      .then(({ createNotification }) => {
-        createNotification(user.id, {
-          title: "Password Changed",
-          message: "Your password has been successfully reset. If this wasn't you, please secure your account.",
-          type: "security",
-        });
-      })
-      .catch((error) => {
-        console.error("Password reset notification error:", error);
-      });
+    return res.json({
+      success: true,
+      message: "Password updated successfully",
+    });
 
-    res.status(200).json({ message: "Password updated successfully" });
   } catch (error) {
-    console.error("Reset Password Error:", error);
-    res.status(500).json({ message: "Server Error" });
+    console.error("❌ Reset Password Error:", error);
+    return res.status(500).json({ success: false, message: "Server error" });
   }
 };
 

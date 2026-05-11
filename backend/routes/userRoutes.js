@@ -1,10 +1,11 @@
 // backend/routes/userRoutes.js
+
 import express from "express";
 import multer from "multer";
 import path from "path";
 import { protect } from "../middleware/authMiddleware.js";
 import validate from "../middleware/validate.js";
-import { registerSchema, loginSchema } from "../schemas/authSchema.js";
+
 import {
   updateProfileSchema,
   changePasswordSchema,
@@ -15,8 +16,6 @@ import {
 } from "../schemas/userSchema.js";
 
 import {
-  registerUser,
-  loginUser,
   getUserProfile,
   updateUserProfile,
   purchaseCourse,
@@ -26,12 +25,13 @@ import {
   updateUserSettings,
   removePurchasedCourse,
   deleteAccount,
-  changePassword,
   completeProfile,
+  changePassword,
 } from "../controllers/userController.js";
 
 const router = express.Router();
 
+/* ================= MULTER ================= */
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, "uploads/");
@@ -44,35 +44,63 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-/* ---------- AUTH ROUTES ---------- */
-
-router.post("/register", validate(registerSchema), registerUser);
-router.post("/login", validate(loginSchema), loginUser);
-
-/* ---------- FIRST-TIME ONBOARDING ---------- */
-// Accepts avatar via multipart form data, requires JWT auth
-router.post("/complete-profile", protect, upload.single("avatar"), completeProfile);
-
-/* ---------- USER ROUTES ---------- */
-
+/* ================= USER PROFILE ================= */
 router.route("/profile")
   .get(protect, getUserProfile)
-  .put(protect, upload.single("avatar"), validate(updateProfileSchema), updateUserProfile);
+  .put(
+    protect,
+    upload.single("avatar"),
+    validate(updateProfileSchema),
+    updateUserProfile
+  );
 
-router.put("/change-password", protect, validate(changePasswordSchema), changePassword);
+/* ================= COMPLETE PROFILE ================= */
+router.post(
+  "/complete-profile",
+  protect,
+  upload.single("avatar"),
+  completeProfile
+);
 
-router.post("/purchase-course", protect, validate(purchaseCourseSchema), purchaseCourse);
+/* ================= PASSWORD ================= */
+router.put(
+  "/change-password",
+  protect,
+  validate(changePasswordSchema),
+  changePassword
+);
 
-router.put("/course-progress", protect, validate(courseProgressSchema), updateCourseProgress);
+/* ================= COURSES ================= */
+router.post(
+  "/purchase-course",
+  protect,
+  validate(purchaseCourseSchema),
+  purchaseCourse
+);
+
+router.put(
+  "/course-progress",
+  protect,
+  validate(courseProgressSchema),
+  updateCourseProgress
+);
 
 router.get("/watched-videos", protect, getWatchedVideos);
 
+/* ================= SETTINGS ================= */
 router.route("/settings")
   .get(protect, getUserSettings)
   .put(protect, validate(updateSettingsSchema), updateUserSettings);
 
-router.post("/remove-course", protect, validate(removeCourseSchema), removePurchasedCourse);
+/* ================= REMOVE COURSE ================= */
+router.post(
+  "/remove-course",
+  protect,
+  validate(removeCourseSchema),
+  removePurchasedCourse
+);
 
+/* ================= DELETE ACCOUNT ================= */
 router.delete("/delete-account", protect, deleteAccount);
 
 export default router;

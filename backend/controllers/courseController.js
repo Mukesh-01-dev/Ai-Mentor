@@ -5,7 +5,7 @@ import { Course, Module, Lesson, LessonContent } from "../models/modelAssociatio
 ========================= */
 
 const parseLessonsCount = (lessons) => {
-  if (typeof lessons !== "string") return 0;
+  if (!lessons || typeof lessons !== "string") return 0;
 
   try {
     if (lessons.includes(" of ")) {
@@ -21,25 +21,31 @@ const parseLessonsCount = (lessons) => {
 };
 
 const formatCourse = (course) => ({
-  id: course.id,
-  title: course.title,
-  category: course.category,
-  categoryColor: course.categoryColor,
-  level: course.level,
-  lessons: course.lessons,
-  lessonsCount: course.lessonsCount ?? parseLessonsCount(course.lessons),
-  price: course.price,
-  priceValue: course.priceValue,
-  currency: course.currency,
-  rating: course.rating,
-  students: course.students,
-  studentsCount: course.studentsCount,
-  image: course.image,
-  isBookmarked: course.isBookmarked,
+  id: course.id || "",
+  title: course.title || "",
+  category: course.category || "",
+  categoryColor: course.categoryColor || "",
+  level: course.level || "",
+
+  lessons: course.lessons || "",
+  lessonsCount:
+    course.lessonsCount ??
+    parseLessonsCount(course.lessons || ""),
+
+  price: course.price || 0,
+  priceValue: course.priceValue || 0,
+  currency: course.currency || "INR",
+
+  rating: course.rating || 0,
+  students: course.students || 0,
+  studentsCount: course.studentsCount || 0,
+
+  image: course.image || "",
+  isBookmarked: course.isBookmarked || false,
 });
 
 /* =========================
-   GET ALL COURSES (DB)
+   GET ALL COURSES
 ========================= */
 const getCourses = async (req, res) => {
   try {
@@ -49,19 +55,20 @@ const getCourses = async (req, res) => {
 
     res.json(courses.map(formatCourse));
   } catch (error) {
-    console.error("GET COURSES ERROR:", error);
-    res.status(500).json({ message: "Failed to load courses" });
+    console.error("GET COURSES ERROR FULL:", error);
+    res.status(500).json({
+      message: error.message,
+      error: error.toString(),
+    });
   }
 };
 
 /* =========================
-   GET COURSE BY ID (DB)
+   GET COURSE BY ID
 ========================= */
 const getCourseById = async (req, res) => {
   try {
-    const courseId = String(req.params.id);
-
-    const course = await Course.findByPk(courseId);
+    const course = await Course.findByPk(req.params.id);
 
     if (!course) {
       return res.status(404).json({ message: "Course not found" });
@@ -75,25 +82,19 @@ const getCourseById = async (req, res) => {
 };
 
 /* =========================
-   GET MY COURSES (DB)
+   GET MY COURSES
 ========================= */
 const getMyCourses = async (req, res) => {
   try {
-    if (!req.user) {
-      return res.json([]);
-    }
+    if (!req.user) return res.json([]);
 
     const purchasedIds =
       req.user.purchasedCourses?.map((c) => String(c.courseId)) || [];
 
-    if (purchasedIds.length === 0) {
-      return res.json([]);
-    }
+    if (purchasedIds.length === 0) return res.json([]);
 
     const myCourses = await Course.findAll({
-      where: {
-        id: purchasedIds,
-      },
+      where: { id: purchasedIds },
       order: [["createdAt", "ASC"]],
     });
 
@@ -115,35 +116,27 @@ const getMyCourses = async (req, res) => {
 };
 
 /* =========================
-   GET COURSE LEARNING DATA (DB)
+   GET COURSE LEARNING DATA
 ========================= */
 const getCourseLearningData = async (req, res) => {
   try {
-    const courseId = String(req.params.id);
-
-    const course = await Course.findByPk(courseId);
+    const course = await Course.findByPk(req.params.id);
 
     if (!course) {
       return res.status(404).json({ message: "Learning data not found" });
     }
 
     const modules = await Module.findAll({
-      where: { courseId },
-      order: [["order", "ASC"], ["createdAt", "ASC"]],
+      where: { courseId: req.params.id },
+      order: [["order", "ASC"]],
     });
 
     const formattedModules = await Promise.all(
       modules.map(async (module) => {
         const lessons = await Lesson.findAll({
           where: { moduleId: module.id },
-          include: [
-            {
-              model: LessonContent,
-              as: "content",
-              required: false,
-            },
-          ],
-          order: [["order", "ASC"], ["createdAt", "ASC"]],
+          include: [{ model: LessonContent, as: "content", required: false }],
+          order: [["order", "ASC"]],
         });
 
         return {
@@ -159,9 +152,9 @@ const getCourseLearningData = async (req, res) => {
             youtubeUrl: lesson.youtubeUrl,
             content: lesson.content
               ? {
-                introduction: lesson.content.introduction,
-                keyConcepts: lesson.content.keyConcepts,
-              }
+                  introduction: lesson.content.introduction,
+                  keyConcepts: lesson.content.keyConcepts,
+                }
               : undefined,
           })),
         };
@@ -173,10 +166,7 @@ const getCourseLearningData = async (req, res) => {
     for (const module of formattedModules) {
       const firstLesson = module.lessons?.[0];
       if (firstLesson) {
-        currentLesson = {
-          ...firstLesson,
-          module: module.title,
-        };
+        currentLesson = { ...firstLesson, module: module.title };
         break;
       }
     }
@@ -198,28 +188,8 @@ const getCourseLearningData = async (req, res) => {
   }
 };
 
-/* =================================
-   GET COURSE AND LESSON TITLES
-===================================== */
-const getCourseAndLessonTitles = async (courseId, lessonId) => {
-  try {
-    const course = await Course.findByPk((courseId));
-    const lesson = await Lesson.findByPk((lessonId));
-
-    if (!course || !lesson) return null;
-
-    return {
-      courseTitle: course.title || null,
-      lessonTitle: lesson.title || null,
-    };
-  } catch (error) {
-    console.error("Error reading course/lesson titles:", error);
-    return null;
-  }
-};
-
 /* =========================
-   GET STATS CARDS (DB)
+   STATS
 ========================= */
 const getStatsCards = async (req, res) => {
   try {
@@ -232,37 +202,31 @@ const getStatsCards = async (req, res) => {
       certificates: 0,
     });
   } catch (error) {
-    console.error("GET STATS CARDS ERROR:", error);
+    console.error("GET STATS ERROR:", error);
     res.status(500).json({ message: "Failed to load stats" });
   }
 };
 
 /* =========================
-   ADMIN STUBS (UNCHANGED)
+   STUBS
 ========================= */
-const addCourse = async (req, res) => {
+const addCourse = async (req, res) =>
   res.status(501).json({ message: "addCourse not implemented" });
-};
 
-const deleteCourse = async (req, res) => {
+const deleteCourse = async (req, res) =>
   res.status(501).json({ message: "deleteCourse not implemented" });
-};
 
-const updateLessonVideo = async (req, res) => {
+const updateLessonVideo = async (req, res) =>
   res.status(501).json({ message: "updateLessonVideo not implemented" });
-};
 
-const addSubtopics = async (req, res) => {
+const addSubtopics = async (req, res) =>
   res.status(501).json({ message: "addSubtopics not implemented" });
-};
 
-const addLessons = async (req, res) => {
+const addLessons = async (req, res) =>
   res.status(501).json({ message: "addLessons not implemented" });
-};
 
-const addModules = async (req, res) => {
+const addModules = async (req, res) =>
   res.status(501).json({ message: "addModules not implemented" });
-};
 
 /* =========================
    EXPORTS
@@ -271,7 +235,6 @@ export {
   getCourses,
   getCourseById,
   getCourseLearningData,
-  getCourseAndLessonTitles,
   getStatsCards,
   getMyCourses,
   addCourse,

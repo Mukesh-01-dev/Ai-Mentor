@@ -9,6 +9,7 @@ import toast from "react-hot-toast";
 /* safe getter */
 function safeGet(obj, path, fallback = undefined) {
   if (!obj || !path) return fallback;
+
   return (
     path
       .split(".")

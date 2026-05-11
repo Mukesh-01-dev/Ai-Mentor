@@ -4,8 +4,10 @@ import { useAuth } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import DashboardLayout from "./components/DashboardLayout";
 import LoadingSpinner from "./components/common/LoadingSpinner";
+import CompleteProfilePage from "./pages/CompleteProfilePage";
+import "./App.css";
 
-// Lazy Loading 
+// Lazy Loading
 const LoginPage = lazy(() => import("./pages/LoginPage"));
 const SignUpPage = lazy(() => import("./pages/SignUpPage"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -20,32 +22,50 @@ const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const CertificatesPage = lazy(() => import("./pages/CertificatesPage"));
 const Success = lazy(() => import("./pages/Success"));
-import CompleteProfilePage from "./pages/CompleteProfilePage";
-import "./App.css";
-// Redirects from the root path based on authentication status.
+
+/* =========================
+   REDIRECT LOGIC
+========================= */
+
 const RootRedirect = () => {
   const { isAuthenticated, user } = useAuth();
+
   if (!isAuthenticated) return <Navigate to="/login" replace />;
-  // Redirect to onboarding if profile is incomplete
-  return <Navigate to={user?.isProfileComplete ? "/dashboard" : "/complete-profile"} replace />;
+
+  return (
+    <Navigate
+      to={user?.isProfileComplete ? "/dashboard" : "/complete-profile"}
+      replace
+    />
+  );
 };
 
-// Prevents authenticated users from accessing public-only pages like login/signup.
 const PublicRoutes = () => {
   const { isAuthenticated, user } = useAuth();
+
   if (!isAuthenticated) return <Outlet />;
-  // Redirect to onboarding if profile is incomplete
-  return <Navigate to={user?.isProfileComplete ? "/dashboard" : "/complete-profile"} replace />;
+
+  return (
+    <Navigate
+      to={user?.isProfileComplete ? "/dashboard" : "/complete-profile"}
+      replace
+    />
+  );
 };
+
+/* =========================
+   MAIN APP
+========================= */
 
 const App = () => {
   return (
     <Suspense fallback={<LoadingSpinner />}>
       <Routes>
-        {/* Redirect from root */}
+
+        {/* Root Redirect */}
         <Route path="/" element={<RootRedirect />} />
 
-        {/* Public routes that logged-in users should not see */}
+        {/* Public Routes */}
         <Route element={<PublicRoutes />}>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignUpPage />} />
@@ -53,25 +73,37 @@ const App = () => {
           <Route path="/reset-password/:token" element={<ResetPassword />} />
         </Route>
 
-        {/* Protected Routes with shared Header + Sidebar layout */}
+        {/* Protected Routes */}
         <Route element={<ProtectedRoute />}>
-          {/* Complete Profile Route */}
+
+          {/* Profile Completion */}
           <Route path="/complete-profile" element={<CompleteProfilePage />} />
+
+          {/* Dashboard Layout */}
           <Route element={<DashboardLayout />}>
+
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/analytics" element={<Analytics />} />
             <Route path="/courses" element={<CoursesPage />} />
             <Route path="/discussions" element={<DiscussionsPage />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/certificates" element={<CertificatesPage />} />
-            <Route path="/watchedvideos" element={<WatchedVideos />} />
+
+            {/* ✅ FIXED ROUTE (IMPORTANT) */}
+            <Route path="/watched" element={<WatchedVideos />} />
+
             <Route path="/learning/:id" element={<LearningPage />} />
             <Route path="/success" element={<Success />} />
+
           </Route>
         </Route>
 
-        {/* Other public routes */}
+        {/* Public Course Preview */}
         <Route path="/course-preview/:courseId" element={<CoursePreview />} />
+
+        {/* ✅ FALLBACK ROUTE */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+
       </Routes>
     </Suspense>
   );

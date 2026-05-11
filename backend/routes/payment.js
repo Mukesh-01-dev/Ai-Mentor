@@ -1,3 +1,4 @@
+console.log("Stripe Key:", process.env.STRIPE_SECRET_KEY);
 import express from "express";
 import Stripe from "stripe";
 

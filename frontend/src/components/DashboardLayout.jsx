@@ -18,18 +18,26 @@ const DashboardLayout = () => {
   const location = useLocation();
   const { sidebarCollapsed } = useSidebar();
 
-  // Derive activePage from the current path
   const activePage =
     routeToPage[location.pathname] ||
     (location.pathname.startsWith("/learning") ? "courses" : "dashboard");
 
   return (
-    <div className="min-h-screen bg-canvas-alt flex flex-col">
-      <Header />
-      <Sidebar activePage={activePage} />
+    <div className="min-h-screen bg-canvas-alt">
+      {/* HEADER FIXED */}
+      <div className="fixed top-0 left-0 right-0 z-50">
+        <Header />
+      </div>
+
+      {/* SIDEBAR FIXED */}
+      <div className="fixed top-[4.5rem] left-0 h-[calc(100vh-4.5rem)] z-40">
+        <Sidebar activePage={activePage} />
+      </div>
+
+      {/* MAIN CONTENT */}
       <div
-        className={`flex-1 flex flex-col transition-all duration-300 mt-[4.5rem] ${
-          sidebarCollapsed ? "lg:ml-20" : "lg:ml-80"
+        className={`pt-[4.5rem] transition-all duration-300 ${
+          sidebarCollapsed ? "pl-20" : "pl-64"
         }`}
       >
         <Outlet />

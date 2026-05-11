@@ -151,64 +151,73 @@ const CompleteProfilePage = () => {
 
   /* ─── Form submission ─── */
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!validate()) return;
+  e.preventDefault();
+  if (!validate()) return;
 
-    setLoading(true);
-    try {
-      const token = localStorage.getItem("token");
-      const formData = new FormData();
+  setLoading(true);
 
-      // Dynamically include names + password if they were shown
-      if (showNameFields) {
-        formData.append("firstName", firstName.trim());
-        formData.append("lastName", lastName.trim());
-      }
-      if (showPasswordField) {
-        formData.append("password", password);
-      }
+  try {
+    const token = localStorage.getItem("token");
 
-      if (showBioField) {
-        formData.append("bio", bio.trim());
-      }
+    const formData = new FormData();
 
-      if (showAvatarField && avatar) {
-        formData.append("avatar", avatar);
-      }
-
-      const response = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/users/complete-profile`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          body: formData,
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to complete profile");
-      }
-
-      // Update auth context with the new user data (preserves token)
-      updateUser({
-        ...data,
-        isProfileComplete: true,
-        token: token,
-      });
-
-      toast.success("Profile completed successfully! 🎉");
-      navigate("/dashboard", { replace: true });
-    } catch (error) {
-      toast.error(error.message || "Something went wrong");
-    } finally {
-      setLoading(false);
+    if (showNameFields) {
+      formData.append("firstName", firstName.trim());
+      formData.append("lastName", lastName.trim());
     }
-  };
 
+    if (showPasswordField) {
+      formData.append("password", password);
+    }
+
+    if (showBioField) {
+      formData.append("bio", bio.trim());
+    }
+
+    if (showAvatarField && avatar) {
+      formData.append("avatar", avatar);
+    }
+
+    // ✅ FIXED: HARD CODE URL (removes env issue)
+    const response = await fetch(
+      "http://localhost:5000/api/users/complete-profile",
+      {
+        method: "POST",
+
+        // 🔥 IMPORTANT FIX
+        credentials: "include",
+
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+
+        body: formData,
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Failed to complete profile");
+    }
+
+    updateUser({
+      ...data,
+      isProfileComplete: true,
+      token: token,
+    });
+
+    toast.success("Profile completed successfully! 🎉");
+    navigate("/dashboard", { replace: true });
+
+  } catch (error) {
+    console.log("Error:", error);
+    toast.error(error.message || "Something went wrong");
+
+  } finally {
+    setLoading(false);
+  }
+};
   return (
     <AuthLayout
       title="Complete Your Profile"

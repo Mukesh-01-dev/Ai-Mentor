@@ -1,44 +1,47 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
 
 const SidebarContext = createContext();
 
+// ✅ Custom Hook
 export const useSidebar = () => {
-    const context = useContext(SidebarContext);
-    if (!context) {
-        throw new Error("useSidebar must be used within a SidebarProvider");
-    }
-    return context;
+  const context = useContext(SidebarContext);
+  if (!context) {
+    throw new Error("useSidebar must be used inside SidebarProvider");
+  }
+  return context;
 };
 
+// ✅ Provider
 export const SidebarProvider = ({ children }) => {
-    // sidebarOpen is for mobile/tablet responsive view
-    const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
-    // sidebarCollapsed is the "icons view" for desktop
-    const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
-        const saved = localStorage.getItem("sidebarCollapsed");
-        return saved !== null ? JSON.parse(saved) : false;
-    });
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("sidebarCollapsed")) || false;
+    } catch {
+      return false;
+    }
+  });
 
-    useEffect(() => {
-        localStorage.setItem("sidebarCollapsed", JSON.stringify(sidebarCollapsed));
-    }, [sidebarCollapsed]);
+  useEffect(() => {
+    localStorage.setItem("sidebarCollapsed", JSON.stringify(sidebarCollapsed));
+  }, [sidebarCollapsed]);
 
-    const toggleSidebar = () => setSidebarOpen((prev) => !prev);
-    const toggleCollapse = () => setSidebarCollapsed((prev) => !prev);
+  const toggleSidebar = () => setSidebarOpen(prev => !prev);
+  const toggleCollapse = () => setSidebarCollapsed(prev => !prev);
 
-    const value = {
+  return (
+    <SidebarContext.Provider
+      value={{
         sidebarOpen,
         setSidebarOpen,
         sidebarCollapsed,
         setSidebarCollapsed,
         toggleSidebar,
         toggleCollapse,
-    };
-
-    return (
-        <SidebarContext.Provider value={value}>
-            {children}
-        </SidebarContext.Provider>
-    );
+      }}
+    >
+      {children}
+    </SidebarContext.Provider>
+  );
 };

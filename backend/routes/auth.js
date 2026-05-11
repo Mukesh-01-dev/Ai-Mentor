@@ -1,12 +1,11 @@
 import express from "express";
 import validate from "../middleware/validate.js";
+
 import {
   registerSchema,
   loginSchema,
-  forgotPasswordSchema,
-  resetPasswordSchema,
-  googleLoginSchema,
 } from "../schemas/authSchema.js";
+
 import {
   register,
   login,
@@ -16,10 +15,39 @@ import {
 } from "../controllers/authController.js";
 
 const router = express.Router();
-router.post("/register", validate(registerSchema), register);
-router.post("/login", validate(loginSchema), login);
-router.post("/google-login", validate(googleLoginSchema), googleLogin);
-router.post("/forgot-password", validate(forgotPasswordSchema), forgotPassword);
-router.post("/reset-password/:token", validate(resetPasswordSchema), resetPassword);
+
+/* ================= AUTH ROUTES ================= */
+
+// Register
+router.post(
+  "/register",
+  validate(registerSchema),
+  register
+);
+
+// Login
+router.post(
+  "/login",
+  validate(loginSchema),
+  login
+);
+
+// Google Login
+router.post(
+  "/google-login",
+  googleLogin
+);
+
+// Forgot Password
+router.post(
+  "/forgot-password",
+  forgotPassword
+);
+
+// Reset Password
+router.put(
+  "/reset-password/:token",
+  resetPassword
+);
 
 export default router;

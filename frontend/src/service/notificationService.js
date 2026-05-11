@@ -1,64 +1,45 @@
-import API_BASE_URL from "../lib/api";
+import API from "../lib/api";
 
-const getHeaders = () => {
-  const token = localStorage.getItem("token");
-  return {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${token}`,
-  };
-};
-
+// ================= GET ALL =================
 export const fetchNotifications = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/notifications`, {
-      headers: getHeaders(),
-    });
-    if (!response.ok) throw new Error("Failed to fetch notifications");
-    return await response.json();
+    const res = await API.get("/api/notifications");
+    return res.data;
   } catch (error) {
-    console.error("Fetch Notifications Error:", error);
-    throw error;
+    console.error("Fetch Notifications Error:", error.response?.data || error.message);
+    throw new Error("Failed to fetch notifications");
   }
 };
 
+// ================= MARK ONE AS READ =================
 export const markAsReadApi = async (id) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/notifications/${id}/read`, {
-      method: "PATCH",
-      headers: getHeaders(),
-    });
-    if (!response.ok) throw new Error("Failed to mark notification as read");
-    return await response.json();
+    const res = await API.patch(`/api/notifications/${id}/read`);
+    return res.data;
   } catch (error) {
-    console.error("Mark Read Error:", error);
-    throw error;
+    console.error("Mark Read Error:", error.response?.data || error.message);
+    throw new Error("Failed to mark notification as read");
   }
 };
 
+// ================= MARK ALL AS READ =================
 export const markAllAsReadApi = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/notifications/read-all`, {
-      method: "PATCH",
-      headers: getHeaders(),
-    });
-    if (!response.ok) throw new Error("Failed to mark all as read");
-    return await response.json();
+    const res = await API.patch("/api/notifications/read-all");
+    return res.data;
   } catch (error) {
-    console.error("Mark All Read Error:", error);
-    throw error;
+    console.error("Mark All Read Error:", error.response?.data || error.message);
+    throw new Error("Failed to mark all as read");
   }
 };
 
+// ================= CLEAR ALL =================
 export const clearAllNotificationsApi = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/notifications/clear`, {
-      method: "DELETE",
-      headers: getHeaders(),
-    });
-    if (!response.ok) throw new Error("Failed to clear notifications");
-    return await response.json();
+    const res = await API.delete("/api/notifications/clear");
+    return res.data;
   } catch (error) {
-    console.error("Clear Notifications Error:", error);
-    throw error;
+    console.error("Clear Notifications Error:", error.response?.data || error.message);
+    throw new Error("Failed to clear notifications");
   }
 };

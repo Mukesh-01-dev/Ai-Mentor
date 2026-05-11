@@ -1,127 +1,142 @@
-// frontend/src/context/AuthContext.jsx
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+} from "react";
 
 const AuthContext = createContext();
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
-
 export const AuthProvider = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    const token = localStorage.getItem('token');
-    const storedUser = localStorage.getItem('user');
-    return !!(token && storedUser && storedUser !== "undefined");
-  });
 
+  // ✅ LOAD USER FROM LOCAL STORAGE
   const [user, setUser] = useState(() => {
-    const storedUser = localStorage.getItem('user');
-    try {
-      return storedUser && storedUser !== "undefined" ? JSON.parse(storedUser) : null;
-    } catch {
-      return null;
-    }
+    const storedUser = localStorage.getItem("user");
+
+    return storedUser
+      ? JSON.parse(storedUser)
+      : null;
   });
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    const storedUser = localStorage.getItem('user');
 
-    if (!token || !storedUser || storedUser === "undefined") {
-      setIsAuthenticated(false);
-      setUser(null);
-    }
-  }, []);
+  // ✅ AUTH STATUS
+  const isAuthenticated = !!user;
 
-  const login = (userData) => {
-    setIsAuthenticated(true);
-    setUser(userData);
-    // Ensure token is extracted correctly from the response object
-    localStorage.setItem('token', userData.token);
-    localStorage.setItem('user', JSON.stringify(userData));
+  /* ================= LOGIN ================= */
+  const login = (data) => {
+
+    // save user
+    setUser(data.user);
+
+    // save token
+    localStorage.setItem(
+      "token",
+      data.token
+    );
+
+    // save user
+    localStorage.setItem(
+      "user",
+      JSON.stringify(data.user)
+    );
+  };
+   /* ================= UPDATE USER ================= */
+  const updateUser = (updatedData) => {
+
+  const updatedUser = {
+    ...user,
+    ...updatedData,
   };
 
+  setUser(updatedUser);
+
+  localStorage.setItem(
+    "user",
+    JSON.stringify(updatedUser)
+    );
+  };
+  /* ================= LOGOUT ================= */
+  const logout = () => {
+
+    setUser(null);
+
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+  };
+
+  /* ================= FETCH PROFILE ================= */
   const fetchUserProfile = useCallback(async () => {
     try {
-      const token = localStorage.getItem('token');
+
+      const token =
+        localStorage.getItem("token");
+
       if (!token) return;
 
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/users/profile`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await fetch(
+        "/api/users/profile",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
-      if (response.ok) {
-        const userData = await response.json();
+      const userData = await response.json();
+
+      if (response.ok && userData) {
 
         const newUser = {
           ...userData,
-          token: localStorage.getItem("token"),
-          avatar_url: userData.avatar_url || null,
-          isProfileComplete: userData.isProfileComplete ?? false,
-          isGoogleUser: userData.isGoogleUser ?? false,
-          googleId: userData.googleId ?? null,
-          hasPassword: userData.hasPassword ?? false,
+          avatar_url:
+            userData.avatar_url || null,
+
+          isProfileComplete:
+            userData.isProfileComplete ?? false,
+
+          isGoogleUser:
+            userData.isGoogleUser ?? false,
+
+          googleId:
+            userData.googleId ?? null,
+
+          hasPassword:
+            userData.hasPassword ?? false,
         };
 
         setUser(newUser);
-        localStorage.setItem("user", JSON.stringify(newUser));
+
+        localStorage.setItem(
+          "user",
+          JSON.stringify(newUser)
+        );
       }
+
     } catch (error) {
-      console.error('Error fetching user profile:', error);
+
+      console.error(
+        "Error fetching user profile:",
+        error
+      );
     }
   }, []);
 
-  const logout = () => {
-    setIsAuthenticated(false);
-    setUser(null);
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-
-    // Clear course progress from localStorage
-    Object.keys(localStorage).forEach(key => {
-      if (key.startsWith('course-progress-')) {
-        localStorage.removeItem(key);
-      }
-    });
-
-    // Safety: Clear everything to prevent stale data
-    localStorage.clear();
-  };
-
-  const updateUser = (updatedUserData) => {
-    setUser((prevUser) => {
-      const newUser = {
-        ...prevUser,
-        ...updatedUserData,
-        settings: {
-          ...prevUser?.settings,
-          ...updatedUserData?.settings,
-        },
-        token: prevUser?.token || localStorage.getItem("token"),
-      };
-
-      localStorage.setItem("user", JSON.stringify(newUser));
-      return newUser;
-    });
-  };
-
-  const value = {
-    isAuthenticated,
+  return (
+    <AuthContext.Provider
+    value={{
     user,
+    setUser,
     login,
     logout,
     updateUser,
     fetchUserProfile,
-  };
-
-  return (
-    <AuthContext.Provider value={value}>
+    isAuthenticated,
+}}
+    >
       {children}
     </AuthContext.Provider>
   );
 };
+
+// Hook
+export const useAuth = () =>
+  useContext(AuthContext);

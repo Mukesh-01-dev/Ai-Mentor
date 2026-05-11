@@ -1,53 +1,74 @@
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 
-const protect = async (req, res, next) => {
-  let token;
+// ================= AUTH MIDDLEWARE =================
+export const protect = async (req, res, next) => {
+  try {
+    let token;
 
-  // 1️⃣ Check Authorization header
-  if (
-    req.headers.authorization &&
-    req.headers.authorization.startsWith("Bearer")
-  ) {
-    try {
+    // Check Authorization header
+    if (
+      req.headers.authorization &&
+      req.headers.authorization.startsWith("Bearer ")
+    ) {
       token = req.headers.authorization.split(" ")[1];
-
-      // 2️⃣ Ensure JWT secret exists
-      if (!process.env.JWT_SECRET) {
-        return res.status(500).json({ message: "JWT secret not configured" });
-      }
-
-      // 3️⃣ Verify token
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-      // 4️⃣ Fetch user using Sequelize findByPk (not MongoDB findById)
-      const user = await User.findByPk(decoded.id, {
-        attributes: { exclude: ["password"] },
-      });
-
-      if (!user) {
-        return res.status(401).json({ message: "User not found" });
-      }
-
-      req.user = user;
-      return next();
-    } catch (error) {
-      console.error("AUTH ERROR:", error.message);
-      return res.status(401).json({ message: "Not authorized, token failed" });
     }
-  }
 
-  // 5️⃣ No token provided
-  return res.status(401).json({ message: "Not authorized, no token" });
+    // No token found
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: "Not authorized, no token",
+      });
+    }
+
+    // Verify token
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET || "secret"
+    );
+
+    // Find user
+    const user = await User.findByPk(decoded.id, {
+      attributes: { exclude: ["password"] },
+    });
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // Attach user to request
+    req.user = user;
+
+    next();
+  } catch (error) {
+    console.error("🔥 AUTH ERROR:", error.message);
+
+    return res.status(401).json({
+      success: false,
+      message: "Not authorized, token failed",
+    });
+  }
 };
 
-export { protect };
+// ================= ADMIN MIDDLEWARE =================
+export const admin = (req, res, next) => {
+  try {
+    if (req.user && req.user.role === "admin") {
+      return next();
+    }
 
-const admin = (req, res, next) => {
-  if (req.user && req.user.role === "admin") {
-    return next();
+    return res.status(403).json({
+      success: false,
+      message: "Admin access required",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
   }
-  return res.status(403).json({ message: "Not authorized, admin access required" });
 };
-
-export { admin };
