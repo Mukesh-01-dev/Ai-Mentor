@@ -1,0 +1,43 @@
+Zod Request Validation: Explanation & Testing Guide
+===================================================
+
+1. What is Zod?
+   Zod is a TypeScript-first schema declaration and validation library. In this project, 
+   it acts as a "Gatekeeper" at the API layer. It ensures that any incoming data 
+   matches the expected format BEFORE it reaches your controllers or database.
+
+2. Why use Zod here?
+   - Replaces Manual Checks: Previously, we had multiple manual "if (!email || !password)" 
+     checks. Zod does this for us and handles complex rules (like email formatting).
+   - Early Rejection: If data is invalid, Zod rejects it immediately, saving 
+     database resources on your Neon PostgreSQL cluster.
+   - Consistent Errors: Every validation failure returns a structured JSON 
+     response with the exact error and the path (field).
+
+3. Validation Rules (Limits)
+   The schemas are defined in `backend/schemas/authSchema.js`. Current rules:
+   - Name: Must be at least 2 characters string.
+   - Email: Must be a valid email string.
+   - Password: Must be at least 6 characters string.
+   - Google Login: Requires an `idToken`.
+
+   *Limit note*: Zod validates the STRUCTURE and FORMAT of the data. Database-level 
+   uniqueness (like checking if an email already exists in the table) is still handled 
+   remotely by Sequelize and Neon PostgreSQL.
+
+4. How to Test it Yourself
+   You can use the following PowerShell command in a terminal while the server is running:
+
+   # Test with bad data
+   Invoke-RestMethod -Method Post -Uri "http://localhost:5000/api/auth/register" `
+     -ContentType "application/json" `
+     -Body '{"name": "A", "email": "not-an-email", "password": "123"}'
+
+   Result: You will receive a 400 Bad Request with a JSON list of all the errors found.
+
+   # Test with good data
+   Replace the email and name with valid values to see it successfully enter the 
+   controller (though if the email already exists, Sequelize will return a 400 "User exists").
+
+
+  

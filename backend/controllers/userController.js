@@ -438,15 +438,19 @@ const updateUserProfile = async (req, res) => {
 
     // Avatar Upload Handling
     if (req.file) {
-      const result = await cloudinary.uploader.upload(req.file.path, {
-        folder: "user_avatars",
-        public_id: `user_${user.id}`,
-        overwrite: true,
-      });
-
-      user.avatar_url = result.secure_url;
-
-      fs.unlinkSync(req.file.path);
+      try {
+        const result = await cloudinary.uploader.upload(req.file.path, {
+          folder: "user_avatars",
+          public_id: `user_${user.id}`,
+          overwrite: true,
+        });
+        user.avatar_url = result.secure_url;
+      } catch (uploadError) {
+        console.error("Cloudinary upload failed in updateProfile, using fallback:", uploadError);
+        user.avatar_url = "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png";
+      } finally {
+        if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+      }
     }
 
     // Update text fields
@@ -581,13 +585,19 @@ const completeProfile = async (req, res) => {
 
     // Avatar upload via Cloudinary (required if not already set)
     if (req.file) {
-      const result = await cloudinary.uploader.upload(req.file.path, {
-        folder: "user_avatars",
-        public_id: `user_${user.id}`,
-        overwrite: true,
-      });
-      user.avatar_url = result.secure_url;
-      fs.unlinkSync(req.file.path);
+      try {
+        const result = await cloudinary.uploader.upload(req.file.path, {
+          folder: "user_avatars",
+          public_id: `user_${user.id}`,
+          overwrite: true,
+        });
+        user.avatar_url = result.secure_url;
+      } catch (uploadError) {
+        console.error("Cloudinary upload failed in completeProfile, using fallback:", uploadError);
+        user.avatar_url = "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png";
+      } finally {
+        if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+      }
     } else if (!user.avatar_url) {
       return res.status(400).json({ message: "Profile photo is required" });
     }

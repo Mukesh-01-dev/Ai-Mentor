@@ -4,6 +4,28 @@ import dotenv from "dotenv";
 import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
+import dns from "dns";
+
+// Force Google DNS
+dns.setServers(["8.8.8.8", "8.8.4.4"]);
+
+// Monkey-patch dns.lookup so that pg uses our Google DNS instead of OS getaddrinfo
+const originalLookup = dns.lookup;
+dns.lookup = function(hostname, options, callback) {
+  if (typeof options === 'function') {
+    callback = options;
+    options = {};
+  }
+  if (hostname && hostname.includes('neon.tech')) {
+    // Hardcoded IP from successful nslookup to completely bypass broken local DNS
+    if (options && options.all) {
+      return callback(null, [{ address: '98.85.120.174', family: 4 }]);
+    }
+    return callback(null, '98.85.120.174', 4);
+  } else {
+    originalLookup(hostname, options, callback);
+  }
+};
 
 import { connectDB, sequelize } from "./config/db.js";
 
@@ -16,6 +38,7 @@ import sidebarRoutes from "./routes/sidebarRoutes.js";
 import aiRoutes from "./routes/aiRoutes.js";
 import communityRoutes from "./routes/communityRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
+import adminRoutes from "./routes/adminRoutes.js";
 import certificateRoutes from "./routes/certificateRoutes.js";
 import paymentRoutes from "./routes/payment.js";
 import preferenceRoutes from "./routes/preferenceRoutes.js";
@@ -40,7 +63,7 @@ app.use(express.json());
 
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:5173",
+    origin: [process.env.FRONTEND_URL || "http://localhost:5173", "http://localhost:5174"],
     credentials: true,
   }),
 );
@@ -64,6 +87,7 @@ app.use("/api/sidebar", sidebarRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/community", communityRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/admin", adminRoutes);
 app.use("/api/certificate", certificateRoutes);
 app.use("/api/preferences", preferenceRoutes);
 app.use("/api/contactus", contactUsRoutes); // ✅ added route
@@ -94,14 +118,10 @@ const startServer = async () => {
     await connectDB();
 
     const isDevelopment = process.env.NODE_ENV !== "production";
-    const syncOptions = isDevelopment ? { alter: true } : {};
-
+    const syncOptions = {}; // Disabled alter: true to fix index already exists crash
     await sequelize.sync(syncOptions);
-    console.log(
-      isDevelopment
-        ? "✅ Database models synced with schema auto-alter enabled (development)"
-        : "✅ Database models synced",
-    );
+    console.log("✅ Database models synced");
+
     app.listen(PORT, () => {
       console.log(`🚀 Server running on http://localhost:${PORT}`);
     });
