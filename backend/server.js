@@ -4,6 +4,28 @@ import dotenv from "dotenv";
 import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
+import dns from "dns";
+
+// Force Google DNS
+dns.setServers(["8.8.8.8", "8.8.4.4"]);
+
+// Monkey-patch dns.lookup so that pg uses our Google DNS instead of OS getaddrinfo
+const originalLookup = dns.lookup;
+dns.lookup = function(hostname, options, callback) {
+  if (typeof options === 'function') {
+    callback = options;
+    options = {};
+  }
+  if (hostname && hostname.includes('neon.tech')) {
+    // Hardcoded IP from successful nslookup to completely bypass broken local DNS
+    if (options && options.all) {
+      return callback(null, [{ address: '98.85.120.174', family: 4 }]);
+    }
+    return callback(null, '98.85.120.174', 4);
+  } else {
+    originalLookup(hostname, options, callback);
+  }
+};
 
 import { connectDB, sequelize } from "./config/db.js";
 
@@ -95,7 +117,9 @@ const startServer = async () => {
   try {
     await connectDB();
 
-    await sequelize.sync({ alter: true });
+    const isDevelopment = process.env.NODE_ENV !== "production";
+    const syncOptions = {}; // Disabled alter: true to fix index already exists crash
+    await sequelize.sync(syncOptions);
     console.log("✅ Database models synced");
 
     app.listen(PORT, () => {

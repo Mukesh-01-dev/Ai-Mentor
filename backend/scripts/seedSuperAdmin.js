@@ -7,6 +7,7 @@ dotenv.config();
 const seedSuperAdmin = async () => {
   try {
     await connectDB();
+    await Admin.sync();
 
     const email = process.env.SUPER_ADMIN_EMAIL;
     const adminExists = await Admin.findOne({ where: { email } });
