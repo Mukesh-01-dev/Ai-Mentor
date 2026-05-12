@@ -1,6 +1,6 @@
 // routes/contactus.js
 import express from "express";
-import ContactMessage from "../models/contactMessage.js";
+import ContactMessage from "../models/Contactmessage.js";
 
 const router = express.Router();
 
