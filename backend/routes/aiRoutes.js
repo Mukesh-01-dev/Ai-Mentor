@@ -4,6 +4,7 @@ import { protect } from "../middleware/authMiddleware.js";
 import validate from "../middleware/validate.js";
 import { generateVideoSchema } from "../schemas/aiSchema.js";
 import { getCourseAndLessonTitles } from "../controllers/courseController.js";
+import Preferences from "../models/Preference.js";
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -88,8 +89,21 @@ router.post("/generate-video", protect, validate(generateVideoSchema), async (re
 
     const { courseTitle, lessonTitle } = titles;
 
+    const userPreferencesRecord = await Preferences.findOne({
+      where: { user_id: req.user.id }   // 👈 FIX
+    });
+
+    const userPreferences = userPreferencesRecord
+      ? userPreferencesRecord.toJSON()
+      : null;
+
     // Call AI service
     console.log("🤖 Cache miss. Calling AI service for:", celebrity);
+
+    console.log("📤 Sending preferences to AI service:");
+    console.log(userPreferences);
+
+
     const aiResponse = await fetch(
       `${process.env.AI_SERVICE_URL}/generate`,
       {
@@ -99,12 +113,20 @@ router.post("/generate-video", protect, validate(generateVideoSchema), async (re
           course: courseTitle,
           topic: lessonTitle,
           celebrity,
+          preferences: userPreferences,   // 👈 NEW
         }),
       }
     );
 
     if (!aiResponse.ok) {
-      throw new Error("AI service failed");
+      const errorText = await aiResponse.text();
+
+      console.error("❌ AI SERVICE RESPONSE:", errorText);
+
+      return res.status(500).json({
+        message: "AI service failed",
+        aiError: errorText,
+      });
     }
 
     const { filename, text_file, jobId } = await aiResponse.json();

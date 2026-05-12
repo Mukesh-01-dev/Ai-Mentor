@@ -55,6 +55,7 @@ class LessonRequest(BaseModel):
     course: str
     topic: str
     celebrity: str
+    preferences: dict | None = None   # 👈 NEW
 
 # --------------------------
 # Helpers
@@ -151,10 +152,27 @@ def generate_lesson(data: LessonRequest, background_tasks: BackgroundTasks):
 # Background Task Logic
 # --------------------------
 def process_lesson(data: LessonRequest, base_filename: str):
+    print("\n📥 RAW REQUEST DATA:")
+    print(data.dict())
     try:
         print(f"\n🚀 Starting generation for: {data.topic} ({data.celebrity})")
 
-        # 1️⃣ Generate Text with detailed prompt
+        #  Build preference context
+        preferences_text = ""
+
+        if data.preferences:
+            preferences_text = f"""
+        User Preferences:
+        - Learning Goal: {data.preferences.get("learning_goal", "Not specified")}
+        - Interested Topics: {", ".join(data.preferences.get("interested_topics", [])) if isinstance(data.preferences.get("interested_topics"), list) else data.preferences.get("interested_topics", "Not specified")}
+        - Experience Level: {data.preferences.get("experience_level", "Not specified")}
+        - Weekly Commitment: {data.preferences.get("weekly_commitment", "Not specified")}
+        - Learning Style: {data.preferences.get("learning_style", "Not specified")}
+        """
+        else:
+            preferences_text = "User Preferences: Not provided"
+
+        # 🎯 Final Prompt
         prompt = f"""
         Create a 50 word educational explanation about '{data.topic}' in the subject '{data.course}'.
 
@@ -166,8 +184,17 @@ def process_lesson(data: LessonRequest, base_filename: str):
         - Between 45 and 60 words
 
         Narration style inspired by the celebrity {data.celebrity}.
+
+        {preferences_text}
+
+        Instructions:
+        - Adapt explanation based on user's experience level
+        - Adjust depth based on learning goal
+        - Match explanation style with preferred learning style
         """
-        
+        print("\n📊 USER PREFERENCES:\n")
+        print(data.preferences if data.preferences else "No preferences provided")
+
         try:
             response = client.models.generate_content(
                 model="gemini-2.5-flash",
