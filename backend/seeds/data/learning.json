@@ -1065,7 +1065,7 @@
     "course": {
       "title": "PostgreSQL",
       "subtitle": "Learn PostgreSQL Database Fundamentals and SQL Operations",
-      "logo": "AI_Tutor_New_UI/Dashboard/postgresql.png",
+      "logo": "/AI_Tutor_New_UI/Dashboard/postgresql.png",
       "progress": 60
     },
     "currentLesson": {
