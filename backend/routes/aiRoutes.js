@@ -119,7 +119,14 @@ router.post("/generate-video", protect, validate(generateVideoSchema), async (re
     );
 
     if (!aiResponse.ok) {
-      throw new Error("AI service failed");
+      const errorText = await aiResponse.text();
+
+      console.error("❌ AI SERVICE RESPONSE:", errorText);
+
+      return res.status(500).json({
+        message: "AI service failed",
+        aiError: errorText,
+      });
     }
 
     const { filename, text_file, jobId } = await aiResponse.json();
