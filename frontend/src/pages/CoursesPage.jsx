@@ -193,7 +193,9 @@ const CoursesPage = () => {
   }
 
   const filteredExploreCourses = exploreCourses
-    .filter((course) => !myCourses.some((c) => c.id === course.id))
+    .filter((course) =>
+      !myCourses.some((c) => String(c.id) === String(course.id))
+    )
     .filter((course) => {
       if (searchQuery.trim() !== "") {
         return course.title.toLowerCase().includes(searchQuery.toLowerCase());
@@ -254,7 +256,7 @@ const CoursesPage = () => {
   return (
     <>
       {/* ══════ HERO ══════ */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-teal-700 via-teal-600 to-teal-800 pt-10 sm:pt-12 lg:pt-16 pb-8 sm:pb-10 lg:pb-12 px-4 sm:px-6 lg:px-8">
+      <div className="relative bg-gradient-to-br from-teal-700 via-teal-600 to-teal-800 pt-10 sm:pt-12 lg:pt-16 pb-8 sm:pb-10 lg:pb-12 px-4 sm:px-6 lg:px-8">
         <div
           className="absolute inset-0 opacity-10"
           style={{
@@ -304,11 +306,10 @@ const CoursesPage = () => {
                 <style>{`.courses-tabs-scroll-container::-webkit-scrollbar { display: none; }`}</style>
                 <button
                   onClick={() => setActiveTab("my-courses")}
-                  className={`flex-1 basis-0 min-w-0 flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-6 py-2.5 rounded-full font-semibold text-xs sm:text-sm transition-all ${
-                    activeTab === "my-courses"
-                      ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/30"
-                      : "bg-black/30 text-white hover:bg-black/40"
-                  }`}
+                  className={`flex-1 basis-0 min-w-0 flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-6 py-2.5 rounded-full font-semibold text-xs sm:text-sm transition-all ${activeTab === "my-courses"
+                    ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/30"
+                    : "bg-black/30 text-white hover:bg-black/40"
+                    }`}
                 >
                   <BookOpen className="w-4 h-4 shrink-0 hidden sm:block" />
                   <span className="hidden sm:inline truncate">
@@ -320,11 +321,10 @@ const CoursesPage = () => {
                 </button>
                 <button
                   onClick={() => setActiveTab("explore")}
-                  className={`flex-1 basis-0 min-w-0 flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-6 py-2.5 rounded-full font-semibold text-xs sm:text-sm transition-all ${
-                    activeTab === "explore"
-                      ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/30"
-                      : "bg-black/30 text-white hover:bg-black/40"
-                  }`}
+                  className={`flex-1 basis-0 min-w-0 flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-6 py-2.5 rounded-full font-semibold text-xs sm:text-sm transition-all ${activeTab === "explore"
+                    ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/30"
+                    : "bg-black/30 text-white hover:bg-black/40"
+                    }`}
                 >
                   <Search className="w-4 h-4 shrink-0 hidden sm:block" />
                   <span className="hidden sm:inline truncate">
@@ -342,11 +342,10 @@ const CoursesPage = () => {
                 <div ref={filterRef}>
                   <button
                     onClick={() => setShowFilters(!showFilters)}
-                    className={`relative flex items-center justify-center flex-shrink-0 w-10 h-10 sm:w-auto sm:px-5 sm:py-2.5 rounded-full border text-sm font-semibold transition-all duration-300 shadow-xl ${
-                      showFilters || getActiveFilterCount() > 0
-                        ? "bg-gradient-to-r from-teal-500/80 to-cyan-500/80 border-transparent text-white shadow-teal-500/20"
-                        : "bg-black/40 border-white/20 text-white hover:bg-black/60 hover:border-white/40 backdrop-blur-md"
-                    }`}
+                    className={`relative flex items-center justify-center flex-shrink-0 w-10 h-10 sm:w-auto sm:px-5 sm:py-2.5 rounded-full border text-sm font-semibold transition-all duration-300 shadow-xl ${showFilters || getActiveFilterCount() > 0
+                      ? "bg-gradient-to-r from-teal-500/80 to-cyan-500/80 border-transparent text-white shadow-teal-500/20"
+                      : "bg-black/40 border-white/20 text-white hover:bg-black/60 hover:border-white/40 backdrop-blur-md"
+                      }`}
                   >
                     <svg
                       className="w-4 h-4 shrink-0"
@@ -416,29 +415,21 @@ const CoursesPage = () => {
                             </label>
                             <div className="flex flex-wrap gap-3">
                               <button
-                                onClick={() =>
-                                  setFilters({ ...filters, category: [] })
-                                }
-                                className={`px-4 py-2 text-xs rounded-xl font-bold transition-all duration-300 ${
-                                  filters.category.length === 0
-                                    ? "bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-lg shadow-teal-500/25 scale-[1.03]"
-                                    : "bg-teal-900/30 text-teal-100 hover:bg-teal-500/20 border border-teal-500/30"
-                                }`}
+                                onClick={() => setFilters({ ...filters, category: [] })}
+                                className={`px-4 py-2 text-xs rounded-xl font-bold transition-all duration-300 ${filters.category.length === 0
+                                  ? "bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-lg shadow-teal-500/25 scale-[1.03]"
+                                  : "bg-teal-900/30 text-teal-100 hover:bg-teal-500/20 border border-teal-500/30"
+                                  }`}
                               >
                                 {t("courses.all_categories")}
                               </button>
-                              {availableCategories
-                                .filter((cat) => cat !== "All")
-                                .map((cat) => (
-                                  <button
-                                    key={cat}
-                                    onClick={() =>
-                                      toggleFilter("category", cat)
-                                    }
-                                    className={`px-4 py-2 text-xs rounded-xl font-bold transition-all duration-300 ${
-                                      filters.category.includes(cat)
-                                        ? "bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-lg shadow-teal-500/25 scale-[1.03]"
-                                        : "bg-teal-900/30 text-teal-100 hover:bg-teal-500/20 border border-teal-500/30"
+                              {availableCategories.filter(cat => cat !== "All").map(cat => (
+                                <button
+                                  key={cat}
+                                  onClick={() => toggleFilter("category", cat)}
+                                  className={`px-4 py-2 text-xs rounded-xl font-bold transition-all duration-300 ${filters.category.includes(cat)
+                                    ? "bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-lg shadow-teal-500/25 scale-[1.03]"
+                                    : "bg-teal-900/30 text-teal-100 hover:bg-teal-500/20 border border-teal-500/30"
                                     }`}
                                   >
                                     {cat}
@@ -454,14 +445,11 @@ const CoursesPage = () => {
                             </label>
                             <div className="flex flex-wrap gap-3">
                               <button
-                                onClick={() =>
-                                  setFilters({ ...filters, level: [] })
-                                }
-                                className={`px-4 py-2 text-xs rounded-xl font-bold transition-all duration-300 ${
-                                  filters.level.length === 0
-                                    ? "bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-lg shadow-teal-500/25 scale-[1.03]"
-                                    : "bg-teal-900/30 text-teal-100 hover:bg-teal-500/20 border border-teal-500/30"
-                                }`}
+                                onClick={() => setFilters({ ...filters, level: [] })}
+                                className={`px-4 py-2 text-xs rounded-xl font-bold transition-all duration-300 ${filters.level.length === 0
+                                  ? "bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-lg shadow-teal-500/25 scale-[1.03]"
+                                  : "bg-teal-900/30 text-teal-100 hover:bg-teal-500/20 border border-teal-500/30"
+                                  }`}
                               >
                                 {t("courses.any_level")}
                               </button>
@@ -469,11 +457,10 @@ const CoursesPage = () => {
                                 <button
                                   key={lvl}
                                   onClick={() => toggleFilter("level", lvl)}
-                                  className={`px-4 py-2 text-xs rounded-xl font-bold transition-all duration-300 ${
-                                    filters.level.includes(lvl)
-                                      ? "bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-lg shadow-teal-500/25 scale-[1.03]"
-                                      : "bg-teal-900/30 text-teal-100 hover:bg-teal-500/20 border border-teal-500/30"
-                                  }`}
+                                  className={`px-4 py-2 text-xs rounded-xl font-bold transition-all duration-300 ${filters.level.includes(lvl)
+                                    ? "bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-lg shadow-teal-500/25 scale-[1.03]"
+                                    : "bg-teal-900/30 text-teal-100 hover:bg-teal-500/20 border border-teal-500/30"
+                                    }`}
                                 >
                                   {lvl}
                                 </button>
@@ -488,14 +475,11 @@ const CoursesPage = () => {
                             </label>
                             <div className="flex gap-3">
                               <button
-                                onClick={() =>
-                                  setFilters({ ...filters, price: [] })
-                                }
-                                className={`flex-1 py-2 text-xs rounded-xl font-bold transition-all duration-300 ${
-                                  filters.price.length === 0
-                                    ? "bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-lg shadow-teal-500/25 scale-[1.03]"
-                                    : "bg-teal-900/30 text-teal-100 hover:bg-teal-500/20 border border-teal-500/30"
-                                }`}
+                                onClick={() => setFilters({ ...filters, price: [] })}
+                                className={`flex-1 py-2 text-xs rounded-xl font-bold transition-all duration-300 ${filters.price.length === 0
+                                  ? "bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-lg shadow-teal-500/25 scale-[1.03]"
+                                  : "bg-teal-900/30 text-teal-100 hover:bg-teal-500/20 border border-teal-500/30"
+                                  }`}
                               >
                                 {t("courses.any_price")}
                               </button>
@@ -503,11 +487,10 @@ const CoursesPage = () => {
                                 <button
                                   key={p}
                                   onClick={() => toggleFilter("price", p)}
-                                  className={`flex-1 py-2 text-xs rounded-xl font-bold transition-all duration-300 ${
-                                    filters.price.includes(p)
-                                      ? "bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-lg shadow-teal-500/25 scale-[1.03]"
-                                      : "bg-teal-900/30 text-teal-100 hover:bg-teal-500/20 border border-teal-500/30"
-                                  }`}
+                                  className={`flex-1 py-2 text-xs rounded-xl font-bold transition-all duration-300 ${filters.price.includes(p)
+                                    ? "bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-lg shadow-teal-500/25 scale-[1.03]"
+                                    : "bg-teal-900/30 text-teal-100 hover:bg-teal-500/20 border border-teal-500/30"
+                                    }`}
                                 >
                                   {p}
                                 </button>
@@ -549,7 +532,12 @@ const CoursesPage = () => {
         <div className="max-w-7xl mx-auto space-y-10">
           {/* ================= MY COURSES ================= */}
           {activeTab === "my-courses" && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-4 auto-rows-fr
+">
+
+
+
+
               {myCourses.length === 0 && (
                 <p className="text-slate-500">{t("courses.not_enrolled")}</p>
               )}
@@ -571,26 +559,45 @@ const CoursesPage = () => {
                 return (
                   <div
                     key={course.id}
-                    className="bg-card rounded-3xl border border-border overflow-hidden shadow-sm"
+                    className="
+    bg-card rounded-3xl border border-border overflow-hidden shadow-sm 
+    flex flex-col h-full
+   w-full
+  "
                   >
-                    <img
-                      src={course.image}
-                      alt={course.title}
-                      className="h-40 w-full object-cover"
-                    />
-                    <div className="p-6 space-y-4">
-                      <h3 className="text-lg font-semibold text-main">
-                        {course.title}
-                      </h3>
-                      <p className="text-sm text-slate-400">{course.lessons}</p>
-                      <button
-                        onClick={() => navigate(`/learning/${course.id}`)}
-                        className="w-full py-3 rounded-xl bg-[#2DD4BF] text-white font-semibold"
-                      >
-                        {hasStarted
-                          ? t("common.continue_learning")
-                          : t("common.start_learning")}
-                      </button>
+
+                    <div className="relative h-32 sm:h-40">
+
+                      <img
+                        src={course.image}
+                        className="w-full h-full object-cover"
+                        alt={course.title}
+                      />
+                    </div>
+
+                    <div className="p-3 sm:p-4 flex flex-col flex-1 justify-between">
+
+
+                      <div className="space-y-2 min-h-[72px]">
+
+                        <h3 className="text-sm font-semibold text-main line-clamp-2">
+                          {course.title}
+                        </h3>
+
+                        <p className="text-xs text-muted">
+                          {course.lessons} lessons • {course.level}
+                        </p>
+                      </div>
+
+                      <div className="mt-4">
+                        <button
+                          onClick={() => navigate(`/learning/${course.id}`)}
+                          className="w-full py-2 rounded-lg bg-[#2DD4BF] text-white text-xs font-semibold"
+                        >
+                          {hasStarted ? t("common.continue_learning") : t("common.start_learning")}
+                        </button>
+                      </div>
+
                     </div>
                   </div>
                 );
@@ -604,16 +611,17 @@ const CoursesPage = () => {
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-bold text-main">Explore Courses</h2>
                 {/* Prev / Next Buttons */}
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 md:hidden">
+
                   <button
                     onClick={scrollLeft}
-                    className="p-2 rounded-full bg-card border border-border hover:bg-teal-50 hover:border-teal-400 transition-all shadow-sm"
+                    className="p-2 rounded-full bg-card border border-border hover:bg-teal-500/10 hover:border-teal-500/50 dark:hover:bg-teal-500/20 dark:hover:border-teal-500/40 transition-all shadow-sm"
                   >
                     <ChevronLeft className="w-5 h-5 text-main" />
                   </button>
                   <button
                     onClick={scrollRight}
-                    className="p-2 rounded-full bg-card border border-border hover:bg-teal-50 hover:border-teal-400 transition-all shadow-sm"
+                    className="p-2 rounded-full bg-card border border-border hover:bg-teal-500/10 hover:border-teal-500/50 dark:hover:bg-teal-500/20 dark:hover:border-teal-500/40 transition-all shadow-sm"
                   >
                     <ChevronRight className="w-5 h-5 text-main" />
                   </button>
@@ -623,10 +631,12 @@ const CoursesPage = () => {
               {/* Horizontal Scroll Row */}
               <div
                 ref={scrollRef}
-                className="flex gap-4 sm:gap-6 overflow-x-auto pb-4 scroll-smooth"
-                style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+                className="flex gap-4 overflow-x-auto pb-4 no-scrollbar snap-x snap-mandatory"
               >
-                <style>{`div::-webkit-scrollbar { display: none; }`}</style>
+
+
+
+
 
                 {filteredExploreCourses.length === 0 && (
                   <p className="text-slate-500">{t("courses.no_courses")}</p>
@@ -635,9 +645,19 @@ const CoursesPage = () => {
                 {filteredExploreCourses.map((course) => (
                   <div
                     key={course.id}
-                    className="bg-card rounded-3xl border border-border overflow-hidden shadow-sm flex-shrink-0 w-[82vw] max-w-72 sm:w-64"
+                    className="
+      min-w-[220px] sm:min-w-[260px] md:min-w-[280px]
+    snap-start
+    bg-card rounded-3xl border border-border overflow-hidden shadow-sm
+    flex flex-col
+"
+
+
+
+
                   >
-                    <div className="relative h-40">
+                    <div className="relative h-32 sm:h-40">
+
                       <img
                         src={course.image}
                         className="w-full h-full object-cover"
@@ -649,19 +669,28 @@ const CoursesPage = () => {
                       </div>
                     </div>
 
-                    <div className="p-4 space-y-3">
-                      <h3 className="text-sm font-semibold text-main line-clamp-2">
-                        {course.title}
-                      </h3>
-                      <p className="text-xs text-muted">
-                        {course.lessons} lessons • {course.level}
-                      </p>
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <span className="font-bold text-green-600">
-                            {course.price}
-                          </span>
-                        </div>
+                    <div className="p-3 sm:p-4 flex flex-col flex-1 justify-between">
+
+
+                      {/* Top content (same as My Courses) */}
+                      <div className="space-y-2 min-h-[72px]">
+                        <h3 className="text-sm font-semibold text-main line-clamp-2">
+                          {course.title}
+                        </h3>
+
+                        <p className="text-xs text-muted">
+                          {course.lessons} lessons • {course.level}
+                        </p>
+                      </div>
+
+                      {/* Bottom content */}
+                      <div className="mt-4 flex justify-between items-center">
+                        <span className="font-bold text-green-600">
+                          {course?.priceValue === 0
+                            ? "Free"
+                            : `₹${course?.priceValue || 0}`}
+                        </span>
+
                         <button
                           onClick={() =>
                             navigate(`/course-preview/${course.id}`)
@@ -671,7 +700,9 @@ const CoursesPage = () => {
                           {t("common.enroll")}
                         </button>
                       </div>
+
                     </div>
+
                   </div>
                 ))}
               </div>
@@ -701,7 +732,7 @@ const CoursesPage = () => {
             </p>
             <div className="flex justify-between items-center mt-4">
               <span className="text-lg font-bold text-green-600">
-                {selectedCourse.price}
+                {selectedCourse.priceValue > 0 ? `₹${selectedCourse.priceValue}` : "Free"}
               </span>
             </div>
             <button

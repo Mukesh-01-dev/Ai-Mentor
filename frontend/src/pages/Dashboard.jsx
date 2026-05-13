@@ -81,45 +81,47 @@ const Dashboard = () => {
     console.log("Calculating stats with user:", user);
     console.log("coursesData:", coursesData);
 
-    if (
-      !user?.purchasedCourses ||
-      !coursesData.statsCards ||
-      coursesData.statsCards.length < 4
-    ) {
-      return [
-        {
-          icon: <Play className="w-5 h-5 text-blue-600" />,
-          value: "0",
-          label: "Ongoing Courses",
-          change: "+0%",
-          bgColor: "bg-blue-50",
-          iconBg: "bg-blue-100",
-        },
-        {
-          icon: <CheckCircle className="w-5 h-5 text-green-600" />,
-          value: "0",
-          label: "Completed",
-          change: "+0",
-          bgColor: "bg-green-50",
-          iconBg: "bg-green-100",
-        },
-        {
-          icon: <Award className="w-5 h-5 text-purple-600" />,
-          value: "0",
-          label: "Certificates",
-          change: "+0",
-          bgColor: "bg-purple-50",
-          iconBg: "bg-purple-100",
-        },
-        {
-          icon: <Clock className="w-5 h-5 text-orange-600" />,
-          value: "0h",
-          label: "Hours Spent",
-          change: "+0h",
-          bgColor: "bg-orange-50",
-          iconBg: "bg-orange-100",
-        },
-      ];
+    const defaultCards = [
+      {
+        icon: <Play className="w-5 h-5 text-blue-600" />,
+        value: "0",
+        label: "Ongoing Courses",
+        change: "+0%",
+        bgColor: "bg-blue-50",
+        iconBg: "bg-blue-100",
+      },
+      {
+        icon: <CheckCircle className="w-5 h-5 text-green-600" />,
+        value: "0",
+        label: "Completed",
+        change: "+0",
+        bgColor: "bg-green-50",
+        iconBg: "bg-green-100",
+      },
+      {
+        icon: <Award className="w-5 h-5 text-purple-600" />,
+        value: "0",
+        label: "Certificates",
+        change: "+0",
+        bgColor: "bg-purple-50",
+        iconBg: "bg-purple-100",
+      },
+      {
+        icon: <Clock className="w-5 h-5 text-orange-600" />,
+        value: "0h",
+        label: "Hours Spent",
+        change: "+0h",
+        bgColor: "bg-orange-50",
+        iconBg: "bg-orange-100",
+      },
+    ];
+
+    const baseCards = coursesData.statsCards?.length === 4 
+      ? coursesData.statsCards 
+      : defaultCards;
+
+    if (!user?.purchasedCourses) {
+      return baseCards;
     }
 
     let coursesInProgress = 0;
@@ -144,7 +146,7 @@ const Dashboard = () => {
 
         if (completedLessons === totalLessons && totalLessons > 0) {
           completedCourses++;
-        } else if (completedLessons > 0) {
+        } else {
           coursesInProgress++;
         }
       }
@@ -152,19 +154,19 @@ const Dashboard = () => {
 
     const result = [
       {
-        ...coursesData.statsCards[0],
+        ...baseCards[0],
         value: coursesInProgress.toString(),
       },
       {
-        ...coursesData.statsCards[1],
+        ...baseCards[1],
         value: completedCourses.toString(),
       },
       {
-        ...coursesData.statsCards[2],
+        ...baseCards[2],
         value: certificates.toString(),
       },
       {
-        ...coursesData.statsCards[3],
+        ...baseCards[3],
         value: `${totalHours}h`,
       },
     ];
@@ -411,12 +413,12 @@ const Dashboard = () => {
             {/* Slider */}
             <div
               id="courseSlider"
-              className="flex gap-6 overflow-x-auto pb-4 scroll-smooth"
+              className="flex gap-6 overflow-x-auto px-3 py-3 pb-6"
             >
               {coursesData.allCourses.slice(0, 10).map((course, index) => (
                 <div
                   key={index}
-                  className="bg-card rounded-xl border border-border w-64 flex-shrink-0 shadow-sm"
+                  className="bg-card rounded-xl border border-border w-64 flex-shrink-0 shadow-sm transition-all duration-300 ease-out hover:shadow-xl hover:-translate-y-2 hover:scale-[1.03] hover:border-teal-400/50"
                 >
                   {/* Image */}
                   <div className="relative h-40">
@@ -447,7 +449,9 @@ const Dashboard = () => {
 
                     <div className="flex justify-between items-center mt-2">
                       <span className="font-bold text-green-500">
-                        {course.price}
+                        {course.priceValue === 0
+                          ? "Free"
+                          : `₹${course.priceValue}`}
                       </span>
 
                       <button
@@ -593,68 +597,67 @@ const Dashboard = () => {
             </div>
 
             {/* Continue Learning */}
-            {
-              filteredContinueLearning.length !== 0 ? (
-                <div>
-                  <h2 className="text-xl font-bold text-main mt-6 mb-6">
-                    {t("dashboard.continue_learning")}
-                  </h2>
-                  <div className="space-y-4">
-                    {filteredContinueLearning.map((item, index) => (
-                      <div
-                        key={index}
-                        className="bg-card rounded-xl p-4 border border-border shadow-sm hover:shadow-md transition-shadow"
-                      >
-                        <div className="flex items-center">
-                          <Link
-                            to={`/course-preview/${item.id}`}
-                            className="flex items-center flex-1"
-                          >
-                            <img
-                              src={item.image}
-                              alt={item.title}
-                              className="w-12 h-12 rounded-lg mr-4"
-                            />
-                            <div className="flex-1">
-                              <h3 className="font-medium text-main mb-1 hover:text-teal-600">
-                                {item.title}
-                              </h3>
-                              <p className="text-sm text-muted mb-2">
-                                {item.lesson}
-                              </p>
-                              <div className="w-full bg-border rounded-full h-2 mb-2">
-                                <div
-                                  className={`h-2 rounded-full ${item.progressColor}`}
-                                  style={{ width: `${item.progress}%` }}
-                                ></div>
-                              </div>
+            {filteredContinueLearning.length !== 0 ? (
+              <div>
+                <h2 className="text-xl font-bold text-main mt-6 mb-6">
+                  {t("dashboard.continue_learning")}
+                </h2>
+                <div className="space-y-4">
+                  {filteredContinueLearning.map((item, index) => (
+                    <div
+                      key={index}
+                      className="bg-card rounded-xl p-4 border border-border shadow-sm hover:shadow-md transition-shadow"
+                    >
+                      <div className="flex items-center">
+                        <Link
+                          to={`/course-preview/${item.id}`}
+                          className="flex items-center flex-1"
+                        >
+                          <img
+                            src={item.image}
+                            alt={item.title}
+                            className="w-12 h-12 rounded-lg mr-4"
+                          />
+                          <div className="flex-1">
+                            <h3 className="font-medium text-main mb-1 hover:text-teal-600">
+                              {item.title}
+                            </h3>
+                            <p className="text-sm text-muted mb-2">
+                              {item.lesson}
+                            </p>
+                            <div className="w-full bg-border rounded-full h-2 mb-2">
+                              <div
+                                className={`h-2 rounded-full ${item.progressColor}`}
+                                style={{ width: `${item.progress}%` }}
+                              ></div>
                             </div>
-                          </Link>
-                          <Link
-                            to={`/learning/${item.id}`}
-                            className="ml-4 px-4 py-2 bg-teal-500 text-white text-sm font-medium rounded-lg hover:bg-teal-600"
-                          >
-                            {t("dashboard.continue")}
-                          </Link>
-                        </div>
+                          </div>
+                        </Link>
+                        <Link
+                          to={`/learning/${item.id}`}
+                          className="ml-4 px-4 py-2 bg-teal-500 text-white text-sm font-medium rounded-lg hover:bg-teal-600"
+                        >
+                          {t("dashboard.continue")}
+                        </Link>
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  ))}
                 </div>
-              ) : null
-              // <div className="p-6  text-muted">
-              //   <p>
-              //     {normalizedSearchQuery
-              //       ? "No in-progress courses match your search."
-              //       : "Start Learning to get your progress tracked!"}
-              //   </p>
-              //   <button
-              //     className="mt-4 px-4 py-2 bg-teal-500 text-white text-sm font-medium rounded-lg hover:bg-teal-600"
-              //     onClick={() => navigate("/courses")}
-              //   >
-              //     My Courses
-              //   </button>
-              // </div>
+              </div>
+            ) : null
+            // <div className="p-6  text-muted">
+            //   <p>
+            //     {normalizedSearchQuery
+            //       ? "No in-progress courses match your search."
+            //       : "Start Learning to get your progress tracked!"}
+            //   </p>
+            //   <button
+            //     className="mt-4 px-4 py-2 bg-teal-500 text-white text-sm font-medium rounded-lg hover:bg-teal-600"
+            //     onClick={() => navigate("/courses")}
+            //   >
+            //     My Courses
+            //   </button>
+            // </div>
             }
           </div>
         </div>

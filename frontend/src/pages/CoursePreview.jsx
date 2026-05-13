@@ -257,25 +257,23 @@ export default function CoursePreview() {
             throw new Error(data.message || "Enrollment failed");
           }
         } else {
-          toast.success("Course enrolled successfully!");
-
-          // ✅ refresh header data
-          await fetchUserProfile();
-
-          // ✅ update notifications
-          window.dispatchEvent(new Event("refreshNotifications"));
-          // ✅ redirect user
-          navigate(`/courses/${selectedCourse.id}`);
-          return;
-        }
-      } catch (err) {
-        console.error(err);
-        toast.error(err.message || "Enrollment failed");
-      } finally {
-        setIsPurchasing(false);
+        toast.success("Course enrolled successfully!");
+        // ✅ Notify Header to refetch notifications (updates unread count instantly) for free courses!
+        window.dispatchEvent(new Event("refreshNotifications"));
       }
-      return;
+
+      await fetchUserProfile();
+
+      navigate(`/learning/${selectedCourse.id}`);
+    } catch (err) {
+      console.error(err);
+      toast.error(err.message || "Enrollment failed");
+    } finally {
+      setIsPurchasing(false);
     }
+
+    return;
+  }
     // PAID COURSE FLOW
     try {
       setIsPurchasing(true);
