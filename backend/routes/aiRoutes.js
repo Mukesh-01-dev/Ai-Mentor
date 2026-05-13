@@ -4,6 +4,7 @@ import { protect } from "../middleware/authMiddleware.js";
 import validate from "../middleware/validate.js";
 import { generateVideoSchema } from "../schemas/aiSchema.js";
 import { getCourseAndLessonTitles } from "../controllers/courseController.js";
+import Preferences from "../models/Preference.js";
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -90,17 +91,45 @@ router.post(
 
       const { courseTitle, lessonTitle } = titles;
 
-      // Call AI service
-      console.log("🤖 Cache miss. Calling AI service for:", celebrity);
-      const aiResponse = await fetch(`${process.env.AI_SERVICE_URL}/generate`, {
+    const userPreferencesRecord = await Preferences.findOne({
+      where: { user_id: req.user.id }   // 👈 FIX
+    });
+
+    const userPreferences = userPreferencesRecord
+      ? userPreferencesRecord.toJSON()
+      : null;
+
+    // Call AI service
+    console.log("🤖 Cache miss. Calling AI service for:", celebrity);
+
+    console.log("📤 Sending preferences to AI service:");
+    console.log(userPreferences);
+
+
+    const aiResponse = await fetch(
+      `${process.env.AI_SERVICE_URL}/generate`,
+      {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           course: courseTitle,
           topic: lessonTitle,
           celebrity,
+          preferences: userPreferences,   // 👈 NEW
         }),
+      }
+    );
+
+    if (!aiResponse.ok) {
+      const errorText = await aiResponse.text();
+
+      console.error("❌ AI SERVICE RESPONSE:", errorText);
+
+      return res.status(500).json({
+        message: "AI service failed",
+        aiError: errorText,
       });
+    }
 
       if (!aiResponse.ok) {
         throw new Error("AI service failed");
