@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import API_BASE_URL from "../lib/api";
 
 import { useTranslation } from "react-i18next";
 import {
