@@ -488,7 +488,7 @@
     "course": {
       "title": "Python For AI",
       "subtitle": "Master Python for Artificial Intelligence",
-      "logo": "AI_Tutor_New_UI/Dashboard/python_for_ai_logo.png",
+      "logo": "/AI_Tutor_New_UI/Dashboard/python_for_ai_logo.png",
       "progress": 50
     },
     "currentLesson": {
