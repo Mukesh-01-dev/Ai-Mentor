@@ -265,7 +265,7 @@
     "course": {
       "title": "React Fundamentals",
       "subtitle": "Complete Course",
-      "logo": "AI_Tutor_New_UI/Dashboard/react_fundamentals_logo.png",
+      "logo": "/AI_Tutor_New_UI/Dashboard/react_fundamentals_logo.png",
       "progress": 75
     },
     "currentLesson": {
