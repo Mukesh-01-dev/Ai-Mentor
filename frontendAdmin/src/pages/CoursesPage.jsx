@@ -287,7 +287,12 @@ function CoursesPage() {
         body: JSON.stringify(newCourse),
       });
       setShowAddModal(false);
-      setNewCourse({ title: "", category: "", priceValue: "", currency: "INR" });
+      setNewCourse({
+        title: "",
+        category: "",
+        priceValue: "",
+        currency: "INR",
+      });
       fetchCourses();
     } catch (err) {
       alert("Failed to add course: " + err.message);
@@ -543,45 +548,61 @@ function CoursesPage() {
             </div>
             <form onSubmit={handleAddCourse} className="p-5 sm:p-8 space-y-5">
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-muted ml-1">Course Title</label>
+                <label className="text-[10px] font-black uppercase tracking-widest text-muted ml-1">
+                  Course Title
+                </label>
                 <input
                   type="text"
                   required
                   className="w-full h-12 px-5 rounded-2xl bg-canvas border border-border focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10 outline-none transition-all font-medium text-main"
                   placeholder="e.g. Advanced React Architecture"
                   value={newCourse.title}
-                  onChange={(e) => setNewCourse({ ...newCourse, title: e.target.value })}
+                  onChange={(e) =>
+                    setNewCourse({ ...newCourse, title: e.target.value })
+                  }
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-muted ml-1">Category</label>
+                <label className="text-[10px] font-black uppercase tracking-widest text-muted ml-1">
+                  Category
+                </label>
                 <input
                   type="text"
                   required
                   className="w-full h-12 px-5 rounded-2xl bg-canvas border border-border focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10 outline-none transition-all font-medium text-main"
                   placeholder="e.g. Web Development"
                   value={newCourse.category}
-                  onChange={(e) => setNewCourse({ ...newCourse, category: e.target.value })}
+                  onChange={(e) =>
+                    setNewCourse({ ...newCourse, category: e.target.value })
+                  }
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-muted ml-1">Price</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-muted ml-1">
+                    Price
+                  </label>
                   <input
                     type="number"
                     required
                     className="w-full h-12 px-5 rounded-2xl bg-canvas border border-border focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10 outline-none transition-all font-bold text-main"
                     placeholder="0"
                     value={newCourse.priceValue}
-                    onChange={(e) => setNewCourse({ ...newCourse, priceValue: e.target.value })}
+                    onChange={(e) =>
+                      setNewCourse({ ...newCourse, priceValue: e.target.value })
+                    }
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-muted ml-1">Currency</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-muted ml-1">
+                    Currency
+                  </label>
                   <select
                     className="w-full h-12 px-5 rounded-2xl bg-canvas border border-border focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10 outline-none transition-all font-bold text-main appearance-none"
                     value={newCourse.currency}
-                    onChange={(e) => setNewCourse({ ...newCourse, currency: e.target.value })}
+                    onChange={(e) =>
+                      setNewCourse({ ...newCourse, currency: e.target.value })
+                    }
                   >
                     <option value="INR">INR</option>
                     <option value="USD">USD</option>

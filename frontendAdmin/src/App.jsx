@@ -13,6 +13,7 @@ import ReportsPage from "./pages/ReportsPage";
 import ProfilePage from "./pages/ProfilePage";
 import SettingsPage from "./pages/SettingsPage";
 
+
 const PAGE_COMPONENTS = {
   dashboard: DashboardPage,
   courses: CoursesPage,

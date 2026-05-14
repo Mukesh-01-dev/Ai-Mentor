@@ -21,6 +21,7 @@ import certificateRoutes from "./routes/certificateRoutes.js";
 import paymentRoutes from "./routes/payment.js";
 import preferenceRoutes from "./routes/preferenceRoutes.js";
 import contactUsRoutes from "./routes/contactus.js"; // ✅ fixed import
+import reportRoutes from "../backend/routes/reportRoutes.js";
 
 // ================= MODELS =================
 import "./models/CommunityPost.js";
@@ -69,6 +70,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/certificate", certificateRoutes);
 app.use("/api/preferences", preferenceRoutes);
 app.use("/api/contactus", contactUsRoutes); // ✅ added route
+app.use("/api/coures-reports", reportRoutes);
 
 // ================= 404 HANDLER =================
 app.use((req, res) => {

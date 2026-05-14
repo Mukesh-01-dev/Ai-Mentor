@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   BookOpen,
   ChevronRight,
@@ -98,6 +99,7 @@ function AdminSidebar({
                   type="button"
                   onClick={() => {
                     onPageChange(id);
+                    navigate(`/${id}`);
                     onMobileClose?.();
                   }}
                   className={`group relative w-full flex items-center px-4 py-4 rounded-3xl cursor-pointer transition-all duration-300 ${

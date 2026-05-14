@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Star, X, BookOpen, Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { Star, X, BookOpen, Search, ChevronLeft, ChevronRight,AlertTriangle } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import API_BASE_URL from "../lib/api";
 import { useTranslation } from "react-i18next";
+import ReportModal from "../components/common/ReportModal";
 
 const CoursesPage = () => {
   const { t } = useTranslation();
@@ -17,6 +18,13 @@ const CoursesPage = () => {
   const [myCourses, setMyCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportText, setReportText] = useState("");
+  const [subType, setSubType] = useState("");
+  const [reportType, setReportType] = useState("Select Issue Type");
+  const [reportCourse, setReportCourse] = useState(""); 
+  const [reportLoading, setReportLoading] = useState(false);
 
   const [filters, setFilters] = useState({ category: [], level: [], price: [] });
   const [showFilters, setShowFilters] = useState(false);
@@ -145,6 +153,43 @@ const CoursesPage = () => {
       console.error("Enroll error:", error);
     }
   };
+
+  /* ================= REPORT ================= */
+  const handleReportSubmit = async () => {
+  try {
+    setReportLoading(true);
+    const res = await fetch("http://localhost:5000/api/coures-reports", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${user?.token}`,
+      },
+      body: JSON.stringify({
+        reportType,
+        subType,
+        description: reportText,
+        courseName: selectedCourse || "General",
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.message || "Failed to submit report");
+    }
+
+    setShowReportModal(false);
+    setReportText("");
+    setReportType("");
+    setSubType("");
+    setSelectedCourse("");
+
+  } catch (err) {
+    console.error(err);
+  }  finally {
+    setReportLoading(false);
+  }
+};
 
   if (!user) {
     return (
@@ -429,7 +474,8 @@ const CoursesPage = () => {
             </div>
 
             {/* Bottom Row / Search Container (Permanently shown on second row) */}
-            <div className="relative group w-full md:w-60 md:max-w-xs z-40 transition-all duration-300 block">
+            <div className="flex items-center gap-2 ml-auto">
+              <div className="relative w-52 md:w-60">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50 group-focus-within:text-teal-300 transition-colors w-4 h-4" />
               <input
                 type="text"
@@ -438,7 +484,38 @@ const CoursesPage = () => {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 bg-black/30 border border-white/20 rounded-full text-sm text-white placeholder-white/50 focus:ring-2 focus:ring-teal-400/30 focus:border-teal-400 transition-all outline-none shadow-inner"
               />
-            </div>
+              </div>
+              </div>
+                       {/* 🚨 Report Button */}
+  <div className="relative group flex items-center">
+    <button
+      onClick={() => setShowReportModal(true)}
+      className="w-10 h-10 grid place-items-center rounded-full bg-red-500 hover:bg-red-600 text-white shadow-lg transition-all"
+    >
+      <AlertTriangle className="w-5 h-5" />
+    </button>
+
+    {/* Tooltip */}
+    <span className="absolute top-full mt-2 left-1/2 -translate-x-1/2 whitespace-nowrap text-xs bg-black text-white px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition duration-200 z-50">
+      Report Issue
+    </span>
+     <ReportModal
+  show={showReportModal}
+  onClose={() => setShowReportModal(false)}
+  onSubmit={handleReportSubmit}
+  reportText={reportText}
+  setReportText={setReportText}
+  reportType={reportType}
+  setReportType={setReportType}
+  enrolledCourses={myCourses}
+  subType={subType}
+  setSubType={setSubType}
+  selectedCourse={selectedCourse}
+  setSelectedCourse={setSelectedCourse}
+   loading={reportLoading} 
+/>
+  </div>
+           
           </div>
         </div>
       </div>
