@@ -1,0 +1,150 @@
+ESLINT SETUP GUIDE (FRONTEND - JAVASCRIPT / REACT)
+
+---
+
+1. WHAT ESLINT IS (IMPORTANT)
+
+---
+
+* ESLint is a STATIC ANALYSIS tool
+* It checks code WITHOUT running it
+* Used to find:
+
+  * syntax errors
+  * bad patterns
+  * potential bugs
+  * unused variables
+
+NOTE:
+
+* ESLint is NOT for unit testing
+* ESLint is NOT for runtime bug detection
+* ESLint runs in terminal or editor BEFORE execution
+
+---
+
+2. HOW TO CHECK IF ESLINT IS ALREADY INSTALLED
+
+---
+
+Step 1: Check package.json
+
+Look for:
+"eslint": "...version..."
+
+OR in scripts:
+"lint": "eslint ."
+
+Step 2: Run command in terminal:
+
+npx eslint -v
+
+If installed → shows version
+If not → error or installs temporarily
+
+Step 3: Check node_modules
+
+node_modules/eslint/
+
+---
+
+3. HOW TO INSTALL ESLINT (IF NOT INSTALLED)
+
+---
+
+Step 1: Install ESLint
+
+npm install eslint --save-dev
+
+Step 2: Initialize config
+
+npx eslint --init
+
+Answer prompts:
+
+* style guide → choose basic or airbnb (optional)
+* framework → React (if using)
+* TypeScript → yes/no
+* format → JSON
+
+This creates:
+.eslintrc.json
+
+---
+
+4. HOW TO RUN ESLINT (BUG CHECKING IN TERMINAL)
+
+---
+
+Check entire project:
+
+npx eslint .
+
+Check specific file:
+
+npx eslint src/App.js
+
+Fix issues automatically:
+
+npx eslint . --fix
+
+---
+
+5. ADD SCRIPT (RECOMMENDED)
+
+---
+
+In package.json:
+
+"scripts": {
+"lint": "eslint ."
+}
+
+Now run:
+
+npm run lint
+
+---
+
+6. WHAT ESLINT ACTUALLY HELPS WITH
+
+---
+
+Example issues it catches:
+
+* Undefined variables
+* Wrong comparisons (== vs ===)
+* Unused imports
+* Accidental global variables
+* Bad async patterns
+
+Example:
+
+let x;
+console.log(x.toUpperCase());  ← ESLint warning
+
+---
+
+7. WHAT ESLINT DOES NOT DO
+
+---
+
+* Does NOT run your code
+* Does NOT test APIs
+* Does NOT replace Jest / testing frameworks
+* Does NOT fix Git merge conflicts directly
+
+---
+
+8. BEST PRACTICE (TEAM USAGE)
+
+---
+
+* Run ESLint before every commit
+* Use with Prettier for formatting
+* Add to CI pipeline
+* Do NOT ignore errors blindly
+
+---
+
+## END
