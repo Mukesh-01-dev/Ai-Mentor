@@ -30,6 +30,9 @@ import "./models/contactMessage.js";
 
 dotenv.config();
 
+import { validateEnv } from "./env-validator.js";
+validateEnv();
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
