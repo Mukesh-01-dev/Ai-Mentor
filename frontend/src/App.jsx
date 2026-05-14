@@ -20,6 +20,7 @@ const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const CertificatesPage = lazy(() => import("./pages/CertificatesPage"));
 const Success = lazy(() => import("./pages/Success"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 import CompleteProfilePage from "./pages/CompleteProfilePage";
 import "./App.css";
 
@@ -68,10 +69,12 @@ const App = () => {
             <Route path="/learning/:id" element={<LearningPage />} />
             <Route path="/success" element={<Success />} />
           </Route>
+          <Route path="/course-preview/:courseId" element={<CoursePreview />} />
         </Route>
+        {/* Catch-all route for 404 Not Found */}
+        <Route path="*" element={<NotFound />} />
 
-        {/* Other public routes */}
-        <Route path="/course-preview/:courseId" element={<CoursePreview />} />
+
 
       </Routes>
     </Suspense>

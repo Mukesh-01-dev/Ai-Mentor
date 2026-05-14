@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   BookOpen,
   ChevronRight,
@@ -11,6 +12,7 @@ import {
   X,
 } from "lucide-react";
 import { NAV_ITEMS } from "../../constants/adminNavigation";
+
 
 const ICONS = {
   dashboard: LayoutDashboard,
@@ -29,6 +31,7 @@ function AdminSidebar({
   collapsed = false,
   onToggleCollapsed,
 }) {
+  const navigate = useNavigate();
   const user = useMemo(() => {
     try {
       const raw = localStorage.getItem("user");
@@ -96,6 +99,7 @@ function AdminSidebar({
                   type="button"
                   onClick={() => {
                     onPageChange(id);
+                    navigate(`/${id}`);
                     onMobileClose?.();
                   }}
                   className={`group relative w-full flex items-center px-4 py-4 rounded-3xl cursor-pointer transition-all duration-300 ${
@@ -133,7 +137,10 @@ function AdminSidebar({
                   <div className="text-[9px] text-muted font-bold opacity-60 uppercase tracking-widest mt-0.5">{roleLabel}</div>
                 </div>
               )}
-              {!collapsed && <Settings className="w-4 h-4 text-muted" />}
+              {!collapsed && <button  onClick={() => {
+                        navigate("/settings");
+                        onPageChange("settings");
+                      }}><Settings className="w-4 h-4 text-muted"/></button> }
             </div>
           </div>
         </div>

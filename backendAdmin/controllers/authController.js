@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import { Admin } from "../models/index.js";
+import { adminLoginSchema, adminRegisterSchema } from "../schemas/adminAuthSchema.js";
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -8,13 +9,21 @@ const generateToken = (id) => {
 };
 
 export const registerAdmin = async (req, res) => {
-  const { name, email, password } = req.body;
-  if (!name || !email || !password) {
-    return res.status(400).json({ message: "Name, email and password are required" });
+  const validation = adminRegisterSchema.safeParse(req.body);
+  
+  if (!validation.success) {
+    return res.status(400).json({ 
+      message: "Validation failed", 
+      errors: validation.error.errors 
+    });
   }
+
+  const { name, email, password } = req.body;
+  
   try {
     const adminExists = await Admin.findOne({ where: { email } });
     if (adminExists) return res.status(400).json({ message: "Admin already exists" });
+    
     const admin = await Admin.create({ name, email, password, role: "admin" });
     res.status(201).json({ id: admin.id, name: admin.name, email: admin.email, role: admin.role });
   } catch (error) {
@@ -23,11 +32,28 @@ export const registerAdmin = async (req, res) => {
 };
 
 export const loginAdmin = async (req, res) => {
+  const validation = adminLoginSchema.safeParse(req.body);
+  
+  if (!validation.success) {
+    return res.status(400).json({ 
+      message: "Validation failed", 
+      errors: validation.error.errors 
+    });
+  }
+
   const { email, password } = req.body;
+  
   try {
     const admin = await Admin.findOne({ where: { email } });
+    
     if (admin && (await admin.matchPassword(password))) {
-      res.json({ id: admin.id, name: admin.name, email: admin.email, role: admin.role, token: generateToken(admin.id) });
+      res.json({ 
+        id: admin.id, 
+        name: admin.name, 
+        email: admin.email, 
+        role: admin.role, 
+        token: generateToken(admin.id) 
+      });
     } else {
       res.status(401).json({ message: "Invalid email or password" });
     }

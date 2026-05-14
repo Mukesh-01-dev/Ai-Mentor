@@ -41,13 +41,12 @@ const Success = () => {
         }
         // ✅ small delay for UX
         setTimeout(() => {
-          navigate("/courses", { state: { activeTab: "my-courses" } });
+          navigate(`/learning/${courseId}`);
         }, 1500);
       } catch (error) {
         console.error("Error saving purchase:", error);
         // still redirect
-        navigate("/courses", { state: { activeTab: "my-courses" } });
-      }
+        navigate(`/learning/${courseId}`);}
     };
     if (courseId) {
       savePurchase();
