@@ -68,6 +68,18 @@ const REQUIRED_ENV_VARS = [
     hint: "Frontend URL for CORS (e.g. http://localhost:5173)",
     group: "Frontend",
   },
+
+  // ── Stripe ────────────────────────────────────────────────────────────────
+  {
+    key: "STRIPE_SECRET_KEY",
+    hint: "Stripe secret key from your Stripe dashboard (starts with sk_test_ or sk_live_)",
+    group: "Stripe",
+  },
+  {
+    key: "STRIPE_WEBHOOK_SECRET",
+    hint: "Stripe webhook secret from your Stripe dashboard (starts with whsec_)",
+    group: "Stripe",
+  },
 ];
 
 const PLACEHOLDER_PATTERNS = [
