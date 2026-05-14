@@ -44,6 +44,7 @@ const formatCourse = (course) => ({
 const getCourses = async (req, res) => {
   try {
     const courses = await Course.findAll({
+      where: { status: "published" },
       order: [["createdAt", "ASC"]],
     });
 
@@ -65,6 +66,11 @@ const getCourseById = async (req, res) => {
 
     if (!course) {
       return res.status(404).json({ message: "Course not found" });
+    }
+
+    // Block access to disabled/deleted courses — NO exceptions
+    if (course.status !== "published") {
+      return res.status(403).json({ message: "This course is not currently available." });
     }
 
     res.json(formatCourse(course));
@@ -93,6 +99,7 @@ const getMyCourses = async (req, res) => {
     const myCourses = await Course.findAll({
       where: {
         id: purchasedIds,
+        status: "published",
       },
       order: [["createdAt", "ASC"]],
     });
@@ -124,6 +131,16 @@ const getCourseLearningData = async (req, res) => {
     const course = await Course.findByPk(courseId);
 
     if (!course) {
+      return res.status(404).json({ message: "Learning data not found" });
+    }
+
+    // Disabled = completely blocked for ALL users, including enrolled
+    if (course.status === "disabled") {
+      return res.status(403).json({ message: "This course is currently disabled." });
+    }
+
+    // Deleted = not found
+    if (course.status === "deleted") {
       return res.status(404).json({ message: "Learning data not found" });
     }
 
@@ -223,7 +240,7 @@ const getCourseAndLessonTitles = async (courseId, lessonId) => {
 ========================= */
 const getStatsCards = async (req, res) => {
   try {
-    const totalCourses = await Course.count();
+    const totalCourses = await Course.count({ where: { status: "published" } });
 
     res.json({
       totalCourses,

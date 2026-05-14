@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { MoreVertical, Trash2, ShieldAlert, CheckCircle2, UserX, UserCheck } from "lucide-react";
 import { callApi } from "../utils/api";
+import { useToast } from "../context/ToastContext";
 
 function ActionMenu({ account, onAction, isSuperAdmin }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -76,6 +77,7 @@ function ActionMenu({ account, onAction, isSuperAdmin }) {
 }
 
 function UsersPage() {
+  const { showToast } = useToast();
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -160,12 +162,12 @@ function UsersPage() {
         await callApi(endpoint, { method: "DELETE" });
         fetchAccounts();
       } catch (err) {
-        alert("Failed to delete account: " + err.message);
+        showToast("Failed to delete account: " + err.message, "error");
       }
     } else if (action === "active" || action === "on-hold") {
       try {
         if (account.type === "admin") {
-          alert("Admin status cannot be changed yet.");
+          showToast("Admin status cannot be changed yet.", "warning");
           return;
         }
         await callApi(`/admin/users/${account.rawId}/status`, {
@@ -174,7 +176,7 @@ function UsersPage() {
         });
         fetchAccounts();
       } catch (err) {
-        alert("Failed to update status: " + err.message);
+        showToast("Failed to update status: " + err.message, "error");
       }
     }
   };

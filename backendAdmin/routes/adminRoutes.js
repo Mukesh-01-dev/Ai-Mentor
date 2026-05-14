@@ -10,6 +10,9 @@ import {
 import {
   getAllCourses,
   createCourse,
+  updateCourseStatus,
+  deleteCourseHard,
+  getCourseEnrollments,
 } from "../controllers/courseController.js";
 import {
   getAllUsers,
@@ -45,6 +48,9 @@ router.get("/enrollments", protectAdmin, getAllEnrollments);
 router.get("/payments", protectAdmin, getAllPayments);
 router.get("/courses", protectAdmin, getAllCourses);
 router.post("/courses", protectAdmin, createCourse);
+router.patch("/courses/:id/status", protectAdmin, updateCourseStatus);
+router.delete("/courses/:id", protectAdmin, superAdminOnly, deleteCourseHard);
+router.get("/courses/:id/enrollments", protectAdmin, getCourseEnrollments);
 router.get("/users", protectAdmin, getAllUsers);
 router.patch("/users/:id/status", protectAdmin, superAdminOnly, updateUserStatus);
 router.delete("/users/:id", protectAdmin, superAdminOnly, deleteUser);

@@ -1,8 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { Plus, X } from "lucide-react";
 import { callApi } from "../utils/api";
+import CourseStatusDropdown from "../components/CourseStatusDropdown";
+import ConfirmDeleteModal from "../components/ConfirmDeleteModal";
+import { useToast } from "../context/ToastContext";
 
 function CoursesPage() {
+  const { showToast } = useToast();
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -14,6 +18,15 @@ function CoursesPage() {
     currency: "INR",
   });
   const [submitting, setSubmitting] = useState(false);
+
+  // Delete modal state
+  const [deleteModal, setDeleteModal] = useState({
+    open: false,
+    courseId: null,
+    courseTitle: "",
+    enrolledCount: 0,
+    isDeleting: false,
+  });
 
   const fetchCourses = async () => {
     try {
@@ -48,10 +61,105 @@ function CoursesPage() {
       setNewCourse({ title: "", category: "", priceValue: "", currency: "INR" });
       fetchCourses();
     } catch (err) {
-      alert("Failed to add course: " + err.message);
+      showToast("Failed to add course: " + err.message, "error");
     } finally {
       setSubmitting(false);
     }
+  };
+
+  // Ref always holds the latest courses — prevents stale closures in callbacks
+  const coursesRef = useRef(courses);
+  useEffect(() => {
+    coursesRef.current = courses;
+  }, [courses]);
+
+  /**
+   * Optimistic status update with rollback on failure.
+   * Uses coursesRef to avoid stale closure — callback identity stays stable.
+   */
+  const handleStatusChange = useCallback(async (courseId, newStatus) => {
+    const prevCourses = [...coursesRef.current];
+
+    // Optimistic update
+    setCourses((prev) =>
+      prev.map((c) =>
+        c.id === courseId ? { ...c, status: newStatus, deletedAt: null } : c
+      )
+    );
+
+    try {
+      await callApi(`/admin/courses/${courseId}/status`, {
+        method: "PATCH",
+        body: JSON.stringify({ status: newStatus }),
+      });
+    } catch (err) {
+      // Rollback on failure
+      setCourses(prevCourses);
+      showToast("Failed to update status: " + err.message, "error");
+    }
+  }, []);
+
+  /**
+   * Opens the delete confirmation modal after fetching enrollment count.
+   * Uses coursesRef to avoid stale closure.
+   */
+  const handleDeleteRequest = useCallback(async (courseId) => {
+    const course = coursesRef.current.find((c) => c.id === courseId);
+    if (!course) return;
+
+    // Fetch enrolled user count
+    let enrolledCount = 0;
+    try {
+      const data = await callApi(`/admin/courses/${courseId}/enrollments`);
+      enrolledCount = data.enrolledCount || 0;
+    } catch {
+      // If fetch fails, show modal anyway with 0 count
+    }
+
+    setDeleteModal({
+      open: true,
+      courseId,
+      courseTitle: course.title || "Untitled Course",
+      enrolledCount,
+      isDeleting: false,
+    });
+  }, []);
+
+  /**
+   * Permanently delete a course (hard delete).
+   */
+  const handleConfirmDelete = useCallback(async () => {
+    const { courseId } = deleteModal;
+    if (!courseId) return;
+
+    setDeleteModal((prev) => ({ ...prev, isDeleting: true }));
+
+    try {
+      await callApi(`/admin/courses/${courseId}?force=true`, {
+        method: "DELETE",
+      });
+      // Remove from local state
+      setCourses((prev) => prev.filter((c) => c.id !== courseId));
+      setDeleteModal({ open: false, courseId: null, courseTitle: "", enrolledCount: 0, isDeleting: false });
+    } catch (err) {
+      showToast("Failed to delete course: " + err.message, "error");
+      setDeleteModal((prev) => ({ ...prev, isDeleting: false }));
+    }
+  }, [deleteModal]);
+
+  const closeDeleteModal = useCallback(() => {
+    if (!deleteModal.isDeleting) {
+      setDeleteModal({ open: false, courseId: null, courseTitle: "", enrolledCount: 0, isDeleting: false });
+    }
+  }, [deleteModal.isDeleting]);
+
+  /**
+   * Status badge color helper for the row styling.
+   */
+  const getRowClass = (status) => {
+    if (status === "deleted") return "opacity-50";
+    if (status === "disabled") return "opacity-75";
+    return "";
   };
 
   if (loading && courses.length === 0) return <div className="p-10 text-center text-muted">Loading courses...</div>;
@@ -60,7 +168,7 @@ function CoursesPage() {
   return (
     <>
       <div className="border-b border-border p-6 md:p-8 flex items-center justify-between">
-        <h2 className="text-3xl font-semibold">Active Courses</h2>
+        <h2 className="text-3xl font-semibold">Course Management</h2>
         <div className="flex gap-2">
           <button
             type="button"
@@ -89,9 +197,11 @@ function CoursesPage() {
           <tbody className="text-sm">
             {courses.length > 0 ? (
               courses.map((course) => (
-                <tr key={course.id} className="border-b border-border hover:bg-canvas-alt transition-colors">
+                <tr key={course.id} className={`border-b border-border hover:bg-canvas-alt transition-colors ${getRowClass(course.status)}`}>
                   <td className="p-5">
-                    <div className="font-semibold text-main">{course.title}</div>
+                    <div className={`font-semibold text-main ${course.status === "deleted" ? "line-through" : ""}`}>
+                      {course.title}
+                    </div>
                     <div className="text-muted text-[10px] uppercase tracking-tighter">ID: {course.id}</div>
                   </td>
                   <td>
@@ -104,7 +214,14 @@ function CoursesPage() {
                   </td>
                   <td className="text-muted font-bold text-[11px]">{course.currency || "INR"}</td>
                   <td className="text-muted text-[11px] font-medium">{new Date(course.createdAt).toLocaleDateString()}</td>
-                  <td className="text-teal-500 font-black text-[10px] uppercase tracking-widest">Published</td>
+                  <td>
+                    <CourseStatusDropdown
+                      courseId={course.id}
+                      currentStatus={course.status || "published"}
+                      onStatusChange={handleStatusChange}
+                      onDeleteRequest={handleDeleteRequest}
+                    />
+                  </td>
                 </tr>
               ))
             ) : (
@@ -116,6 +233,7 @@ function CoursesPage() {
         </table>
       </div>
 
+      {/* Add Course Modal */}
       {showAddModal && (
         <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
           <div className="bg-card border border-border w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
@@ -196,6 +314,16 @@ function CoursesPage() {
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmDeleteModal
+        isOpen={deleteModal.open}
+        onClose={closeDeleteModal}
+        onConfirm={handleConfirmDelete}
+        courseTitle={deleteModal.courseTitle}
+        enrolledCount={deleteModal.enrolledCount}
+        isDeleting={deleteModal.isDeleting}
+      />
     </>
   );
 }
