@@ -257,23 +257,23 @@ export default function CoursePreview() {
             throw new Error(data.message || "Enrollment failed");
           }
         } else {
-        toast.success("Course enrolled successfully!");
-        // ✅ Notify Header to refetch notifications (updates unread count instantly) for free courses!
-        window.dispatchEvent(new Event("refreshNotifications"));
+          toast.success("Course enrolled successfully!");
+          // ✅ Notify Header to refetch notifications (updates unread count instantly) for free courses!
+          window.dispatchEvent(new Event("refreshNotifications"));
+        }
+
+        await fetchUserProfile();
+
+        navigate(`/learning/${selectedCourse.id}`);
+      } catch (err) {
+        console.error(err);
+        toast.error(err.message || "Enrollment failed");
+      } finally {
+        setIsPurchasing(false);
       }
 
-      await fetchUserProfile();
-
-      navigate(`/learning/${selectedCourse.id}`);
-    } catch (err) {
-      console.error(err);
-      toast.error(err.message || "Enrollment failed");
-    } finally {
-      setIsPurchasing(false);
+      return;
     }
-
-    return;
-  }
     // PAID COURSE FLOW
     try {
       setIsPurchasing(true);
@@ -300,6 +300,107 @@ export default function CoursePreview() {
     } catch (err) {
       console.error(err);
       toast.error("Payment error");
+      setIsPurchasing(false);
+    }
+  };
+
+  const handleRazorpayPayment = async () => {
+    if (!selectedCourse || isPurchasing) return;
+    const token = localStorage.getItem("token");
+    const priceValue = Number(
+      selectedCourse.priceValue ??
+      selectedCourse.price?.replace("₹", "") ??
+      0
+    );
+
+    try {
+      setIsPurchasing(true);
+      // 1. Create order on backend
+      const res = await fetch(`${API_BASE_URL}/api/payment/razorpay/create-order`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          course: {
+            id: selectedCourse.id,
+            priceValue,
+          },
+        }),
+      });
+      const orderData = await res.json();
+
+      if (!orderData.orderId) {
+        throw new Error(orderData.error || "Failed to create order");
+      }
+
+      // 2. Open Razorpay checkout
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID || "",
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: "UpToSkills",
+        description: selectedCourse.title,
+        order_id: orderData.orderId,
+        handler: async function (response) {
+          try {
+            // 3. Verify payment
+            const verifyRes = await fetch(`${API_BASE_URL}/api/payment/razorpay/verify`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                courseId: selectedCourse.id,
+                courseTitle: selectedCourse.title,
+                userId: user?.id,
+              }),
+            });
+
+            const verifyData = await verifyRes.json();
+            if (verifyData.success) {
+              toast.success("Payment successful!");
+              window.dispatchEvent(new Event("refreshNotifications"));
+              await fetchUserProfile();
+              navigate(`/learning/${selectedCourse.id}`);
+            } else {
+              throw new Error(verifyData.error || "Payment verification failed");
+            }
+          } catch (err) {
+            console.error("Verification error:", err);
+            toast.error(err.message || "Payment verification failed");
+          }
+        },
+        prefill: {
+          name: user?.name || user?.firstName || "Test User",
+          email: user?.email || "test@example.com",
+          contact: user?.phone || "9876543210",
+        },
+        theme: {
+          color: "#0f766e", // teal-700
+        },
+        modal: {
+          ondismiss: function () {
+            setIsPurchasing(false);
+          },
+        },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.on("payment.failed", function (response) {
+        toast.error("Payment failed: " + response.error.description);
+      });
+      rzp.open();
+
+    } catch (err) {
+      console.error(err);
+      toast.error(err.message || "Payment error");
+    } finally {
       setIsPurchasing(false);
     }
   };
@@ -763,13 +864,32 @@ export default function CoursePreview() {
                 {selectedCourse.price}
               </span>
             </div>
-            <button
-              onClick={handlePayment}
-              disabled={isPurchasing}
-              className="w-full mt-6 py-3 rounded-xl bg-primary text-white font-semibold disabled:opacity-50"
-            >
-              {isPurchasing ? "Processing..." : "Confirm Enrollment"}
-            </button>
+            {Number(selectedCourse.priceValue) > 0 || (selectedCourse.price && selectedCourse.price !== "Free" && selectedCourse.price !== "₹0") ? (
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={handlePayment}
+                  disabled={isPurchasing}
+                  className="w-1/2 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold disabled:opacity-50 transition-colors"
+                >
+                  {isPurchasing ? "Processing..." : "Pay with Stripe"}
+                </button>
+                <button
+                  onClick={handleRazorpayPayment}
+                  disabled={isPurchasing}
+                  className="w-1/2 py-3 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-semibold disabled:opacity-50 transition-colors"
+                >
+                  {isPurchasing ? "Processing..." : "Pay with Razorpay"}
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={handlePayment}
+                disabled={isPurchasing}
+                className="w-full mt-6 py-3 rounded-xl bg-primary text-white font-semibold disabled:opacity-50"
+              >
+                {isPurchasing ? "Processing..." : "Confirm Enrollment"}
+              </button>
+            )}
           </div>
         </div>
       )}
