@@ -74,17 +74,16 @@ router.post("/login", async (req, res) => {
 
     if (user && user.password && isMatch) {
       console.log("Login successful!");
-      res.json({
-        id: user.id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        bio: user.bio,
-        purchasedCourses: user.purchasedCourses,
-        token: generateToken(user.id),
-      });
+      res.cookie("token", token, {
+  httpOnly: true,
+  secure: false,
+  sameSite: "Lax",
+});
+
+res.json({
+  message: "Login successful",
+  user
+});
 
       // ✅ Notification Trigger (Security Alert)
       import("../controllers/notificationController.js")

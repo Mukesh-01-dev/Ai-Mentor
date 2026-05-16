@@ -42,10 +42,12 @@ const LoginPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/auth/login`, { email, password }
+      const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/auth/login`, { email, password },{
+        withCredentials: true
+      }
     );
 
-      if (response.data.token) {
+      if (response.data) {
         login(response.data);
         toast.success("Logged in successfully!");
         navigate('/dashboard');

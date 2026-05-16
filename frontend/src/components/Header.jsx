@@ -138,7 +138,7 @@ const Header = ({ searchQuery = "", onSearchChange }) => {
 
   return (
     <>
-    <header className="bg-card/80 backdrop-blur-xl border-b border-border/50 px-6 py-4 fixed top-0 left-0 right-0 z-[100]">
+    <header className="bg-card/80 backdrop-blur-xl border-b border-border/50 px-6 py-1 fixed top-0 left-0 right-0 z-[100]">
       <div className="flex items-center justify-between max-w-[1600px] mx-auto">
 
         {/* Mobile Menu & Logo */}

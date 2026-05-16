@@ -1,3 +1,4 @@
+import Cookies from "js-cookie";
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -43,14 +44,15 @@ const Sidebar = ({ activePage = "dashboard" }) => {
     let isMounted = true;
     const fetchNavigationItems = async () => {
       try {
-        const token = localStorage.getItem("token");
+        //const token = localStorage.getItem("token");
+        const token = Cookies.get("token");
         if (!token) return;
         const response = await fetch(`${API_BASE_URL}/api/sidebar/navigation`, {
           headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
         });
         if (!response.ok) return;
         const data = await response.json();
-        if (isMounted) setNavigationItems(data);
+        if (isMounted) console.log(data);
       } catch (error) { console.error("Error:", error); }
     };
     fetchNavigationItems();

@@ -37,6 +37,7 @@ app.options("*", cors({
   credentials: true
 }));
 app.use(express.json());
+//const cookieParser = require("cookie-parser");
 app.use(cookieParser());
 // ✅ REGISTER ROUTES (CORRECT PLACE)
 app.use("/api/auth", authRoutes);
