@@ -237,7 +237,10 @@ export default function Settings() {
 
   useEffect(() => {
     const fetchNotificationSettings = async () => {
-      if (!user) return;
+      if (!user) {
+        setPageLoading(false);
+        return;
+      }
       try {
         const token = localStorage.getItem("token");
         const { data } = await axios.get("/api/users/settings", { headers: { Authorization: `Bearer ${token}` } });

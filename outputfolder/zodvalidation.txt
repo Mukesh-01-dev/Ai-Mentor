@@ -1,0 +1,76 @@
+Zod Validation Implementation: Detailed Changes & Routes
+=======================================================
+
+I have extended the Zod validation across the entire backend. This ensures that every route handling user input is now protected.
+
+1. New Schema Files Created
+---------------------------
+- userSchema.js: Handles profile updates, password changes, and course actions.
+- aiSchema.js: Handles AI video generation requests.
+- communitySchema.js: Handles posts, replies, and reporting.
+- courseSchema.js: Handles admin-level course and module management.
+- analyticsSchema.js: Handles study session recording.
+
+2. Updated Routes & Validations
+-------------------------------
+
+User Component (/api/users)
+- POST /register: Validates firstName, lastName, email, and password.
+- POST /login: Validates email and password.
+- PUT /profile: Validates optional updates for firstName, lastName, email, and bio.
+- PUT /change-password: Validates currentPassword and a strong newPassword (min 6 chars, uppercase, special char).
+- POST /purchase-course: Validates courseId and courseTitle.
+- PUT /course-progress: Validates courseId, lessonId, and progress data.
+- PUT /settings: Validates notification, security, and appearance settings.
+- POST /remove-course: Validates courseId.
+
+AI Component (/api/ai)
+- POST /generate-video: Validates courseId, lessonId, and celebrity name.
+
+Community Component (/api/community)
+- POST /: Validates post type (course/global), content, and required fields (courseId for course posts, category for global).
+- PUT /:id: Validates updated post content.
+- POST /:id/reply: Validates reply text.
+- PUT /:id/reply/:replyId: Validates edited reply text.
+- POST /:id/report: Validates report reason and optional description.
+- PUT /reports/:reportId: Validates admin moderation action (hidden, deleted, dismissed).
+
+Course Component (/api/courses - Admin)
+- POST /: Validates new course details.
+- POST /:courseId/modules: Validates module array structure.
+- POST /:courseId/modules/:moduleId/lessons: Validates lesson array structure.
+- PUT /:courseId/lessons/:lessonId/video: Validates video URL format.
+- POST /:courseId/subtopics: Validates subtopics array.
+
+Analytics Component (/api/analytics)
+- POST /study-session: Validates study hours (positive number) and optional date.
+
+3. How to Test Every Single Validation
+--------------------------------------
+To test every validation I have implemented, please use the comprehensive test suite I created.
+
+1. Ensure your backend server is running:
+   `cd backend && npm run dev`
+
+2. Run the test suite:
+   `node backend/scripts/testValidation.js`
+
+4. What the Test Suite Covers
+-----------------------------
+The test suite performs 13 distinct tests across all components:
+- [User] Registration with invalid email/short password.
+- [User] Profile update with invalid email/oversized bio.
+- [User] Password change with weak new password.
+- [User] Course purchase with non-numeric ID.
+- [User] Progress update with missing required fields.
+- [AI Generate] missing celebrity name or lesson info.
+- [Community] Post creation with missing type/content/category.
+- [Community] Reporting with missing reason.
+- [Community] Admin moderation with invalid action labels.
+- [Admin Course] Creation with missing title/negative price.
+- [Admin Course] Video update with malformed URLs.
+- [Analytics] Session recording with negative hours.
+
+Each test is designed to FAIL Zod validation, and the script will confirm that the server correctly returns a "400 Bad Request" with the exact error details.
+
+This centralized validation system ensures your controllers stay clean and your database remains protected from corrupt data.

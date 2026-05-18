@@ -3,7 +3,8 @@ import { User } from "../models/index.js";
 export const getAllUsers = async (req, res) => {
   try {
     const users = await User.findAll({
-  attributes: ["id", "name", "email", "role", "purchasedCourses", "createdAt"]    });
+      attributes: ["id", "name", "email", "role", "status", "purchasedCourses", "createdAt"],
+    });
     res.status(200).json({ success: true, data: users });
   } catch (error) {
     console.error("GET USERS ERROR:", error);

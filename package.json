@@ -8,8 +8,5 @@
     "lint:frontend": "npm run lint --prefix frontend",
     "lint:admin": "npm run lint --prefix frontendAdmin"
   },
-  "type": "commonjs",
-  "dependencies": {
-    "razorpay": "^2.9.6"
-  }
+  "type": "commonjs"
 }

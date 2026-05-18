@@ -582,21 +582,7 @@ const Dashboard = () => {
                       ))}
                     </div>
                   </div>
-                ) : (
-                  <div className="p-6 text-center text-muted">
-                    <p>
-                      {normalizedSearchQuery
-                        ? t("dashboard.no_courses_search")
-                        : t("dashboard.no_courses_enrolled")}
-                    </p>
-                    <button
-                      className="mt-4 px-4 py-2 bg-teal-500 text-white text-sm font-medium rounded-lg hover:bg-teal-600"
-                      onClick={handleBrowseCourses}
-                    >
-                      {t("dashboard.browse_courses")}
-                    </button>
-                  </div>
-                )}
+                ) : null}
               </div>
             </div>
 
