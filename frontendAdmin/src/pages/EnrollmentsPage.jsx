@@ -104,6 +104,29 @@ function EnrollmentsPage() {
     doc.save("Enrollments_Report.pdf");
   };
 
+  // CSV Export
+  const exportToCSV = () => {
+    const csvData = enrollments.map((enrollment) => ({
+      Student: enrollment.user,
+      Course: enrollment.course,
+      Date: enrollment.date
+        ? new Date(enrollment.date).toLocaleDateString()
+        : "N/A",
+      Amount: `Rs ${enrollment.amount}`,
+      Status: enrollment.status || "Completed",
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(csvData);
+
+    const csvOutput = XLSX.utils.sheet_to_csv(worksheet);
+
+    const blob = new Blob([csvOutput], {
+      type: "text/csv;charset=utf-8;",
+    });
+
+    saveAs(blob, "Enrollments_Report.csv");
+  };
+
   if (loading)
     return (
       <div className="p-10 text-center text-muted">
@@ -137,6 +160,7 @@ function EnrollmentsPage() {
 
           {showDropdown && (
             <div className="absolute right-0 mt-2 w-48 bg-canvas border border-border rounded-xl shadow-lg z-10 overflow-hidden">
+              
               <button
                 onClick={() => {
                   exportToExcel();
@@ -156,6 +180,17 @@ function EnrollmentsPage() {
               >
                 Download PDF
               </button>
+
+              <button
+                onClick={() => {
+                  exportToCSV();
+                  setShowDropdown(false);
+                }}
+                className="block w-full text-left px-4 py-3 hover:bg-canvas-alt transition-colors"
+              >
+                Download CSV
+              </button>
+
             </div>
           )}
         </div>
