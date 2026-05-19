@@ -40,12 +40,14 @@ export default function Learning() {
   // Captions state
   const [captions, setCaptions] = useState([]);
   const [activeCaption, setActiveCaption] = useState("");
-  const celebrities = ["Salman Khan", "Modi ji", "SRK"];
+  const celebrities = ["Salman Khan", "Modi ji", "SRK", "Hrithik", "Owl_Video"];
 
   const celebrityVideoMap = {
     "Salman Khan": { video: "/videos/salman.mp4", vtt: "/videos/salman.vtt" },
     "Modi ji": { video: "/videos/modi.mp4", vtt: "/videos/modi.vtt" },
-    SRK: { video: "/videos/srk.mp4", vtt: "/videos/srk.vtt" },
+    "SRK": { video: "/videos/srk.mp4", vtt: "/videos/srk.vtt" },
+    "Hrithik Roshan": { video: "/videos/hrithik.mp4", vtt: "/videos/hrithik.vtt" },
+    "Owl": { video: "/videos/owl.mp4", vtt: "/videos/owl.vtt" },
   };
 
   const [selectedCelebrity, setSelectedCelebrity] = useState(null);
