@@ -120,7 +120,7 @@ function App() {
           </div>
         </header>
 
-        <section className="p-4 md:p-8">
+        <section className="p-4 md:p-8 overflow-auto">
           <div className="rounded-2xl bg-white border overflow-hidden" style={{ borderColor: "var(--neutral-100)", boxShadow: "0 2px 8px rgba(26,26,26,0.06)" }}>
             {page === "dashboard" && <DashboardPage />}
             {page === "courses" && <CoursesPage />}
@@ -273,7 +273,7 @@ function PaymentsPage() {
         <article className="rounded-2xl border p-5" style={{ borderColor: "var(--neutral-100)" }}><p style={{ color: "rgba(51,51,51,0.7)" }}>Refunded</p><p className="text-5xl font-bold text-red-600">Rs 450</p></article>
       </div>
 
-      <div className="rounded-2xl border overflow-hidden" style={{ borderColor: "var(--neutral-100)" }}>
+      <div className="rounded-2xl bg-white border" style={{ borderColor: "var(--neutral-100)" }}>
         <div className="p-5 border-b" style={{ borderColor: "var(--neutral-100)" }}>
           <h3 className="text-2xl font-semibold">Recent Transactions</h3>
         </div>
