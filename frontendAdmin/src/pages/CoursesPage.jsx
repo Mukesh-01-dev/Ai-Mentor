@@ -1,6 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from "react";
-import { Plus, X } from "lucide-react";
-import { useEffect, useState, useMemo, useRef } from "react";
+import { useEffect, useState, useMemo, useRef,useCallback} from "react";
 import { Plus, X, ChevronDown, SlidersHorizontal, ArrowUpDown, Check, BookOpen } from "lucide-react";
 import { callApi } from "../utils/api";
 import CourseStatusDropdown from "../components/CourseStatusDropdown";
@@ -597,67 +595,73 @@ return (
             </tr>
           </thead>
           <tbody className="text-sm">
-            {courses.length > 0 ? (
-              courses.map((course) => (
-                <tr key={course.id} className={`border-b border-border hover:bg-canvas-alt transition-colors ${getRowClass(course.status)}`}>
-                  <td className="p-5">
-                    <div className={`font-semibold text-main ${course.status === "deleted" ? "line-through" : ""}`}>
-                      {course.title}
-                    </div>
-                    <div className="text-muted text-[10px] uppercase tracking-tighter">ID: {course.id}</div>
-            {filteredCourses.length > 0 ? (
-              filteredCourses.map((course) => (
-                <tr
-                  key={course.id}
-                  className="border-b border-border hover:bg-canvas-alt transition-colors group"
-                >
-                  <td className="p-5">
-                    <div className="font-semibold text-main group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors">
-                      {course.title}
-                    </div>
-                    <div className="text-muted text-[10px] uppercase tracking-tighter mt-0.5">
-                      ID: {course.id}
-                    </div>
-                  </td>
-                  <td className="pr-4">
-                    <span className="px-2.5 py-1 rounded-lg bg-canvas-alt border border-border text-[11px] font-bold uppercase tracking-tight text-muted">
-                      {course.category || "—"}
-                    </span>
-                  </td>
-                  <td className="pr-4 font-black text-main tracking-tight">
-                    {course.priceValue != null && course.priceValue !== "" ? (
-                      Number(course.priceValue) === 0
-                        ? <span className="text-teal-500 text-[11px] font-black uppercase tracking-widest">Free</span>
-                        : course.priceValue
-                    ) : "—"}
-                  </td>
-                  <td className="pr-4 text-muted font-bold text-[11px]">{course.currency || "INR"}</td>
-                  <td className="pr-4 text-muted text-[11px] font-medium">
-                    {new Date(course.createdAt).toLocaleDateString()}
-                  </td>
-                  <td className="pr-4">
-                    <span className="text-teal-500 font-black text-[10px] uppercase tracking-widest">Published</span>
-                  </td>
-                  <td className="text-muted font-bold text-[11px]">{course.currency || "INR"}</td>
-                  <td className="text-muted text-[11px] font-medium">{new Date(course.createdAt).toLocaleDateString()}</td>
-                  <td>
-                    <CourseStatusDropdown
-                      courseId={course.id}
-                      currentStatus={course.status || "published"}
-                      onStatusChange={handleStatusChange}
-                      onDeleteRequest={handleDeleteRequest}
-                    />
-                  </td>
-                </tr>
-              ))
+  {filteredCourses.length > 0 ? (
+    filteredCourses.map((course) => (
+      <tr
+        key={course.id}
+        className={`border-b border-border hover:bg-canvas-alt transition-colors group ${getRowClass(course.status)}`}
+      >
+        <td className="p-5">
+          <div
+            className={`font-semibold text-main group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors ${
+              course.status === "deleted" ? "line-through" : ""
+            }`}
+          >
+            {course.title}
+          </div>
+
+          <div className="text-muted text-[10px] uppercase tracking-tighter mt-0.5">
+            ID: {course.id}
+          </div>
+        </td>
+
+        <td className="pr-4">
+          <span className="px-2.5 py-1 rounded-lg bg-canvas-alt border border-border text-[11px] font-bold uppercase tracking-tight text-muted">
+            {course.category || "—"}
+          </span>
+        </td>
+
+        <td className="pr-4 font-black text-main tracking-tight">
+          {course.priceValue != null &&
+          course.priceValue !== "" ? (
+            Number(course.priceValue) === 0 ? (
+              <span className="text-teal-500 text-[11px] font-black uppercase tracking-widest">
+                Free
+              </span>
             ) : (
-              <tr>
-                <td colSpan="6">
-                  <EmptyState onClear={clearAll} />
-                </td>
-              </tr>
-            )}
-          </tbody>
+              course.priceValue
+            )
+          ) : (
+            "—"
+          )}
+        </td>
+
+        <td className="pr-4 text-muted font-bold text-[11px]">
+          {course.currency || "INR"}
+        </td>
+
+        <td className="pr-4 text-muted text-[11px] font-medium">
+          {new Date(course.createdAt).toLocaleDateString()}
+        </td>
+
+        <td>
+          <CourseStatusDropdown
+            courseId={course.id}
+            currentStatus={course.status || "published"}
+            onStatusChange={handleStatusChange}
+            onDeleteRequest={handleDeleteRequest}
+          />
+        </td>
+      </tr>
+    ))
+  ) : (
+    <tr>
+      <td colSpan="6">
+        <EmptyState onClear={clearAll} />
+      </td>
+    </tr>
+  )}
+</tbody>
         </table>
       </div>
 
