@@ -19,6 +19,7 @@ import notificationRoutes from "./routes/notificationRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import certificateRoutes from "./routes/certificateRoutes.js";
 import paymentRoutes from "./routes/payment.js";
+import razorpayRoutes from "./routes/razorpay.js";
 import preferenceRoutes from "./routes/preferenceRoutes.js";
 import contactUsRoutes from "./routes/contactus.js"; // ✅ fixed import
 import reportRoutes from "../backend/routes/reportRoutes.js";
@@ -31,6 +32,9 @@ import "./models/modelAssociations.js";
 import "./models/contactMessage.js";
 
 dotenv.config();
+
+import { validateEnv } from "./env-validator.js";
+validateEnv();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -61,6 +65,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/courses", courseRoutes);
 app.use("/api/payment", paymentRoutes);
+app.use("/api/payment/razorpay", razorpayRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/sidebar", sidebarRoutes);
 app.use("/api/ai", aiRoutes);

@@ -6,6 +6,7 @@ import { useAuth } from "../context/AuthContext";
 import { getAIVideo } from "../service/aiService";
 import VideoPlayer from "../components/video/VideoPlayer";
 import AITranscript from "../components/video/AITranscript";
+import toast from "react-hot-toast";
 
 import {
   ChevronLeft,
@@ -423,6 +424,7 @@ export default function Learning() {
   const saveLessonData = async (lessonId, data) => {
     try {
       const token = localStorage.getItem("token");
+      const mod = modules.find((m) => m.lessons?.some((l) => l.id === currentLesson.id));
       const res = await fetch("/api/users/course-progress", {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -431,8 +433,9 @@ export default function Learning() {
           lessonData: { lessonId, data },
           currentLesson: {
             lessonId,
-            moduleTitle: modules?.find((m) => m.id === expandedModule)?.title || "",
+            moduleTitle: mod.title || "",
           },
+          completedLesson: { lessonId },
         }),
       });
       if (res.ok) {
@@ -448,29 +451,16 @@ export default function Learning() {
     const courseProgress = user?.purchasedCourses?.find(
       (course) => course.courseId === parseInt(courseId)
     )?.progress;
-    const isAlreadyCompleted = courseProgress?.completedLessons?.some((cl) => cl.lessonId === lessonId);
-    if (isAlreadyCompleted) return;
+    const isAlreadyCompleted = courseProgress?.completedLessons?.some(
+      (cl) => cl.lessonId === lessonId
+    );
 
-    try {
-      const token = localStorage.getItem("token");
-      const res = await fetch("/api/users/course-progress", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({
-          courseId: parseInt(courseId),
-          completedLesson: { lessonId },
-          currentLesson: {
-            lessonId,
-            moduleTitle: modules?.find((m) => m.id === expandedModule)?.title || expandedModule || "",
-          },
-        }),
-      });
-      if (res.ok) {
-        const result = await res.json();
-        if (updateUser && result.purchasedCourses) updateUser({ purchasedCourses: result.purchasedCourses });
-      }
-    } catch (error) {
-      console.error("Error updating progress:", error);
+    if (isAlreadyCompleted) {
+      console.log("Lesson already completed, skipping");
+      return;
+    }
+    else{
+      toast.error("Please watch the video before continuing.");
     }
   };
 

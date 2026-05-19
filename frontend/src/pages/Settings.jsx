@@ -250,12 +250,15 @@ export default function Settings() {
         setSettingsData(data);
         setOriginalNotifications(notifications);
         if (data?.appearance?.language) i18n.changeLanguage(data.appearance.language);
-      } catch (err) { console.error("Failed to fetch notification settings:", err); }
-      finally {
+      } catch (err) { 
+        console.error("Failed to fetch notification settings:", err); 
+      } finally {
         setPageLoading(false);
       }
     };
-    fetchNotificationSettings();
+    fetchNotificationSettings().finally(() => {
+    setPageLoading(false);
+});
   }, [user]);
 
   /* mobile navigation helpers */
@@ -284,7 +287,7 @@ export default function Settings() {
 
   /* ── shared panel renderers ── */
   const ProfilePanel = () => (
-    <div className="max-w-3xl">
+    <div className="max-w-3xl mx-auto">
       <div className="hidden lg:block mb-8">
         <h1 className="text-xl sm:text-2xl md:text-[30px] font-bold text-main font-[Inter] mb-2">{t("settings.profile.title")}</h1>
         <p className="text-sm sm:text-[16px] text-muted font-[Inter]">{t("settings.profile.subtitle")}</p>
@@ -340,6 +343,7 @@ export default function Settings() {
       </div>
     </div>
   );
+}
 
   const NotificationsPanel = () => (
     <div className="w-full">
@@ -564,18 +568,50 @@ export default function Settings() {
     </div>
   );
 
-  const renderPanel = (key) => {
-    switch (key) {
-      case "profile":           return <ProfilePanel />;
-      case "notifications":     return <NotificationsPanel />;
-      case "password_security": return <PasswordSecurityPanel />;
-      case "preferences":       return <div className="w-full"><div className="hidden lg:block mb-8"><h1 className="text-xl sm:text-2xl md:text-[30px] font-bold text-main font-[Inter] mb-2">{t("preferences.nav_title")}</h1><p className="text-sm sm:text-[16px] text-muted font-[Inter]">{t("preferences.settings_modal_subtitle")}</p></div><Preferences mode="settings" onSuccess={() => toast.success(t("preferences.save_success"))} /></div>;
-      case "appearance":        return <AppearancePanel />;
-      case "language":          return <LanguagePanel />;
-      case "contactus":         return <ContactPanel />;
-      default:                  return null;
-    }
-  };
+const renderPanel = (key) => {
+  switch (key) {
+    case "profile":
+      return ProfilePanel();
+
+    case "notifications":
+      return NotificationsPanel();
+
+    case "password_security":
+      return PasswordSecurityPanel();
+
+    case "preferences":
+      return (
+        <div className="w-full">
+          <div className="hidden lg:block mb-8">
+            <h1 className="text-xl sm:text-2xl md:text-[30px] font-bold text-main font-[Inter] mb-2">
+              {t("preferences.nav_title")}
+            </h1>
+
+            <p className="text-sm sm:text-[16px] text-muted font-[Inter]">
+              {t("preferences.settings_modal_subtitle")}
+            </p>
+          </div>
+
+          <Preferences
+            mode="settings"
+            onSuccess={() => toast.success(t("preferences.save_success"))}
+          />
+        </div>
+      );
+
+    case "appearance":
+      return AppearancePanel();
+
+    case "language":
+      return LanguagePanel();
+
+    case "contactus":
+      return ContactPanel();
+
+    default:
+      return null;
+  }
+};
 
   if (pageLoading) {
     return (

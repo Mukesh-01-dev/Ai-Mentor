@@ -33,6 +33,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const { user, fetchUserProfile } = useAuth();
   const navigate = useNavigate();
+  const [data, setData] = useState(null);
 
   useEffect(() => {
     const fetchAllData = async () => {
@@ -44,11 +45,19 @@ const Dashboard = () => {
           "Content-Type": "application/json",
         };
 
-        const [coursesRes, statsRes] = await Promise.all([
+        const [coursesRes, statsRes,res] = await Promise.all([
           fetch("/api/courses", { headers }),
           fetch("/api/courses/stats/cards", { headers }),
+          fetch("/api/certificate/list", {headers}),
         ]);
 
+        if (res.ok) {
+          const json = await res.json();
+          setData(json);
+        }
+         if (!res.ok) {
+          console.error(`Failed to fetch certificates: ${res.status}`);
+        }
         if (!coursesRes.ok) {
           throw new Error(`Courses API failed: ${coursesRes.status}`);
         }
@@ -74,52 +83,49 @@ const Dashboard = () => {
 
     fetchAllData();
   }, []);
-
   const calculateStats = () => {
     console.log("Calculating stats with user:", user);
     console.log("coursesData:", coursesData);
 
-    const defaultCards = [
-      {
-        icon: <Play className="w-5 h-5 text-blue-600" />,
-        value: "0",
-        label: "Ongoing Courses",
-        change: "+0%",
-        bgColor: "bg-blue-50",
-        iconBg: "bg-blue-100",
-      },
-      {
-        icon: <CheckCircle className="w-5 h-5 text-green-600" />,
-        value: "0",
-        label: "Completed",
-        change: "+0",
-        bgColor: "bg-green-50",
-        iconBg: "bg-green-100",
-      },
-      {
-        icon: <Award className="w-5 h-5 text-purple-600" />,
-        value: "0",
-        label: "Certificates",
-        change: "+0",
-        bgColor: "bg-purple-50",
-        iconBg: "bg-purple-100",
-      },
-      {
-        icon: <Clock className="w-5 h-5 text-orange-600" />,
-        value: "0h",
-        label: "Hours Spent",
-        change: "+0h",
-        bgColor: "bg-orange-50",
-        iconBg: "bg-orange-100",
-      },
-    ];
-
-    const baseCards = coursesData.statsCards?.length === 4 
-      ? coursesData.statsCards 
-      : defaultCards;
-
-    if (!user?.purchasedCourses) {
-      return baseCards;
+    if (
+      !user?.purchasedCourses ||
+      !coursesData.statsCards ||
+      coursesData.statsCards.length < 4
+    ) {
+      return [
+        {
+          icon: <Play className="w-5 h-5 text-blue-600" />,
+          value: data?.stats?.inProgress ?? 0,
+          label: "Ongoing Courses",
+          change: "+0%",
+          bgColor: "bg-blue-50",
+          iconBg: "bg-blue-100",
+        },
+        {
+          icon: <CheckCircle className="w-5 h-5 text-green-600" />,
+          value: data?.stats?.completed ?? 0,
+          label: "Completed",
+          change: "+0",
+          bgColor: "bg-green-50",
+          iconBg: "bg-green-100",
+        },
+        {
+          icon: <Award className="w-5 h-5 text-purple-600" />,
+          value:data?.stats?.certificatesEarned ?? 0,
+          label: "Certificates",
+          change: "+0",
+          bgColor: "bg-purple-50",
+          iconBg: "bg-purple-100",
+        },
+        {
+          icon: <Clock className="w-5 h-5 text-orange-600" />,
+          value: "0h",
+          label: "Hours Spent",
+          change: "+0h",
+          bgColor: "bg-orange-50",
+          iconBg: "bg-orange-100",
+        },
+      ];
     }
 
     let coursesInProgress = 0;

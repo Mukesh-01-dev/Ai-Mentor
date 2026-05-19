@@ -1,6 +1,11 @@
+import { useEffect, useState, useCallback, useRef } from "react";
+import { Plus, X } from "lucide-react";
 import { useEffect, useState, useMemo, useRef } from "react";
 import { Plus, X, ChevronDown, SlidersHorizontal, ArrowUpDown, Check, BookOpen } from "lucide-react";
 import { callApi } from "../utils/api";
+import CourseStatusDropdown from "../components/CourseStatusDropdown";
+import ConfirmDeleteModal from "../components/ConfirmDeleteModal";
+import { useToast } from "../context/ToastContext";
 
 // ─── MultiSelect Dropdown ─────────────────────────────────────────────────────
 function MultiSelectDropdown({ label, options, selected, onChange }) {
@@ -144,12 +149,22 @@ function FilterChip({ label, onRemove }) {
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 function CoursesPage() {
+  const { showToast } = useToast();
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [newCourse, setNewCourse] = useState({ title: "", category: "", priceValue: "", currency: "INR" });
   const [submitting, setSubmitting] = useState(false);
+
+  // Delete modal state
+  const [deleteModal, setDeleteModal] = useState({
+    open: false,
+    courseId: null,
+    courseTitle: "",
+    enrolledCount: 0,
+    isDeleting: false,
+  });
 
   // ── Filter panel toggle ───────────────────────────────────────────────────
   const [showFilters, setShowFilters] = useState(false);
@@ -295,23 +310,158 @@ function CoursesPage() {
       });
       fetchCourses();
     } catch (err) {
-      alert("Failed to add course: " + err.message);
+      showToast("Failed to add course: " + err.message, "error");
     } finally {
       setSubmitting(false);
     }
   };
 
-  if (loading && courses.length === 0)
-    return <div className="p-10 text-center text-muted">Loading courses…</div>;
-  if (error && courses.length === 0)
-    return <div className="p-10 text-center text-red-500">Error: {error}</div>;
+ // Ref always holds the latest courses — prevents stale closures in callbacks
+const coursesRef = useRef(courses);
 
+useEffect(() => {
+  coursesRef.current = courses;
+}, [courses]);
+
+/**
+ * Optimistic status update with rollback on failure.
+ */
+const handleStatusChange = useCallback(async (courseId, newStatus) => {
+  const prevCourses = [...coursesRef.current];
+
+  // Optimistic update
+  setCourses((prev) =>
+    prev.map((c) =>
+      c.id === courseId
+        ? { ...c, status: newStatus, deletedAt: null }
+        : c
+    )
+  );
+
+  try {
+    await callApi(`/admin/courses/${courseId}/status`, {
+      method: "PATCH",
+      body: JSON.stringify({ status: newStatus }),
+    });
+  } catch (err) {
+    // Rollback on failure
+    setCourses(prevCourses);
+    showToast("Failed to update status: " + err.message, "error");
+  }
+}, []);
+
+/**
+ * Opens the delete confirmation modal.
+ */
+const handleDeleteRequest = useCallback(async (courseId) => {
+  const course = coursesRef.current.find((c) => c.id === courseId);
+
+  if (!course) return;
+
+  let enrolledCount = 0;
+
+  try {
+    const data = await callApi(
+      `/admin/courses/${courseId}/enrollments`
+    );
+
+    enrolledCount = data.enrolledCount || 0;
+  } catch {
+    // Ignore fetch failure
+  }
+
+  setDeleteModal({
+    open: true,
+    courseId,
+    courseTitle: course.title || "Untitled Course",
+    enrolledCount,
+    isDeleting: false,
+  });
+}, []);
+
+/**
+ * Permanently delete a course.
+ */
+const handleConfirmDelete = useCallback(async () => {
+  const { courseId } = deleteModal;
+
+  if (!courseId) return;
+
+  setDeleteModal((prev) => ({
+    ...prev,
+    isDeleting: true,
+  }));
+
+  try {
+    await callApi(`/admin/courses/${courseId}?force=true`, {
+      method: "DELETE",
+    });
+
+    // Remove from local state
+    setCourses((prev) =>
+      prev.filter((c) => c.id !== courseId)
+    );
+
+    setDeleteModal({
+      open: false,
+      courseId: null,
+      courseTitle: "",
+      enrolledCount: 0,
+      isDeleting: false,
+    });
+  } catch (err) {
+    showToast("Failed to delete course: " + err.message, "error");
+
+    setDeleteModal((prev) => ({
+      ...prev,
+      isDeleting: false,
+    }));
+  }
+}, [deleteModal]);
+
+const closeDeleteModal = useCallback(() => {
+  if (!deleteModal.isDeleting) {
+    setDeleteModal({
+      open: false,
+      courseId: null,
+      courseTitle: "",
+      enrolledCount: 0,
+      isDeleting: false,
+    });
+  }
+}, [deleteModal.isDeleting]);
+
+/**
+ * Status badge color helper.
+ */
+const getRowClass = (status) => {
+  if (status === "deleted") return "opacity-50";
+  if (status === "disabled") return "opacity-75";
+  return "";
+};
+
+if (loading && courses.length === 0)
   return (
-    <>
-      {/* ── Header ──────────────────────────────────────────────────────────── */}
-      <div className="border-b border-border px-4 py-4 sm:px-6 md:px-8 sm:py-6 flex flex-wrap gap-3 items-center justify-between">
-        <h2 className="text-2xl sm:text-3xl font-semibold">Active Courses</h2>
-        <div className="flex gap-2 items-center">
+    <div className="p-10 text-center text-muted">
+      Loading courses...
+    </div>
+  );
+
+if (error && courses.length === 0)
+  return (
+    <div className="p-10 text-center text-red-500">
+      Error: {error}
+    </div>
+  );
+
+return (
+  <>
+    {/* ── Header ──────────────────────────────────────────────────────────── */}
+    <div className="border-b border-border px-4 py-4 sm:px-6 md:px-8 sm:py-6 flex flex-wrap gap-3 items-center justify-between">
+      <h2 className="text-2xl sm:text-3xl font-semibold">
+        Active Courses
+      </h2>
+      <div className="flex gap-2 items-center">
           <button
             type="button"
             onClick={() => setShowAddModal(true)}
@@ -447,6 +597,14 @@ function CoursesPage() {
             </tr>
           </thead>
           <tbody className="text-sm">
+            {courses.length > 0 ? (
+              courses.map((course) => (
+                <tr key={course.id} className={`border-b border-border hover:bg-canvas-alt transition-colors ${getRowClass(course.status)}`}>
+                  <td className="p-5">
+                    <div className={`font-semibold text-main ${course.status === "deleted" ? "line-through" : ""}`}>
+                      {course.title}
+                    </div>
+                    <div className="text-muted text-[10px] uppercase tracking-tighter">ID: {course.id}</div>
             {filteredCourses.length > 0 ? (
               filteredCourses.map((course) => (
                 <tr
@@ -480,6 +638,16 @@ function CoursesPage() {
                   <td className="pr-4">
                     <span className="text-teal-500 font-black text-[10px] uppercase tracking-widest">Published</span>
                   </td>
+                  <td className="text-muted font-bold text-[11px]">{course.currency || "INR"}</td>
+                  <td className="text-muted text-[11px] font-medium">{new Date(course.createdAt).toLocaleDateString()}</td>
+                  <td>
+                    <CourseStatusDropdown
+                      courseId={course.id}
+                      currentStatus={course.status || "published"}
+                      onStatusChange={handleStatusChange}
+                      onDeleteRequest={handleDeleteRequest}
+                    />
+                  </td>
                 </tr>
               ))
             ) : (
@@ -493,6 +661,7 @@ function CoursesPage() {
         </table>
       </div>
 
+      {/* Add Course Modal */}
       {/* Mobile card list (hidden on desktop) */}
       <div className="sm:hidden divide-y divide-border">
         {filteredCourses.length > 0 ? (
@@ -630,6 +799,16 @@ function CoursesPage() {
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmDeleteModal
+        isOpen={deleteModal.open}
+        onClose={closeDeleteModal}
+        onConfirm={handleConfirmDelete}
+        courseTitle={deleteModal.courseTitle}
+        enrolledCount={deleteModal.enrolledCount}
+        isDeleting={deleteModal.isDeleting}
+      />
     </>
   );
 }

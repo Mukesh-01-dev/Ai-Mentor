@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useRef } from "react";
-import { Star, X, BookOpen, Search, ChevronLeft, ChevronRight,AlertTriangle } from "lucide-react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
+import { Star, X, BookOpen, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import API_BASE_URL from "../lib/api";
 import { useTranslation } from "react-i18next";
 import ReportModal from "../components/common/ReportModal";
+import toast from "react-hot-toast";
 
 const CoursesPage = () => {
   const { t } = useTranslation();
@@ -117,11 +118,14 @@ const CoursesPage = () => {
     }
   };
 
-  /* ================= ENROLL ================= */
-  const handleEnroll = async () => {
-    if (!selectedCourse) return;
+  /* ================= ENROLL & PAYMENT ================= */
+  const [isPurchasing, setIsPurchasing] = useState(false);
+
+  const handleFreeEnrollment = async () => {
+    if (!selectedCourse || isPurchasing) return;
 
     try {
+      setIsPurchasing(true);
       const token = localStorage.getItem("token");
 
       await fetch(`${API_BASE_URL}/api/users/purchase-course`, {
@@ -149,8 +153,148 @@ const CoursesPage = () => {
       setShowEnrollPopup(false);
       setSelectedCourse(null);
       setActiveTab("my-courses");
+      toast.success("Successfully enrolled!");
+
+      // Notify Header to refetch notifications
+      window.dispatchEvent(new Event('refreshNotifications'));
     } catch (error) {
       console.error("Enroll error:", error);
+      toast.error("Failed to enroll. Please try again.");
+    } finally {
+      setIsPurchasing(false);
+    }
+  };
+
+  const handleStripePayment = async () => {
+    if (!selectedCourse || isPurchasing) return;
+    const token = localStorage.getItem("token");
+    const priceValue = Number(selectedCourse.priceValue || 0);
+
+    try {
+      setIsPurchasing(true);
+      const res = await fetch(`${API_BASE_URL}/api/payment/create-checkout-session`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          course: {
+            id: selectedCourse.id,
+            title: selectedCourse.title,
+            priceValue,
+          },
+        }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error("Payment failed");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Payment error");
+      setIsPurchasing(false);
+    }
+  };
+
+  const handleRazorpayPayment = async () => {
+    if (!selectedCourse || isPurchasing) return;
+    const token = localStorage.getItem("token");
+    const priceValue = Number(selectedCourse.priceValue || 0);
+
+    try {
+      setIsPurchasing(true);
+      const res = await fetch(`${API_BASE_URL}/api/payment/razorpay/create-order`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          course: {
+            id: selectedCourse.id,
+            priceValue,
+          },
+        }),
+      });
+      const orderData = await res.json();
+
+      if (!orderData.orderId) {
+        throw new Error(orderData.error || "Failed to create order");
+      }
+
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID || "",
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: "UpToSkills",
+        description: selectedCourse.title,
+        order_id: orderData.orderId,
+        handler: async function (response) {
+          try {
+            const verifyRes = await fetch(`${API_BASE_URL}/api/payment/razorpay/verify`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                courseId: selectedCourse.id,
+                userId: user?.id,
+              }),
+            });
+
+            const verifyData = await verifyRes.json();
+            if (verifyData.success) {
+              toast.success("Payment successful!");
+              window.dispatchEvent(new Event("refreshNotifications"));
+
+              const [exploreRes, myRes] = await Promise.all([
+                fetch(`${API_BASE_URL}/api/courses`),
+                fetch(`${API_BASE_URL}/api/courses/my-courses`, {
+                  headers: { Authorization: `Bearer ${token}` },
+                }),
+              ]);
+              setExploreCourses(await exploreRes.json());
+              setMyCourses(await myRes.json());
+
+              setShowEnrollPopup(false);
+              setSelectedCourse(null);
+              setActiveTab("my-courses");
+            } else {
+              throw new Error(verifyData.error || "Payment verification failed");
+            }
+          } catch (err) {
+            console.error("Verification error:", err);
+            toast.error(err.message || "Payment verification failed");
+          }
+        },
+        prefill: {
+          name: user?.name || user?.firstName || "",
+          email: user?.email || "",
+          contact: user?.phone || "9999999999",
+        },
+        theme: {
+          color: "#0f766e",
+        },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.on("payment.failed", function (response) {
+        toast.error("Payment failed: " + response.error.description);
+      });
+      rzp.open();
+
+    } catch (err) {
+      console.error(err);
+      toast.error(err.message || "Payment error");
+    } finally {
+      setIsPurchasing(false);
     }
   };
 
@@ -729,12 +873,32 @@ const CoursesPage = () => {
                 {selectedCourse.priceValue > 0 ? `₹${selectedCourse.priceValue}` : "Free"}
               </span>
             </div>
-            <button
-              onClick={handleEnroll}
-              className="w-full mt-6 py-3 rounded-xl bg-[#2DD4BF] text-white font-semibold"
-            >
-              {t("courses.confirm_enrollment")}
-            </button>
+            {Number(selectedCourse.priceValue) > 0 ? (
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={handleStripePayment}
+                  disabled={isPurchasing}
+                  className="w-1/2 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold disabled:opacity-50 transition-colors"
+                >
+                  {isPurchasing ? "Processing..." : "Pay with Stripe"}
+                </button>
+                <button
+                  onClick={handleRazorpayPayment}
+                  disabled={isPurchasing}
+                  className="w-1/2 py-3 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-semibold disabled:opacity-50 transition-colors"
+                >
+                  {isPurchasing ? "Processing..." : "Pay with Razorpay"}
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={handleFreeEnrollment}
+                disabled={isPurchasing}
+                className="w-full mt-6 py-3 rounded-xl bg-[#2DD4BF] text-white font-semibold disabled:opacity-50"
+              >
+                {isPurchasing ? "Processing..." : t("courses.confirm_enrollment")}
+              </button>
+            )}
           </div>
         </div>
       )}

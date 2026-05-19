@@ -2,7 +2,9 @@ import { useMemo, useState, useEffect } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import Header from "./components/Header";
 import AdminSidebar from "./components/layout/AdminSidebar";
+import Toast from "./components/Toast";
 import { PAGE_TITLES } from "./constants/adminNavigation";
+import { ToastProvider } from "./context/ToastContext";
 import CoursesPage from "./pages/CoursesPage";
 import DashboardPage from "./pages/DashboardPage";
 import EnrollmentsPage from "./pages/EnrollmentsPage";
@@ -51,26 +53,29 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-canvas-alt text-main">
-      <AdminSidebar
-        page={page}
-        onPageChange={setPage}
-        mobileOpen={mobileNav}
-        onMobileClose={() => setMobileNav(false)}
-        collapsed={sidebarCollapsed}
-        onToggleCollapsed={() => setSidebarCollapsed((prev) => !prev)}
-      />
+    <ToastProvider>
+      <div className="min-h-screen bg-canvas-alt text-main">
+        <AdminSidebar
+          page={page}
+          onPageChange={setPage}
+          mobileOpen={mobileNav}
+          onMobileClose={() => setMobileNav(false)}
+          collapsed={sidebarCollapsed}
+          onToggleCollapsed={() => setSidebarCollapsed((prev) => !prev)}
+        />
 
-      <main className={`min-h-screen transition-all duration-300 ${sidebarCollapsed ? "lg:ml-24" : "lg:ml-80"}`}>
-        <Header title={title} onMenuClick={() => setMobileNav(true)} />
+        <main className={`min-h-screen transition-all duration-300 ${sidebarCollapsed ? "lg:ml-24" : "lg:ml-80"}`}>
+          <Header title={title} onMenuClick={() => setMobileNav(true)} />
 
-        <section className="p-4 md:p-8">
-          <div className="rounded-2xl bg-card border border-border overflow-hidden shadow-[0_2px_8px_rgba(26,26,26,0.06)]">
-            <CurrentPage />
-          </div>
-        </section>
-      </main>
-    </div>
+          <section className="p-4 md:p-8">
+            <div className="rounded-2xl bg-card border border-border overflow-hidden shadow-[0_2px_8px_rgba(26,26,26,0.06)]">
+              <CurrentPage />
+            </div>
+          </section>
+        </main>
+      </div>
+      <Toast />
+    </ToastProvider>
   );
 }
 
