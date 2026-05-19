@@ -18,6 +18,7 @@ Preference.init(
     explanation_type: {
       type: DataTypes.STRING,
       allowNull: false,
+      defaultValue: 'standard'
     },
     learning_style: {
       type: DataTypes.STRING,
@@ -26,14 +27,17 @@ Preference.init(
     teaching_pace: {
       type: DataTypes.STRING,
       allowNull: false,
+      defaultValue: 'medium'
     },
     example_type: {
       type: DataTypes.STRING,
       allowNull: false,
+      defaultValue: 'default'
     },
     focus_area: {
       type: DataTypes.STRING,
       allowNull: false,
+      defaultValue: 'general'
     },
   },
   {
