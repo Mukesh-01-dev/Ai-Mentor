@@ -21,7 +21,6 @@ const SettingsPage = () => {
   
   const handlePasswordChange = (e) => {
     e.preventDefault();
-    console.log("Submit clicked:", { currentPassword, newPassword });
   };
 
   return (

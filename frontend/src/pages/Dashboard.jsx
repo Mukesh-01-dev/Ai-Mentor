@@ -68,9 +68,6 @@ const Dashboard = () => {
         const allCourses = await coursesRes.json();
         const { statsCards } = await statsRes.json();
 
-        console.log("Fetched allCourses:", allCourses);
-        console.log("Fetched statsCards:", statsCards);
-
         setCoursesData({ allCourses, statsCards });
         await fetchUserProfile();
       } catch (error) {
@@ -84,9 +81,6 @@ const Dashboard = () => {
     fetchAllData();
   }, []);
   const calculateStats = () => {
-    console.log("Calculating stats with user:", user);
-    console.log("coursesData:", coursesData);
-
     if (
       !user?.purchasedCourses ||
       !coursesData.statsCards ||
@@ -175,14 +169,10 @@ const Dashboard = () => {
       },
     ];
 
-    console.log("Calculated stats result:", result);
     return result;
   };
 
   const dynamicStatsCards = calculateStats();
-
-  console.log("Creating myCourses with user:", user);
-  console.log("coursesData.allCourses:", coursesData.allCourses);
 
   const myCourses = coursesData.allCourses
     .filter((course) =>
@@ -224,13 +214,8 @@ const Dashboard = () => {
         progressColor: "bg-indigo-600",
       };
 
-      console.log("Mapped course:", courseData);
       return courseData;
     });
-
-  console.log("Final myCourses:", myCourses);
-
-  console.log("Creating continueLearning");
 
   const continueLearning = coursesData.allCourses
     .filter((course) =>
@@ -285,8 +270,6 @@ const Dashboard = () => {
         image: course.image,
         progressColor: progress > 75 ? "bg-cyan-600" : "bg-orange-400",
       };
-
-      console.log("Mapped continueLearning item:", continueData);
       return continueData;
     });
 
@@ -316,8 +299,6 @@ const Dashboard = () => {
       course.level?.toLowerCase().includes(normalizedSearchQuery)
     );
   });
-
-  console.log("Final continueLearning:", continueLearning);
 
   const handleBrowseCourses = () => {
     navigate("/courses", { state: { activeTab: "explore" } });
