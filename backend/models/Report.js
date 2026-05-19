@@ -52,6 +52,7 @@ Report.init(
   {
     sequelize,
     modelName: "Report",
+    tableName: "UserReports",
     timestamps: true,
     indexes: [
       { fields: ["postId"] },

@@ -22,6 +22,7 @@ CommunityPost.init(
     type: {
       type: DataTypes.ENUM("course", "global"),
       allowNull: false,
+      defaultValue: "global",
     },
     courseId: {
       type: DataTypes.INTEGER,

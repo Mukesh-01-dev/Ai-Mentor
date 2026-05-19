@@ -236,7 +236,7 @@ const updateCourseProgress = async (req, res) => {
 
     const { courseId, lessonData, currentLesson, completedLesson } = req.body;
 
-    let courses = [...(user.purchasedCourses || [])];
+    let courses = JSON.parse(JSON.stringify(user.purchasedCourses || []));
     let courseIndex = courses.findIndex(
       (c) => Number(c.courseId) === Number(courseId)
     );

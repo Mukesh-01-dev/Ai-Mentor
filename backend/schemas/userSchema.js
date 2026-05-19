@@ -20,17 +20,31 @@ export const purchaseCourseSchema = z.object({
   courseTitle: z.string().min(1, "Course title is required"),
 });
 
+// export const courseProgressSchema = z.object({
+//   courseId: z.union([z.string(), z.number()]).transform((val) => Number(val)),
+
+//   lessonData: z.object({
+//     lessonId: z.coerce.string().min(1, "Lesson ID is required"),
+//     data: z.record(z.any()),
+//   }).optional(),
+
+//   currentLesson: z.object({
+//     lessonId: z.coerce.string(),
+//     moduleTitle: z.string().optional(),
+//   }).optional(),
+  
+//   completedLesson: z.object({
+//     lessonId: z.coerce.string().min(1, "Lesson ID is required"),
+//     completedAt: z.string().or(z.date()).optional(),
+//   }).optional(),
+// });
+
 export const courseProgressSchema = z.object({
   courseId: z.union([z.string(), z.number()]).transform((val) => Number(val)),
-  lessonData: z.object({
-    lessonId: z.string().min(1, "Lesson ID is required"),
-    data: z.record(z.any()),
-  }).optional(),
-  currentLesson: z.string().optional(),
-  completedLesson: z.object({
-    lessonId: z.string().min(1, "Lesson ID is required"),
-    completedAt: z.string().or(z.date()).optional(),
-  }).optional(),
+  
+  lessonData: z.any().optional(),
+  currentLesson: z.any().optional(),
+  completedLesson: z.any().optional(),
 });
 
 export const updateSettingsSchema = z.object({
