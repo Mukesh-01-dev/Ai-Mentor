@@ -343,7 +343,7 @@ export default function Settings() {
       </div>
     </div>
   );
-}
+
 
   const NotificationsPanel = () => (
     <div className="w-full">

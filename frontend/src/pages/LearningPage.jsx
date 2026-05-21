@@ -25,6 +25,7 @@ import {
   User,
   X,
   Sparkles,
+  AlertTriangle,
 } from "lucide-react";
 
 export default function Learning() {
@@ -60,6 +61,7 @@ export default function Learning() {
   const [aiVideoUrl, setAiVideoUrl] = useState(null);
   const [isAIVideoLoading, setIsAIVideoLoading] = useState(false);
   const [generatedTextContent, setGeneratedTextContent] = useState("");
+  const [aiError, setAiError] = useState(null);
 
   const videoRef = useRef(null);
   const playerContainerRef = useRef(null);
@@ -294,6 +296,7 @@ export default function Learning() {
         }
 
         setIsAIVideoLoading(true);
+        setAiError(null);
         setGeneratedTextContent("");
         setAiVideoUrl(null);
 
@@ -322,7 +325,9 @@ export default function Learning() {
                   if (statusData.cloudinary_url) data.videoUrl = statusData.cloudinary_url;
                   break;
                 }
-                if (statusData.status === "failed") throw new Error("Video generation failed.");
+                if (statusData.status === "failed") {
+                  throw new Error(statusData.error || "Video generation failed.");
+                }
                 attempts++;
                 await new Promise((r) => setTimeout(r, 1000));
               }
@@ -363,6 +368,7 @@ export default function Learning() {
           setGeneratedTextContent("");
           setAiVideoUrl(null);
           setIsPlaying(false);
+          setAiError(error.message);
         } finally {
           setIsAIVideoLoading(false);
         }
@@ -927,6 +933,21 @@ export default function Learning() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 min-h-[calc(100vh-180px)]">
         <div className="lg:col-span-2 bg-canvas-alt p-6 overflow-y-auto">
           <div className="max-w-2xl mx-auto">
+            {aiError && (
+              <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-md flex items-start shadow-sm">
+                <AlertTriangle className="text-red-500 w-5 h-5 mr-3 mt-0.5 flex-shrink-0" />
+                <div className="flex-1">
+                  <h3 className="text-red-800 font-medium text-sm">Generation Failed</h3>
+                  <p className="text-red-700 text-sm mt-1">{aiError}</p>
+                </div>
+                <button 
+                  onClick={() => setAiError(null)}
+                  className="text-red-400 hover:text-red-600 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            )}
             <VideoPlayer
               currentLesson={currentLesson}
               aiVideoUrl={aiVideoUrl}

@@ -261,9 +261,13 @@ router.get("/video/:courseId/:filename", async (req, res) => {
 
   } catch (error) {
     console.error("❌ Proxy Error:", error.message);
-    res.status(500).json({
-      error: "Failed to load video via proxy",
-    });
+    if (!res.headersSent) {
+      res.status(500).json({
+        error: "Failed to load video via proxy",
+      });
+    } else {
+      res.end(); 
+    }
   }
 });
 
