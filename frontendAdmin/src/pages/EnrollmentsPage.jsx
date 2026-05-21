@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { callApi } from "../utils/api";
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
+import Papa from "papaparse";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -108,26 +109,24 @@ function EnrollmentsPage() {
 
   // CSV Export
   const exportToCSV = () => {
-    const csvData = enrollments.map((enrollment) => ({
-      Student: enrollment.user,
-      Course: enrollment.course,
-      Date: enrollment.date
-        ? new Date(enrollment.date).toLocaleDateString()
+  const csv = Papa.unparse(
+    enrollments.map((e) => ({
+      Student: e.user,
+      Course: e.course,
+      Date: e.date
+        ? new Date(e.date).toLocaleDateString()
         : "N/A",
-      Amount: `Rs ${enrollment.amount}`,
-      Status: enrollment.status || "Completed",
-    }));
+      Amount: `Rs ${e.amount}`,
+      Status: e.status || "Completed",
+    }))
+  );
 
-    const worksheet = XLSX.utils.json_to_sheet(csvData);
+  const blob = new Blob([csv], {
+    type: "text/csv;charset=utf-8;",
+  });
 
-    const csvOutput = XLSX.utils.sheet_to_csv(worksheet);
-
-    const blob = new Blob([csvOutput], {
-      type: "text/csv;charset=utf-8;",
-    });
-
-    saveAs(blob, "Enrollments_Report.csv");
-  };
+  saveAs(blob, "Enrollments_Report.csv");
+}
 
   if (loading)
     return (
