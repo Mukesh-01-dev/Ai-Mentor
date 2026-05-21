@@ -13,11 +13,13 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from google import genai
+from elevenlabs.client import ElevenLabs  # 🌟 Restored
 from config import (
     GEMINI_API_KEY,
     CLOUDINARY_CLOUD_NAME,
     CLOUDINARY_API_KEY,
     CLOUDINARY_API_SECRET,
+    ELEVENLABS_API_KEY,  # 🌟 Restored
 )
 
 # --------------------------
@@ -44,9 +46,10 @@ app.add_middleware(
 )
 
 # --------------------------
-# Gemini Client
+# Gemini & ElevenLabs Clients
 # --------------------------
 client = genai.Client(api_key=GEMINI_API_KEY)
+eleven_client = ElevenLabs(api_key=ELEVENLABS_API_KEY)  # 🌟 Cleaned and kept
 
 # --------------------------
 # Request Model
@@ -55,21 +58,53 @@ class LessonRequest(BaseModel):
     course: str
     topic: str
     celebrity: str
-    preferences: dict | None = None   # 👈 NEW
+    preferences: dict | None = None
 
 # --------------------------
 # Helpers
 # --------------------------
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-async def generate_tts(text: str, output_file: str):
-    communicate = edge_tts.Communicate(
-        text=text,
-        voice="en-US-GuyNeural",
-        rate="+0%",
-        pitch="+0Hz"
-    )
-    await communicate.save(output_file)
+async def generate_tts(text: str, output_file: str, celebrity: str):  # 🌟 Updated signatures
+    print(f"🎙️ Generating voice for: {celebrity}")
+    
+    use_fallback = True
+
+    # 1️⃣ Check if the requested character is Hrithik or contains 'owl'
+    if celebrity.lower() == "hrithik" or "owl" in celebrity.lower():
+        env_var = "HRITHIK_VOICE_ID" if celebrity.lower() == "hrithik" else "OWL_VOICE_ID"
+        voice_id = os.getenv(env_var)
+        
+        try:
+            print(f"💎 Attempting premium ElevenLabs TTS for {celebrity}...")
+            # Call ElevenLabs text-to-speech API
+            audio = eleven_client.text_to_speech.convert(
+                voice_id=voice_id,
+                model_id="eleven_multilingual_v2",
+                text=text
+            )
+            # Save stream data directly into the mp3 file
+            with open(output_file, "wb") as f:
+                for chunk in audio:
+                    if chunk:
+                        f.write(chunk)
+            print(f"✅ ElevenLabs TTS generation successful!")
+            use_fallback = False  # Premium succeeded, no fallback needed!
+            
+        except Exception as eleven_error:
+            # 🚨 FALLBACK ACTIVATED: Catch ElevenLabs errors (Quota, Invalid Key, etc.)
+            print(f"⚠️ ElevenLabs failed ({eleven_error}). Triggering fallback mechanism...")
+            print(f"🔄 Activating fallback mechanism: Routing {celebrity} to Edge TTS...")
+            use_fallback = True  # Explicitly force fallback execution
+
+    # 2️⃣ Fallback / Default engine: Run standard Edge TTS if premium failed or wasn't requested
+    if use_fallback:
+        communicate = edge_tts.Communicate(
+            text=text,
+            voice="en-IN-PrabhatNeural" 
+        )
+        await communicate.save(output_file)
+        print(f"✅ Edge TTS generation completed as fallback.")
 
 def get_celebrity_video(celebrity_name: str):
     input_video_dir = os.path.join(BASE_DIR, "backend", "input")
@@ -87,7 +122,6 @@ def get_celebrity_video(celebrity_name: str):
 # --------------------------
 # Serve Files
 # --------------------------
-
 base_output_path = os.path.join(BASE_DIR, "outputs")
 video_output_path = os.path.join(base_output_path, "video")
 text_output_path = os.path.join(base_output_path, "text")
@@ -117,7 +151,6 @@ def get_transcript(filename: str):
 @app.get("/status/{job_id}")
 def get_status(job_id: str):
     status_data = job_status.get(job_id, {"status": "not_found"})
-    # Backward compat: handle old string-based entries
     if isinstance(status_data, str):
         return {"status": status_data}
     return status_data
@@ -125,19 +158,16 @@ def get_status(job_id: str):
 # --------------------------
 # Generate Lesson Endpoint
 # --------------------------
-
 job_status = {}
 
 @app.post("/generate")
 def generate_lesson(data: LessonRequest, background_tasks: BackgroundTasks):
-    # Generate filename here so we can return it immediately
     topic_clean = re.sub(r'[^\w\s-]', '', data.topic).strip().replace(" ", "_")
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     base_filename = f"{topic_clean}_{timestamp}"
     
     job_status[base_filename] = {"status": "processing"}
 
-    # Run as a background task to avoid timeout issues
     background_tasks.add_task(process_lesson, data, base_filename)
     
     return {
@@ -157,9 +187,7 @@ def process_lesson(data: LessonRequest, base_filename: str):
     try:
         print(f"\n🚀 Starting generation for: {data.topic} ({data.celebrity})")
 
-        #  Build preference context
         preferences_text = ""
-
         if data.preferences:
             preferences_text = f"""
         User Preferences:
@@ -197,17 +225,17 @@ def process_lesson(data: LessonRequest, base_filename: str):
 
         try:
             response = client.models.generate_content(
-                model="gemini-2.5-flash",
+                model="gemini-3.1-flash-lite",
                 contents=prompt
             )
             script = response.text.strip().replace("\n", " ")
             print(f"📝 Generated text: {script}")
         except Exception as e:
             print(f"❌ Gemini Error: {e}")
+            job_status[base_filename] = {"status": "failed"}
             return
 
         # 2️⃣ Create Output Folders
-
         base_output_dir = os.path.join(BASE_DIR, "outputs")
         text_dir = os.path.join(base_output_dir, "text")
         audio_dir = os.path.join(base_output_dir, "audio")
@@ -226,22 +254,25 @@ def process_lesson(data: LessonRequest, base_filename: str):
             f.write(script)
         print(f"💾 Saved text to: {text_path}")
 
-        # 4️⃣ Convert Text to Speech (edge-tts)
+        # 4️⃣ Convert Text to Speech (Premium -> Fallback Setup)
         print("🎵 Starting TTS generation...")
         try:
             if os.path.exists(audio_path):
                 os.remove(audio_path)
 
-            asyncio.run(generate_tts(script, audio_path))
+            # Pass script, audio_path, AND data.celebrity to use fallback logic
+            asyncio.run(generate_tts(script, audio_path, data.celebrity))
             print(f"✅ Audio saved: {audio_path}")
         except Exception as e:
             print(f"❌ TTS Error: {e}")
+            job_status[base_filename] = {"status": "failed"}
             return
 
         # 5️⃣ Select Video
         input_video = get_celebrity_video(data.celebrity)
         if not os.path.exists(input_video):
             print(f"❌ Error: Video file not found at {input_video}")
+            job_status[base_filename] = {"status": "failed"}
             return
 
         # 6️⃣ Merge Video + Audio (FFmpeg)
@@ -270,7 +301,7 @@ def process_lesson(data: LessonRequest, base_filename: str):
                 folder="ai_mentor/videos",
                 public_id=base_filename,
                 overwrite=True,
-                chunk_size=6000000,  # 6 MB chunks for large files
+                chunk_size=6000000,
             )
             cloudinary_url = upload_result.get("secure_url")
             print(f"✅ Cloudinary upload success: {cloudinary_url}")
@@ -279,14 +310,11 @@ def process_lesson(data: LessonRequest, base_filename: str):
 
         job_status[base_filename] = {
             "status": "ready",
-            "cloudinary_url": cloudinary_url,  # None if upload failed
+            "cloudinary_url": cloudinary_url,
         }
         print(f"✅ Lesson ready!")
-        print(f"   Video : {final_video}")
-        if cloudinary_url:
-            print(f"   Cloud : {cloudinary_url}")
 
     except Exception as e:
-        job_status[base_filename] = {"status": "failed"}  # 👈 mark failed on error
+        job_status[base_filename] = {"status": "failed"}
         print(f"❌ Error generating lesson: {e}")
         traceback.print_exc()
