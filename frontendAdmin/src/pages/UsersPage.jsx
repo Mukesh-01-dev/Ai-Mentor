@@ -90,11 +90,6 @@ function UsersPage() {
     email: "",
     password: "",
   });
-  const [deleteModal, setDeleteModal] = useState({
-  open: false,
-  account: null,
-});
-const [isDeleting, setIsDeleting] = useState(false);
 
   const currentAdmin = JSON.parse(localStorage.getItem("user") || "{}");
   const isSuperAdmin = currentAdmin?.role === "superadmin";
@@ -158,74 +153,34 @@ const [isDeleting, setIsDeleting] = useState(false);
   }, []);
 
   const handleAction = async (account, action) => {
-  if (!isSuperAdmin) return;
+    if (!isSuperAdmin) return;
 
-  // Open custom delete modal
-  if (action === "delete") {
-    setDeleteModal({
-      open: true,
-      account,
-    });
-    return;
-  }
-
-  // Change status
-  if (action === "active" || action === "on-hold") {
-    try {
-      if (account.type === "admin") {
-        showToast("Admin status cannot be changed yet.", "warning");
-        return;
+    if (action === "delete") {
+      if (!window.confirm(`Are you sure you want to delete ${account.name}? This action cannot be undone.`)) return;
+      try {
+        const endpoint = account.type === "admin" ? `/admin/${account.rawId}` : `/admin/users/${account.rawId}`;
+        await callApi(endpoint, { method: "DELETE" });
+        fetchAccounts();
+      } catch (err) {
+        showToast("Failed to delete account: " + err.message, "error");
       }
-
-      await callApi(`/admin/users/${account.rawId}/status`, {
-        method: "PATCH",
-        body: JSON.stringify({ status: action }),
-      });
-
-      showToast(
-        `User ${action === "active" ? "activated" : "put on hold"} successfully.`,
-        "success"
-      );
-
-      fetchAccounts();
-    } catch (err) {
-      showToast("Failed to update status: " + err.message, "error");
+    } else if (action === "active" || action === "on-hold") {
+      try {
+        if (account.type === "admin") {
+          showToast("Admin status cannot be changed yet.", "warning");
+          return;
+        }
+        await callApi(`/admin/users/${account.rawId}/status`, {
+          method: "PATCH",
+          body: JSON.stringify({ status: action }),
+        });
+        fetchAccounts();
+      } catch (err) {
+        showToast("Failed to update status: " + err.message, "error");
+      }
     }
-  }
-};
-const confirmDelete = async () => {
-  const account = deleteModal.account;
-  if (!account) return;
+  };
 
-  try {
-    setIsDeleting(true);
-
-    const endpoint =
-      account.type === "admin"
-        ? `/admin/${account.rawId}`
-        : `/admin/users/${account.rawId}`;
-
-    await callApi(endpoint, {
-      method: "DELETE",
-    });
-
-    showToast(
-      `${account.type === "admin" ? "Admin" : "User"} deleted successfully.`,
-      "success"
-    );
-
-    setDeleteModal({
-      open: false,
-      account: null,
-    });
-
-    fetchAccounts();
-  } catch (err) {
-    showToast("Failed to delete account: " + err.message, "error");
-  } finally {
-    setIsDeleting(false);
-  }
-};
   const onFieldChange = (event) => {
     const { name, value } = event.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -457,75 +412,6 @@ const confirmDelete = async () => {
           </div>
         </div>
       )}
-      {deleteModal.open && (
-  <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-    <div className="w-full max-w-md rounded-3xl bg-card border border-border shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-
-      {/* Header */}
-      <div className="p-6 border-b border-border bg-linear-to-r from-red-500/5 to-transparent">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-red-500/10 flex items-center justify-center">
-            <Trash2 className="w-6 h-6 text-red-500" />
-          </div>
-          <div>
-            <h3 className="text-xl font-black text-main uppercase tracking-tight">
-              Delete {deleteModal.account?.type === "admin" ? "Admin" : "User"}
-            </h3>
-            <p className="text-sm text-muted">
-              This action cannot be undone.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Body */}
-      <div className="p-6 space-y-4">
-        <p className="text-main leading-relaxed">
-          Are you sure you want to delete{" "}
-          <span className="font-bold text-red-400">
-            {deleteModal.account?.name}
-          </span>
-          ?
-        </p>
-
-        <div className="p-4 rounded-2xl bg-red-500/5 border border-red-500/10">
-          <p className="text-xs font-bold uppercase tracking-widest text-red-400">
-            Email
-          </p>
-          <p className="text-sm text-main mt-1">
-            {deleteModal.account?.email}
-          </p>
-        </div>
-      </div>
-
-      {/* Footer */}
-      <div className="p-6 pt-0 flex gap-3">
-        <button
-          type="button"
-          onClick={() =>
-            setDeleteModal({
-              open: false,
-              account: null,
-            })
-          }
-          disabled={isDeleting}
-          className="flex-1 h-12 rounded-2xl border border-border font-bold uppercase tracking-widest text-[11px] hover:bg-canvas-alt transition-all disabled:opacity-50"
-        >
-          Cancel
-        </button>
-
-        <button
-          type="button"
-          onClick={confirmDelete}
-          disabled={isDeleting}
-          className="flex-1 h-12 rounded-2xl bg-red-500 text-white font-bold uppercase tracking-widest text-[11px] hover:bg-red-600 transition-all shadow-xl shadow-red-500/20 disabled:opacity-50"
-        >
-          {isDeleting ? "Deleting..." : "Delete"}
-        </button>
-      </div>
-    </div>
-  </div>
-)}
     </>
   );
 }
