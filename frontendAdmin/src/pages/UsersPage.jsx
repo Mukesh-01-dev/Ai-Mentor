@@ -17,7 +17,7 @@ function ActionMenu({ account, onAction, isSuperAdmin }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  if (!isSuperAdmin) return <div className="text-muted opacity-20"><MoreVertical className="w-5 h-5" /></div>;
+  if (!isSuperAdmin) return <div className="text-muted flex justify-end pr-2 opacity-20"><MoreVertical className="w-5 h-5" /></div>;
 
   const status = account.status || "active";
 
@@ -84,7 +84,7 @@ function UsersPage() {
   const [isAddAdminOpen, setIsAddAdminOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
-  const [activeFilter, setActiveFilter] = useState(null);
+  const [activeFilter, setActiveFilter] = useState("admin");
   const [formData, setFormData] = useState({
     name: "",
     email: "",
