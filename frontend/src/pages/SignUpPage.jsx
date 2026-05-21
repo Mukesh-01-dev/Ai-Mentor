@@ -54,7 +54,7 @@ const SignUpPage = () => {
     capital: /[A-Z]/.test(password),
     lower: /[a-z]/.test(password),
     number: /[0-9]/.test(password),
-    symbol: /[!@#$%^&*(),.?":{}|<>]/.test(password),
+    symbol: /[^A-Za-z0-9]/.test(password),
   };
 
   const isPasswordValid = Object.values(passwordRequirements).every(Boolean);

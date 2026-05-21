@@ -14,12 +14,26 @@ const ResetPassword = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [success, setSuccess] = useState(false);
+    const passwordRequirements = {
+    length: password.length >= 8,
+    capital: /[A-Z]/.test(password),
+    lower: /[a-z]/.test(password),
+    number: /[0-9]/.test(password),
+    symbol: /[^A-Za-z0-9]/.test(password),
+};
+
+const isPasswordValid = Object.values(passwordRequirements).every(Boolean);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (password !== confirmPassword) {
             return setError("Passwords do not match");
         }
+        if (!isPasswordValid) {
+    return setError(
+        "Password must contain uppercase, lowercase, number, special character and be at least 8 characters long"
+    );
+}
 
         setLoading(true);
         setError("");
@@ -79,7 +93,7 @@ const ResetPassword = () => {
                                 </div>
                                 <div className="flex items-center gap-1.5 mt-1.5 text-gray-500 dark:text-gray-400">
                                     <Lock size={12} />
-                                    <small className="text-[11px]">Min. 8 chars required</small>
+                                      <small className="text-[11px]">st include uppercase, lowercase, number & special character  </small>
                                 </div>
                             </div>
 
