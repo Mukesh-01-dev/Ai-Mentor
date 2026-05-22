@@ -204,6 +204,19 @@ def process_lesson(data: LessonRequest, base_filename: str):
             print(f"📝 Generated text: {script}")
         except Exception as e:
             print(f"❌ Gemini Error: {e}")
+            
+            error_text = str(e)
+            if "503" in error_text:
+                error_message = "AI Service is temporarily overloaded. Please try again in a few minutes."
+            elif "429" in error_text:
+                error_message = "You are generating videos too quickly. Please wait about 60 seconds and try again."
+            else:
+                error_message = "Failed to generate script. Please try again."
+
+            job_status[base_filename] = {
+                "status": "failed",
+                "error": error_message
+            }
             return
 
         # 2️⃣ Create Output Folders
