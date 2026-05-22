@@ -1,4 +1,3 @@
-// backend/models/User.js
 import { DataTypes, Model } from "sequelize";
 import bcrypt from "bcryptjs";
 import { sequelize } from "../config/db.js";
@@ -12,20 +11,25 @@ User.init(
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
     },
-
-    firstName: {
-      type: DataTypes.STRING,
-    },
-
-    lastName: {
-      type: DataTypes.STRING,
-    },
-
-    name: {
+    // 🔹 Added username (Required for your registration logic)
+    username: {
       type: DataTypes.STRING,
       allowNull: false,
+      unique: true,
     },
-
+    firstName: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    lastName: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    // 🔹 Keep name, but allow it to be generated or updated via hooks
+    name: {
+      type: DataTypes.STRING,
+      allowNull: true, 
+    },
     email: {
       type: DataTypes.STRING,
       allowNull: false,
@@ -34,37 +38,31 @@ User.init(
         isEmail: true,
       },
     },
-
     password: {
+      type: DataTypes.STRING,
+      allowNull: true, // Allow null for Google users
+    },
+    googleId: {
       type: DataTypes.STRING,
       allowNull: true,
     },
-
-    googleId: {
-      type: DataTypes.STRING,
-    },
-
     role: {
       type: DataTypes.STRING,
       defaultValue: "user",
     },
-
     bio: {
       type: DataTypes.STRING,
       defaultValue: "",
     },
-
     avatar_url: {
       type: DataTypes.TEXT,
       allowNull: true,
       defaultValue: null,
     },
-
     purchasedCourses: {
       type: DataTypes.JSONB,
       defaultValue: [],
     },
-
     analytics: {
       type: DataTypes.JSONB,
       defaultValue: {
@@ -80,12 +78,10 @@ User.init(
         certificates: 0,
       },
     },
-
     learningHoursChart: {
       type: DataTypes.JSONB,
       defaultValue: [],
     },
-
     settings: {
       type: DataTypes.JSONB,
       defaultValue: {
@@ -113,9 +109,6 @@ User.init(
       type: DataTypes.DATE,
       allowNull: true,
     },
-
-    // Tracks whether the user has completed first-time onboarding
-    // (bio, avatar, and for Google users: name + password)
     isProfileComplete: {
       type: DataTypes.BOOLEAN,
       defaultValue: false,
@@ -127,25 +120,32 @@ User.init(
     timestamps: true,
     hooks: {
       beforeSave: async (user) => {
-        // hash password only if it was changed
+        // 1. Hash password only if it was changed
         if (user.password && user.changed("password")) {
           const salt = await bcrypt.genSalt(10);
           user.password = await bcrypt.hash(user.password, salt);
         }
 
-        // Dynamically calculate isProfileComplete on EVERY save for ALL users
+        // 2. Automatically sync "name" field from firstName and lastName
+        if (user.firstName || user.lastName) {
+          user.name = `${user.firstName || ""} ${user.lastName || ""}`.trim();
+        }
+
+        // 3. Dynamically calculate isProfileComplete
         const hasBio = user.bio && user.bio.trim().length > 0;
         const hasAvatar = user.avatar_url && user.avatar_url.trim().length > 0;
         const hasFirstName = user.firstName && user.firstName.trim().length > 0;
         const hasLastName = user.lastName && user.lastName.trim().length > 0;
+        const hasUsername = user.username && user.username.trim().length > 0;
         const hasPassword = user.password && user.password.trim().length > 0;
         
-        // Google users MUST have a password to be "complete".
-        // Email users are "complete" if Bio, Avatar, and Names are present.
+        // Logical check for completion
         if (user.googleId) {
+          // Google users are complete if they add a Bio, Avatar, and eventually a password
           user.isProfileComplete = Boolean(hasBio && hasAvatar && hasFirstName && hasLastName && hasPassword);
         } else {
-          user.isProfileComplete = Boolean(hasBio && hasAvatar && hasFirstName && hasLastName);
+          // Email users are complete if names, username, bio, and avatar exist
+          user.isProfileComplete = Boolean(hasBio && hasAvatar && hasFirstName && hasLastName && hasUsername);
         }
       },
     },
@@ -153,6 +153,7 @@ User.init(
 );
 
 User.prototype.matchPassword = async function (enteredPassword) {
+  if (!this.password) return false;
   return await bcrypt.compare(enteredPassword, this.password);
 };
 

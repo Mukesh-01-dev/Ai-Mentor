@@ -140,9 +140,6 @@ function MobileModal({ open, onBack, onClose, title, children }) {
   );
 }
 
-/* ───────────────────────────────────────────────
-   Main Settings Component
-─────────────────────────────────────────────── */
 export default function Settings() {
   const { t } = useTranslation();
   const [originalNotifications, setOriginalNotifications] = useState(null);
@@ -247,9 +244,27 @@ export default function Settings() {
         setSettingsData(data);
         setOriginalNotifications(notifications);
         if (data?.appearance?.language) i18n.changeLanguage(data.appearance.language);
-      } catch (err) { console.error("Failed to fetch notification settings:", err); }
+      } catch (err) { 
+        console.error("Failed to fetch notification settings:", err);
+      } finally {
+        setPageLoading(false);
+      }
     };
     fetchNotificationSettings();
+  }, [user]);
+
+  // Initial loading effect
+  useEffect(() => {
+    // If user is already loaded from auth context, set loading false
+    if (user) {
+      setPageLoading(false);
+    } else {
+      // Set a timeout to stop loading after max 3 seconds even if no user
+      const timeout = setTimeout(() => {
+        setPageLoading(false);
+      }, 3000);
+      return () => clearTimeout(timeout);
+    }
   }, [user]);
 
   /* mobile navigation helpers */

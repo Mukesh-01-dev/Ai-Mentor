@@ -327,13 +327,13 @@ const Dashboard = () => {
   }
 
   return (
-    <main className="flex-1 overflow-x-hidden overflow-y-auto bg-canvas-alt p-6">
+    <main className="flex-1 overflow-x-hidden overflow-y-auto bg-canvas-alt p-4">
       <Preferences 
         key={localStorage.getItem("token")} 
         mode="modal" 
         onSuccess={() => { console.log('Preferences saved') }} 
       />
-      <div className="max-w-7xl pt-16 mx-auto space-y-8">
+      <div className="max-w-7xl pt-4 mx-auto space-y-5">
             {/* Stats Cards */}
             <div className="grid grid-cols-1  sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {dynamicStatsCards.map((card, index) => {
@@ -436,7 +436,7 @@ const Dashboard = () => {
           </p>
 
           <div className="flex justify-between items-center mt-2">
-            <span className="font-bold text-green-500">₹0</span>
+            <span className="font-bold text-green-500">₹999</span>
 
             <button
               onClick={() => navigate(`/course-preview/${course.id}`)}
@@ -450,12 +450,6 @@ const Dashboard = () => {
     ))}
   </div>
 </div>
-              
-
-              
-
-              
-
               {/* My Courses Table */}
               <div className="xl:col-span-2 flex flex-col">
                 <h2 className="text-xl font-bold text-main mb-6">{t("dashboard.my_courses")}</h2>

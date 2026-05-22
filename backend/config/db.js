@@ -14,7 +14,7 @@ if (connectionString) {
     dialect: "postgres",
     logging: false,
     pool: {
-      max: parseInt(process.env.DB_POOL_MAX, 10) || 5,
+      max: parseInt(process.env.DB_POOL_MAX, 10) || 10,
       min: parseInt(process.env.DB_POOL_MIN, 10) || 0,
       acquire: parseInt(process.env.DB_POOL_ACQUIRE, 10) || 30000,
       idle: parseInt(process.env.DB_POOL_IDLE, 10) || 10000,
@@ -22,8 +22,11 @@ if (connectionString) {
     dialectOptions: {
       ssl: {
         require: true,
-        rejectUnauthorized: true,
+        // FIX: rejectUnauthorized: false prevents the SSL handshake crash on local Windows machines
+        rejectUnauthorized: false, 
       },
+      // Keeps the connection alive and stable
+      keepAlive: true,
     },
   });
 } else {
@@ -43,19 +46,15 @@ if (connectionString) {
 
 async function connectDB() {
   try {
+    // Attempting to verify connection
     await sequelize.authenticate();
     console.log("✅ Connected to Neon PostgreSQL using Sequelize");
   } catch (error) {
-    const messageParts = ["❌ Unable to connect:"];
-    if (error && typeof error === "object") {
-      if ("message" in error && error.message) {
-        messageParts.push(error.message);
-      }
-      if ("code" in error && error.code) {
-        messageParts.push(`(code: ${error.code})`);
-      }
-    }
-    console.error(messageParts.join(" "));
+    console.error("❌ Unable to connect to the database:");
+    if (error.message) console.error(`Error Message: ${error.message}`);
+    if (error.code) console.error(`Error Code: ${error.code}`);
+    
+    // Provides full error details if DB_LOG_VERBOSE_ERRORS is true in .env
     if (process.env.DB_LOG_VERBOSE_ERRORS === "true") {
       console.error(error);
     }

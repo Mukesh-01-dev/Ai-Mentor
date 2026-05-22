@@ -62,3 +62,10 @@ coverage/
 */.agents
 
 outputfolder/
+# Firebase
+backend/firebase-service-account.json
+
+# Secrets
+*.pem
+*.key
+*.crt

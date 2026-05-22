@@ -63,3 +63,8 @@ backend/outputs/
 Thumbs.db
 .vscode/
 .idea/
+backend/firebase-service-account.json
+.env
+.env.local
+node_modules/
+dist/

@@ -1,5 +1,16 @@
 import { z } from "zod";
 
+// --- NEW: Added for the Onboarding / Complete Profile flow ---
+export const completeProfileSchema = z.object({
+  firstName: z.string().min(1, "First name is required").optional(),
+  lastName: z.string().min(1, "Last name is required").optional(),
+  // Bio is required during onboarding in your controller logic
+  bio: z.string().trim().min(5, "Bio must be at least 5 characters").max(500),
+  // Password is optional because Google users might set it, but Email users already have it
+  password: z.string().min(6, "Password must be at least 6 characters").optional(),
+  username: z.string().min(3, "Username must be at least 3 characters").optional(),
+});
+
 export const updateProfileSchema = z.object({
   firstName: z.string().min(1, "First name is required").optional(),
   lastName: z.string().min(1, "Last name is required").optional(),
