@@ -3,7 +3,7 @@ import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, Subtitles } from "lu
 
 const VideoPlayer = ({
   currentLesson,
-  aiVideoUrl,
+  stableVideoUrl,
   selectedCelebrity,
   celebrityVideoMap,
   activeCaption,
@@ -32,6 +32,7 @@ const VideoPlayer = ({
   const [showCaptions, setShowCaptions] = useState(true);
   const [showControls, setShowControls] = useState(true);
   const controlsTimeoutRef = useRef(null);
+  const [videoCacheKey] = useState(Date.now());
 
   useEffect(() => {
     const v = videoRef?.current;
@@ -65,10 +66,15 @@ const VideoPlayer = ({
     } else {
       v.pause();
     }
-  }, [isPlaying, videoRef, aiVideoUrl]);
+  }, [isPlaying, videoRef, stableVideoUrl]);
 
   // Unified loading state: either AI is being generated OR the video is buffering bytes
-  const showLoading = isAIVideoLoading || isBuffering;
+  const activeSrc =
+  stableVideoUrl
+    ? `${stableVideoUrl}?t=${videoCacheKey}`
+    : (selectedCelebrity && celebrityVideoMap[selectedCelebrity]?.video) ||
+      currentLesson?.videoUrl;
+  const showLoading = isAIVideoLoading || (isBuffering && !!activeSrc);
 
   const resetControlsTimeout = () => {
     setShowControls(true);
@@ -95,10 +101,11 @@ const VideoPlayer = ({
       <video
         ref={videoRef}
         src={
-          aiVideoUrl ||
-          (selectedCelebrity && celebrityVideoMap[selectedCelebrity]?.video) ||
+          stableVideoUrl
+          ? `${stableVideoUrl}?t=${videoCacheKey}`
+          : (selectedCelebrity && celebrityVideoMap[selectedCelebrity]?.video) ||
           currentLesson?.videoUrl
-        }
+    }
         className="w-full h-full object-contain"
         onTimeUpdate={handleProgress}
         onLoadedMetadata={handleProgress}

@@ -75,6 +75,7 @@ export default function Learning() {
   const [aiVideoUrl, setAiVideoUrl] = useState(null);
   const [isAIVideoLoading, setIsAIVideoLoading] = useState(false);
   const [generatedTextContent, setGeneratedTextContent] = useState("");
+  const [stableVideoUrl, setStableVideoUrl] = useState(null);
 
   const videoRef = useRef(null);
   const playerContainerRef = useRef(null);
@@ -167,7 +168,7 @@ export default function Learning() {
           const findFullLesson = (id) => {
             return courseData.modules
               .flatMap(m => m.lessons)
-              .find(l => l.id === id);
+              .find(l => l.id == id);
           };
 
           const userProgress = user?.purchasedCourses?.find(
@@ -212,7 +213,7 @@ export default function Learning() {
               if (savedData?.generatedTextContent) {
                 setGeneratedTextContent(savedData.generatedTextContent);
                 if (savedData.aiVideoUrl) {
-                  setAiVideoUrl(savedData.aiVideoUrl);
+                  setStableVideoUrl(savedData.aiVideoUrl);
                 }
                 if (savedData.celebrity) {
                   setSelectedCelebrity(savedData.celebrity);
@@ -418,7 +419,7 @@ export default function Learning() {
               return;
             }
 
-            setAiVideoUrl(data.videoUrl);
+            setStableVideoUrl(data.videoUrl);
 
             if (data.transcriptName) {
               try {
@@ -493,9 +494,7 @@ export default function Learning() {
           // If video is almost finished, don't jump to end, start over
           const isAlmostFinished = jumpToTimeRef.current >= video.duration - 5;
           if (!isAlmostFinished) {
-            video.addEventListener('loadedmetadata', () => {
             video.currentTime = jumpToTimeRef.current;
-            }, { once: true });
             setCurrentTime(jumpToTimeRef.current);
           }
           jumpToTimeRef.current = null;
@@ -555,6 +554,42 @@ export default function Learning() {
 
   const { modules, currentLesson } = learningData || {};
 
+    const saveLessonData = async (lessonId, data) => {
+      console.log("Saving lesson history...");
+console.log(data);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_BASE_URL}/api/users/course-progress`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          courseId: parseInt(courseId),
+          lessonData: {
+            lessonId,
+            data
+          },
+          currentLesson: {
+            lessonId,
+            moduleTitle: modules?.find(m => m.id === expandedModule)?.title || ""
+          }
+          
+        }),
+      });
+      if (res.ok) {
+        const result = await res.json();
+        // Update user context to reflect changes
+        if (updateUser && result.purchasedCourses) {
+          updateUser({ purchasedCourses: result.purchasedCourses });
+        }
+      }
+    } catch (error) {
+      console.error("Error saving lesson data:", error);
+    }
+  };
+
   if (!learningData) {
     return (
       <div className="min-h-screen bg-canvas-alt flex items-center justify-center">
@@ -572,38 +607,7 @@ export default function Learning() {
     (lesson) => lesson.id === currentLesson?.id
   );
 
-  const saveLessonData = async (lessonId, data) => {
-    try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(`${API_BASE_URL}/api/users/course-progress`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          courseId: parseInt(courseId),
-          lessonData: {
-            lessonId,
-            data
-          },
-          currentLesson: {
-            lessonId,
-            moduleTitle: modules.find(m => m.id === expandedModule)?.title || ""
-          }
-        }),
-      });
-      if (res.ok) {
-        const result = await res.json();
-        // Update user context to reflect changes
-        if (updateUser && result.purchasedCourses) {
-          updateUser({ purchasedCourses: result.purchasedCourses });
-        }
-      }
-    } catch (error) {
-      console.error("Error saving lesson data:", error);
-    }
-  };
+
 
   const completeLesson = async (lessonId) => {
     // Check if lesson is already completed
@@ -632,7 +636,7 @@ export default function Learning() {
           completedLesson: { lessonId },
           currentLesson: {
             lessonId,
-            moduleTitle: modules.find(m => m.id === expandedModule)?.title || expandedModule || "",
+            moduleTitle: modules?.find(m => m.id === expandedModule)?.title || expandedModule || "",
           },
         }),
       });
@@ -659,6 +663,7 @@ export default function Learning() {
     // update current lesson locally and let useEffect handle video loading
     setGeneratedTextContent(null);
     setAiVideoUrl(null);
+    setStableVideoUrl(null);
     setLearningData((prev) => ({ ...prev, currentLesson: lesson }));
     
     // Set jump time if history exists
@@ -747,13 +752,22 @@ export default function Learning() {
       // --- WATCH HISTORY THROTTLING FOR THE TEAM ---
       // We save watch history to the backend every 5 seconds to prevent spamming the server.
       // This ensures we only lose at most 5 seconds of progress if the user suddenly closes the tab.
-      if (Math.abs(vidCurrentTime - lastSavedTimeRef.current) >= 5) {
+      console.log({
+       current: vidCurrentTime,
+       duration: vidDuration,
+       progress: currentProgressPercent
+      });
+      if (Math.abs(vidCurrentTime - lastSavedTimeRef.current) >= 2) {
         lastSavedTimeRef.current = vidCurrentTime;
         
         // --- WATCH HISTORY VALIDATION FOR THE TEAM ---
         // During initial video load, browsers might briefly report duration as NaN or Infinity.
         // We MUST validate isFinite() and > 0, otherwise we will corrupt the database with NaN:NaN.
-        if (learningData?.currentLesson && isFinite(vidDuration) && vidDuration > 0 && !isNaN(currentProgressPercent)) {
+        // if (learningData?.currentLesson && isFinite(vidDuration) && vidDuration > 0 && !isNaN(currentProgressPercent)) 
+        if (
+             learningData?.currentLesson &&
+             vidCurrentTime > 3
+          ){
            const formatDurationString = (secs) => {
              const m = Math.floor(secs / 60);
              const s = Math.floor(secs % 60);
@@ -772,7 +786,9 @@ export default function Learning() {
                lastWatched: new Date().toISOString(),
                title: learningData.currentLesson.title || "Lesson Video",
                thumbnail: learningData?.currentLesson?.thumbnail || learningData?.course?.image || "https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=1000&auto=format&fit=crop",
-               formattedDuration: formatDurationString(vidDuration),
+               formattedDuration: isFinite(vidDuration)
+              ? formatDurationString(vidDuration)
+               : "0:00",
                status: safeProgress >= 95 ? "completed" : "in-progress"
              }
            });
@@ -1008,11 +1024,11 @@ export default function Learning() {
                   (completedCount / totalCount) * 100,
                   100
                 );
-                console.log("Progress calculation:", {
-                  completedCount,
-                  totalCount,
-                  progressPercent,
-                });
+                // console.log("Progress calculation:", {
+                //   completedCount,
+                //   totalCount,
+                //   progressPercent,
+                // });
                 return (
                   <div className="w-full sm:w-1/2 mx-auto">
 
@@ -1180,7 +1196,7 @@ export default function Learning() {
               {/* Video Player */}
               <VideoPlayer
                 currentLesson={currentLesson}
-                aiVideoUrl={aiVideoUrl}
+                stableVideoUrl={stableVideoUrl}
                 selectedCelebrity={selectedCelebrity}
                 celebrityVideoMap={celebrityVideoMap}
                 activeCaption={activeCaption}

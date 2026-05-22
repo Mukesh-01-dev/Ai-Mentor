@@ -157,6 +157,7 @@ const getCourseLearningData = async (req, res) => {
             playing: lesson.playing,
             type: lesson.type,
             youtubeUrl: lesson.youtubeUrl,
+            videoUrl: lesson.videoUrl,
             content: lesson.content
               ? {
                 introduction: lesson.content.introduction,
