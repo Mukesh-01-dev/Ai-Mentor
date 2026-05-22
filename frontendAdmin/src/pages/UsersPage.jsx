@@ -48,6 +48,8 @@ function UsersPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
   const [activeFilter, setActiveFilter] = useState("admin");
+  const [page, setPage] = useState(1);
+const [totalPages, setTotalPages] = useState(1);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -65,13 +67,19 @@ function UsersPage() {
     try {
       setLoading(true);
       const [usersResult, adminsResult] = await Promise.allSettled([
-        callApi("/admin/users"),
+        callApi(`/admin/users?page=${page}&limit=10`),
         callApi("/admin/admins"),
       ]);
 
+console.log(usersResult.usersResult);
       const usersList = usersResult.status === "fulfilled"
-        ? (Array.isArray(usersResult.value?.data) ? usersResult.value.data : [])
-        : [];
+   ? (Array.isArray(usersResult.value?.data)
+      ? usersResult.value.data
+      : [])
+  : [];
+  if (usersResult.status === "fulfilled") {
+  setTotalPages(usersResult.value?. totalPages || 1);
+}
       const adminsList = adminsResult.status === "fulfilled"
         ? (Array.isArray(adminsResult.value?.data) ? adminsResult.value.data : [])
         : [];
@@ -117,7 +125,7 @@ function UsersPage() {
 
   useEffect(() => {
     fetchAccounts();
-  }, []);
+  }, [page]);
 
   const handleAction = async (account, action) => {
     if (!isSuperAdmin) return;
@@ -333,7 +341,29 @@ function UsersPage() {
             )}
           </tbody>
         </table>
+
       </div>
+      <div className="flex items-center justify-center gap-4 py-6">
+  <button
+    disabled={page === 1}
+    onClick={() => setPage(page - 1)}
+    className="px-4 py-2 rounded-lg border border-border disabled:opacity-50"
+  >
+    Prev
+  </button>
+
+  <span className="font-bold">
+    Page {page} of {totalPages}
+  </span>
+
+  <button
+    disabled={page === totalPages}
+    onClick={() => setPage(page + 1)}
+    className="px-4 py-2 rounded-lg border border-border disabled:opacity-50"
+  >
+    Next
+  </button>
+</div>
 
       {isAddAdminOpen && (
         <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">

@@ -10,6 +10,8 @@ import {
   Mail,
   Phone,
   FileText,
+  Filter,
+  ChevronDown,
 } from "lucide-react";
 import { callApi } from "../utils/api";
 
@@ -136,6 +138,8 @@ function ReportsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedReport, setSelectedReport] = useState(null);
+  const [activeFilter, setActiveFilter] = useState("all");
+  const [showFilterMenu, setShowFilterMenu] = useState(false);
 
   useEffect(() => {
     const fetchReports = async () => {
@@ -160,6 +164,33 @@ function ReportsPage() {
       r.reportType?.toLowerCase() === "certificate" ||
       r.subType?.toLowerCase()?.includes("certificate")
   ).length;
+
+const filteredReports = reports.filter((report) => {
+  const type = report.reportType?.toLowerCase() || "";
+  switch (activeFilter) {
+    case "certificate":
+      return type.includes("certificate");
+    case "bug":
+      return (
+        type.includes("bug") ||
+        type.includes("error")
+      );
+    case "course":
+      return type.includes("course");
+    case "payment":
+      return type.includes("payment");
+    case "others":
+      return (
+        !type.includes("certificate") &&
+        !type.includes("bug") &&
+        !type.includes("error") &&
+        !type.includes("course") &&
+        !type.includes("payment")
+      );
+    default:
+      return true;
+  }
+});
 
   if (loading)
     return <div className="p-10 text-center text-muted">Loading reports...</div>;
@@ -191,10 +222,106 @@ function ReportsPage() {
               <CheckCircle2 className="w-4 h-4 text-green-500" />
               <span className="text-xs font-bold text-green-500">Resolved: {resolvedCount}</span>
             </div>
+            <div className="relative">
+          <button
+           onClick={() => setShowFilterMenu((prev) => !prev)}
+           className="h-12 px-5 rounded-2xl border border-border bg-card flex items-center gap-3 text-sm font-black uppercase tracking-widest text-main hover:bg-canvas-alt transition-all shadow-lg"
+          >
+          <Filter className="w-4 h-4 text-teal-500" />
+           <span> Filter: {activeFilter} </span>
+           <ChevronDown
+          className={`w-4 h-4 transition-transform duration-200 ${
+           showFilterMenu ? "rotate-180" : ""
+        }`}
+          />
+         </button>
+      {showFilterMenu && (
+    <div className="absolute top-14 right-0 min-w-[240px] rounded-2xl border border-border bg-card shadow-2xl overflow-hidden z-[500] animate-in fade-in zoom-in-95 duration-200">
+      <button
+        onClick={() => {
+          setActiveFilter("all");
+          setShowFilterMenu(false);
+        }}
+        className={`w-full px-5 py-4 text-left text-sm font-bold transition-all ${
+          activeFilter === "all"
+            ? "bg-teal-500 text-white"
+            : "hover:bg-canvas-alt text-main"
+        }`}
+      >
+        All Reports
+      </button>
+      <button
+        onClick={() => {
+          setActiveFilter("certificate");
+          setShowFilterMenu(false);
+        }}
+        className={`w-full px-5 py-4 text-left text-sm font-bold transition-all ${
+          activeFilter === "certificate"
+            ? "bg-amber-500 text-white"
+            : "hover:bg-canvas-alt text-main"
+        }`}
+      >
+        Certificate
+      </button>
+      <button
+        onClick={() => {
+          setActiveFilter("bug");
+          setShowFilterMenu(false);
+        }}
+        className={`w-full px-5 py-4 text-left text-sm font-bold transition-all ${
+          activeFilter === "bug"
+            ? "bg-red-500 text-white"
+            : "hover:bg-canvas-alt text-main"
+        }`}
+      >
+        Bug / Error
+      </button>
+      <button
+        onClick={() => {
+          setActiveFilter("course");
+          setShowFilterMenu(false);
+        }}
+        className={`w-full px-5 py-4 text-left text-sm font-bold transition-all ${
+          activeFilter === "course"
+            ? "bg-blue-500 text-white"
+            : "hover:bg-canvas-alt text-main"
+        }`}
+      >
+        Course
+      </button>
+      <button
+        onClick={() => {
+          setActiveFilter("payment");
+          setShowFilterMenu(false);
+        }}
+        className={`w-full px-5 py-4 text-left text-sm font-bold transition-all ${
+          activeFilter === "payment"
+            ? "bg-green-500 text-white"
+            : "hover:bg-canvas-alt text-main"
+        }`}
+      >
+        Payment Issue
+      </button>
+      <button
+        onClick={() => {
+          setActiveFilter("others");
+          setShowFilterMenu(false);
+        }}
+        className={`w-full px-5 py-4 text-left text-sm font-bold transition-all ${
+          activeFilter === "others"
+            ? "bg-purple-500 text-white"
+            : "hover:bg-canvas-alt text-main"
+        }`}
+      >
+        Others
+      </button>
+    </div>
+  )}
+</div>
           </div>
         </div>
 
-        <div className="rounded-2xl border border-border overflow-hidden bg-canvas-alt/20 backdrop-blur-xl overflow-x-auto">
+        <div className="rounded-2xl border border-border bg-canvas-alt/20 backdrop-blur-xl overflow-x-auto overflow-y-visible">
           <table className="w-full min-w-[800px]">
             <thead className="text-left text-[11px] uppercase tracking-widest text-muted bg-black/20">
               <tr className="border-b border-border">
@@ -208,8 +335,8 @@ function ReportsPage() {
               </tr>
             </thead>
             <tbody>
-              {reports.length > 0 ? (
-                reports.map((report) => {
+              {filteredReports.length > 0 ? (
+                filteredReports.map((report) => {
                   const isCertificate =
                     report.reportType?.toLowerCase() === "certificate" ||
                     report.subType?.toLowerCase()?.includes("certificate");
@@ -221,7 +348,7 @@ function ReportsPage() {
                             <User className="w-5 h-5 text-teal-500" />
                           </div>
                           <div>
-                            <div className="font-bold text-white">{report.user?.name || "Unknown User"}</div>
+                            <div className="font-bold text-main">{report.user?.name || "Unknown User"}</div>
                             <div className="text-[10px] text-muted uppercase">Reporter</div>
                           </div>
                         </div>

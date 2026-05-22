@@ -2,13 +2,39 @@ import { User } from "../models/index.js";
 
 export const getAllUsers = async (req, res) => {
   try {
-    const users = await User.findAll({
-      attributes: ["id", "name", "email", "role", "status", "purchasedCourses", "createdAt"],
+    // page aur limit query se lo
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+
+    // skip calculate karo
+    const offset = (page - 1) * limit;
+
+    const users = await User.findAndCountAll({
+      attributes: [
+        "id",
+        "name",
+        "email",
+        "role",
+        "purchasedCourses",
+        "createdAt",
+      ],
+      limit,
+      offset,
     });
-    res.status(200).json({ success: true, data: users });
+
+    res.status(200).json({
+      success: true,
+      totalUsers: users.count,
+      currentPage: page,
+      totalPages: Math.ceil(users.count / limit),
+      data: users.rows,
+    });
   } catch (error) {
     console.error("GET USERS ERROR:", error);
-    res.status(500).json({ success: false, message: "Server Error: " + error.message });
+    res.status(500).json({
+      success: false,
+      message: "Server Error: " + error.message,
+    });
   }
 };
 
