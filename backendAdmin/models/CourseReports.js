@@ -30,6 +30,16 @@ export const CourseReports = sequelize.define(
       allowNull: false,
     },
 
+    email: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+
+    phone: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+
     description: {
       type: DataTypes.TEXT,
       allowNull: true,

@@ -80,6 +80,19 @@ const REQUIRED_ENV_VARS = [
     hint: "Stripe webhook secret from your Stripe dashboard (starts with whsec_)",
     group: "Stripe",
   },
+
+  // ── Razorpay ────────────────────────────────────────────────────────────────
+
+  {
+    key: "RAZORPAY_KEY_ID",
+    hint: "RAZORPAY KEY ID from your Razorpay Dashboard -> Account & Settings -> Api keys (sart with rzp_test_ )",
+    group: "Razorpay",
+  },
+  {
+    key: "RAZORPAY_KEY_SECRET",
+    hint: "RAZORPAY KEY SECRET from your Razorpay Dashboard -> Account & Settings -> Api keys",
+    group: "Razorpay",
+  },
 ];
 
 const PLACEHOLDER_PATTERNS = [
@@ -89,6 +102,7 @@ const PLACEHOLDER_PATTERNS = [
   /^placeholder/i,
   /^changeme/i,
   /^xxx/i,
+  /^rzp_test_your_key_here$/i,
 ];
 
 // ── ANSI colours ─────────────────────────────────────────────────────────────

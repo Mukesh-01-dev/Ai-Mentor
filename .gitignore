@@ -10,7 +10,7 @@ pnpm-debug.log*
 __pycache__
 
 venv/
-
+outputfolder
 # Videos
 videos/
 

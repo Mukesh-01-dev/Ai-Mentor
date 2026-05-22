@@ -304,7 +304,6 @@ export default function Learning() {
             celebrity: selectedCelebrity.split(" ")[0].toLowerCase(), // ✅ sends "salman"
           };
 
-          console.log("AI PAYLOAD:", payload);
           const data = await getAIVideo(payload);
 
           if (data?.videoUrl) {

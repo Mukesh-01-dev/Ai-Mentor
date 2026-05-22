@@ -5,6 +5,8 @@ function PaymentsPage() {
   const [data, setData] = useState({ summary: {}, transactions: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedPayment, setSelectedPayment] = useState(null);
+  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
     const fetchPayments = async () => {
@@ -25,6 +27,15 @@ function PaymentsPage() {
     };
     fetchPayments();
   }, []);
+  const handleShowDetails = (payment) => {
+  setSelectedPayment(payment);
+  setShowModal(true);
+  };
+
+ const closeModal = () => {
+   setShowModal(false);
+   setSelectedPayment(null);
+  };
 
   if (loading)
     return (
@@ -120,6 +131,7 @@ function PaymentsPage() {
                 <div className="flex justify-end">
                   <button
                     type="button"
+                    onClick={() => handleShowDetails(t)}
                     className="h-10 px-4 rounded-xl bg-teal-500 text-white hover:bg-teal-600 transition-colors font-semibold whitespace-nowrap"
                   >
                     See Details
@@ -134,6 +146,107 @@ function PaymentsPage() {
           )}
         </div>
       </div>
+      {/* PAYMENT DETAILS MODAL */}
+{showModal && selectedPayment && (
+  <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+    <div className="w-full max-w-2xl rounded-3xl border border-border bg-card shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+      {/* HEADER */}
+      <div className="p-6 border-b border-border bg-linear-to-r from-teal-500/5 to-transparent flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-black uppercase tracking-tight text-main">
+            Payment Details
+          </h2>
+          <p className="text-xs text-muted mt-1 font-medium uppercase tracking-widest">
+            Transaction Information
+          </p>
+        </div>
+        <button
+          onClick={closeModal}
+          className="w-10 h-10 rounded-xl border border-border flex items-center justify-center hover:bg-red-500 hover:text-white transition-all"
+        >
+          ✕
+        </button>
+      </div>
+      {/* BODY */}
+      <div className="p-8 grid md:grid-cols-2 gap-6">
+        {/* USER */}
+        <div className="rounded-2xl border border-border bg-canvas p-5">
+          <p className="text-[10px] font-black uppercase tracking-widest text-muted mb-2">
+            User
+          </p>
+          <p className="text-lg font-bold text-main">
+            {selectedPayment.userName}
+          </p>
+        </div>
+        {/* COURSE */}
+        <div className="rounded-2xl border border-border bg-canvas p-5">
+          <p className="text-[10px] font-black uppercase tracking-widest text-muted mb-2">
+            Course
+          </p>
+          <p className="text-lg font-bold text-main">
+            {selectedPayment.courseTitle}
+          </p>
+        </div>
+        {/* AMOUNT */}
+        <div className="rounded-2xl border border-green-500/20 bg-green-500/5 p-5">
+          <p className="text-[10px] font-black uppercase tracking-widest text-green-600 mb-2">
+            Amount
+          </p>
+          <p className="text-3xl font-black text-green-600">
+            ₹ {selectedPayment.amount}
+          </p>
+        </div>
+        {/* STATUS */}
+        <div className="rounded-2xl border border-border bg-canvas p-5">
+          <p className="text-[10px] font-black uppercase tracking-widest text-muted mb-2">
+            Status
+          </p>
+          <span
+            className={`inline-flex h-8 items-center px-4 rounded-xl text-[11px] font-black uppercase tracking-widest ${
+              selectedPayment.status === "paid"
+                ? "bg-green-500/10 text-green-600"
+                : "bg-orange-500/10 text-orange-500"
+            }`}
+          >
+            {selectedPayment.status}
+          </span>
+        </div>
+        {/* TRANSACTION ID */}
+        <div className="md:col-span-2 rounded-2xl border border-border bg-canvas p-5">
+          <p className="text-[10px] font-black uppercase tracking-widest text-muted mb-2">
+            Transaction ID
+          </p>
+          <p className="font-mono text-sm break-all text-main">
+            {selectedPayment.transactionId ||
+              selectedPayment.paymentId}
+          </p>
+        </div>
+        {/* DATE */}
+        <div className="md:col-span-2 rounded-2xl border border-border bg-canvas p-5">
+          <p className="text-[10px] font-black uppercase tracking-widest text-muted mb-2">
+            Purchase Date
+          </p>
+          <p className="font-bold text-main">
+            {selectedPayment.purchaseDate
+              ? new Date(
+                  selectedPayment.purchaseDate
+                ).toLocaleString()
+              : "Pending"}
+          </p>
+        </div>
+      </div>
+      {/* FOOTER */}
+      <div className="border-t border-border p-6 flex justify-end">
+        <button
+          onClick={closeModal}
+          className="h-12 px-6 rounded-2xl border border-border font-black uppercase tracking-widest text-[11px] hover:bg-canvas-alt transition-all"
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+)}
     </div>
   );
 }

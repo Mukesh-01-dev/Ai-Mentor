@@ -56,7 +56,7 @@ router.get("/users", protectAdmin, getAllUsers);
 router.patch("/users/:id/status", protectAdmin, superAdminOnly, updateUserStatus);
 router.delete("/users/:id", protectAdmin, superAdminOnly, deleteUser);
 router.get("/reports", protectAdmin, getAllReports);
-router.get("/admins", protectAdmin, superAdminOnly, getAllAdmins);
+router.get("/admins", protectAdmin, getAllAdmins);
 
 // Notifications
 router.get("/notifications", protectAdmin, getAdminNotifications);

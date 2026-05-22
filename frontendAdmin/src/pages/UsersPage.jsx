@@ -17,7 +17,7 @@ function ActionMenu({ account, onAction, isSuperAdmin }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  if (!isSuperAdmin) return <div className="text-muted opacity-20"><MoreVertical className="w-5 h-5" /></div>;
+  if (!isSuperAdmin) return <div className="text-muted flex justify-end pr-2 opacity-20"><MoreVertical className="w-5 h-5" /></div>;
 
   const status = account.status || "active";
 
@@ -84,12 +84,18 @@ function UsersPage() {
   const [isAddAdminOpen, setIsAddAdminOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
-  const [activeFilter, setActiveFilter] = useState(null);
+  const [activeFilter, setActiveFilter] = useState("admin");
+  const [page, setPage] = useState(1);
+const [totalPages, setTotalPages] = useState(1);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
   });
+  const [deleteModal, setDeleteModal] = useState({
+  open: false,
+  account: null,
+});
 
   const currentAdmin = JSON.parse(localStorage.getItem("user") || "{}");
   const isSuperAdmin = currentAdmin?.role === "superadmin";
@@ -98,13 +104,19 @@ function UsersPage() {
     try {
       setLoading(true);
       const [usersResult, adminsResult] = await Promise.allSettled([
-        callApi("/admin/users"),
+        callApi(`/admin/users?page=${page}&limit=10`),
         callApi("/admin/admins"),
       ]);
 
+console.log(usersResult.usersResult);
       const usersList = usersResult.status === "fulfilled"
-        ? (Array.isArray(usersResult.value?.data) ? usersResult.value.data : [])
-        : [];
+   ? (Array.isArray(usersResult.value?.data)
+      ? usersResult.value.data
+      : [])
+  : [];
+  if (usersResult.status === "fulfilled") {
+  setTotalPages(usersResult.value?. totalPages || 1);
+}
       const adminsList = adminsResult.status === "fulfilled"
         ? (Array.isArray(adminsResult.value?.data) ? adminsResult.value.data : [])
         : [];
@@ -150,21 +162,18 @@ function UsersPage() {
 
   useEffect(() => {
     fetchAccounts();
-  }, []);
+  }, [page]);
 
   const handleAction = async (account, action) => {
     if (!isSuperAdmin) return;
 
-    if (action === "delete") {
-      if (!window.confirm(`Are you sure you want to delete ${account.name}? This action cannot be undone.`)) return;
-      try {
-        const endpoint = account.type === "admin" ? `/admin/${account.rawId}` : `/admin/users/${account.rawId}`;
-        await callApi(endpoint, { method: "DELETE" });
-        fetchAccounts();
-      } catch (err) {
-        showToast("Failed to delete account: " + err.message, "error");
-      }
-    } else if (action === "active" || action === "on-hold") {
+   if (action === "delete") {
+       setDeleteModal({
+       open: true,
+       account,
+      });
+    return;
+} else if (action === "active" || action === "on-hold") {
       try {
         if (account.type === "admin") {
           showToast("Admin status cannot be changed yet.", "warning");
@@ -180,7 +189,47 @@ function UsersPage() {
       }
     }
   };
+  const confirmDelete = async () => {
+  const account = deleteModal.account;
+  if (!account) return;
+  try {
+    // Prevent self delete
+    if (
+      currentAdmin?.id &&
+      Number(account.rawId) === Number(currentAdmin.id)
+    ) {
+      showToast("You cannot delete yourself.", "warning");
+      return;
+    }
+    // Prevent deleting superadmin
+    if (account.role === "superadmin") {
+      showToast("Super Admin cannot be deleted.", "warning");
+      return;
+    }
+    const endpoint =
+      account.type === "admin"
+        ? `/admin/${account.rawId}`
+        : `/admin/users/${account.rawId}`;
 
+    await callApi(endpoint, {
+      method: "DELETE",
+    });
+    showToast(
+      `${account.name} deleted successfully`,
+      "success"
+    );
+    setDeleteModal({
+      open: false,
+      account: null,
+    });
+    await fetchAccounts();
+  } catch (err) {
+    showToast(
+      "Failed to delete account: " + err.message,
+      "error"
+    );
+  }
+};
   const onFieldChange = (event) => {
     const { name, value } = event.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -329,7 +378,29 @@ function UsersPage() {
             )}
           </tbody>
         </table>
+
       </div>
+      <div className="flex items-center justify-center gap-4 py-6">
+  <button
+    disabled={page === 1}
+    onClick={() => setPage(page - 1)}
+    className="px-4 py-2 rounded-lg border border-border disabled:opacity-50"
+  >
+    Prev
+  </button>
+
+  <span className="font-bold">
+    Page {page} of {totalPages}
+  </span>
+
+  <button
+    disabled={page === totalPages}
+    onClick={() => setPage(page + 1)}
+    className="px-4 py-2 rounded-lg border border-border disabled:opacity-50"
+  >
+    Next
+  </button>
+</div>
 
       {isAddAdminOpen && (
         <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
@@ -412,6 +483,95 @@ function UsersPage() {
           </div>
         </div>
       )}
+      {deleteModal.open && (
+  <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+    <div className="w-full max-w-lg rounded-3xl border border-border bg-card shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+      {/* Header */}
+      <div className="p-6 border-b border-border bg-linear-to-r from-red-500/5 to-transparent flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-black uppercase tracking-tight text-main">
+            Delete Account
+          </h2>
+          <p className="text-xs text-muted mt-1 font-medium">
+            This action cannot be undone.
+          </p>
+        </div>
+        <button
+          onClick={() =>
+            setDeleteModal({
+              open: false,
+              account: null,
+            })
+          }
+          className="w-10 h-10 rounded-xl border border-border flex items-center justify-center hover:bg-red-500 hover:text-white transition-all"
+        >
+          <XIcon />
+        </button>
+      </div>
+      {/* Body */}
+      <div className="p-6 space-y-5">
+        <div className="flex items-start gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-red-500/10 text-red-500 flex items-center justify-center shrink-0">
+            <Trash2 className="w-6 h-6" />
+          </div>
+          <div>
+            <h3 className="font-black text-main tracking-tight">
+              Are you sure you want to delete{" "}
+              <span className="text-red-500">
+                {deleteModal.account?.name}
+              </span>
+              ?
+            </h3>
+            <p className="text-sm text-muted mt-2 leading-relaxed">
+              Deleting this account will permanently remove
+              access and related data. This action cannot
+              be undone.
+            </p>
+          </div>
+        </div>
+        {/* User Info */}
+        <div className="rounded-2xl border border-border bg-canvas p-4 space-y-2">
+          <div className="flex justify-between text-sm">
+            <span className="text-muted font-bold uppercase text-[10px] tracking-widest">
+              Email
+            </span>
+            <span className="text-main font-semibold">
+              {deleteModal.account?.email}
+            </span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span className="text-muted font-bold uppercase text-[10px] tracking-widest">
+              Role
+            </span>
+            <span className="text-main font-semibold uppercase">
+              {deleteModal.account?.role}
+            </span>
+          </div>
+        </div>
+        {/* Buttons */}
+        <div className="flex gap-3 pt-2">
+          <button
+            onClick={() =>
+              setDeleteModal({
+                open: false,
+                account: null,
+              })
+            }
+            className="flex-1 h-14 rounded-2xl border border-border font-black uppercase tracking-widest text-[11px] hover:bg-canvas-alt transition-all"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={confirmDelete}
+            className="flex-1 h-14 rounded-2xl bg-red-500 text-white font-black uppercase tracking-widest text-[11px] hover:bg-red-600 shadow-xl shadow-red-500/20 transition-all"
+          >
+            Delete Account
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
     </>
   );
 }

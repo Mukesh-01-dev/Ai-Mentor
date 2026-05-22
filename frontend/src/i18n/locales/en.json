@@ -15,7 +15,8 @@
     "watched": "Watched Videos",
     "admin": "Admin Panel",
     "account": "Account",
-    "certificates": "Certificates"
+    "certificates": "Certificates",
+    "report": "Report"
   },
   "common": {
     "cancel": "Cancel",
