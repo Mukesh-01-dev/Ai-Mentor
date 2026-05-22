@@ -78,15 +78,24 @@ export default function CoursePreview() {
       setError(null);
       try {
         const metaUrl = `${API_BASE_URL}/api/courses/${courseId}`;
-        const learnUrl = `${API_BASE_URL}/api/courses/${courseId}/learning`;
-        const [metaRes, learnRes] = await Promise.all([
-          fetch(metaUrl),
-          fetch(learnUrl),
-        ]);
+        const learnUrl = `${API_BASE_URL}/api/courses/${courseId}/learning`;      
+        const metaRes = await fetch(metaUrl);
         if (!metaRes.ok) throw new Error("Failed to fetch course meta");
-        if (!learnRes.ok) throw new Error("Failed to fetch course learning");
         const meta = await metaRes.json();
-        const learning = await learnRes.json();
+        let learning = {};
+        const token = localStorage.getItem("token");
+        if (token) {
+          try {
+            const learnRes = await fetch(learnUrl, {
+              headers: { Authorization: `Bearer ${token}` }
+            });
+            if (learnRes.ok) {
+              learning = await learnRes.json();
+            }
+          } catch (e) {
+            console.warn("User not enrolled or token invalid, skipping learning data.");
+          }
+        }
         if (!cancelled) {
           setCourseMeta(meta || {});
           setLearningData(learning || {});

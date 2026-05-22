@@ -128,6 +128,17 @@ const getCourseLearningData = async (req, res) => {
   try {
     const courseId = String(req.params.id);
 
+    const hasPurchased = req.user?.purchasedCourses?.some(
+      (c) => String(c.courseId) === courseId
+    );
+
+    // If they haven't purchased it (and aren't an admin), block access
+    if (!hasPurchased && req.user?.role !== "admin") {
+      return res.status(403).json({ 
+        message: "Access Denied: You have not purchased this course." 
+      });
+    }
+
     const course = await Course.findByPk(courseId);
 
     if (!course) {
