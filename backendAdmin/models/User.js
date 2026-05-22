@@ -34,10 +34,6 @@ const User = sequelize.define(
       type: DataTypes.JSON,
       defaultValue: [],
     },
-    bookmarkedCourses: {
-      type: DataTypes.JSON,
-      defaultValue: [],
-    },
   },
   {
     timestamps: true,

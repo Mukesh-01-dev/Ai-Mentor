@@ -48,7 +48,10 @@ User.init(
       type: DataTypes.STRING,
       defaultValue: "user",
     },
-
+    status: {
+      type: DataTypes.STRING,
+      defaultValue: "active",
+    },
     bio: {
       type: DataTypes.STRING,
       defaultValue: "",
