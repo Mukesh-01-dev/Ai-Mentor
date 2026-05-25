@@ -38,14 +38,6 @@ const Course = sequelize.define("Course", {
       isIn: [["published", "disabled", "deleted"]],
     },
   },
-
-  deletedAt: {
-    type: DataTypes.DATE,
-    allowNull: true,
-    defaultValue: null,
-  },
-
-  isBookmarked: DataTypes.BOOLEAN,
 });
 
 export default Course;

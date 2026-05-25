@@ -81,11 +81,6 @@ User.init(
       },
     },
 
-    learningHoursChart: {
-      type: DataTypes.JSONB,
-      defaultValue: [],
-    },
-
     settings: {
       type: DataTypes.JSONB,
       defaultValue: {
