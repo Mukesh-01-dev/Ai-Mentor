@@ -38,6 +38,7 @@ const PublicRoutes = () => {
 };
 
 const App = () => {
+  const { isAuthenticated } = useAuth();
   return (
     <Suspense fallback={<LoadingSpinner />}>
       <Routes>
