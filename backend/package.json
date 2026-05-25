@@ -9,6 +9,8 @@
     "dev": "nodemon server.js",
     "seed:courses": "node scripts/seedCourses.js",
     "clear:preferences": "node scripts/clearPreferences.js",
+    "seed:load-users": "node scripts/seedLoadTestUsers.js",
+    "cleanup:load-users": "node scripts/cleanupLoadTest.js",
     "lint": "eslint ."
   },
   "dependencies": {
