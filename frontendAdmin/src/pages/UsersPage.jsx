@@ -1,27 +1,59 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { MoreVertical, Trash2, ShieldAlert, CheckCircle2, UserX, UserCheck } from "lucide-react";
 import { callApi } from "../utils/api";
 import { useToast } from "../context/ToastContext";
 
 function ActionMenu({ account, onAction, isSuperAdmin }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   if (!isSuperAdmin) return <div className="text-muted flex justify-end pr-2 opacity-20"><MoreVertical className="w-5 h-5" /></div>;
 
   const status = account.status || "active";
 
   return (
-         <div className="flex items-center justify-end gap-2">
+    <div className="relative" ref={menuRef}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="p-2 rounded-xl hover:bg-canvas-alt transition-all text-muted hover:text-main"
+      >
+        <MoreVertical className="w-5 h-5" />
+      </button>
+
+      {isOpen && (
+        <div className="absolute right-0 mt-2 w-48 rounded-2xl bg-card border border-border shadow-2xl z-50 overflow-hidden py-2 animate-in fade-in zoom-in-95 duration-200">
+          <div className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-muted border-b border-border/50 mb-1">
+            Actions
+          </div>
+          
           {status === "active" ? (
             <button
-              onClick={() =>onAction(account, "on-hold")}
-              className="h-8 px-3 rounded-xl bg-orange-500/10 text-orange-500 hover:bg-orange-500 hover:text-white transition-all flex items-center gap-2 text-[10px] font-black uppercase tracking-widest"
+              onClick={() => {
+                onAction(account, "on-hold");
+                setIsOpen(false);
+              }}
+              className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-orange-500 hover:bg-orange-500/5 transition-all"
             >
               <UserX className="w-4 h-4" />
               Put On Hold
             </button>
           ) : (
             <button
-              onClick={() =>onAction(account, "active")}
-              className="h-8 px-3 rounded-xl bg-orange-500/10 text-orange-500 hover:bg-orange-500 hover:text-white transition-all flex items-center gap-2 text-[10px] font-black uppercase tracking-widest"
+              onClick={() => {
+                onAction(account, "active");
+                setIsOpen(false);
+              }}
+              className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-teal-500 hover:bg-teal-500/5 transition-all"
             >
               <UserCheck className="w-4 h-4" />
               Activate
@@ -29,13 +61,18 @@ function ActionMenu({ account, onAction, isSuperAdmin }) {
           )}
 
           <button
-            onClick={() =>onAction(account, "delete")}
-            className="h-8 px-3 rounded-xl bg-orange-500/10 text-orange-500 hover:bg-orange-500 hover:text-white transition-all flex items-center gap-2 text-[10px] font-black uppercase tracking-widest"
+            onClick={() => {
+              onAction(account, "delete");
+              setIsOpen(false);
+            }}
+            className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-red-500 hover:bg-red-500/5 transition-all"
           >
             <Trash2 className="w-4 h-4" />
             Delete Account
           </button>
         </div>
+      )}
+    </div>
   );
 }
 
@@ -278,8 +315,8 @@ console.log(usersResult.usersResult);
         </div>
       </div>
       <div className="overflow-x-auto">
-       <table className="w-full min-w-[1000px] border-separate border-spacing-x-7 ">
-          <thead className="text-center text-[10px] font-black uppercase tracking-widest text-muted border-b border-border bg-canvas-alt/10">
+        <table className="w-full min-w-[1000px]">
+          <thead className="text-left text-[10px] font-black uppercase tracking-widest text-muted border-b border-border bg-canvas-alt/10">
             <tr>
               <th className="p-6">Name</th>
               <th>Email</th>
@@ -287,14 +324,14 @@ console.log(usersResult.usersResult);
               <th>Role</th>
               <th>Created</th>
               <th>Status</th>
-              <th>Actions</th>
+              <th className="pr-8 text-right">Actions</th>
             </tr>
           </thead>
-          <tbody className="text-sm text-center">
+          <tbody className="text-sm">
             {visibleAccounts.length > 0 ? (
               visibleAccounts.map((account) => (
                 <tr key={account.id} className="border-b border-border hover:bg-canvas-alt/50 transition-all group">
-                  <td className="px-3 py-4">
+                  <td className="p-6">
                     <div className="flex items-center gap-3">
                       <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black uppercase text-[10px] ${
                         account.type === "admin" ? "bg-teal-500/10 text-teal-500" : "bg-blue-500/10 text-blue-500"
