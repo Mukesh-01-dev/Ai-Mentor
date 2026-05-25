@@ -1,20 +1,96 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { ChevronRight, LogOut, Settings, User, ShieldCheck, LayoutGrid } from "lucide-react";
+import {
+  ChevronRight,
+  LogOut,
+  Settings,
+  User,
+  ShieldCheck,
+  LayoutGrid,
+  ChevronDown,
+  ArrowLeft,
+  Search,
+  BookOpen,
+  Code,
+  Server,
+  Sparkles,
+} from "lucide-react";
 import API_BASE_URL from "../lib/api";
 import { useSidebar } from "../context/SidebarContext";
 import { useTranslation } from "react-i18next";
+import { docsStructure, docsContent } from "../data/docsData";
 
 const Sidebar = ({ activePage = "dashboard" }) => {
   const { t } = useTranslation();
   const { sidebarOpen, setSidebarOpen, sidebarCollapsed, setSidebarCollapsed } = useSidebar();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [navigationItems, setNavigationItems] = useState([]);
   const [profilePopupOpen, setProfilePopupOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const profileRef = useRef(null);
+
+  // Docs Specific States
+  const [searchQuery, setSearchQuery] = useState("");
+  const [hoveredSection, setHoveredSection] = useState(null);
+  const [expandedSections, setExpandedSections] = useState({
+    "getting-started": true,
+    "frontend-docs": false,
+    "backend-docs": false,
+    "backend-admin-docs": false,
+    "frontend-admin-docs": false,
+    "ai-service-docs": false,
+  });
+
+  const sectionIcons = {
+    "getting-started": BookOpen,
+    "frontend-docs": Code,
+    "backend-docs": Server,
+    "backend-admin-docs": ShieldCheck,
+    "frontend-admin-docs": LayoutGrid,
+    "ai-service-docs": Sparkles,
+  };
+
+  // Filter doc items based on search query
+  const getFilteredDocs = () => {
+    if (!searchQuery) return docsStructure;
+    const query = searchQuery.toLowerCase();
+
+    return docsStructure
+      .map((sec) => {
+        const matchedItems = sec.items.filter((item) => {
+          const titleMatch = item.title.toLowerCase().includes(query);
+          const contentMatch = docsContent[sec.id]?.[item.id]?.content
+            ?.toLowerCase()
+            .includes(query);
+          return titleMatch || contentMatch;
+        });
+        return { ...sec, items: matchedItems };
+      })
+      .filter((sec) => sec.items.length > 0);
+  };
+
+  const filteredDocs = getFilteredDocs();
+
+  // If search is active, automatically expand all matching sections
+  useEffect(() => {
+    if (searchQuery) {
+      const newExpanded = {};
+      filteredDocs.forEach((sec) => {
+        newExpanded[sec.id] = true;
+      });
+      setExpandedSections(newExpanded);
+    }
+  }, [searchQuery]);
+
+  const toggleSection = (sectionId) => {
+    setExpandedSections((prev) => ({
+      ...prev,
+      [sectionId]: !prev[sectionId],
+    }));
+  };
 
   const handleLogout = () => {
     setShowLogoutConfirm(true);
@@ -81,22 +157,157 @@ const Sidebar = ({ activePage = "dashboard" }) => {
           <ChevronRight className={`w-5 h-5 transition-transform duration-500 ${sidebarCollapsed ? "" : "rotate-180"}`} />
         </button>
 
-        <nav className={`mt-8 px-4 h-[calc(100vh-16rem)] scrollbar-hide ${sidebarCollapsed ? "overflow-visible" : "overflow-y-auto"}`}>
-          <div className="space-y-3">
-            {navigationItems.map((item) => {
-              const isActive = activePage === item.id;
-              return (
-                <div key={item.id} onClick={() => { navigate(item.path); setSidebarOpen(false); }} className={`group relative flex items-center px-4 py-4 rounded-3xl cursor-pointer transition-all duration-300 ${sidebarCollapsed ? "justify-center" : ""} ${isActive ? "bg-teal-500 text-white shadow-xl shadow-teal-500/30" : "hover:bg-canvas-alt"}`}>
-                  <img src={item.icon} alt={item.label} className={`w-5 h-5 shrink-0 transition-transform group-hover:scale-110 ${isActive ? "brightness-0 invert" : "opacity-80"}`} />
-                  {!sidebarCollapsed && <span className={`ml-4 text-sm font-black uppercase tracking-tight ${isActive ? "text-white" : ""}`} style={isActive ? {} : { color: '#b2b2b3' }}>{t(`nav.${item.id}`)}</span>}
-                  {sidebarCollapsed && (
-                    <div className="absolute left-full ml-6 px-4 py-2 bg-slate-900 text-white text-[10px] font-black rounded-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-all shadow-2xl z-50 uppercase tracking-widest">{t(`nav.${item.id}`)}</div>
-                  )}
+        {activePage === "docs" ? (
+          <nav className={`mt-8 px-4 h-[calc(100vh-16rem)] scrollbar-hide relative ${sidebarCollapsed ? "overflow-visible" : "overflow-y-auto"}`}>
+            {/* Dashboard Back trigger */}
+            <div
+              onClick={() => { navigate("/dashboard"); setSidebarOpen(false); }}
+              className={`group relative flex items-center px-4 py-4 rounded-3xl cursor-pointer transition-all duration-300 mb-4 border border-border/30 hover:bg-canvas-alt ${sidebarCollapsed ? "justify-center" : ""}`}
+            >
+              <ArrowLeft className="w-5 h-5 text-teal-500 shrink-0 transition-transform group-hover:-translate-x-1" />
+              {!sidebarCollapsed && (
+                <span className="ml-4 text-xs font-black uppercase tracking-wider text-muted group-hover:text-main">
+                  Dashboard
+                </span>
+              )}
+              {sidebarCollapsed && (
+                <div className="absolute left-full ml-6 px-4 py-2 bg-slate-900 text-white text-[10px] font-black rounded-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-all shadow-2xl z-50 uppercase tracking-widest">
+                  Back to Dashboard
                 </div>
-              );
-            })}
-          </div>
-        </nav>
+              )}
+            </div>
+
+            {/* Search Input */}
+            {!sidebarCollapsed && (
+              <div className="relative mb-6 px-1">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
+                <input
+                  type="text"
+                  placeholder="Search docs..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 rounded-2xl bg-canvas-alt border border-border text-xs font-bold text-main placeholder-muted focus:outline-none focus:border-teal-500 transition-colors shadow-inner"
+                />
+              </div>
+            )}
+
+            <div className="space-y-4">
+              {filteredDocs.map((sec) => {
+                const SecIcon = sectionIcons[sec.id] || BookOpen;
+                const isExpanded = !!expandedSections[sec.id] || searchQuery.trim().length > 0;
+                return (
+                  <div key={sec.id} className="relative group/sec">
+                    {/* Collapsed Section Icon */}
+                    {sidebarCollapsed ? (
+                      <div
+                        onMouseEnter={() => setHoveredSection(sec.id)}
+                        onMouseLeave={() => setHoveredSection(null)}
+                        className={`relative flex items-center justify-center w-12 h-12 mx-auto rounded-2xl cursor-pointer transition-all duration-300 border border-transparent ${
+                          location.pathname.includes(`/docs/${sec.id}`)
+                            ? "bg-teal-500/10 text-teal-500 border-teal-500/20"
+                            : "hover:bg-canvas-alt text-muted hover:text-main"
+                        }`}
+                      >
+                        <SecIcon className="w-5 h-5" />
+                        {/* Hover Flyout */}
+                        {hoveredSection === sec.id && (
+                          <div className="absolute left-full top-0 ml-4 w-60 bg-card border border-border rounded-2xl shadow-2xl p-3 z-[100] animate-in fade-in slide-in-from-left-2 duration-200">
+                            <h4 className="text-[10px] font-black uppercase text-main tracking-wider mb-2 pb-1 border-b border-border/40">
+                              {sec.title}
+                            </h4>
+                            <div className="space-y-1 max-h-60 overflow-y-auto">
+                              {sec.items.map((item) => {
+                                const isItemActive = location.pathname === `/docs/${sec.id}/${item.id}`;
+                                return (
+                                  <div
+                                    key={item.id}
+                                    onClick={() => {
+                                      navigate(`/docs/${sec.id}/${item.id}`);
+                                      setSidebarOpen(false);
+                                    }}
+                                    className={`px-3 py-2 rounded-xl text-left text-xs font-bold transition-all cursor-pointer ${
+                                      isItemActive
+                                        ? "text-teal-500 bg-teal-500/5 font-extrabold"
+                                        : "text-muted hover:text-main hover:bg-canvas-alt"
+                                    }`}
+                                  >
+                                    {item.title}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      // Expanded view
+                      <div>
+                        <button
+                          onClick={() => toggleSection(sec.id)}
+                          className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-canvas-alt text-left text-xs font-black uppercase tracking-wider text-main select-none transition-colors"
+                        >
+                          <div className="flex items-center gap-3">
+                            <SecIcon className="w-4 h-4 text-teal-500" />
+                            <span className="text-[11px] tracking-tight">{sec.title}</span>
+                          </div>
+                          <ChevronRight
+                            className={`w-3.5 h-3.5 text-muted transition-transform duration-300 ${
+                              isExpanded ? "rotate-90 text-teal-500" : ""
+                            }`}
+                          />
+                        </button>
+
+                        {/* Collapsible Subitems */}
+                        <div
+                          className={`pl-4 border-l border-border/40 ml-5.5 mt-1.5 space-y-1.5 overflow-hidden transition-all duration-300 ${
+                            isExpanded ? "max-h-96 opacity-100" : "max-h-0 opacity-0 pointer-events-none"
+                          }`}
+                        >
+                          {sec.items.map((item) => {
+                            const isItemActive = location.pathname === `/docs/${sec.id}/${item.id}`;
+                            return (
+                              <div
+                                key={item.id}
+                                onClick={() => {
+                                  navigate(`/docs/${sec.id}/${item.id}`);
+                                  setSidebarOpen(false);
+                                }}
+                                className={`block px-3 py-2.5 rounded-2xl text-xs cursor-pointer transition-all duration-200 ${
+                                  isItemActive
+                                    ? "text-teal-500 bg-teal-500/5 font-extrabold shadow-sm border border-teal-500/10"
+                                    : "text-muted hover:text-main hover:bg-canvas-alt/50 font-semibold"
+                                }`}
+                              >
+                                {item.title}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </nav>
+        ) : (
+          <nav className={`mt-8 px-4 h-[calc(100vh-16rem)] scrollbar-hide ${sidebarCollapsed ? "overflow-visible" : "overflow-y-auto"}`}>
+            <div className="space-y-3">
+              {navigationItems.map((item) => {
+                const isActive = activePage === item.id;
+                return (
+                  <div key={item.id} onClick={() => { navigate(item.path); setSidebarOpen(false); }} className={`group relative flex items-center px-4 py-4 rounded-3xl cursor-pointer transition-all duration-300 ${sidebarCollapsed ? "justify-center" : ""} ${isActive ? "bg-teal-500 text-white shadow-xl shadow-teal-500/30" : "hover:bg-canvas-alt"}`}>
+                    <img src={item.icon} alt={item.label} className={`w-5 h-5 shrink-0 transition-transform group-hover:scale-110 ${isActive ? "brightness-0 invert" : "opacity-80"}`} />
+                    {!sidebarCollapsed && <span className={`ml-4 text-sm font-black uppercase tracking-tight ${isActive ? "text-white" : ""}`} style={isActive ? {} : { color: '#b2b2b3' }}>{t(`nav.${item.id}`, item.label)}</span>}
+                    {sidebarCollapsed && (
+                      <div className="absolute left-full ml-6 px-4 py-2 bg-slate-900 text-white text-[10px] font-black rounded-xl opacity-0 group-hover:opacity-100 pointer-events-none transition-all shadow-2xl z-50 uppercase tracking-widest">{t(`nav.${item.id}`, item.label)}</div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </nav>
+        )}
 
         {/* --- BOTTOM PROFILE WITH POPUP --- */}
         <div className="absolute bottom-8 left-0 right-0 px-4" ref={profileRef}>

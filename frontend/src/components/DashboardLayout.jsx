@@ -21,8 +21,10 @@ const DashboardLayout = () => {
 
   // Derive activePage from the current path
   const activePage =
-    routeToPage[location.pathname] ||
-    (location.pathname.startsWith("/learning") ? "courses" : "dashboard");
+    location.pathname.startsWith("/docs")
+      ? "docs"
+      : routeToPage[location.pathname] ||
+        (location.pathname.startsWith("/learning") ? "courses" : "dashboard");
 
   return (
     <div className="min-h-screen bg-canvas-alt flex flex-col">
