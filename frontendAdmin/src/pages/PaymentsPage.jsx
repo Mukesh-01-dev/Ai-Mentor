@@ -5,17 +5,21 @@ function PaymentsPage() {
   const [data, setData] = useState({ summary: {}, transactions: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
     const fetchPayments = async () => {
       try {
         setLoading(true);
-        const res = await callApi("/admin/payments?type=list");
+        const res = await callApi(`/admin/payments?page=${page}&limit=10`);
         if (res.success) {
           setData({
             summary: res.summary || {},
             transactions: res.data || [],
           });
+          
+        setTotalPages(res.totalPages || 1);
         }
       } catch (err) {
         setError(err.message);
@@ -24,7 +28,7 @@ function PaymentsPage() {
       }
     };
     fetchPayments();
-  }, []);
+  }, [page]);
 
   if (loading)
     return (
@@ -133,6 +137,27 @@ function PaymentsPage() {
             </div>
           )}
         </div>
+      </div>
+            <div className="flex items-center justify-center gap-4 mt-6">
+        <button
+          disabled={page === 1}
+          onClick={() => setPage(page - 1)}
+          className="px-4 py-2 rounded-xl border border-border disabled:opacity-50"
+        >
+          Prev
+        </button>
+
+        <span className="font-bold">
+          Page {page} of {totalPages}
+        </span>
+
+        <button
+          disabled={page === totalPages}
+          onClick={() => setPage(page + 1)}
+          className="px-4 py-2 rounded-xl border border-border disabled:opacity-50"
+        >
+          Next
+        </button>
       </div>
     </div>
   );
