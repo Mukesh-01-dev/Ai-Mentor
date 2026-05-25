@@ -90,6 +90,13 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const logout = () => {
+
+        try {
+      await signOut(auth);
+    } catch (error) {
+      console.error("Firebase sign out error:", error);
+    }
+
     setIsAuthenticated(false);
     setUser(null);
     localStorage.removeItem('token');
