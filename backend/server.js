@@ -23,13 +23,14 @@ import razorpayRoutes from "./routes/razorpay.js";
 import preferenceRoutes from "./routes/preferenceRoutes.js";
 import contactUsRoutes from "./routes/contactus.js"; // ✅ fixed import
 import reportRoutes from "../backend/routes/reportRoutes.js";
+import docsRoutes from "./routes/docsRoutes.js";
 
 // ================= MODELS =================
 import "./models/CommunityPost.js";
 import "./models/Notification.js";
 import "./models/Report.js";
 import "./models/modelAssociations.js";
-import "./models/contactMessage.js";
+import "./models/Contactmessage.js";
 
 dotenv.config();
 
@@ -76,6 +77,7 @@ app.use("/api/certificate", certificateRoutes);
 app.use("/api/preferences", preferenceRoutes);
 app.use("/api/contactus", contactUsRoutes); // ✅ added route
 app.use("/api/coures-reports", reportRoutes);
+app.use("/api/docs", docsRoutes);
 
 // ================= 404 HANDLER =================
 app.use((req, res) => {
