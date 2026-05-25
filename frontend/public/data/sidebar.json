@@ -52,5 +52,11 @@
     "icon": "/AI_Tutor_New_UI/Icons/settings.svg",
     "label": "Report",
     "path": "/report"
+  },
+  {
+    "id": "docs",
+    "icon": "/AI_Tutor_New_UI/Icons/file.svg",
+    "label": "Documentation",
+    "path": "/docs"
   }
 ]

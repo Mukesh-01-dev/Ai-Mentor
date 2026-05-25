@@ -23,6 +23,7 @@ const ReportPage = lazy(() => import("./pages/ReportPage"));
 const Success = lazy(() => import("./pages/Success"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const DocumentationPage = lazy(() => import("./pages/Documentation/DocumentationPage"));
+const DocsPage = lazy(() => import("./pages/DocsPage"));
 import CompleteProfilePage from "./pages/CompleteProfilePage";
 import "./App.css";
 
@@ -74,6 +75,8 @@ const App = () => {
             <Route path="/watchedvideos" element={<WatchedVideos />} />
             <Route path="/learning/:id" element={<LearningPage />} />
             <Route path="/success" element={<Success />} />
+            <Route path="/docs" element={<DocsPage />} />
+            <Route path="/docs/:section/:page" element={<DocsPage />} />
           </Route>
           <Route path="/course-preview/:courseId" element={<CoursePreview />} />
         </Route>

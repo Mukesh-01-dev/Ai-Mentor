@@ -152,19 +152,19 @@ const Dashboard = () => {
 
     const result = [
       {
-        ...baseCards[0],
+        ...coursesData.statsCards[0],
         value: coursesInProgress.toString(),
       },
       {
-        ...baseCards[1],
+        ...coursesData.statsCards[1],
         value: completedCourses.toString(),
       },
       {
-        ...baseCards[2],
+        ...coursesData.statsCards[2],
         value: certificates.toString(),
       },
       {
-        ...baseCards[3],
+        ...coursesData.statsCards[3],
         value: `${totalHours}h`,
       },
     ];

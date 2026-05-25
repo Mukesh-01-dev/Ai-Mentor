@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
-import { Star, X, BookOpen, Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { Star, X, BookOpen, Search, ChevronLeft, ChevronRight, AlertTriangle } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import API_BASE_URL from "../lib/api";
 import { useTranslation } from "react-i18next";
 import ReportModal from "../components/common/ReportModal";
 import toast from "react-hot-toast";
-import { AlertTriangle } from "lucide-react";
 
 const CoursesPage = () => {
     const { t } = useTranslation();

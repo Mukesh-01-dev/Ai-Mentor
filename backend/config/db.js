@@ -1,10 +1,40 @@
 import { Sequelize } from "sequelize";
 import dotenv from "dotenv";
+import dns from "dns";
 
 dotenv.config();
 
-// Support both Neon (production) and local PostgreSQL (development)
+// Apply custom DNS lookup hook for neon.tech databases to bypass restrictive local/ISP DNS issues
 const connectionString = process.env.NEON_DATABASE_URL;
+if (connectionString && connectionString.includes("neon.tech")) {
+  const originalLookup = dns.lookup;
+  const resolver = new dns.Resolver();
+  resolver.setServers(["8.8.8.8", "8.8.4.4"]);
+
+  dns.lookup = function (hostname, options, callback) {
+    let cb = callback;
+    let opts = options;
+    if (typeof options === "function") {
+      cb = options;
+      opts = {};
+    }
+
+    if (hostname.includes("neon.tech")) {
+      return resolver.resolve4(hostname, (err, addresses) => {
+        if (err || addresses.length === 0) {
+          return originalLookup(hostname, opts, cb);
+        }
+        if (opts.all) {
+          const mapped = addresses.map((addr) => ({ address: addr, family: 4 }));
+          return cb(null, mapped);
+        }
+        return cb(null, addresses[0], 4);
+      });
+    }
+
+    return originalLookup(hostname, opts, cb);
+  };
+}
 
 let sequelize;
 
