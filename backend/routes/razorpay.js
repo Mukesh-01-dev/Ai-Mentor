@@ -3,8 +3,6 @@ import Razorpay from "razorpay";
 import crypto from "crypto";
 import User from "../models/User.js";
 import { createNotification } from "../controllers/notificationController.js";
-// 1️⃣ Import the protect middleware safely
-import { protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
@@ -14,8 +12,8 @@ const razorpay = new Razorpay({
     key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 
-// ✅ CREATE ORDER (2️⃣ Added 'protect' here)
-router.post("/create-order", protect, async (req, res) => {
+// ✅ CREATE ORDER
+router.post("/create-order", async (req, res) => {
     try {
         const { course } = req.body;
 
@@ -58,8 +56,8 @@ router.post("/create-order", protect, async (req, res) => {
     }
 });
 
-// ✅ VERIFY PAYMENT (2️⃣ Added 'protect' here)
-router.post("/verify", protect, async (req, res) => {
+// ✅ VERIFY PAYMENT
+router.post("/verify", async (req, res) => {
     try {
         const {
             razorpay_order_id,
@@ -67,13 +65,10 @@ router.post("/verify", protect, async (req, res) => {
             razorpay_signature,
             courseId,
             courseTitle,
-            // ❌ REMOVED: userId from req.body to stop ID spoofing attacks
+            userId,
         } = req.body;
 
-        // 3️⃣ SECURE UPGRADE: Grab the user ID straight from the verified JWT token
-        const userId = req.user.id;
-
-        // Validate request parameters (Checking verified userId instead of req.body)
+        // Validate request
         if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !courseId || !userId) {
             return res.status(400).json({ success: false, error: "Missing required parameters" });
         }
