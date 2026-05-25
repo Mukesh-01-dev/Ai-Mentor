@@ -1,5 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect,useRef,  useState } from "react";
+import {
+  Download,
+  FileSpreadsheet,
+  FileText,
+  ChevronDown,
+} from "lucide-react";
 import { callApi } from "../utils/api";
+import Papa from "papaparse";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 function PaymentsPage() {
   const [data, setData] = useState({ summary: {}, transactions: [] });
@@ -7,6 +16,8 @@ function PaymentsPage() {
   const [error, setError] = useState(null);
   const [selectedPayment, setSelectedPayment] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const exportRef = useRef(null);
 
   useEffect(() => {
     const fetchPayments = async () => {
@@ -27,6 +38,26 @@ function PaymentsPage() {
     };
     fetchPayments();
   }, []);
+  useEffect(() => {
+  const handleClickOutside = (event) => {
+    if (
+      exportRef.current &&
+      !exportRef.current.contains(event.target)
+    ) {
+      setShowExportMenu(false);
+    }
+  };
+  document.addEventListener(
+    "mousedown",
+    handleClickOutside
+  );
+  return () => {
+    document.removeEventListener(
+      "mousedown",
+      handleClickOutside
+    );
+  };
+}, []);
   const handleShowDetails = (payment) => {
   setSelectedPayment(payment);
   setShowModal(true);
@@ -36,6 +67,69 @@ function PaymentsPage() {
    setShowModal(false);
    setSelectedPayment(null);
   };
+
+ const exportToCSV = () => {
+  const exportData = data.transactions.map((t) => ({
+    Student: t.userName,
+    Course: t.courseTitle,
+    TransactionID: t.transactionId || t.paymentId,
+    Date: t.purchaseDate
+      ? new Date(t.purchaseDate).toLocaleString()
+      : "Pending",
+    Amount: t.amount,
+    Status: t.status,
+  }));
+  const csv = Papa.unparse(exportData);
+  const blob = new Blob([csv], {
+    type: "text/csv;charset=utf-8;",
+  });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = "payments-report.csv";
+  link.click();
+  setShowExportMenu(false);
+};
+const exportToPDF = () => {
+  const doc = new jsPDF();
+  doc.setFontSize(18);
+  doc.text("Payments Report", 14, 20);
+  const rows = data.transactions.map((t) => [
+    t.userName,
+    t.courseTitle,
+    t.transactionId || t.paymentId,
+    t.purchaseDate
+      ? new Date(t.purchaseDate).toLocaleString()
+      : "Pending",
+    `Rs ${t.amount}`,
+    t.status,
+  ]);
+  autoTable(doc, {
+    head: [[
+      "Student",
+      "Course",
+      "Transaction ID",
+      "Date",
+      "Amount",
+      "Status",
+    ]],
+    body: rows,
+    startY: 30,
+    styles: {
+      fontSize: 8,
+      cellPadding: 3,
+    },
+    headStyles: {
+      fillColor: [20, 184, 166],
+    },
+    columnStyles: {
+      2: {
+        cellWidth: 45,
+      },
+    },
+  });
+  doc.save("payments-report.pdf");
+  setShowExportMenu(false);
+};
 
   if (loading)
     return (
@@ -73,13 +167,50 @@ function PaymentsPage() {
 
       <div className="rounded-2xl border border-border bg-card overflow-hidden">
         <div className="p-5 border-b border-border flex items-center justify-between">
-          <h3 className="text-xl font-black uppercase tracking-tight">
-            Recent Transactions
-          </h3>
-          <span className="text-[10px] font-bold text-muted bg-canvas-alt px-3 py-1 rounded-full uppercase tracking-widest">
-            Live Updates
-          </span>
-        </div>
+            <h3 className="text-xl font-black uppercase tracking-tight">
+             Recent Transactions
+            </h3>
+       <div className="flex items-center gap-3">
+              <span className="text-[10px] font-bold text-muted bg-canvas-alt px-3 py-1 rounded-full uppercase tracking-widest">
+               Live Updates
+              </span>
+    {/* EXPORT DROPDOWN */}
+     <div className="relative" ref={exportRef}>
+        <button
+          onClick={() =>
+           setShowExportMenu((prev) => !prev)
+         }
+         className="h-11 px-5 rounded-2xl border border-border bg-card flex items-center gap-3 text-sm font-black uppercase tracking-widest text-main hover:bg-canvas-alt transition-all"
+       >
+         <Download className="w-4 h-4 text-teal-500" />
+         Export
+         <ChevronDown
+           className={`w-4 h-4 transition-transform duration-200 ${
+             showExportMenu ? "rotate-180" : ""
+           }`}
+         />
+       </button>
+       {showExportMenu && (
+         <div className="absolute top-14 right-0 w-64 rounded-2xl border border-border bg-card shadow-2xl overflow-hidden z-[300] animate-in fade-in zoom-in-95 duration-200">
+           <button
+             onClick={exportToPDF}
+             className="w-full flex items-center gap-3 px-5 py-4 text-left text-sm font-bold text-main hover:bg-canvas-alt transition-all"
+           >
+             <FileText className="w-4 h-4 text-red-500" />
+             Download PDF
+           </button>
+           <button
+             onClick={exportToCSV}
+             className="w-full flex items-center gap-3 px-5 py-4 text-left text-sm font-bold text-main hover:bg-canvas-alt transition-all"
+           >
+             <FileSpreadsheet className="w-4 h-4 text-green-600" />
+             Download CSV
+           </button>
+         </div>
+       )}
+     </div>
+     </div>
+   </div>
 
         <div className="divide-y divide-border/50">
           {data.transactions.length > 0 ? (
@@ -250,5 +381,4 @@ function PaymentsPage() {
     </div>
   );
 }
-
 export default PaymentsPage;
