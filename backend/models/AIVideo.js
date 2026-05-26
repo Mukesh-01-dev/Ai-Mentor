@@ -38,6 +38,11 @@ AIVideo.init(
             type: DataTypes.STRING,
             allowNull: true,
         },
+        generationVersion: {
+            type: DataTypes.STRING,
+            allowNull: false,
+            defaultValue: "wav2lip_v1",
+        },
     },
     {
         sequelize,

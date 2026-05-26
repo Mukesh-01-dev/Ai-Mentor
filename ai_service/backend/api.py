@@ -5,6 +5,8 @@ import datetime
 import re
 import traceback
 import asyncio
+import subprocess
+import shutil
 import edge_tts
 import cloudinary
 import cloudinary.uploader
@@ -62,6 +64,20 @@ class LessonRequest(BaseModel):
 # --------------------------
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+# Wav2Lip Paths
+
+WAV2LIP_DIR = os.path.join(BASE_DIR, "backend", "Wav2Lip")
+
+WAV2LIP_CHECKPOINT = os.path.join(
+    WAV2LIP_DIR,
+    "checkpoints",
+    "wav2lip_gan.pth"
+)
+
+TEMP_DIR = os.path.join(BASE_DIR, "temp")
+
+os.makedirs(TEMP_DIR, exist_ok=True)
+
 async def generate_tts(text: str, output_file: str):
     communicate = edge_tts.Communicate(
         text=text,
@@ -83,6 +99,53 @@ def get_celebrity_video(celebrity_name: str):
         input_video = os.path.join(input_video_dir, "modi.mp4")
         print(f"🎬 Using default video: {input_video}")
         return input_video
+
+def run_wav2lip(face_video, audio_file, output_file):
+    """
+    Runs Wav2Lip inference
+    """
+
+    inference_script = os.path.join(WAV2LIP_DIR, "inference.py")
+
+    command = [
+        os.sys.executable,
+        inference_script,
+        "--checkpoint_path",
+        WAV2LIP_CHECKPOINT,
+        "--face",
+        face_video,
+        "--audio",
+        audio_file,
+        "--outfile",
+        output_file,
+        "--resize_factor",
+        "2",
+    ]
+
+    print("\n🎬 STARTING WAV2LIP...")
+    print(" ".join(command))
+
+    result = subprocess.run(
+        command,
+        capture_output=True,
+        text=True,
+        cwd=WAV2LIP_DIR
+    )
+
+    print("\n📄 WAV2LIP STDOUT:")
+    print(result.stdout)
+
+    if result.stderr:
+        print("\n⚠️ WAV2LIP STDERR:")
+        print(result.stderr)
+
+    if result.returncode != 0:
+        raise Exception("Wav2Lip inference failed")
+
+    if not os.path.exists(output_file):
+        raise Exception("Wav2Lip output video not created")
+
+    print(f"\n✅ Wav2Lip video created: {output_file}")
 
 # --------------------------
 # Serve Files
@@ -244,20 +307,40 @@ def process_lesson(data: LessonRequest, base_filename: str):
             print(f"❌ Error: Video file not found at {input_video}")
             return
 
-        # 6️⃣ Merge Video + Audio (FFmpeg)
-        ffmpeg_command = (
-            f'ffmpeg -y -stream_loop -1 -i "{input_video}" '
-            f'-i "{audio_path}" '
-            f'-map 0:v:0 -map 1:a:0 '
-            f'-c:v copy -c:a aac -shortest "{final_video}"'
-        )
+        # # 6️⃣ Merge Video + Audio (FFmpeg)
+        # ffmpeg_command = (
+        #     f'ffmpeg -y -stream_loop -1 -i "{input_video}" '
+        #     f'-i "{audio_path}" '
+        #     f'-map 0:v:0 -map 1:a:0 '
+        #     f'-c:v copy -c:a aac -shortest "{final_video}"'
+        # )
 
-        print(f"🎥 Running ffmpeg command...")
-        os.system(ffmpeg_command)
+        # print(f"🎥 Running ffmpeg command...")
+        # os.system(ffmpeg_command)
 
-        if not os.path.exists(final_video):
-            print(f"❌ FFmpeg failed — video file not found at {final_video}")
-            job_status[base_filename] = {"status": "failed"}
+        # if not os.path.exists(final_video):
+        #     print(f"❌ FFmpeg failed — video file not found at {final_video}")
+        #     job_status[base_filename] = {"status": "failed"}
+        #     return
+
+        # 6️⃣ Generate LipSynced Video using Wav2Lip
+
+        print("🎭 Starting LipSync generation...")
+
+        try:
+            run_wav2lip(
+                face_video=input_video,
+                audio_file=audio_path,
+                output_file=final_video
+            )
+
+        except Exception as wav_err:
+            print(f"❌ Wav2Lip Error: {wav_err}")
+
+            job_status[base_filename] = {
+                "status": "failed"
+            }
+
             return
 
         # 7️⃣ Upload to Cloudinary
