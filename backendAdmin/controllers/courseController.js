@@ -11,7 +11,7 @@ const VALID_STATUSES = ["published", "disabled", "deleted"];
 export const getAllCourses = async (req, res) => {
   try {
     const courses = await Course.findAll({
-      attributes: ["id", "title", "category", "priceValue", "currency", "status", "deletedAt", "createdAt", "updatedAt"],
+      attributes: ["id", "title", "category", "priceValue", "currency", "status", "createdAt", "updatedAt"],
       order: [["createdAt", "DESC"]],
     });
     res.status(200).json({ success: true, data: courses });
@@ -30,7 +30,9 @@ export const createCourse = async (req, res) => {
   try {
     const { title, category, priceValue, currency } = req.body;
     if (!title) return res.status(400).json({ success: false, message: "Title is required" });
+    const courseid=await Course.max("id")+1;
     const course = await Course.create({
+      id:courseid,
       title,
       category,
       priceValue: parseFloat(priceValue) || 0,
@@ -77,14 +79,6 @@ export const updateCourseStatus = async (req, res) => {
 
     // Update status
     course.status = status;
-
-    // Set or clear deletedAt based on status
-    if (status === "deleted") {
-      course.deletedAt = new Date();
-    } else {
-      course.deletedAt = null;
-    }
-
     await course.save();
 
     // 🔔 Create notification for the status change

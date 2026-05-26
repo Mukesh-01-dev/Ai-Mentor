@@ -1,5 +1,7 @@
 // frontend/src/context/AuthContext.jsx
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { signOut } from "firebase/auth";
+import { auth } from "../firebase"; 
 
 const AuthContext = createContext();
 
@@ -90,6 +92,13 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const logout = () => {
+
+        try {
+      await signOut(auth);
+    } catch (error) {
+      console.error("Firebase sign out error:", error);
+    }
+
     setIsAuthenticated(false);
     setUser(null);
     localStorage.removeItem('token');
