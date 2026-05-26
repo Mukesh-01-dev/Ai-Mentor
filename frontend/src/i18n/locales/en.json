@@ -16,7 +16,8 @@
     "admin": "Admin Panel",
     "account": "Account",
     "certificates": "Certificates",
-    "report": "Report"
+    "report": "Report",
+    "docs": "Documentation"
   },
   "common": {
     "cancel": "Cancel",
