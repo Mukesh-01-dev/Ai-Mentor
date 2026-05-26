@@ -37,6 +37,10 @@ ENV/
 # AI Service Specific
 outputs/
 backend/outputs/
+backend/temp/
+*.mp4
+*.wav
+*.avi
 
 # Media and Models
 
@@ -63,3 +67,5 @@ backend/outputs/
 Thumbs.db
 .vscode/
 .idea/
+
+ai_service/backend/Wav2Lip/
