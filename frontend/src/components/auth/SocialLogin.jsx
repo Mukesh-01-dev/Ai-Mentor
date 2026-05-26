@@ -13,7 +13,15 @@ const SocialLogin = () => {
     try {
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
-      const idToken = await user.getIdToken();
+      
+      let idToken;
+      try {
+        idToken = await user.getIdToken(true); 
+      } catch (tokenError) {
+        console.error("Firebase token error:", tokenError);
+        toast.error("Session expired or network issue. Please sign in again.");
+        return; // Stop execution if token fails
+      }
 
       // Call backend to exchange Google token for your JWT
       const res = await fetch(
