@@ -5,11 +5,21 @@ import { useToast } from "../context/ToastContext";
 
 function ActionMenu({ account, onAction, isSuperAdmin }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [position, setPosition] = useState({
+    top: 0,
+    left: 0,
+  });
+
+  const buttonRef = useRef(null);
   const menuRef = useRef(null);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(event.target) &&
+        !buttonRef.current?.contains(event.target)
+      ) {
         setIsOpen(false);
       }
     };
@@ -17,32 +27,93 @@ function ActionMenu({ account, onAction, isSuperAdmin }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  if (!isSuperAdmin) return <div className="text-muted flex justify-end pr-2 opacity-20"><MoreVertical className="w-5 h-5" /></div>;
+  const toggleMenu = () => {
+    if (!buttonRef.current) return;
+
+    const rect =
+      buttonRef.current.getBoundingClientRect();
+
+    const menuWidth = 220;
+    const menuHeight = 180;
+
+    let left = rect.right - menuWidth;
+    let top = rect.bottom + 10;
+
+    // prevent left overflow
+    if (left < 10) {
+      left = 10;
+    }
+
+    // open upward if no space below
+    if (
+      window.innerHeight - rect.bottom <
+      menuHeight
+    ) {
+      top =
+        rect.top -
+        menuHeight -
+        10;
+    }
+
+    setPosition({ top, left });
+
+    setIsOpen((prev) => !prev);
+  };
+
+  if (!isSuperAdmin) {
+    return (
+      <div className="flex justify-end pr-2 opacity-20">
+        <MoreVertical className="w-5 h-5 text-muted" />
+      </div>
+    );
+  }
 
   const status = account.status || "active";
 
   return (
-    <div className="relative" ref={menuRef}>
+    <>
       <button
-        onClick={() => setIsOpen(!isOpen)}
         className="p-2 rounded-xl hover:bg-canvas-alt transition-all text-muted hover:text-main"
+        ref={buttonRef}
+        onClick={toggleMenu}
       >
         <MoreVertical className="w-5 h-5" />
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-48 rounded-2xl bg-card border border-border shadow-2xl z-50 overflow-hidden py-2 animate-in fade-in zoom-in-95 duration-200">
-          <div className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-muted border-b border-border/50 mb-1">
+        <div
+          ref={menuRef}
+          style={{
+            position: "fixed",
+            top: position.top,
+            left: position.left,
+            width: "220px",
+          }}
+          className="
+            z-[9999]
+            rounded-2xl
+            bg-card
+            border
+            border-border
+            shadow-2xl
+            overflow-hidden
+            py-2
+            animate-in
+            fade-in
+            zoom-in-95
+            duration-200
+          "
+        >
+          <div className="text-center px-4 py-2 text-[10px] font-black uppercase tracking-widest text-muted border-b border-border/50">
             Actions
           </div>
-          
           {status === "active" ? (
             <button
               onClick={() => {
                 onAction(account, "on-hold");
                 setIsOpen(false);
               }}
-              className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-orange-500 hover:bg-orange-500/5 transition-all"
+              className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-orange-500 hover:bg-orange-500/5"
             >
               <UserX className="w-4 h-4" />
               Put On Hold
@@ -53,7 +124,7 @@ function ActionMenu({ account, onAction, isSuperAdmin }) {
                 onAction(account, "active");
                 setIsOpen(false);
               }}
-              className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-teal-500 hover:bg-teal-500/5 transition-all"
+              className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-teal-500 hover:bg-teal-500/5"
             >
               <UserCheck className="w-4 h-4" />
               Activate
@@ -65,14 +136,14 @@ function ActionMenu({ account, onAction, isSuperAdmin }) {
               onAction(account, "delete");
               setIsOpen(false);
             }}
-            className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-red-500 hover:bg-red-500/5 transition-all"
+            className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-red-500 hover:bg-red-500/5"
           >
             <Trash2 className="w-4 h-4" />
             Delete Account
           </button>
         </div>
       )}
-    </div>
+    </>
   );
 }
 
