@@ -22,6 +22,7 @@ const CertificatesPage = lazy(() => import("./pages/CertificatesPage"));
 const ReportPage = lazy(() => import("./pages/ReportPage"));
 const Success = lazy(() => import("./pages/Success"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const DocumentationPage = lazy(() => import("./pages/Documentation/DocumentationPage"));
 import CompleteProfilePage from "./pages/CompleteProfilePage";
 import "./App.css";
 
@@ -54,6 +55,9 @@ const App = () => {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password/:token" element={<ResetPassword />} />
         </Route>
+
+        {/* Documentation Route - Public and independent of PublicRoutes wrapper so it's accessible whether logged in or not */}
+        <Route path="/documentation" element={<DocumentationPage />} />
 
         {/* Protected routes */}
         <Route element={<ProtectedRoute />}>
