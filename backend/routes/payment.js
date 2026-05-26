@@ -1,13 +1,15 @@
 import express from "express";
 import Stripe from "stripe";
+// 1️⃣ Import the protect middleware safely
+import { protect } from "../middleware/authMiddleware.js"; 
 
 const router = express.Router();
 
 // ✅ Initialize Stripe safely
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-// ✅ CREATE CHECKOUT SESSION
-router.post("/create-checkout-session", async (req, res) => {
+// ✅ CREATE CHECKOUT SESSION (2️⃣ Added 'protect' middleware here)
+router.post("/create-checkout-session", protect, async (req, res) => {
   try {
     const { course } = req.body;
 
@@ -51,10 +53,11 @@ router.post("/create-checkout-session", async (req, res) => {
         },
       ],
 
-      // ✅ pass metadata (VERY IMPORTANT for future webhook)
+      // ✅ 3️⃣ SECURE FIX: Bind the verified user ID from JWT token to metadata
       metadata: {
         courseId: course.id.toString(),
         courseTitle: course.title,
+        userId: req.user.id.toString(), // Attaches the secure user ID from the token
       },
 
       success_url: successUrl,

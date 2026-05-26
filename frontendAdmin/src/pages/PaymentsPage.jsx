@@ -4,6 +4,9 @@ import {
   FileSpreadsheet,
   FileText,
   ChevronDown,
+  Filter,
+  CalendarDays,
+  IndianRupee,
 } from "lucide-react";
 import { callApi } from "../utils/api";
 import Papa from "papaparse";
@@ -18,6 +21,11 @@ function PaymentsPage() {
   const [showModal, setShowModal] = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
   const exportRef = useRef(null);
+
+const [showFilterMenu, setShowFilterMenu] =useState(false);
+const [filterType, setFilterType] =useState(null);
+const [activeFilter, setActiveFilter] =useState("all");
+const filterRef = useRef(null);
 
   useEffect(() => {
     const fetchPayments = async () => {
@@ -46,6 +54,13 @@ function PaymentsPage() {
     ) {
       setShowExportMenu(false);
     }
+    if (
+  filterRef.current &&
+  !filterRef.current.contains(event.target)
+  ) {
+  setShowFilterMenu(false);
+  setFilterType(null);
+ }
   };
   document.addEventListener(
     "mousedown",
@@ -131,6 +146,45 @@ const exportToPDF = () => {
   setShowExportMenu(false);
 };
 
+const filteredTransactions =
+  data.transactions.filter((t) => {
+    const amount = Number(t.amount || 0);
+    const paymentDate = new Date(t.purchaseDate);
+    const today = new Date();
+    // TODAY
+    if (activeFilter === "today") {
+      return (
+        paymentDate.toDateString() ===
+        today.toDateString()
+      );
+    }
+    // LAST 7 DAYS
+    if (activeFilter === "last7days") {
+      const last7Days = new Date();
+      last7Days.setDate(today.getDate() - 7);
+      return paymentDate >= last7Days;
+    }
+    // THIS MONTH
+    if (activeFilter === "thisMonth") {
+      return (
+        paymentDate.getMonth() ===
+          today.getMonth() &&
+        paymentDate.getFullYear() ===
+          today.getFullYear()
+      );
+    }
+    if (activeFilter === "below500") {
+      return amount < 500;
+    }
+    if (activeFilter === "between500And2000") {
+      return amount >= 500 && amount <= 2000;
+    }
+    if (activeFilter === "above2000") {
+      return amount > 2000;
+    }
+    return true;
+  });
+
   if (loading)
     return (
       <div className="p-10 text-center text-muted">Loading payments...</div>
@@ -174,6 +228,133 @@ const exportToPDF = () => {
               <span className="text-[10px] font-bold text-muted bg-canvas-alt px-3 py-1 rounded-full uppercase tracking-widest">
                Live Updates
               </span>
+              {/* FILTER DROPDOWN */}
+   <div className="relative" ref={filterRef}>
+     <button
+       onClick={() => {
+        setShowFilterMenu((prev) => !prev);
+        setFilterType(null);
+      }}
+      className="h-11 px-5 rounded-2xl border border-border bg-card flex items-center gap-3 text-sm font-black uppercase tracking-widest text-main hover:bg-canvas-alt transition-all"
+       >
+      <Filter className="w-4 h-4 text-teal-500" />
+      Filter
+     <ChevronDown
+      className={`w-4 h-4 transition-transform duration-200 ${
+        showFilterMenu ? "rotate-180" : ""
+      }`}
+    />
+  </button>
+  {showFilterMenu && (
+    <div className="absolute top-14 right-0 rounded-2xl border border-border bg-card shadow-2xl z-[400] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      {/* MAIN FILTER OPTIONS */}
+      {!filterType && (
+        <div className="flex">
+          <button
+            onClick={() => setFilterType("date")}
+            className="w-40 px-5 py-5 flex flex-col items-center justify-center gap-2 border-r border-border hover:bg-canvas-alt transition-all text-main"
+          >
+            <CalendarDays className="w-5 h-5 text-blue-500" />
+            <span className="text-xs font-black uppercase tracking-widest">
+              By Date
+            </span>
+          </button>
+          <button
+            onClick={() => setFilterType("amount")}
+            className="w-40 px-5 py-5 flex flex-col items-center justify-center gap-2 hover:bg-canvas-alt transition-all text-main"
+          >
+            <IndianRupee className="w-5 h-5 text-green-500" />
+            <span className="text-xs font-black uppercase tracking-widest">
+              By Amount
+            </span>
+          </button>
+        </div>
+      )}
+    {/* DATE FILTERS */}
+    {filterType === "date" && (
+     <div className="w-64">
+       <button
+          onClick={() => {
+          setActiveFilter("today");
+          setShowFilterMenu(false);
+        }}
+        className="w-full px-5 py-4 text-left text-sm font-bold text-main hover:bg-canvas-alt transition-all"
+       >
+         Today
+      </button>
+      <button
+         onClick={() => {
+          setActiveFilter("last7days");
+          setShowFilterMenu(false);
+        }}
+       className="w-full px-5 py-4 text-left text-sm font-bold text-main hover:bg-canvas-alt transition-all"
+      >
+       Last 7 Days
+    </button>
+     <button
+       onClick={() => {
+         setActiveFilter("thisMonth");
+         setShowFilterMenu(false);
+       }}
+       className="w-full px-5 py-4 text-left text-sm font-bold text-main hover:bg-canvas-alt transition-all"
+      >
+       This Month
+     </button>
+     <button
+        onClick={() => {
+         setActiveFilter("all");
+         setShowFilterMenu(false);
+       }}
+       className="w-full px-5 py-4 text-left text-sm font-bold text-main hover:bg-canvas-alt transition-all border-t border-border"
+      >
+       Clear Filter
+     </button>
+    </div>
+   )}
+  {/* AMOUNT FILTERS */}
+  {filterType === "amount" && (
+   <div className="w-64">
+     <button
+        onClick={() => {
+        setActiveFilter("below500");
+        setShowFilterMenu(false);
+       }}
+       className="w-full px-5 py-4 text-left text-sm font-bold text-main hover:bg-canvas-alt transition-all"
+      >
+       Below ₹500
+     </button>
+     <button
+        onClick={() => {
+          setActiveFilter("between500And2000");
+          setShowFilterMenu(false);
+        }}
+        className="w-full px-5 py-4 text-left text-sm font-bold text-main hover:bg-canvas-alt transition-all"
+      >
+      ₹500 - ₹2000
+      </button>
+      <button
+        onClick={() => {
+          setActiveFilter("above2000");
+          setShowFilterMenu(false);
+        }}
+        className="w-full px-5 py-4 text-left text-sm font-bold text-main hover:bg-canvas-alt transition-all"
+      >
+         Above ₹2000
+      </button>
+       <button
+          onClick={() => {
+          setActiveFilter("all");
+          setShowFilterMenu(false);
+        }}
+        className="w-full px-5 py-4 text-left text-sm font-bold text-main hover:bg-canvas-alt transition-all border-t border-border"
+        >
+        Clear Filter
+       </button>
+       </div>
+       )}
+    </div>
+  )}
+</div>
     {/* EXPORT DROPDOWN */}
      <div className="relative" ref={exportRef}>
         <button
@@ -214,7 +395,7 @@ const exportToPDF = () => {
 
         <div className="divide-y divide-border/50">
           {data.transactions.length > 0 ? (
-            data.transactions.map((t) => (
+            filteredTransactions.map((t) => (
              
               <div
                 key={t.paymentId}
