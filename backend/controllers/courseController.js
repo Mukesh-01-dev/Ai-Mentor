@@ -143,7 +143,19 @@ const getCourseLearningData = async (req, res) => {
     if (course.status === "deleted") {
       return res.status(404).json({ message: "Learning data not found" });
     }
+// Check if user purchased/enrolled in the course
+const purchasedCourses =
+  req.user.purchasedCourses?.map((c) => String(c.courseId)) || [];
 
+const hasAccess = purchasedCourses.includes(String(course.id));
+
+// Allow admins to access
+if (!hasAccess && req.user.role !== "admin") {
+  return res.status(403).json({
+    message: "Access denied. Please purchase/enroll in this course.",
+  });
+}
+ 
     const modules = await Module.findAll({
       where: { courseId },
       order: [["order", "ASC"], ["createdAt", "ASC"]],
@@ -174,6 +186,7 @@ const getCourseLearningData = async (req, res) => {
             playing: lesson.playing,
             type: lesson.type,
             youtubeUrl: lesson.youtubeUrl,
+            videoUrl: lesson.videoUrl,
             content: lesson.content
               ? {
                 introduction: lesson.content.introduction,
