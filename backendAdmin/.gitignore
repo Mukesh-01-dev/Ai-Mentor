@@ -11,3 +11,6 @@ dist/
 build/
 .vscode/
 .idea/
+backend/uploads/*.jpg
+backend/uploads/*.jpeg
+backend/uploads/*.png
