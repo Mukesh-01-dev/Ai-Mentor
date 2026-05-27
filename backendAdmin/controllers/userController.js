@@ -31,10 +31,7 @@ export const getAllUsers = async (req, res) => {
     });
   } catch (error) {
     console.error("GET USERS ERROR:", error);
-    res.status(500).json({
-      success: false,
-      message: "Server Error: " + error.message,
-    });
+    res.status(500).json({ success: false, message: "Server Error: " + error.message });
   }
 };
 
@@ -57,7 +54,7 @@ export const updateUserStatus = async (req, res) => {
 
     res.status(200).json({ success: true, data: user });
   } catch (error) {
-    console.error("UPDATE STATUS ERROR:", error);
+    console.error("UPDATE STATUS ERROR:", error.message || error);
     res.status(500).json({ success: false, message: "Server Error: " + error.message });
   }
 };
@@ -73,7 +70,7 @@ export const deleteUser = async (req, res) => {
     await user.destroy();
     res.status(200).json({ success: true, message: "User deleted successfully" });
   } catch (error) {
-    console.error("DELETE USER ERROR:", error);
+    console.error("DELETE USER ERROR:", error.message || error);
     res.status(500).json({ success: false, message: "Server Error: " + error.message });
   }
 };

@@ -4,24 +4,26 @@ const validate = (schema) => (req, res, next) => {
     return res.status(500).json({ message: "Internal Server Error: No schema provided" });
   }
 try {
-    schema.parse(req.body);
-    next();
-  } catch (error) {
-    
-const issues = error.issues || error.errors;
-if (issues && Array.isArray(issues)) {
+    const validationResult = schema.safeParse(req.body);
+    if (!validationResult.success) {
+      const issues = validationResult.error.issues;
+      console.error("❌ Validation Failed for body:", JSON.stringify(req.body, null, 2));
+      console.error("❌ Issues:", JSON.stringify(issues, null, 2));
+      
       return res.status(400).json({
         message: "Validation failed",
         errors: issues.map((err) => ({
-          path: err.path[0],
+          path: err.path.join('.'),
           message: err.message,
         })),
       });
     }
-console.error("❌ Validation Middleware Error:", error.message || error);
+    next();
+  } catch (error) {
+    console.error("❌ Validation Middleware Internal Error:", error);
     return res.status(500).json({ 
       message: "Internal Server Error during validation",
-      details: error.message 
+      details: error.message || "Unknown error"
     });
   }
 };

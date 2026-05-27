@@ -6,6 +6,7 @@ import {
   CreditCard,
   GraduationCap,
   LayoutDashboard,
+  MessageSquare,
   Settings,
   Users,
   Flag,
@@ -21,6 +22,7 @@ const ICONS = {
   enrollments: GraduationCap,
   payments: CreditCard,
   reports: Flag,
+  discussions: MessageSquare,
 };
 
 function AdminSidebar({

@@ -1,6 +1,8 @@
 // frontend/src/context/AuthContext.jsx
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-
+import { auth } from '../firebase.js';
+import { signOut } from 'firebase/auth';
+import { apiFetch } from '../lib/api';
 const AuthContext = createContext();
 
 export const useAuth = () => {
@@ -62,12 +64,8 @@ export const AuthProvider = ({ children }) => {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/users/profile`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
+       const response = await apiFetch('/api/users/profile');
+    if (!response) return;
       if (response.ok) {
         const userData = await response.json();
 
@@ -88,8 +86,19 @@ export const AuthProvider = ({ children }) => {
       console.error('Error fetching user profile:', error);
     }
   }, []);
+  useEffect(() => {
+  if (isAuthenticated) {
+    fetchUserProfile();
+  }
+}, [isAuthenticated, fetchUserProfile]);
+const logout = async () => {
 
-  const logout = () => {
+        try {
+      await signOut(auth);
+    } catch (error) {
+      console.error("Firebase sign out error:", error);
+    }
+
     setIsAuthenticated(false);
     setUser(null);
     localStorage.removeItem('token');

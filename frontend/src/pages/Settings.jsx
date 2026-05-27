@@ -168,10 +168,14 @@ export default function Settings() {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [profilepopup, setProfilePopup] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [confirmText, setConfirmText] = useState("");
   const [showDeletePopup, setshowDeletePopup] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [deletePopup, setDeletePopup] = useState(false);
   const [passwordData, setPasswordData] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
+  const [passwordError, setPasswordError] = useState("");
+  const [pwFocused, setPwFocused] = useState(false);
 
   /* handlers */
   const handleDeleteAccount = async () => {
@@ -180,9 +184,14 @@ export default function Settings() {
       const token = localStorage.getItem("token");
       await axios.delete("/api/users/delete-account", { headers: { Authorization: `Bearer ${token}` } });
       localStorage.removeItem("token");
-      window.location.href = "/login";
-    } catch (error) { console.error("Delete error", error); }
-    finally { setDeleting(false); }
+      setshowDeletePopup(false);
+      setDeletePopup(true);
+    } catch (error) {
+      console.error("Delete error", error);
+      toast.error(error.response?.data?.message || "Failed to delete account. Please try again.");
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const handleInputChange = (field, value) => setFormData((prev) => ({ ...prev, [field]: value }));
@@ -393,6 +402,27 @@ export default function Settings() {
     </div>
   );
 
+  // ── Password validation helper ──────────────────────────────────────────
+  const pw = passwordData.newPassword;
+  const pwChecks = {
+    minLength: pw.length >= 8,
+    uppercase: /[A-Z]/.test(pw),
+    lowercase: /[a-z]/.test(pw),
+    number:    /[0-9]/.test(pw),
+    symbol:    /[^A-Za-z0-9]/.test(pw),
+  };
+  const allPwValid = Object.values(pwChecks).every(Boolean);
+
+  // Single step-by-step hint — first failing rule in priority order
+  const pwHint =
+    pw.length === 0        ? null :
+    !pwChecks.minLength    ? "Password must be at least 8 characters" :
+    !pwChecks.uppercase    ? "Password must contain an uppercase letter" :
+    !pwChecks.lowercase    ? "Password must contain a lowercase letter" :
+    !pwChecks.number       ? "Password must contain a number" :
+    !pwChecks.symbol       ? "Password must contain a special character" :
+    null;
+
   const PasswordSecurityPanel = () => (
     <div className="w-full">
       <div className="hidden lg:block mb-8">
@@ -401,9 +431,11 @@ export default function Settings() {
       </div>
       <div className="bg-card rounded-2xl sm:rounded-[24px] shadow-[0_4px_6px_0_rgba(0,0,0,0.10),0_10px_15px_0_rgba(0,0,0,0.10)] p-4 sm:p-6 md:p-8">
         <div className="space-y-6">
+
+          {/* ── Security toggles ── */}
           {[
-            { key: "twoFactorAuth", labelKey: "settings.security.two_factor", descKey: "settings.security.two_factor_desc" },
-            { key: "loginAlerts", labelKey: "settings.security.login_alerts", descKey: "settings.security.login_alerts_desc" },
+            { key: "twoFactorAuth", labelKey: "settings.security.two_factor",  descKey: "settings.security.two_factor_desc" },
+            { key: "loginAlerts",   labelKey: "settings.security.login_alerts", descKey: "settings.security.login_alerts_desc" },
           ].map((item) => (
             <div key={item.key} className="flex items-center justify-between gap-4">
               <div className="flex-1 min-w-0">
@@ -418,50 +450,140 @@ export default function Settings() {
               </label>
             </div>
           ))}
+
+          {/* ── Change Password ── */}
           <div className="border-t border-border pt-6">
             <h3 className="text-[18px] font-semibold text-main font-[Inter] mb-4">{t("settings.security.change_password")}</h3>
             <div className="space-y-5">
+
+              {/* Current Password */}
               <div className="relative">
-                <label className="absolute -top-2 left-4 bg-card px-2 text-[14px] text-muted font-medium font-[Inter]">{t("settings.security.current_password")}</label>
-                <input type={showCurrentPassword ? "text" : "password"} value={passwordData.currentPassword}
+                <label className="absolute -top-2 left-4 bg-card px-2 text-[14px] text-muted font-medium font-[Inter]">
+                  {t("settings.security.current_password")}
+                </label>
+                <input
+                  type={showCurrentPassword ? "text" : "password"}
+                  value={passwordData.currentPassword}
                   onChange={(e) => setPasswordData((prev) => ({ ...prev, currentPassword: e.target.value }))}
-                  className="w-full h-[50px] px-4 pr-12 rounded-xl border border-border text-[16px] font-[Inter] focus:ring-2 focus:ring-primary focus:border-primary bg-input text-main" />
-                <button type="button" onClick={() => setShowCurrentPassword(!showCurrentPassword)} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted hover:text-main">
+                  className="w-full h-[50px] px-4 pr-12 rounded-xl border border-border text-[16px] font-[Inter] focus:ring-2 focus:ring-primary focus:border-primary bg-input text-main transition-colors"
+                />
+                <button type="button" onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-main transition-colors">
                   {showCurrentPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
+
+              {/* New Password + single step-by-step hint */}
+              <div>
+                <div className="relative">
+                  <label className="absolute -top-2 left-4 bg-card px-2 text-[14px] text-muted font-medium font-[Inter]">
+                    {t("settings.security.new_password")}
+                  </label>
+                  <input
+                    type={showNewPassword ? "text" : "password"}
+                    value={pw}
+                    onFocus={() => setPwFocused(true)}
+                    onBlur={() => setPwFocused(false)}
+                    onChange={(e) => {
+                      setPasswordData((prev) => ({ ...prev, newPassword: e.target.value }));
+                      setPasswordError("");
+                    }}
+                    className={`w-full h-[50px] px-4 pr-12 rounded-xl border text-[16px] font-[Inter] focus:ring-2 focus:ring-primary focus:border-primary bg-input text-main transition-colors ${
+                      pw.length > 0 && !allPwValid
+                        ? "border-orange-400 dark:border-orange-500"
+                        : pw.length > 0 && allPwValid
+                        ? "border-[#00BEA5]"
+                        : "border-border"
+                    }`}
+                  />
+                  <button type="button" onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-main transition-colors">
+                    {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+
+                {/* ── Single inline hint ── */}
+                <div className={`overflow-hidden transition-all duration-200 ease-in-out ${pwHint ? "max-h-8 opacity-100 mt-1.5" : "max-h-0 opacity-0 mt-0"}`}>
+                  <p className="text-[12px] text-orange-500 dark:text-orange-400 font-[Inter] pl-1">
+                    {pwHint}
+                  </p>
+                </div>
+              </div>
+
+              {/* Confirm Password */}
               <div className="relative">
-                <label className="absolute -top-2 left-4 bg-card px-2 text-[14px] text-muted font-medium font-[Inter]">{t("settings.security.new_password")}</label>
-                <input type={showNewPassword ? "text" : "password"} value={passwordData.newPassword}
-                  onChange={(e) => setPasswordData((prev) => ({ ...prev, newPassword: e.target.value }))}
-                  className="w-full h-[50px] px-4 pr-12 rounded-xl border border-border text-[16px] font-[Inter] focus:ring-2 focus:ring-primary focus:border-primary bg-input text-main" />
-                <button type="button" onClick={() => setShowNewPassword(!showNewPassword)} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted hover:text-main">
-                  {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                <label className="absolute -top-2 left-4 bg-card px-2 text-[14px] text-muted font-medium font-[Inter]">
+                  {t("settings.security.confirm_password")}
+                </label>
+                <input
+                  type={showConfirmPassword ? "text" : "password"}
+                  autoComplete="new-password"
+                  value={passwordData.confirmPassword}
+                  onChange={(e) => {
+                    setPasswordData((prev) => ({ ...prev, confirmPassword: e.target.value }));
+                    setPasswordError("");
+                  }}
+                  className={`w-full h-[50px] px-4 pr-12 rounded-xl border text-[16px] font-[Inter] focus:ring-2 focus:ring-primary focus:border-primary bg-input text-main transition-colors ${
+                    passwordData.confirmPassword.length > 0
+                      ? passwordData.confirmPassword === pw
+                        ? "border-[#00BEA5]"
+                        : "border-red-400 dark:border-red-500"
+                      : "border-border"
+                  }`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-main transition-colors"
+                >
+                  {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
-              <div className="relative">
-                <label className="absolute -top-2 left-4 bg-card px-2 text-[14px] text-muted font-medium font-[Inter]">{t("settings.security.confirm_password")}</label>
-                <input type="password" autoComplete="new-password" value={passwordData.confirmPassword}
-                  onChange={(e) => setPasswordData((prev) => ({ ...prev, confirmPassword: e.target.value }))}
-                  className="w-full h-[50px] px-4 rounded-xl border border-border text-[16px] font-[Inter] focus:ring-2 focus:ring-primary focus:border-primary bg-input text-main" />
-              </div>
+
             </div>
           </div>
         </div>
+
+        {/* ── Action buttons ── */}
         <div className="flex flex-col-reverse sm:flex-row justify-end gap-4 pt-6 border-t border-border mt-6">
-          <button type="button" className="h-[50px] px-6 rounded-xl border border-border bg-card text-main text-[16px] font-medium font-[Inter] hover:bg-canvas-alt">{t("common.cancel")}</button>
-          <button onClick={async () => {
-            if (!passwordData.currentPassword || !passwordData.newPassword) { toast.error("Please fill all fields!"); return; }
-            if (passwordData.newPassword !== passwordData.confirmPassword) { toast.error("New passwords do not match!"); return; }
-            setLoading(true);
-            try {
-              const token = localStorage.getItem("token");
-              await axios.put("/api/users/change-password", { currentPassword: passwordData.currentPassword, newPassword: passwordData.newPassword }, { headers: { Authorization: `Bearer ${token}` } });
-              toast.success("Password updated successfully!");
-              setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
-            } catch (error) { toast.error(error.response?.data?.message || "Failed to update password"); }
-            finally { setLoading(false); }
-          }} disabled={loading} className="h-[50px] px-6 rounded-xl bg-[#00BEA5] text-white text-[16px] font-medium font-[Inter] hover:opacity-90 disabled:opacity-50">
+          <button
+            type="button"
+            className="h-[50px] px-6 rounded-xl border border-border bg-card text-main text-[16px] font-medium font-[Inter] hover:bg-canvas-alt transition-colors"
+          >
+            {t("common.cancel")}
+          </button>
+          <button
+            onClick={async () => {
+              if (!passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
+                toast.error("Please fill all fields!");
+                return;
+              }
+              if (passwordData.newPassword !== passwordData.confirmPassword) {
+                toast.error("New passwords do not match!");
+                return;
+              }
+              if (!allPwValid) {
+                toast.error("Password does not meet all requirements.");
+                return;
+              }
+              setLoading(true);
+              try {
+                const token = localStorage.getItem("token");
+                await axios.put("/api/users/change-password",
+                  { currentPassword: passwordData.currentPassword, newPassword: passwordData.newPassword },
+                  { headers: { Authorization: `Bearer ${token}` } }
+                );
+                toast.success("Password updated successfully!");
+                setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
+              } catch (error) {
+                toast.error(error.response?.data?.message || "Failed to update password");
+              } finally {
+                setLoading(false);
+              }
+            }}
+            disabled={loading}
+            className="h-[50px] px-6 rounded-xl bg-[#00BEA5] text-white text-[16px] font-medium font-[Inter] hover:opacity-90 disabled:opacity-50 transition-opacity"
+          >
             {loading ? t("common.saving") : t("common.save_changes")}
           </button>
         </div>
@@ -724,6 +846,28 @@ const renderPanel = (key) => {
             </div>
             <h2 className="text-2xl font-bold bg-gradient-to-r from-emerald-500 to-teal-500 bg-clip-text text-transparent mb-3">Profile Updated Successfully!</h2>
             <button onClick={() => setProfilePopup(false)} className="px-8 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-2xl font-semibold shadow-lg hover:scale-105 transition-all duration-300">Ok</button>
+          </div>
+        </div>
+      )}
+
+      {/* ── ACCOUNT DELETED POPUP ── */}
+      {deletePopup && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[240] animate-fadeIn p-4">
+          <div className="relative bg-gradient-to-br from-white to-slate-100 dark:from-slate-800 dark:to-slate-900 rounded-3xl p-6 sm:p-10 w-[90vw] max-w-[420px] text-center shadow-2xl border border-slate-200 dark:border-slate-700">
+            <div className="mx-auto mb-6 w-20 h-20 flex items-center justify-center rounded-full bg-gradient-to-r from-red-400 to-rose-500 shadow-lg animate-bounce">
+              <span className="text-4xl text-white">✓</span>
+            </div>
+            <h2 className="text-2xl font-bold bg-gradient-to-r from-red-500 to-rose-500 bg-clip-text text-transparent mb-3">Account Deleted Successfully!</h2>
+            <p className="text-muted mb-6 text-sm font-[Inter]">Your account and all associated data have been permanently removed.</p>
+            <button
+              onClick={() => {
+                setDeletePopup(false);
+                window.location.href = "/login";
+              }}
+              className="px-8 py-3 bg-gradient-to-r from-red-500 to-rose-500 text-white rounded-2xl font-semibold shadow-lg hover:scale-105 transition-all duration-300"
+            >
+              Ok
+            </button>
           </div>
         </div>
       )}
