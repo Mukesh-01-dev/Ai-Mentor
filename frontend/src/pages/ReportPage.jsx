@@ -40,7 +40,7 @@ const ReportPage = () => {
 
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`${API_BASE_URL}/api/coures-reports`, {
+      const response = await fetch(`${API_BASE_URL}/api/courses-reports`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

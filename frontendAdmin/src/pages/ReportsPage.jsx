@@ -145,7 +145,7 @@ function ReportsPage() {
       setError(null);
       
       const [courseRes, communityRes] = await Promise.allSettled([
-        callApi("/admin/coures-reports"),
+        callApi("/admin/courses-reports"),
         callApi("/admin/reports")
       ]);
 

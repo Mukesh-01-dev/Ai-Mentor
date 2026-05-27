@@ -6,7 +6,7 @@ CourseReports.belongsTo(User, {
   as: "user",
 });
 
-export const getAllCouresReports = async (req, res) => {
+export const getAllCoursesReports = async (req, res) => {
   try {
     const reports = await CourseReports.findAll({
       include: [

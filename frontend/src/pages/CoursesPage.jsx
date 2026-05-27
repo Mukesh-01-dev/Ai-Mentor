@@ -303,7 +303,7 @@ const CoursesPage = () => {
     const handleReportSubmit = async () => {
         try {
             setReportLoading(true);
-            const res = await fetch("http://localhost:5000/api/coures-reports", {
+            const res = await fetch("http://localhost:5000/api/courses-reports", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
