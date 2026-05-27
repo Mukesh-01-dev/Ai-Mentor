@@ -226,10 +226,12 @@ const getStatsCards = async (req, res) => {
     const totalCourses = await Course.count();
 
     res.json({
-      totalCourses,
-      completedCourses: 0,
-      hoursLearned: 0,
-      certificates: 0,
+      statsCards: [
+        { label: "Total Courses",     value: totalCourses },
+        { label: "Completed Courses", value: 0 },
+        { label: "Hours Learned",     value: 0 },
+        { label: "Certificates",      value: 0 },
+      ],
     });
   } catch (error) {
     console.error("GET STATS CARDS ERROR:", error);
