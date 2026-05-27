@@ -76,8 +76,12 @@ const Dashboard = () => {
   }, []);
 
   const calculateStats = () => {
-    console.log("Calculating stats with user:", user);
-    console.log("coursesData:", coursesData);
+    const baseCards = [
+      { icon: <Play className="w-5 h-5 text-blue-600" />,      label: "Ongoing Courses", change: "+0%", bgColor: "bg-blue-50",   iconBg: "bg-blue-100" },
+      { icon: <CheckCircle className="w-5 h-5 text-green-600" />, label: "Completed",      change: "+0",  bgColor: "bg-green-50",  iconBg: "bg-green-100" },
+      { icon: <Award className="w-5 h-5 text-purple-600" />,   label: "Certificates",    change: "+0",  bgColor: "bg-purple-50", iconBg: "bg-purple-100" },
+      { icon: <Clock className="w-5 h-5 text-orange-600" />,   label: "Hours Spent",     change: "+0h", bgColor: "bg-orange-50", iconBg: "bg-orange-100" },
+    ];
 
     if (
       !user?.purchasedCourses ||
@@ -85,38 +89,10 @@ const Dashboard = () => {
       coursesData.statsCards.length < 4
     ) {
       return [
-        {
-          icon: <Play className="w-5 h-5 text-blue-600" />,
-          value: "0",
-          label: "Ongoing Courses",
-          change: "+0%",
-          bgColor: "bg-blue-50",
-          iconBg: "bg-blue-100",
-        },
-        {
-          icon: <CheckCircle className="w-5 h-5 text-green-600" />,
-          value: "0",
-          label: "Completed",
-          change: "+0",
-          bgColor: "bg-green-50",
-          iconBg: "bg-green-100",
-        },
-        {
-          icon: <Award className="w-5 h-5 text-purple-600" />,
-          value: "0",
-          label: "Certificates",
-          change: "+0",
-          bgColor: "bg-purple-50",
-          iconBg: "bg-purple-100",
-        },
-        {
-          icon: <Clock className="w-5 h-5 text-orange-600" />,
-          value: "0h",
-          label: "Hours Spent",
-          change: "+0h",
-          bgColor: "bg-orange-50",
-          iconBg: "bg-orange-100",
-        },
+        { ...baseCards[0], value: "0" },
+        { ...baseCards[1], value: "0" },
+        { ...baseCards[2], value: "0" },
+        { ...baseCards[3], value: "0h" },
       ];
     }
 
@@ -149,22 +125,10 @@ const Dashboard = () => {
     });
 
     const result = [
-      {
-        ...coursesData.statsCards[0],
-        value: coursesInProgress.toString(),
-      },
-      {
-        ...coursesData.statsCards[1],
-        value: completedCourses.toString(),
-      },
-      {
-        ...coursesData.statsCards[2],
-        value: certificates.toString(),
-      },
-      {
-        ...coursesData.statsCards[3],
-        value: `${totalHours}h`,
-      },
+      { ...baseCards[0], value: coursesInProgress.toString() },
+      { ...baseCards[1], value: completedCourses.toString() },
+      { ...baseCards[2], value: certificates.toString() },
+      { ...baseCards[3], value: `${totalHours}h` },
     ];
 
     console.log("Calculated stats result:", result);

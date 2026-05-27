@@ -120,6 +120,15 @@ const startServer = async () => {
     const isDevelopment = process.env.NODE_ENV !== "production";
     const syncOptions = {}; // Disabled alter: true to fix index already exists crash
     await sequelize.sync(syncOptions);
+
+    // Manually add missing columns that alter:true would break
+    try {
+      await sequelize.query(`ALTER TABLE "Courses" ADD COLUMN IF NOT EXISTS "isBookmarked" BOOLEAN DEFAULT false;`);
+      console.log("✅ isBookmarked column ensured");
+    } catch (e) {
+      // Column already exists or non-critical error
+    }
+
     console.log("✅ Database models synced");
 
     app.listen(PORT, () => {
