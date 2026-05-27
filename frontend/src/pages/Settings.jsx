@@ -171,6 +171,7 @@ export default function Settings() {
   const [confirmText, setConfirmText] = useState("");
   const [showDeletePopup, setshowDeletePopup] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [deletePopup, setDeletePopup] = useState(false);
   const [passwordData, setPasswordData] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
 
   /* handlers */
@@ -180,9 +181,14 @@ export default function Settings() {
       const token = localStorage.getItem("token");
       await axios.delete("/api/users/delete-account", { headers: { Authorization: `Bearer ${token}` } });
       localStorage.removeItem("token");
-      window.location.href = "/login";
-    } catch (error) { console.error("Delete error", error); }
-    finally { setDeleting(false); }
+      setshowDeletePopup(false);
+      setDeletePopup(true);
+    } catch (error) {
+      console.error("Delete error", error);
+      toast.error(error.response?.data?.message || "Failed to delete account. Please try again.");
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const handleInputChange = (field, value) => setFormData((prev) => ({ ...prev, [field]: value }));
@@ -724,6 +730,28 @@ const renderPanel = (key) => {
             </div>
             <h2 className="text-2xl font-bold bg-gradient-to-r from-emerald-500 to-teal-500 bg-clip-text text-transparent mb-3">Profile Updated Successfully!</h2>
             <button onClick={() => setProfilePopup(false)} className="px-8 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-2xl font-semibold shadow-lg hover:scale-105 transition-all duration-300">Ok</button>
+          </div>
+        </div>
+      )}
+
+      {/* ── ACCOUNT DELETED POPUP ── */}
+      {deletePopup && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[240] animate-fadeIn p-4">
+          <div className="relative bg-gradient-to-br from-white to-slate-100 dark:from-slate-800 dark:to-slate-900 rounded-3xl p-6 sm:p-10 w-[90vw] max-w-[420px] text-center shadow-2xl border border-slate-200 dark:border-slate-700">
+            <div className="mx-auto mb-6 w-20 h-20 flex items-center justify-center rounded-full bg-gradient-to-r from-red-400 to-rose-500 shadow-lg animate-bounce">
+              <span className="text-4xl text-white">✓</span>
+            </div>
+            <h2 className="text-2xl font-bold bg-gradient-to-r from-red-500 to-rose-500 bg-clip-text text-transparent mb-3">Account Deleted Successfully!</h2>
+            <p className="text-muted mb-6 text-sm font-[Inter]">Your account and all associated data have been permanently removed.</p>
+            <button
+              onClick={() => {
+                setDeletePopup(false);
+                window.location.href = "/login";
+              }}
+              className="px-8 py-3 bg-gradient-to-r from-red-500 to-rose-500 text-white rounded-2xl font-semibold shadow-lg hover:scale-105 transition-all duration-300"
+            >
+              Ok
+            </button>
           </div>
         </div>
       )}
