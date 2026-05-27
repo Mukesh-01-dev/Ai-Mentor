@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import {
   Search,
-  Bell,
   Clock,
   CheckCircle,
   TrendingUp,
@@ -11,6 +10,7 @@ import {
   Play,
   MoreVertical,
   ChevronDown,
+  RotateCcw,
 } from "lucide-react";
 import API_BASE_URL from "../lib/api";
 
@@ -31,35 +31,34 @@ const WatchedVideos = () => {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchWatchedVideos = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        const response = await fetch(
-          `${API_BASE_URL}/api/users/watched-videos`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-        const data = await response.json();
 
-        if (response.ok) {
-          setVideoData(data.videos);
-          setMetrics(data.metrics);
-          setCourses(data.courses || []);
-        } else {
-          console.error("Error fetching watched videos:", data.message);
-        }
-      } catch (error) {
-        console.error("Error fetching watched videos:", error);
-      } finally {
-        setLoading(false);
+  const fetchWatchedVideos = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${API_BASE_URL}/api/users/watched-videos`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setVideoData(data.videos);
+        setMetrics(data.metrics);
+        setCourses(data.courses || []);
+      } else {
+        console.error("Error fetching watched videos:", data.message);
+        setError("Failed to load watched videos.");
       }
-    };
+    } catch (err) {
+      console.error("Error fetching watched videos:", err);
+      setError("Failed to load watched videos. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchWatchedVideos();
   }, []);
 
@@ -88,6 +87,17 @@ const WatchedVideos = () => {
         } ago`;
     return date.toLocaleDateString();
   };
+
+ const handleResume = (video) => {
+    navigate(`/learning/${video.courseId}`, {
+      state: { lessonId: video.lessonId },
+    });
+  };
+
+  const continueWatching = [...videoData]
+    .filter((v) => v.status === "in-progress")
+    .sort((a, b) => new Date(b.lastWatched) - new Date(a.lastWatched))
+    .slice(0, 6);
 
   // Filtered videos based on search and filters
   const filteredVideos = videoData.filter((video) => {
@@ -191,6 +201,84 @@ const WatchedVideos = () => {
     </div>
   );
 
+
+  // ── Continue Watching horizontal strip ────────────────────────────────────
+  const ContinueWatchingSection = () => {
+    if (continueWatching.length === 0) return null;
+    return (
+      <section className="mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-main text-xl font-bold flex items-center gap-2">
+            <Play className="w-5 h-5 text-orange-500 fill-orange-500" />
+            Continue Watching
+          </h2>
+          {continueWatching.length >= 4 && (
+            <button
+              className="text-sm text-blue-600 hover:underline flex items-center gap-1"
+              onClick={() => setStatusFilter("In Progress")}
+            >
+              See all <ChevronRight className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {continueWatching.map((video) => (
+            <div
+              key={video.id}
+              className="bg-card rounded-xl border border-border shadow-sm overflow-hidden flex flex-col"
+            >
+              {/* Thumbnail */}
+              <div className="relative">
+                <img
+                  src={video.thumbnail}
+                  alt={video.title}
+                  className="w-full h-40 object-cover"
+                />
+                {/* Play overlay */}
+                <button
+                  onClick={() => handleResume(video)}
+                  className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 hover:opacity-100 transition-opacity"
+                >
+                  <div className="w-12 h-12 bg-orange-500 rounded-full flex items-center justify-center shadow-lg">
+                    <Play className="w-5 h-5 text-white fill-white ml-0.5" />
+                  </div>
+                </button>
+                <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-sm text-white text-xs px-2 py-1 rounded">
+                  {video.duration}
+                </div>
+                {/* Progress bar */}
+                <div className="absolute bottom-0 left-0 w-full h-1.5 bg-gray-300 dark:bg-gray-700">
+                  <div
+                    className="h-full bg-orange-500 transition-all"
+                    style={{ width: `${video.progress}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Info */}
+              <div className="p-4 flex flex-col flex-1">
+                <h3 className="text-main text-sm font-semibold mb-0.5 line-clamp-1">{video.title}</h3>
+                <p className="text-muted text-xs mb-3">{video.course}</p>
+                <div className="flex justify-between text-xs text-muted mb-3">
+                  <span className="text-orange-500 font-medium">{video.progress}% complete</span>
+                  <span>{formatLastWatched(video.lastWatched)}</span>
+                </div>
+                <button
+                  onClick={() => handleResume(video)}
+                  className="mt-auto w-full h-9 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                >
+                  <Play className="w-4 h-4 fill-white" />
+                  Resume
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+    );
+  };
+
   const SearchAndFilters = () => (
     <div className="bg-card rounded-xl border border-border p-4 md:p-6 shadow-sm mb-6 lg:mb-8">
       <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
@@ -239,6 +327,13 @@ const WatchedVideos = () => {
             <option value="Title A-Z">{t("watched.title_az")}</option>
             <option value="Title Z-A">{t("watched.title_za")}</option>
           </select>
+          <button
+            onClick={() => { setLoading(true); fetchWatchedVideos(); }}
+            title="Refresh history"
+            className="h-[43px] w-[43px] flex items-center justify-center border border-border rounded-lg bg-card text-muted hover:text-main hover:bg-canvas-alt transition-colors shrink-0"
+          >
+            <RotateCcw className="w-4 h-4" />
+          </button>
         </div>
       </div>
     </div>
@@ -292,18 +387,22 @@ const WatchedVideos = () => {
 
         {/* Action Buttons */}
         <div className="flex gap-2">
-          <button
-            className={`flex-1 h-10 rounded-lg text-sm font-medium ${video.status === "completed"
+        <button
+            className={`flex-1 h-10 rounded-lg text-sm font-medium flex items-center justify-center gap-2 ${
+              video.status === "completed"
                 ? "bg-canvas text-main hover:bg-canvas-alt"
-                : "bg-orange-500 text-white"
-              }`}
-            // --- VIDEO RESUME NAVIGATION FOR THE TEAM ---
-            // When the user clicks Resume, we navigate them to the course URL but WE ALSO PASS STATE.
-            // LearningPage uses `location.state.lessonId` to override the default course progression
-            // and forcefully jump the user to this specific video instead.
-            onClick={() => navigate(`/learning/${video.courseId}`, { state: { lessonId: video.lessonId } })}
+                : "bg-orange-500 hover:bg-orange-600 text-white"
+            }`}
+            onClick={() => handleResume(video)}
           >
-            {video.status === "completed" ? t("watched.rewatch") : t("watched.resume")}
+            {video.status === "completed" ? (
+              <>{t("watched.rewatch")}</>
+            ) : (
+              <>
+                <Play className="w-4 h-4 fill-white" />
+                {t("watched.resume")}
+              </>
+            )}
           </button>
           <button
             className="w-7 h-10 flex items-center justify-center text-muted hover:text-main"
@@ -336,18 +435,29 @@ const WatchedVideos = () => {
             </p>
           </div>
 
-          {/* Metrics Cards */}
-          <MetricsCards />
+        <MetricsCards />
+        <ContinueWatchingSection />
+        <SearchAndFilters />
+        <h2 className="text-main text-lg font-bold mb-4">
+          All Watch History
+          <span className="ml-2 text-sm font-normal text-muted">
+            ({sortedVideos.length} video{sortedVideos.length !== 1 ? "s" : ""})
+          </span>
+        </h2>
 
-          {/* Search and Filters */}
-          <SearchAndFilters />
-
-          {/* Video Grid */}
+        {sortedVideos.length === 0 ? (
+          <div className="text-center py-16 text-muted">
+            <Clock className="w-12 h-12 mx-auto mb-4 opacity-30" />
+            <p className="text-lg font-medium">No watch history yet</p>
+            <p className="text-sm mt-1">Start watching a course to see your history here.</p>
+          </div>
+        ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4 md:gap-6">
             {sortedVideos.map((video) => (
               <VideoCard key={video.id} video={video} />
             ))}
           </div>
+        )}
         </main>
     </>
   );

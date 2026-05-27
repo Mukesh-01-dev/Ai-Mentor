@@ -20,11 +20,6 @@ const Course = sequelize.define(
         isIn: [["published", "disabled", "deleted"]],
       },
     },
-    deletedAt: {
-      type: DataTypes.DATE,
-      allowNull: true,
-      defaultValue: null,
-    },
   },
   {
     timestamps: true,

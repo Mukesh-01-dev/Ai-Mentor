@@ -21,17 +21,21 @@ export const purchaseCourseSchema = z.object({
 });
 
 export const courseProgressSchema = z.object({
-  courseId: z.union([z.string(), z.number()]).transform((val) => Number(val)),
+  courseId: z.union([z.string(), z.number()])
+    .transform((val) => Number(val)),
+
   lessonData: z.object({
-    lessonId: z.string().min(1, "Lesson ID is required"),
+    lessonId: z.union([z.string(), z.number()]),
     data: z.any(),
   }).optional(),
+
   currentLesson: z.object({
-    lessonId: z.string().min(1, "Lesson ID is required"),
+    lessonId: z.union([z.string(), z.number()]),
     moduleTitle: z.string().optional(),
   }).optional(),
+
   completedLesson: z.object({
-    lessonId: z.string().min(1, "Lesson ID is required"),
+    lessonId: z.union([z.string(), z.number()]),
     completedAt: z.string().or(z.date()).optional(),
   }).optional(),
 });

@@ -14,8 +14,6 @@ const Lesson = sequelize.define("Lesson", {
 
     title: DataTypes.STRING,
     duration: DataTypes.STRING,
-    completed: DataTypes.BOOLEAN,
-    playing: DataTypes.BOOLEAN,
     type: DataTypes.STRING,
     youtubeUrl: DataTypes.STRING,
     order: DataTypes.INTEGER

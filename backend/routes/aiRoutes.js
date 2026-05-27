@@ -5,6 +5,7 @@ import validate from "../middleware/validate.js";
 import { generateVideoSchema } from "../schemas/aiSchema.js";
 import { getCourseAndLessonTitles } from "../controllers/courseController.js";
 import Preferences from "../models/Preference.js";
+//import { videoQueue } from "../queues/videoQueue.js";
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -33,8 +34,6 @@ router.post("/generate-video", protect, validate(generateVideoSchema), async (re
     });
 
     if (cachedVideo) {
-      console.log("🎯 Cache found. Verifying file exists...");
-      // If already a trusted Cloudinary URL, return it directly — no local check needed
       let parsedUrl;
       try {
         parsedUrl = new URL(cachedVideo.videoUrl);
@@ -46,7 +45,6 @@ router.post("/generate-video", protect, validate(generateVideoSchema), async (re
         parsedUrl.protocol === "https:" &&
         parsedUrl.hostname.endsWith("res.cloudinary.com")
       ) {
-        console.log("✅ Trusted Cloudinary URL found. Serving directly.");
         return res.json({
           videoUrl: cachedVideo.videoUrl,
           transcriptName: cachedVideo.transcriptName,
@@ -97,58 +95,27 @@ router.post("/generate-video", protect, validate(generateVideoSchema), async (re
       ? userPreferencesRecord.toJSON()
       : null;
 
-    // Call AI service
-    console.log("🤖 Cache miss. Calling AI service for:", celebrity);
-
-    console.log("📤 Sending preferences to AI service:");
-    console.log(userPreferences);
-
-
-    const aiResponse = await fetch(
-      `${process.env.AI_SERVICE_URL}/generate`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          course: courseTitle,
-          topic: lessonTitle,
-          celebrity,
-          preferences: userPreferences,   // 👈 NEW
-        }),
-      }
-    );
-
-    if (!aiResponse.ok) {
-      const errorText = await aiResponse.text();
-
-      console.error("❌ AI SERVICE RESPONSE:", errorText);
-
-      return res.status(500).json({
-        message: "AI service failed",
-        aiError: errorText,
-      });
-    }
-
-    const { filename, text_file, jobId } = await aiResponse.json();
-
-    const videoUrl = `/api/ai/video/${courseId}/${filename}`;
-
-    // Save to Cache
-    await AIVideo.create({
-      courseId: Number(courseId),
-      lessonId: String(lessonId),
-      celebrity: String(celebrity).toLowerCase(),
-      videoUrl,
-      transcriptName: text_file,
-      jobId,
-    });
-
-    res.json({
-      videoUrl,
-      transcriptName: text_file,
-      jobId,
-      cached: false,
-    });
+  
+    // Added to queue instead of blocking the request
+//     const job = await videoQueue.add("generate-video", {
+//       courseId,
+//       lessonId,
+//       celebrity,
+//       courseTitle,
+//       lessonTitle,
+//       userPreferences,
+//     });
+//
+//     console.log(`📥 Job added to queue: ${job.id}`);
+//
+//     res.json({
+//       jobId: job.id,
+//       status: "processing",
+//       message: "Video generation started",
+//     });
+       
+    // Temporary fallback response since videoQueue is disabled
+    return res.status(501).json({ message: "Video generation is temporarily disabled." });
 
   } catch (error) {
     console.error("AI GENERATE ERROR:", error);

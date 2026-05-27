@@ -22,7 +22,7 @@ import paymentRoutes from "./routes/payment.js";
 import razorpayRoutes from "./routes/razorpay.js";
 import preferenceRoutes from "./routes/preferenceRoutes.js";
 import contactUsRoutes from "./routes/contactus.js"; // ✅ fixed import
-import reportRoutes from "../backend/routes/reportRoutes.js";
+import reportRoutes from "./routes/reportRoutes.js";
 import docsRoutes from "./routes/docsRoutes.js";
 
 // ================= MODELS =================

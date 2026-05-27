@@ -37,7 +37,7 @@ router.route("/my-courses").get(protect, getMyCourses);
 router.route("/stats/cards").get(protect, getStatsCards);
 
 // COURSE LEARNING
-router.route("/:id/learning").get(getCourseLearningData);
+router.route("/:id/learning").get(protect, getCourseLearningData);
 
 // DYNAMIC (ALWAYS LAST)
 router.route("/:id").get(getCourseById);
