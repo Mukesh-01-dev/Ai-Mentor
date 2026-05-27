@@ -1,5 +1,6 @@
 # backend/api.py
-
+import whisper
+import json
 import os
 import datetime
 import re
@@ -47,6 +48,7 @@ app.add_middleware(
 # Gemini Client
 # --------------------------
 client = genai.Client(api_key=GEMINI_API_KEY)
+whisper_model = whisper.load_model("base")
 
 # --------------------------
 # Request Model
@@ -55,12 +57,14 @@ class LessonRequest(BaseModel):
     course: str
     topic: str
     celebrity: str
-    preferences: dict | None = None   # 👈 NEW
+    preferences: dict | None = None
+
 
 # --------------------------
 # Helpers
 # --------------------------
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 
 async def generate_tts(text: str, output_file: str):
     communicate = edge_tts.Communicate(
@@ -71,23 +75,23 @@ async def generate_tts(text: str, output_file: str):
     )
     await communicate.save(output_file)
 
+
 def get_celebrity_video(celebrity_name: str):
     input_video_dir = os.path.join(BASE_DIR, "backend", "input")
     celebrity_video = os.path.join(input_video_dir, f"{celebrity_name.lower()}.mp4")
-    
+
     if os.path.exists(celebrity_video):
         print(f"🎬 Using celebrity video: {celebrity_video}")
         return celebrity_video
     else:
-        # Fallback to default video (modi.mp4)
         input_video = os.path.join(input_video_dir, "modi.mp4")
         print(f"🎬 Using default video: {input_video}")
         return input_video
 
+
 # --------------------------
 # Serve Files
 # --------------------------
-
 base_output_path = os.path.join(BASE_DIR, "outputs")
 video_output_path = os.path.join(base_output_path, "video")
 text_output_path = os.path.join(base_output_path, "text")
@@ -98,12 +102,14 @@ os.makedirs(text_output_path, exist_ok=True)
 app.mount("/video-stream", StaticFiles(directory=video_output_path), name="video-stream")
 app.mount("/transcript-stream", StaticFiles(directory=text_output_path), name="transcript-stream")
 
+
 # --------------------------
 # Root Route
 # --------------------------
 @app.get("/")
 def home():
     return {"message": "AI Lesson Generator Backend Running"}
+
 
 @app.get("/transcript/{filename}")
 def get_transcript(filename: str):
@@ -114,39 +120,49 @@ def get_transcript(filename: str):
         return {"content": content}
     return {"error": "Transcript not found"}
 
+
+@app.get("/captions/{filename}")
+def get_captions(filename: str):
+    file_path = os.path.join(BASE_DIR, "outputs", "text", filename)
+    if os.path.exists(file_path):
+        with open(file_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return {"error": "Captions not found"}
+
+
 @app.get("/status/{job_id}")
 def get_status(job_id: str):
     status_data = job_status.get(job_id, {"status": "not_found"})
-    # Backward compat: handle old string-based entries
     if isinstance(status_data, str):
         return {"status": status_data}
     return status_data
 
+
 # --------------------------
 # Generate Lesson Endpoint
 # --------------------------
-
 job_status = {}
+
 
 @app.post("/generate")
 def generate_lesson(data: LessonRequest, background_tasks: BackgroundTasks):
-    # Generate filename here so we can return it immediately
     topic_clean = re.sub(r'[^\w\s-]', '', data.topic).strip().replace(" ", "_")
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     base_filename = f"{topic_clean}_{timestamp}"
-    
+
     job_status[base_filename] = {"status": "processing"}
 
-    # Run as a background task to avoid timeout issues
     background_tasks.add_task(process_lesson, data, base_filename)
-    
+
     return {
         "status": "Processing",
         "filename": f"{base_filename}.mp4",
         "text_file": f"{base_filename}.txt",
+        "captions_file": f"{base_filename}.json",
         "audio_file": f"{base_filename}.mp3",
         "jobId": base_filename
     }
+
 
 # --------------------------
 # Background Task Logic
@@ -157,9 +173,7 @@ def process_lesson(data: LessonRequest, base_filename: str):
     try:
         print(f"\n🚀 Starting generation for: {data.topic} ({data.celebrity})")
 
-        #  Build preference context
-        preferences_text = ""
-
+        # 1️⃣ Build preference context
         if data.preferences:
             preferences_text = f"""
         User Preferences:
@@ -192,9 +206,11 @@ def process_lesson(data: LessonRequest, base_filename: str):
         - Adjust depth based on learning goal
         - Match explanation style with preferred learning style
         """
+
         print("\n📊 USER PREFERENCES:\n")
         print(data.preferences if data.preferences else "No preferences provided")
 
+        # 🤖 Generate script with Gemini
         try:
             response = client.models.generate_content(
                 model="gemini-2.5-flash",
@@ -204,10 +220,10 @@ def process_lesson(data: LessonRequest, base_filename: str):
             print(f"📝 Generated text: {script}")
         except Exception as e:
             print(f"❌ Gemini Error: {e}")
+            job_status[base_filename] = {"status": "failed"}
             return
 
         # 2️⃣ Create Output Folders
-
         base_output_dir = os.path.join(BASE_DIR, "outputs")
         text_dir = os.path.join(base_output_dir, "text")
         audio_dir = os.path.join(base_output_dir, "audio")
@@ -220,6 +236,7 @@ def process_lesson(data: LessonRequest, base_filename: str):
         text_path = os.path.join(text_dir, f"{base_filename}.txt")
         audio_path = os.path.join(audio_dir, f"{base_filename}.mp3")
         final_video = os.path.join(video_dir, f"{base_filename}.mp4")
+        captions_path = os.path.join(text_dir, f"{base_filename}.json")
 
         # 3️⃣ Save Text to File
         with open(text_path, "w", encoding="utf-8") as f:
@@ -231,20 +248,44 @@ def process_lesson(data: LessonRequest, base_filename: str):
         try:
             if os.path.exists(audio_path):
                 os.remove(audio_path)
-
             asyncio.run(generate_tts(script, audio_path))
             print(f"✅ Audio saved: {audio_path}")
         except Exception as e:
             print(f"❌ TTS Error: {e}")
+            job_status[base_filename] = {"status": "failed"}
             return
 
-        # 5️⃣ Select Video
+        # 5️⃣ Run Whisper on the TTS audio to generate synced captions
+        print("📝 Running Whisper to generate captions...")
+        try:
+            result = whisper_model.transcribe(audio_path, word_timestamps=True)
+
+            captions = []
+            for segment in result["segments"]:
+                captions.append({
+                    "start": round(segment["start"], 2),
+                    "end": round(segment["end"], 2),
+                    "text": segment["text"].strip()
+                })
+
+            with open(captions_path, "w", encoding="utf-8") as f:
+                json.dump(captions, f, ensure_ascii=False, indent=2)
+
+            print(f"✅ Captions saved: {captions_path}")
+        except Exception as whisper_err:
+            print(f"⚠️ Whisper transcription failed: {whisper_err}")
+            # Save empty captions so frontend doesn't crash
+            with open(captions_path, "w", encoding="utf-8") as f:
+                json.dump([], f)
+
+        # 6️⃣ Select Celebrity Video
         input_video = get_celebrity_video(data.celebrity)
         if not os.path.exists(input_video):
             print(f"❌ Error: Video file not found at {input_video}")
+            job_status[base_filename] = {"status": "failed"}
             return
 
-        # 6️⃣ Merge Video + Audio (FFmpeg)
+        # 7️⃣ Merge Video + Audio (FFmpeg)
         ffmpeg_command = (
             f'ffmpeg -y -stream_loop -1 -i "{input_video}" '
             f'-i "{audio_path}" '
@@ -260,7 +301,7 @@ def process_lesson(data: LessonRequest, base_filename: str):
             job_status[base_filename] = {"status": "failed"}
             return
 
-        # 7️⃣ Upload to Cloudinary
+        # 8️⃣ Upload to Cloudinary
         cloudinary_url = None
         try:
             print(f"☁️ Uploading video to Cloudinary...")
@@ -270,7 +311,7 @@ def process_lesson(data: LessonRequest, base_filename: str):
                 folder="ai_mentor/videos",
                 public_id=base_filename,
                 overwrite=True,
-                chunk_size=6000000,  # 6 MB chunks for large files
+                chunk_size=6000000,
             )
             cloudinary_url = upload_result.get("secure_url")
             print(f"✅ Cloudinary upload success: {cloudinary_url}")
@@ -279,7 +320,7 @@ def process_lesson(data: LessonRequest, base_filename: str):
 
         job_status[base_filename] = {
             "status": "ready",
-            "cloudinary_url": cloudinary_url,  # None if upload failed
+            "cloudinary_url": cloudinary_url,
         }
         print(f"✅ Lesson ready!")
         print(f"   Video : {final_video}")
@@ -287,6 +328,6 @@ def process_lesson(data: LessonRequest, base_filename: str):
             print(f"   Cloud : {cloudinary_url}")
 
     except Exception as e:
-        job_status[base_filename] = {"status": "failed"}  # 👈 mark failed on error
+        job_status[base_filename] = {"status": "failed"}
         print(f"❌ Error generating lesson: {e}")
         traceback.print_exc()

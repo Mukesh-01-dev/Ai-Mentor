@@ -1,4 +1,6 @@
 // frontend/src/context/AuthContext.jsx
+import { auth } from '../firebase';       // adjust path to your firebase config
+import { signOut } from 'firebase/auth';
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
 const AuthContext = createContext();
@@ -38,7 +40,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = (userData) => {
     setIsAuthenticated(true);
-    
+
     // Normalize user data to ensure all required fields exist
     const newUser = {
       ...userData,
@@ -89,9 +91,9 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  const logout = () => {
+  const logout = async () => {
 
-        try {
+    try {
       await signOut(auth);
     } catch (error) {
       console.error("Firebase sign out error:", error);
