@@ -76,7 +76,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/certificate", certificateRoutes);
 app.use("/api/preferences", preferenceRoutes);
 app.use("/api/contactus", contactUsRoutes); // ✅ added route
-app.use("/api/coures-reports", reportRoutes);
+app.use("/api/courses-reports", reportRoutes);
 app.use("/api/docs", docsRoutes);
 
 // ================= 404 HANDLER =================
