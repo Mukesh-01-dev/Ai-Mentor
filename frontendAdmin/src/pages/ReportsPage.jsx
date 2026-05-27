@@ -10,8 +10,6 @@ import {
   Mail,
   Phone,
   FileText,
-  Filter,
-  ChevronDown,
 } from "lucide-react";
 import { callApi } from "../utils/api";
 
@@ -134,68 +132,76 @@ function ReportModal({ report, onClose }) {
 }
 
 function ReportsPage() {
-  const [reports, setReports] = useState([]);
+  const [activeTab, setActiveTab] = useState("course"); // "course" or "community"
+  const [courseReports, setCourseReports] = useState([]);
+  const [communityReports, setCommunityReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedReport, setSelectedReport] = useState(null);
-  const [activeFilter, setActiveFilter] = useState("all");
-  const [showFilterMenu, setShowFilterMenu] = useState(false);
+
+  const fetchReports = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const [courseRes, communityRes] = await Promise.allSettled([
+        callApi("/admin/coures-reports"),
+        callApi("/admin/reports")
+      ]);
+
+      if (courseRes.status === "fulfilled") {
+        const data = Array.isArray(courseRes.value?.data) ? courseRes.value.data : [];
+        setCourseReports(data);
+      } else {
+        console.error("Error fetching course reports:", courseRes.reason);
+      }
+
+      if (communityRes.status === "fulfilled") {
+        const response = communityRes.value;
+        const reportsList = Array.isArray(response?.data)
+          ? response.data
+          : Array.isArray(response)
+            ? response
+            : [];
+        setCommunityReports(reportsList);
+      } else {
+        console.error("Error fetching community reports:", communityRes.reason);
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchReports = async () => {
-      try {
-        setLoading(true);
-        const response = await callApi("/admin/coures-reports");
-        const data = Array.isArray(response?.data) ? response.data : [];
-        setReports(data);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchReports();
   }, []);
 
-  const pendingCount = reports.filter((r) => r.status !== "resolved").length;
-  const resolvedCount = reports.filter((r) => r.status === "resolved").length;
-  const certificateCount = reports.filter(
+  const coursePendingCount = courseReports.filter((r) => r.status !== "resolved").length;
+  const courseResolvedCount = courseReports.filter((r) => r.status === "resolved").length;
+
+  const communityPendingCount = communityReports.filter((r) => r.status !== "resolved").length;
+  const communityResolvedCount = communityReports.filter((r) => r.status === "resolved").length;
+
+  const pendingCount = activeTab === "course" ? coursePendingCount : communityPendingCount;
+  const resolvedCount = activeTab === "course" ? courseResolvedCount : communityResolvedCount;
+
+  const certificateCount = courseReports.filter(
     (r) =>
       r.reportType?.toLowerCase() === "certificate" ||
       r.subType?.toLowerCase()?.includes("certificate")
   ).length;
 
-const filteredReports = reports.filter((report) => {
-  const type = report.reportType?.toLowerCase() || "";
-  switch (activeFilter) {
-    case "certificate":
-      return type.includes("certificate");
-    case "bug":
-      return (
-        type.includes("bug") ||
-        type.includes("error")
-      );
-    case "course":
-      return type.includes("course");
-    case "payment":
-      return type.includes("payment");
-    case "others":
-      return (
-        !type.includes("certificate") &&
-        !type.includes("bug") &&
-        !type.includes("error") &&
-        !type.includes("course") &&
-        !type.includes("payment")
-      );
-    default:
-      return true;
+  if (loading) {
+    return (
+      <div className="p-10 text-center text-muted">Loading reports...</div>
+    );
   }
-});
 
-  if (loading)
-    return <div className="p-10 text-center text-muted">Loading reports...</div>;
-  if (error)
+  if (error) {
     return <div className="p-10 text-center text-red-500">Error: {error}</div>;
+  }
 
   return (
     <>
@@ -204,11 +210,17 @@ const filteredReports = reports.filter((report) => {
       )}
 
       <div className="p-6 md:p-8 space-y-6">
+        {/* HEADER */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight">Reports Dashboard</h2>
-            <p className="text-muted text-sm">Monitor and manage all user reports</p>
+            <h2 className="text-3xl font-bold tracking-tight">
+              Reports Dashboard
+            </h2>
+            <p className="text-muted text-sm">
+              Monitor and manage all user and course reports
+            </p>
           </div>
+
           <div className="flex flex-wrap gap-3">
             <div className="px-4 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center gap-2">
               <Award className="w-4 h-4 text-amber-500" />
@@ -216,203 +228,231 @@ const filteredReports = reports.filter((report) => {
             </div>
             <div className="px-4 py-2 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center gap-2">
               <AlertCircle className="w-4 h-4 text-orange-500" />
-              <span className="text-xs font-bold text-orange-500">Pending: {pendingCount}</span>
+              <span className="text-xs font-bold text-orange-500">
+                Pending: {pendingCount}
+              </span>
             </div>
             <div className="px-4 py-2 rounded-xl bg-green-500/10 border border-green-500/20 flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-green-500" />
               <span className="text-xs font-bold text-green-500">Resolved: {resolvedCount}</span>
             </div>
-            <div className="relative">
-          <button
-           onClick={() => setShowFilterMenu((prev) => !prev)}
-           className="h-12 px-5 rounded-2xl border border-border bg-card flex items-center gap-3 text-sm font-black uppercase tracking-widest text-main hover:bg-canvas-alt transition-all shadow-lg"
-          >
-          <Filter className="w-4 h-4 text-teal-500" />
-           <span> Filter: {activeFilter} </span>
-           <ChevronDown
-          className={`w-4 h-4 transition-transform duration-200 ${
-           showFilterMenu ? "rotate-180" : ""
-        }`}
-          />
-         </button>
-      {showFilterMenu && (
-    <div className="absolute top-14 right-0 min-w-[240px] rounded-2xl border border-border bg-card shadow-2xl overflow-hidden z-[500] animate-in fade-in zoom-in-95 duration-200">
-      <button
-        onClick={() => {
-          setActiveFilter("all");
-          setShowFilterMenu(false);
-        }}
-        className={`w-full px-5 py-4 text-left text-sm font-bold transition-all ${
-          activeFilter === "all"
-            ? "bg-teal-500 text-white"
-            : "hover:bg-canvas-alt text-main"
-        }`}
-      >
-        All Reports
-      </button>
-      <button
-        onClick={() => {
-          setActiveFilter("certificate");
-          setShowFilterMenu(false);
-        }}
-        className={`w-full px-5 py-4 text-left text-sm font-bold transition-all ${
-          activeFilter === "certificate"
-            ? "bg-amber-500 text-white"
-            : "hover:bg-canvas-alt text-main"
-        }`}
-      >
-        Certificate
-      </button>
-      <button
-        onClick={() => {
-          setActiveFilter("bug");
-          setShowFilterMenu(false);
-        }}
-        className={`w-full px-5 py-4 text-left text-sm font-bold transition-all ${
-          activeFilter === "bug"
-            ? "bg-red-500 text-white"
-            : "hover:bg-canvas-alt text-main"
-        }`}
-      >
-        Bug / Error
-      </button>
-      <button
-        onClick={() => {
-          setActiveFilter("course");
-          setShowFilterMenu(false);
-        }}
-        className={`w-full px-5 py-4 text-left text-sm font-bold transition-all ${
-          activeFilter === "course"
-            ? "bg-blue-500 text-white"
-            : "hover:bg-canvas-alt text-main"
-        }`}
-      >
-        Course
-      </button>
-      <button
-        onClick={() => {
-          setActiveFilter("payment");
-          setShowFilterMenu(false);
-        }}
-        className={`w-full px-5 py-4 text-left text-sm font-bold transition-all ${
-          activeFilter === "payment"
-            ? "bg-green-500 text-white"
-            : "hover:bg-canvas-alt text-main"
-        }`}
-      >
-        Payment Issue
-      </button>
-      <button
-        onClick={() => {
-          setActiveFilter("others");
-          setShowFilterMenu(false);
-        }}
-        className={`w-full px-5 py-4 text-left text-sm font-bold transition-all ${
-          activeFilter === "others"
-            ? "bg-purple-500 text-white"
-            : "hover:bg-canvas-alt text-main"
-        }`}
-      >
-        Others
-      </button>
-    </div>
-  )}
-</div>
           </div>
         </div>
 
-        <div className="rounded-2xl border border-border bg-canvas-alt/20 backdrop-blur-xl overflow-x-auto overflow-y-visible">
+        {/* TABS */}
+        <div className="flex border-b border-border gap-6">
+          <button
+            onClick={() => setActiveTab("course")}
+            className={`pb-4 text-sm font-semibold transition-all ${
+              activeTab === "course"
+                ? "border-b-2 border-teal-500 text-teal-500"
+                : "text-muted hover:text-white"
+            }`}
+          >
+            Course Reports ({courseReports.length})
+          </button>
+          <button
+            onClick={() => setActiveTab("community")}
+            className={`pb-4 text-sm font-semibold transition-all ${
+              activeTab === "community"
+                ? "border-b-2 border-teal-500 text-teal-500"
+                : "text-muted hover:text-white"
+            }`}
+          >
+            Community Reports ({communityReports.length})
+          </button>
+        </div>
+
+        {/* TABLE CARD */}
+        <div className="rounded-2xl border border-border overflow-hidden bg-canvas-alt/20 backdrop-blur-xl overflow-x-auto">
           <table className="w-full min-w-[800px]">
-            <thead className="text-left text-[11px] uppercase tracking-widest text-muted bg-black/20">
-              <tr className="border-b border-border">
-                <th className="p-5">User</th>
-                <th>Contact</th>
-                <th>Type</th>
-                <th>Description</th>
-                <th>Status</th>
-                <th>Date</th>
-                <th className="pr-6 text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredReports.length > 0 ? (
-                filteredReports.map((report) => {
-                  const isCertificate =
-                    report.reportType?.toLowerCase() === "certificate" ||
-                    report.subType?.toLowerCase()?.includes("certificate");
-                  return (
-                    <tr key={report.id} className="border-b border-border hover:bg-white/5 transition-all">
-                      <td className="p-5">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-teal-500/10 flex items-center justify-center">
-                            <User className="w-5 h-5 text-teal-500" />
-                          </div>
-                          <div>
-                            <div className="font-bold text-main">{report.user?.name || "Unknown User"}</div>
-                            <div className="text-[10px] text-muted uppercase">Reporter</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="text-xs text-muted">
-                        <div className="space-y-1">
-                          {report.email && (
-                            <div className="flex items-center gap-1">
-                              <Mail className="w-3 h-3 shrink-0" />
-                              <span className="truncate max-w-[140px]">{report.email}</span>
+            {activeTab === "course" ? (
+              <>
+                <thead className="text-left text-[11px] uppercase tracking-widest text-muted bg-black/20">
+                  <tr className="border-b border-border">
+                    <th className="p-5">User</th>
+                    <th>Course</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                    <th className="pr-6 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {courseReports.length > 0 ? (
+                    courseReports.map((report) => (
+                      <tr
+                        key={report.id}
+                        className="border-b border-border hover:bg-white/5 transition-all"
+                      >
+                        {/* USER */}
+                        <td className="p-5">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-teal-500/10 flex items-center justify-center">
+                              <User className="w-5 h-5 text-teal-500" />
                             </div>
-                          )}
-                          {report.phone && (
-                            <div className="flex items-center gap-1">
-                              <Phone className="w-3 h-3 shrink-0" />
-                              {report.phone}
+                            <div>
+                              <div className="font-bold text-white">
+                                {report.user?.name || "Unknown User"}
+                              </div>
+                              <div className="text-[11px] text-muted">
+                                {report.userId}
+                              </div>
+                              <div className="text-[10px] text-muted uppercase">
+                                Reporter
+                              </div>
                             </div>
-                          )}
-                          {!report.email && !report.phone && <span>—</span>}
-                        </div>
-                      </td>
-                      <td>
-                        <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase bg-red-500/10 text-red-400 border border-red-500/20 w-fit">
-                          {report.reportType}
-                        </span>
-                      </td>
-                      <td className="text-muted text-sm max-w-[200px] truncate">
-                        {report.description || "No description"}
-                      </td>
-                      <td>
-                        <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase border ${
-                          report.status === "resolved"
-                            ? "bg-green-500/10 text-green-400 border-green-500/20"
-                            : "bg-orange-500/10 text-orange-400 border-orange-500/20"
-                        }`}>
-                          {report.status}
-                        </span>
-                      </td>
-                      <td className="text-xs text-muted">
-                        <div className="flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          {new Date(report.createdAt).toLocaleDateString()}
-                        </div>
-                      </td>
-                      <td className="pr-6 text-right">
-                        <button
-                          onClick={() => setSelectedReport(report)}
-                          className="px-4 py-2 rounded-xl text-xs font-bold bg-teal-500/10 text-teal-400 hover:bg-teal-500 hover:text-white transition"
-                        >
-                          View
-                        </button>
+                          </div>
+                        </td>
+                        {/* COURSE */}
+                        <td className="text-sm text-muted">{report.courseName}</td>
+                        {/* TYPE */}
+                        <td>
+                          <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase bg-red-500/10 text-red-400 border border-red-500/20">
+                            {report.reportType}
+                          </span>
+                        </td>
+                        {/* DESCRIPTION */}
+                        <td className="text-muted text-sm max-w-[250px] truncate">
+                          {report.description || "No description"}
+                        </td>
+                        {/* STATUS */}
+                        <td>
+                          <span
+                            className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase border ${
+                              report.status === "resolved"
+                                ? "bg-green-500/10 text-green-400 border-green-500/20"
+                                : "bg-orange-500/10 text-orange-400 border-orange-500/20"
+                            }`}
+                          >
+                            {report.status}
+                          </span>
+                        </td>
+                        {/* DATE */}
+                        <td className="text-xs text-muted">
+                          <div className="flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {new Date(report.createdAt).toLocaleDateString()}
+                          </div>
+                        </td>
+                        {/* ACTION */}
+                        <td className="pr-6 text-right">
+                          <button 
+                            onClick={() => setSelectedReport(report)}
+                            className="px-4 py-2 rounded-xl text-xs font-bold bg-teal-500/10 text-teal-400 hover:bg-teal-500 hover:text-white transition">
+                            View
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="7" className="p-20 text-center text-muted">
+                        <Flag className="w-10 h-10 mx-auto mb-3 opacity-50" />
+                        No course reports found
                       </td>
                     </tr>
-                  );
-                })
-              ) : (
-                <tr>
-                  <td colSpan="7" className="p-20 text-center text-muted">
-                    <Flag className="w-10 h-10 mx-auto mb-3 opacity-50" />
-                    No reports found
-                  </td>
-                </tr>
-              )}
-            </tbody>
+                  )}
+                </tbody>
+              </>
+            ) : (
+              <>
+                <thead className="text-left text-[11px] uppercase tracking-widest text-muted bg-black/20">
+                  <tr className="border-b border-border">
+                    <th className="p-5">Reporter</th>
+                    <th>Reported Content</th>
+                    <th>Reason</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                    <th className="pr-6 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {communityReports.length > 0 ? (
+                    communityReports.map((report) => (
+                      <tr
+                        key={report.id}
+                        className="border-b border-border hover:bg-white/5 transition-all"
+                      >
+                        {/* REPORTER */}
+                        <td className="p-5">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-teal-500/10 flex items-center justify-center">
+                              <User className="w-5 h-5 text-teal-500" />
+                            </div>
+                            <div>
+                              <div className="font-bold text-white">
+                                {report.reporter?.name || "Unknown"}
+                              </div>
+                              <div className="text-[11px] text-muted">
+                                {report.reporter?.email}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        {/* CONTENT */}
+                        <td className="max-w-xs">
+                          <div className="truncate font-semibold text-white">
+                            {report.post?.content || "N/A"}
+                          </div>
+                          <div className="text-[11px] text-muted">
+                            Author: {report.post?.author?.name || "Unknown"}
+                          </div>
+                        </td>
+                        {/* REASON */}
+                        <td>
+                          <div className="flex flex-col gap-1 items-start">
+                            <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-red-500/10 text-red-400 border border-red-500/20">
+                              {report.reason}
+                            </span>
+                            {report.description && (
+                              <span className="text-[11px] text-muted italic max-w-[200px] truncate">
+                                "{report.description}"
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        {/* STATUS */}
+                        <td>
+                          <span
+                            className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase border ${
+                              report.status === "resolved"
+                                ? "bg-green-500/10 text-green-400 border-green-500/20"
+                                : "bg-orange-500/10 text-orange-400 border-orange-500/20"
+                            }`}
+                          >
+                            {report.status}
+                          </span>
+                        </td>
+                        {/* DATE */}
+                        <td className="text-xs text-muted">
+                          <div className="flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {new Date(report.createdAt).toLocaleDateString()}
+                          </div>
+                        </td>
+                        {/* ACTION */}
+                        <td className="pr-6 text-right">
+                          <button
+                            onClick={() => setSelectedReport(report)}
+                            className="px-4 py-2 rounded-xl text-xs font-bold bg-teal-500/10 text-teal-400 hover:bg-teal-500 hover:text-white transition">
+                            View Details
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="6" className="p-20 text-center text-muted">
+                        <Flag className="w-10 h-10 mx-auto mb-3 opacity-50" />
+                        No community reports found
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </>
+            )}
           </table>
         </div>
       </div>

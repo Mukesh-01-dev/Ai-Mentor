@@ -30,9 +30,7 @@ export const createCourse = async (req, res) => {
   try {
     const { title, category, priceValue, currency } = req.body;
     if (!title) return res.status(400).json({ success: false, message: "Title is required" });
-    const courseid=await Course.max("id")+1;
     const course = await Course.create({
-      id:courseid,
       title,
       category,
       priceValue: parseFloat(priceValue) || 0,
