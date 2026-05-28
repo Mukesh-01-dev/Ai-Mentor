@@ -106,13 +106,25 @@ const startServer = async () => {
 
     const isDevelopment = process.env.NODE_ENV !== "production";
     const syncOptions = isDevelopment ? { alter: true } : {};
-
-    await sequelize.sync(syncOptions);
-    console.log(
-      isDevelopment
-        ? "✅ Database models synced with schema auto-alter enabled (development)"
-        : "✅ Database models synced",
-    );
+    try {
+      await sequelize.sync(syncOptions);
+      console.log(
+        isDevelopment
+          ? "✅ Database models synced with schema auto-alter enabled (development)"
+          : "✅ Database models synced",
+      );
+    } catch (syncError) {
+      if (isDevelopment && syncOptions.alter) {
+        console.warn(
+          "⚠️ Database auto-alter sync failed. Retrying with basic sync...",
+          syncError.message
+        );
+        await sequelize.sync();
+        console.log("✅ Database models synced (basic fallback)");
+      } else {
+        throw syncError;
+      }
+    }
     app.listen(PORT, () => {
       console.log(`🚀 Server running on http://localhost:${PORT}`);
     });
