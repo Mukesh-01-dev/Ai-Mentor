@@ -71,6 +71,7 @@ export default function Learning() {
   const hasRestoredProgressRef = useRef(false);
   const jumpToTimeRef = useRef(null);
   const lastSavedTimeRef = useRef(0);
+  const pendingCaptionsRef = useRef(null);
 
   // Auto-scroll transcript
   useEffect(() => {
@@ -188,17 +189,40 @@ export default function Learning() {
     const video = videoRef.current;
     if (!video) return;
 
-    const generateFromText = (d) => {
-      if (!generatedTextContent) return false;
-      const sentences = generatedTextContent.split(/[.!?]+/).map((s) => s.trim()).filter(Boolean);
-      if (!sentences.length) return false;
-      const timePerSentence = d / sentences.length;
-      setCaptions(sentences.map((text, i) => ({
-        start: i * timePerSentence,
-        end: (i + 1) * timePerSentence,
-        text,
-      })));
-      return true;
+    const loadGeneratedCaptions = async () => {
+      if (!learningData?.currentLesson || !selectedCelebrity) return false;
+
+      // Use pendingCaptionsRef first — avoids race condition with saveLessonData
+      if (pendingCaptionsRef.current) {
+        setCaptions(pendingCaptionsRef.current);
+        pendingCaptionsRef.current = null;
+        return true;
+      }
+
+      // Fallback for page reload or revisiting a lesson
+      try {
+        const savedData = user?.purchasedCourses
+          ?.find((c) => c.courseId === parseInt(courseId))
+          ?.progress?.lessonData?.[learningData.currentLesson.id];
+
+        if (!savedData?.captionsFile) return false;
+
+        const res = await fetch(`/api/ai/captions/${savedData.captionsFile}`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        });
+
+        if (!res.ok) return false;
+
+        const captionData = await res.json();
+
+        if (!Array.isArray(captionData)) return false;
+
+        setCaptions(captionData);
+        return true;
+      } catch (err) {
+        console.error("Caption load error:", err);
+        return false;
+      }
     };
 
     const loadVTT = async () => {
@@ -243,10 +267,8 @@ export default function Learning() {
     };
 
     if (generatedTextContent) {
-      if (tryGenerate()) return;
-      const handler = () => { generateFromText(video.duration); };
-      video.addEventListener("loadedmetadata", handler, { once: true });
-      return () => video.removeEventListener("loadedmetadata", handler);
+      loadGeneratedCaptions();
+      return;
     }
 
     setCaptions([]);
@@ -338,28 +360,69 @@ export default function Learning() {
 
             if (data.transcriptName) {
               try {
+                // Step 1: fetch captions first, store in ref BEFORE triggering useEffect
+                if (data.captions_file) {
+                  try {
+                    const capRes = await fetch(`/api/ai/captions/${data.captions_file}`, {
+                      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+                    });
+                    if (capRes.ok) {
+                      const capData = await capRes.json();
+                      if (Array.isArray(capData)) {
+                        pendingCaptionsRef.current = capData;
+                      }
+                    }
+                  } catch (capErr) {
+                    console.error("Caption fetch error:", capErr);
+                  }
+                }
+
+                // Step 2: now set transcript text (this triggers captions useEffect, but ref is ready)
                 const trRes = await fetch(`/api/ai/transcript/${data.transcriptName}`, {
                   headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
                 });
                 if (trRes.ok) {
                   const trData = await trRes.json();
                   setGeneratedTextContent(trData.content);
+
+                  // Convert raw transcript text into timed caption chunks
+                  if (trData.content) {
+                    const words = trData.content.trim().split(/\s+/);
+                    const wordsPerChunk = 12;
+                    const secondsPerChunk = 4;
+                    const chunks = [];
+
+                    for (let i = 0; i < words.length; i += wordsPerChunk) {
+                      const chunkWords = words.slice(i, i + wordsPerChunk);
+                      const start = (i / wordsPerChunk) * secondsPerChunk;
+                      chunks.push({
+                        start,
+                        end: start + secondsPerChunk,
+                        text: chunkWords.join(" "),
+                      });
+                    }
+
+                    pendingCaptionsRef.current = chunks;
+                  }
                 }
               } catch (trErr) {
                 console.error("Transcript error:", trErr);
               }
             }
 
+
             setIsPlaying(true);
             saveLessonData(learningData.currentLesson.id, {
               generatedTextContent: data.textContent || "",
               aiVideoUrl: data.videoUrl,
               celebrity: selectedCelebrity,
+              captionsFile: data.captions_file,
             });
           }
         } catch (error) {
           console.error("AI video error:", error);
           setGeneratedTextContent("");
+
           setAiVideoUrl(null);
           setIsPlaying(false);
         } finally {
@@ -458,7 +521,7 @@ export default function Learning() {
       console.log("Lesson already completed, skipping");
       return;
     }
-    else{
+    else {
       toast.error("Please watch the video before continuing.");
     }
   };

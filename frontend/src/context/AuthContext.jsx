@@ -1,13 +1,7 @@
 // frontend/src/context/AuthContext.jsx
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  useCallback,
-} from "react";
-import { signOut } from "firebase/auth";
-import { auth } from "../firebase";
+import { auth } from '../firebase';       // adjust path to your firebase config
+import { signOut } from 'firebase/auth';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { auth } from '../firebase.js';
@@ -100,15 +94,8 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const logout = async () => {
-    try {
-  useEffect(() => {
-  if (isAuthenticated) {
-    fetchUserProfile();
-  }
-}, [isAuthenticated, fetchUserProfile]);
-const logout = async () => {
 
-        try {
+    try {
       await signOut(auth);
     } catch (error) {
       console.error("Firebase sign out error:", error);
