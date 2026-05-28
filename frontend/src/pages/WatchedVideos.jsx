@@ -10,6 +10,7 @@ import {
   Play,
   MoreVertical,
   ChevronDown,
+  ChevronRight,
   RotateCcw,
 } from "lucide-react";
 import API_BASE_URL from "../lib/api";
@@ -102,8 +103,8 @@ const WatchedVideos = () => {
   // Filtered videos based on search and filters
   const filteredVideos = videoData.filter((video) => {
     const matchesSearch =
-      video.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      video.course.toLowerCase().includes(searchQuery.toLowerCase());
+  video.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  (video.course || "").toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCourse =
       courseFilter === "All Courses" || video.course === courseFilter;
     const matchesStatus =
@@ -222,7 +223,7 @@ const WatchedVideos = () => {
           )}
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {continueWatching.map((video) => (
             <div
               key={video.id}
@@ -233,7 +234,7 @@ const WatchedVideos = () => {
                 <img
                   src={video.thumbnail}
                   alt={video.title}
-                  className="w-full h-40 object-cover"
+                 className="w-full h-48 object-cover"
                 />
                 {/* Play overlay */}
                 <button
@@ -257,11 +258,11 @@ const WatchedVideos = () => {
               </div>
 
               {/* Info */}
-              <div className="p-4 flex flex-col flex-1">
+              <div className="p-4 flex flex-col">
                 <h3 className="text-main text-sm font-semibold mb-0.5 line-clamp-1">{video.title}</h3>
                 <p className="text-muted text-xs mb-3">{video.course}</p>
                 <div className="flex justify-between text-xs text-muted mb-3">
-                  <span className="text-orange-500 font-medium">{video.progress}% complete</span>
+                  <span className="text-orange-500 font-medium"> {Number(video.progress).toFixed(1)}% complete</span>
                   <span>{formatLastWatched(video.lastWatched)}</span>
                 </div>
                 <button
@@ -380,7 +381,7 @@ const WatchedVideos = () => {
           >
             {video.status === "completed"
               ? t("analytics.completed")
-              : `${video.progress}${t("watched.percent_complete")}`}
+              : `${Number(video.progress).toFixed(1)}${t("watched.percent_complete")}`}
           </span>
           <span>{formatLastWatched(video.lastWatched)}</span>
         </div>
@@ -436,7 +437,7 @@ const WatchedVideos = () => {
           </div>
 
         <MetricsCards />
-        <ContinueWatchingSection />
+        {/* <ContinueWatchingSection /> */}
         <SearchAndFilters />
         <h2 className="text-main text-lg font-bold mb-4">
           All Watch History

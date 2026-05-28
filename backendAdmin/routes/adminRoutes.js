@@ -31,7 +31,7 @@ import {
   markNotificationRead,
   clearAllNotifications,
 } from "../controllers/notificationController.js";
-import { getAllCouresReports } from "../controllers/couresReportsController.js";
+import { getAllCouresReports,updateReportStatus,deleteReport, } from "../controllers/couresReportsController.js";
 import { protectAdmin, superAdminOnly } from "../middleware/adminAuthMiddleware.js";
 
 const router = express.Router();
@@ -68,5 +68,8 @@ router.delete("/notifications/clear", protectAdmin, clearAllNotifications);
 
 //coures Report
 router.get("/coures-reports", protectAdmin, getAllCouresReports);
+router.patch("/coures-reports/:id", protectAdmin, updateReportStatus);
+router.delete("/coures-reports/:id", protectAdmin, deleteReport);
+
 
 export default router;
