@@ -1,18 +1,9 @@
 // frontend/src/context/AuthContext.jsx
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  useCallback,
-} from "react";
-import { signOut } from "firebase/auth";
-import { auth } from "../firebase";
-
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { auth } from '../firebase.js';
 import { signOut } from 'firebase/auth';
 import { apiFetch } from '../lib/api';
+
 const AuthContext = createContext();
 
 export const useAuth = () => {
@@ -40,44 +31,14 @@ export const AuthProvider = ({ children }) => {
       return null;
     }
   });
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    const storedUser = localStorage.getItem("user");
-
-    if (!token || !storedUser || storedUser === "undefined") {
-      setIsAuthenticated(false);
-      setUser(null);
-    }
-  }, []);
-
-  const login = (userData) => {
-    setIsAuthenticated(true);
-
-    // Normalize user data to ensure all required fields exist
-    const newUser = {
-      ...userData,
-      token: userData.token || localStorage.getItem("token"),
-      avatar_url: userData.avatar_url || null,
-      isProfileComplete: userData.isProfileComplete ?? false,
-      isGoogleUser: (userData.isGoogleUser || !!userData.googleId) ?? false,
-      googleId: userData.googleId ?? null,
-      hasPassword: userData.hasPassword ?? false,
-    };
-
-    setUser(newUser);
-    localStorage.setItem("token", newUser.token);
-    localStorage.setItem("user", JSON.stringify(newUser));
-    // Clear skip flags on every login to ensure onboarding triggers correctly
-    localStorage.removeItem("preferencesSkipped");
-  };
 
   const fetchUserProfile = useCallback(async () => {
     try {
       const token = localStorage.getItem("token");
       if (!token) return;
 
-       const response = await apiFetch('/api/users/profile');
-    if (!response) return;
+      const response = await apiFetch('/api/users/profile');
+      if (!response) return;
       if (response.ok) {
         const userData = await response.json();
 
@@ -99,16 +60,43 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const storedUser = localStorage.getItem("user");
+
+    if (!token || !storedUser || storedUser === "undefined") {
+      setIsAuthenticated(false);
+      setUser(null);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchUserProfile();
+    }
+  }, [isAuthenticated, fetchUserProfile]);
+
+  const login = (userData) => {
+    setIsAuthenticated(true);
+
+    const newUser = {
+      ...userData,
+      token: userData.token || localStorage.getItem("token"),
+      avatar_url: userData.avatar_url || null,
+      isProfileComplete: userData.isProfileComplete ?? false,
+      isGoogleUser: (userData.isGoogleUser || !!userData.googleId) ?? false,
+      googleId: userData.googleId ?? null,
+      hasPassword: userData.hasPassword ?? false,
+    };
+
+    setUser(newUser);
+    localStorage.setItem("token", newUser.token);
+    localStorage.setItem("user", JSON.stringify(newUser));
+    localStorage.removeItem("preferencesSkipped");
+  };
+
   const logout = async () => {
     try {
-  useEffect(() => {
-  if (isAuthenticated) {
-    fetchUserProfile();
-  }
-}, [isAuthenticated, fetchUserProfile]);
-const logout = async () => {
-
-        try {
       await signOut(auth);
     } catch (error) {
       console.error("Firebase sign out error:", error);
@@ -156,8 +144,6 @@ const logout = async () => {
     fetchUserProfile,
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-};
   return (
     <AuthContext.Provider value={value}>
       {children}
