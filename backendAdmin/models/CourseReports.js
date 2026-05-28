@@ -46,7 +46,7 @@ export const CourseReports = sequelize.define(
     },
 
     status: {
-      type: DataTypes.ENUM("pending", "resolved"),
+      type: DataTypes.ENUM("pending", "resolved","rejected"),
       defaultValue: "pending",
     },
   },

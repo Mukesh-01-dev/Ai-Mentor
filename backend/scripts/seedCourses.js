@@ -59,7 +59,9 @@ async function seedCourses() {
 
         // await sequelize.sync({ force: true });
         await sequelize.sync(); // ensures tables exist
-        // clear non-FK dependent tables
+        
+        // clear non-FK dependent tables (optional now but kept for safety)
+        await AIVideo.truncate({ restartIdentity: true });
         await AIVideo.truncate({ restartIdentity: true });
         await Course.truncate({
             cascade: true,
