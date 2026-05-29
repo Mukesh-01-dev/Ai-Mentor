@@ -1,4 +1,5 @@
 import { User, Course, CommunityPost, Report } from "../models/index.js";
+import { sequelize } from "../config/db.js";
 
 const ensureReportSeed = async () => {
   try {
@@ -119,6 +120,46 @@ export const getAllDiscussions = async (req, res) => {
     res.json({ success: true, data: discussions });
   } catch (error) {
     console.error("GET ALL DISCUSSIONS ERROR:", error.message);
+    res.status(500).json({ success: false, message: "Server Error" });
+  }
+};
+
+// DISCUSSION MODERATION WORKERS
+export const hideDiscussion = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await sequelize.query('UPDATE "CommunityPosts" SET "hiddenAt" = :date WHERE id = :id', {
+      replacements: { id, date: new Date().toISOString() },
+    });
+    res.json({ success: true, message: "Post hidden successfully" });
+  } catch (error) {
+    console.error("HIDE DISCUSSION ERROR:", error.message);
+    res.status(500).json({ success: false, message: "Server Error" });
+  }
+};
+
+export const unhideDiscussion = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await sequelize.query('UPDATE "CommunityPosts" SET "hiddenAt" = NULL WHERE id = :id', {
+      replacements: { id },
+    });
+    res.json({ success: true, message: "Post unhidden successfully" });
+  } catch (error) {
+    console.error("UNHIDE DISCUSSION ERROR:", error.message);
+    res.status(500).json({ success: false, message: "Server Error" });
+  }
+};
+
+export const deleteDiscussion = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await sequelize.query('DELETE FROM "CommunityPosts" WHERE id = :id', {
+      replacements: { id },
+    });
+    res.json({ success: true, message: "Post deleted permanently" });
+  } catch (error) {
+    console.error("DELETE DISCUSSION ERROR:", error.message);
     res.status(500).json({ success: false, message: "Server Error" });
   }
 };

@@ -11,15 +11,20 @@ import { useTheme } from "../context/ThemeContext";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import i18n from "../i18n/index.js";
+import FloatingAssistant from "../components/common/FloatingAssistant.jsx";
+
+// ── Added Firebase Imports for Issue #390 Fix ───────────────────────────
+import { signOut } from "firebase/auth";
+import { auth } from "../firebase"; // Ensure this matches your project path to firebase config
 
 const NAV_KEYS = [
-  { icon: User,     key: "profile",           labelKey: "settings.nav.profile" },
-  { icon: Bell,     key: "notifications",      labelKey: "settings.nav.notifications" },
-  { icon: Shield,   key: "password_security",  labelKey: "settings.nav.password_security" },
-  { icon: Sparkles, key: "preferences",        labelKey: "preferences.nav_title" },
-  { icon: Palette,  key: "appearance",         labelKey: "settings.nav.appearance" },
-  { icon: Globe,    key: "language",           labelKey: "settings.nav.language" },
-  { icon: UserX,    key: "delete_account",     labelKey: "settings.nav.delete_account" },
+  { icon: User, key: "profile", labelKey: "settings.nav.profile" },
+  { icon: Bell, key: "notifications", labelKey: "settings.nav.notifications" },
+  { icon: Shield, key: "password_security", labelKey: "settings.nav.password_security" },
+  { icon: Sparkles, key: "preferences", labelKey: "preferences.nav_title" },
+  { icon: Palette, key: "appearance", labelKey: "settings.nav.appearance" },
+  { icon: Globe, key: "language", labelKey: "settings.nav.language" },
+  { icon: UserX, key: "delete_account", labelKey: "settings.nav.delete_account" },
 ];
 
 /* ───────────────────────────────────────────────
@@ -31,7 +36,7 @@ function MobileSettingsDrawer({ open, onClose, onSelect, t }) {
   const [dragOffset, setDragOffset] = useState(0);
 
   const handleTouchStart = (e) => { startY.current = e.touches[0].clientY; };
-  const handleTouchMove  = (e) => {
+  const handleTouchMove = (e) => {
     if (startY.current === null) return;
     const diff = e.touches[0].clientY - startY.current;
     if (diff > 0) { currentY.current = diff; setDragOffset(diff); }
@@ -109,6 +114,7 @@ function MobileSettingsDrawer({ open, onClose, onSelect, t }) {
 /* ───────────────────────────────────────────────
    Mobile full-screen modal (individual setting)
 ─────────────────────────────────────────────── */
+// eslint-disable-next-line no-unused-vars
 function MobileModal({ open, onBack, onClose, title, children }) {
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
@@ -174,7 +180,9 @@ export default function Settings() {
   const [deleting, setDeleting] = useState(false);
   const [deletePopup, setDeletePopup] = useState(false);
   const [passwordData, setPasswordData] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
+  // eslint-disable-next-line no-unused-vars
   const [passwordError, setPasswordError] = useState("");
+  // eslint-disable-next-line no-unused-vars
   const [pwFocused, setPwFocused] = useState(false);
 
   /* handlers */
@@ -182,8 +190,18 @@ export default function Settings() {
     try {
       setDeleting(true);
       const token = localStorage.getItem("token");
+
+      // 1. Delete account from your backend database database
       await axios.delete("/api/users/delete-account", { headers: { Authorization: `Bearer ${token}` } });
+
+      // 2. Clear local browser token storage
       localStorage.removeItem("token");
+
+      // 3. Clear Firebase Client-Side Memory Token Instance ✅
+      if (auth) {
+        await signOut(auth);
+      }
+
       setshowDeletePopup(false);
       setDeletePopup(true);
     } catch (error) {
@@ -259,15 +277,15 @@ export default function Settings() {
         setSettingsData(data);
         setOriginalNotifications(notifications);
         if (data?.appearance?.language) i18n.changeLanguage(data.appearance.language);
-      } catch (err) { 
-        console.error("Failed to fetch notification settings:", err); 
+      } catch (err) {
+        console.error("Failed to fetch notification settings:", err);
       } finally {
         setPageLoading(false);
       }
     };
     fetchNotificationSettings().finally(() => {
-    setPageLoading(false);
-});
+      setPageLoading(false);
+    });
   }, [user]);
 
   /* mobile navigation helpers */
@@ -295,7 +313,7 @@ export default function Settings() {
   const activeMobileNav = NAV_KEYS.find((n) => n.key === mobileModalKey);
 
   /* ── shared panel renderers ── */
-  function ProfilePanel () {
+  function ProfilePanel() {
     return (
       <div className="max-w-3xl">
         <div className="hidden lg:block mb-8">
@@ -415,20 +433,20 @@ export default function Settings() {
     minLength: pw.length >= 8,
     uppercase: /[A-Z]/.test(pw),
     lowercase: /[a-z]/.test(pw),
-    number:    /[0-9]/.test(pw),
-    symbol:    /[^A-Za-z0-9]/.test(pw),
+    number: /[0-9]/.test(pw),
+    symbol: /[!@#$%^&*(),.?":{}|<>]/.test(pw),
   };
   const allPwValid = Object.values(pwChecks).every(Boolean);
 
   // Single step-by-step hint — first failing rule in priority order
   const pwHint =
-    pw.length === 0        ? null :
-    !pwChecks.minLength    ? "Password must be at least 8 characters" :
-    !pwChecks.uppercase    ? "Password must contain an uppercase letter" :
-    !pwChecks.lowercase    ? "Password must contain a lowercase letter" :
-    !pwChecks.number       ? "Password must contain a number" :
-    !pwChecks.symbol       ? "Password must contain a special character" :
-    null;
+    pw.length === 0 ? null :
+      !pwChecks.minLength ? "Password must be at least 8 characters" :
+        !pwChecks.uppercase ? "Password must contain an uppercase letter" :
+          !pwChecks.lowercase ? "Password must contain a lowercase letter" :
+            !pwChecks.number ? "Password must contain a number" :
+              !pwChecks.symbol ? "Password must contain a special character" :
+                null;
 
   const PasswordSecurityPanel = () => (
     <div className="w-full">
@@ -441,8 +459,8 @@ export default function Settings() {
 
           {/* ── Security toggles ── */}
           {[
-            { key: "twoFactorAuth", labelKey: "settings.security.two_factor",  descKey: "settings.security.two_factor_desc" },
-            { key: "loginAlerts",   labelKey: "settings.security.login_alerts", descKey: "settings.security.login_alerts_desc" },
+            { key: "twoFactorAuth", labelKey: "settings.security.two_factor", descKey: "settings.security.two_factor_desc" },
+            { key: "loginAlerts", labelKey: "settings.security.login_alerts", descKey: "settings.security.login_alerts_desc" },
           ].map((item) => (
             <div key={item.key} className="flex items-center justify-between gap-4">
               <div className="flex-1 min-w-0">
@@ -495,13 +513,12 @@ export default function Settings() {
                       setPasswordData((prev) => ({ ...prev, newPassword: e.target.value }));
                       setPasswordError("");
                     }}
-                    className={`w-full h-[50px] px-4 pr-12 rounded-xl border text-[16px] font-[Inter] focus:ring-2 focus:ring-primary focus:border-primary bg-input text-main transition-colors ${
-                      pw.length > 0 && !allPwValid
+                    className={`w-full h-[50px] px-4 pr-12 rounded-xl border text-[16px] font-[Inter] focus:ring-2 focus:ring-primary focus:border-primary bg-input text-main transition-colors ${pw.length > 0 && !allPwValid
                         ? "border-orange-400 dark:border-orange-500"
                         : pw.length > 0 && allPwValid
-                        ? "border-[#00BEA5]"
-                        : "border-border"
-                    }`}
+                          ? "border-[#00BEA5]"
+                          : "border-border"
+                      }`}
                   />
                   <button type="button" onClick={() => setShowNewPassword(!showNewPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-main transition-colors">
@@ -530,13 +547,12 @@ export default function Settings() {
                     setPasswordData((prev) => ({ ...prev, confirmPassword: e.target.value }));
                     setPasswordError("");
                   }}
-                  className={`w-full h-[50px] px-4 pr-12 rounded-xl border text-[16px] font-[Inter] focus:ring-2 focus:ring-primary focus:border-primary bg-input text-main transition-colors ${
-                    passwordData.confirmPassword.length > 0
+                  className={`w-full h-[50px] px-4 pr-12 rounded-xl border text-[16px] font-[Inter] focus:ring-2 focus:ring-primary focus:border-primary bg-input text-main transition-colors ${passwordData.confirmPassword.length > 0
                       ? passwordData.confirmPassword === pw
                         ? "border-[#00BEA5]"
                         : "border-red-400 dark:border-red-500"
                       : "border-border"
-                  }`}
+                    }`}
                 />
                 <button
                   type="button"
@@ -604,7 +620,7 @@ export default function Settings() {
         <h1 className="text-xl sm:text-2xl md:text-[30px] font-bold text-main font-[Inter] mb-2">{t("settings.appearance.title")}</h1>
         <p className="text-sm sm:text-[16px] text-muted font-[Inter]">{t("settings.appearance.subtitle")}</p>
       </div>
-      <div className="bg-card rounded-2xl sm:rounded-[24px] shadow-[0_4px_6px_0_rgba(0,0,0,0.10),0_10px_15px_0_rgba(0,0,0,0.10)] p-4 sm:p-6 md:p-8">
+      <div className="bg-card rounded-2xl sm:rounded-[24px] shadow-[0_4px_6_0_rgba(0,0,0,0.10),0_10px_15_0_rgba(0,0,0,0.10)] p-4 sm:p-6 md:p-8">
         <div className="space-y-6">
           <div>
             <h3 className="text-[16px] font-semibold text-main font-[Inter] mb-3">{t("settings.appearance.theme")}</h3>
@@ -698,50 +714,50 @@ export default function Settings() {
     </div>
   );
 
-const renderPanel = (key) => {
-  switch (key) {
-    case "profile":
-      return ProfilePanel();
+  const renderPanel = (key) => {
+    switch (key) {
+      case "profile":
+        return ProfilePanel();
 
-    case "notifications":
-      return NotificationsPanel();
+      case "notifications":
+        return NotificationsPanel();
 
-    case "password_security":
-      return PasswordSecurityPanel();
+      case "password_security":
+        return PasswordSecurityPanel();
 
-    case "preferences":
-      return (
-        <div className="w-full">
-          <div className="hidden lg:block mb-8">
-            <h1 className="text-xl sm:text-2xl md:text-[30px] font-bold text-main font-[Inter] mb-2">
-              {t("preferences.nav_title")}
-            </h1>
+      case "preferences":
+        return (
+          <div className="w-full">
+            <div className="hidden lg:block mb-8">
+              <h1 className="text-xl sm:text-2xl md:text-[30px] font-bold text-main font-[Inter] mb-2">
+                {t("preferences.nav_title")}
+              </h1>
 
-            <p className="text-sm sm:text-[16px] text-muted font-[Inter]">
-              {t("preferences.settings_modal_subtitle")}
-            </p>
+              <p className="text-sm sm:text-[16px] text-muted font-[Inter]">
+                {t("preferences.settings_modal_subtitle")}
+              </p>
+            </div>
+
+            <Preferences
+              mode="settings"
+              onSuccess={() => toast.success(t("preferences.save_success"))}
+            />
           </div>
+        );
 
-          <Preferences
-            mode="settings"
-            onSuccess={() => toast.success(t("preferences.save_success"))}
-          />
-        </div>
-      );
+      case "appearance":
+        return AppearancePanel();
 
-    case "appearance":
-      return AppearancePanel();
+      case "language":
+        return LanguagePanel();
 
-    case "language":
-      return LanguagePanel();
+      case "contactus":
+        return ContactPanel();
 
-    case "contactus":
-      return ContactPanel();
-
-    default:
-      return null;
-  }
-};
+      default:
+        return null;
+    }
+  };
 
   if (pageLoading) {
     return (
@@ -793,6 +809,7 @@ const renderPanel = (key) => {
         {/* ── Desktop main content ── */}
         <main className="hidden lg:block flex-1 p-3 sm:p-4 md:p-6 lg:p-8 lg:mt-5 min-w-0">
           {renderPanel(activeSetting)}
+          <FloatingAssistant />
         </main>
 
         {/* ── Mobile placeholder card ── */}

@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import ReportModal from "../components/common/ReportModal";
 import toast from "react-hot-toast";
 import { AlertTriangle } from "lucide-react";
+import FloatingAssistant from "../components/common/FloatingAssistant";
 
 const CoursesPage = () => {
     const { t } = useTranslation();
@@ -48,6 +49,11 @@ const CoursesPage = () => {
 
     const [showEnrollPopup, setShowEnrollPopup] = useState(false);
     const [selectedCourse, setSelectedCourse] = useState(null);
+
+    const courseIdMatches = (entry, targetId) => {
+        if (!entry) return false;
+        return String(entry?.id ?? entry?.courseId ?? entry?.course?.id) === String(targetId);
+    };
 
     const filterRef = useRef(null);
 
@@ -97,6 +103,31 @@ const CoursesPage = () => {
         };
 
         fetchCourses();
+    }, []);
+
+    // Listen for external refresh requests (e.g., after enrollment elsewhere)
+    useEffect(() => {
+        const refreshCourses = async () => {
+            try {
+                const token = localStorage.getItem("token");
+                const [exploreRes, myRes] = await Promise.all([
+                    fetch(`${API_BASE_URL}/api/courses`),
+                    fetch(`${API_BASE_URL}/api/courses/my-courses`, {
+                        headers: { Authorization: `Bearer ${token}` },
+                    }),
+                ]);
+                const exploreData = await exploreRes.json();
+                const myData = myRes.ok ? await myRes.json() : [];
+                console.log('refreshCourses: updated myCourses length', myData?.length);
+                setExploreCourses(exploreData);
+                setMyCourses(myData);
+            } catch (err) {
+                console.error('refreshCourses error:', err);
+            }
+        };
+
+        window.addEventListener('refreshCourses', refreshCourses);
+        return () => window.removeEventListener('refreshCourses', refreshCourses);
     }, []);
 
     const location = useLocation();
@@ -303,7 +334,7 @@ const CoursesPage = () => {
     const handleReportSubmit = async () => {
         try {
             setReportLoading(true);
-            const res = await fetch("http://localhost:5000/api/coures-reports", {
+            const res = await fetch("http://localhost:5000/api/course-reports", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -351,8 +382,27 @@ const CoursesPage = () => {
 
     const filteredExploreCourses = exploreCourses
         .filter((course) =>
-            !myCourses.some((c) => String(c.id) === String(course.id))
+            !myCourses.some((c) => courseIdMatches(c, course.id))
         )
+        .filter((course) => {
+            if (searchQuery.trim() !== "") {
+                return course.title.toLowerCase().includes(searchQuery.toLowerCase());
+            }
+
+            const cat = course.category === "Databases" ? "Database" : course.category;
+            const matchesCategory = filters.category.length === 0 || filters.category.includes(cat);
+            const matchesLevel = filters.level.length === 0 || filters.level.includes(course.level);
+
+            const isFree = course.priceValue === 0 || course.price === "₹0" || course.price === "Free" || !course.price;
+            const type = isFree ? "Free" : "Paid";
+            const matchesPrice = filters.price.length === 0 || filters.price.includes(type);
+
+            return matchesCategory && matchesLevel && matchesPrice;
+        });
+
+    // Same filters as filteredExploreCourses but WITHOUT the enrollment exclusion,
+    // so enrolled cards stay visible with the "Enrolled" button state.
+    const allFilteredExploreCourses = exploreCourses
         .filter((course) => {
             if (searchQuery.trim() !== "") {
                 return course.title.toLowerCase().includes(searchQuery.toLowerCase());
@@ -689,7 +739,7 @@ const CoursesPage = () => {
 
                             {filteredMyCourses.map((course) => {
                                 const purchasedEntry = user?.purchasedCourses?.find(
-                                    (c) => Number(c.courseId) === Number(course.id)
+                                    (c) => courseIdMatches(c, course.id)
                                 );
                                 const progress = purchasedEntry?.progress;
                                 const hasStarted =
@@ -712,6 +762,7 @@ const CoursesPage = () => {
                                                 src={course.image}
                                                 className="w-full h-full object-cover"
                                                 alt={course.title}
+                                                loading="lazy"
                                             />
                                         </div>
 
@@ -778,11 +829,15 @@ const CoursesPage = () => {
 
 
 
-                                {filteredExploreCourses.length === 0 && (
+                                {allFilteredExploreCourses.length === 0 && (
                                     <p className="text-slate-500">{t("courses.no_courses")}</p>
                                 )}
 
-                                {filteredExploreCourses.map((course) => (
+                                {allFilteredExploreCourses.map((course) => {
+                                                            const isEnrolled =
+                                                                myCourses.some((c) => courseIdMatches(c, course.id)) ||
+                                                                user?.purchasedCourses?.some((c) => courseIdMatches(c, course.id));
+                                    return (
                                     <div
                                         key={course.id}
                                         className="
@@ -802,6 +857,7 @@ const CoursesPage = () => {
                                                 src={course.image}
                                                 className="w-full h-full object-cover"
                                                 alt={course.title}
+                                                loading="lazy"
                                             />
                                             <div className="absolute bottom-3 right-3 bg-white text-black px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-1 shadow">
                                                 <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
@@ -832,22 +888,34 @@ const CoursesPage = () => {
                                                 </span>
 
                                                 <button
-                                                    onClick={() => navigate(`/course-preview/${course.id}`)}
-                                                    className="px-4 py-2 rounded-lg bg-[#2DD4BF] text-white text-xs font-semibold hover:bg-teal-500 transition-colors"
+                                                    onClick={() => {
+                                                        if (!isEnrolled) {
+                                                            setSelectedCourse(course);
+                                                            setShowEnrollPopup(true);
+                                                        }
+                                                    }}
+                                                    disabled={isEnrolled}
+                                                    className={`px-4 py-2 rounded-lg text-xs font-semibold transition-colors ${
+                                                        isEnrolled
+                                                            ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 cursor-default"
+                                                            : "bg-[#2DD4BF] text-white hover:bg-teal-500"
+                                                    }`}
                                                 >
-                                                    {t("common.enroll")}
+                                                    {isEnrolled ? t("courses.enrolled_short") : t("common.enroll")}
                                                 </button>
                                             </div>
 
                                         </div>
 
                                     </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         </div>
                     )}
 
                 </div>
+                <FloatingAssistant />
             </main>
 
             {/* ================= ENROLL POPUP ================= */}
@@ -864,6 +932,7 @@ const CoursesPage = () => {
                             src={selectedCourse.image}
                             alt={selectedCourse.title}
                             className="w-full h-40 object-cover rounded-xl mb-4"
+                            loading="lazy"
                         />
                         <h2 className="text-xl font-bold">{selectedCourse.title}</h2>
                         <p className="text-sm text-slate-500 mt-1">
@@ -903,7 +972,7 @@ const CoursesPage = () => {
                     </div>
                 </div>
             )}
-        </>
+        </>    
     );
 };
 

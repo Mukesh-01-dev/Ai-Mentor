@@ -36,7 +36,7 @@ function TypeBadge({ type }) {
 }
 
 // ─── Expanded Detail Modal ───────────────────────────────────────────────────
-function DiscussionModal({ post, onClose }) {
+function DiscussionModal({ post, onClose, onHide, onDelete }) {
   if (!post) return null;
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
@@ -115,20 +115,18 @@ function DiscussionModal({ post, onClose }) {
             </div>
           )}
 
-          {/* Action Buttons — interns can wire these up */}
+          {/* Action Buttons */}
           <div className="flex gap-3 pt-2 border-t border-border">
             <button
-              disabled
-              title="Coming soon — interns will implement this"
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-orange-500/10 text-orange-400 border border-orange-500/20 opacity-60 cursor-not-allowed"
+              onClick={() => onHide(post)}
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-orange-500/10 text-orange-400 border border-orange-500/20 hover:bg-orange-500 hover:text-white transition-all"
             >
               <EyeOff className="w-4 h-4" />
-              Hide Post
+              {post.hiddenAt ? "Unhide Post" : "Hide Post"}
             </button>
             <button
-              disabled
-              title="Coming soon — interns will implement this"
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-red-500/10 text-red-400 border border-red-500/20 opacity-60 cursor-not-allowed"
+              onClick={() => onDelete(post.id)}
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500 hover:text-white transition-all"
             >
               <Trash2 className="w-4 h-4" />
               Delete Post
@@ -148,6 +146,35 @@ function DiscussionsPage() {
   const [filter, setFilter] = useState("all"); // "all" | "global" | "course"
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState(null);
+
+  const handleToggleHide = async (post) => {
+    try {
+      const isCurrentlyHidden = !!post.hiddenAt;
+      const action = isCurrentlyHidden ? "unhide" : "hide";
+      
+      await callApi(`/admin/discussions/${post.id}/${action}`, { method: "PUT" });
+      setDiscussions((prev) => 
+        prev.map((p) => 
+          p.id === post.id ? { ...p, hiddenAt: isCurrentlyHidden ? null : new Date().toISOString() } : p
+        )
+      );
+      setSelected(null); 
+    } catch (err) {
+      alert(err.message || "Failed to update visibility");
+    }
+  };
+
+  const handleDeletePost = async (id) => {
+    if (!window.confirm("Are you sure you want to permanently delete this post?")) return;
+    try {
+      // Tell backend to delete the post
+      await callApi(`/admin/discussions/${id}`, { method: "DELETE" });         
+      setDiscussions((prev) => prev.filter((post) => post.id !== id));
+      setSelected(null);
+    } catch (err) {
+      alert(err.message || "Failed to delete post");
+    }
+  };
 
   useEffect(() => {
     const fetchDiscussions = async () => {
@@ -200,7 +227,12 @@ function DiscussionsPage() {
   return (
     <>
       {selected && (
-        <DiscussionModal post={selected} onClose={() => setSelected(null)} />
+        <DiscussionModal 
+          post={selected} 
+          onClose={() => setSelected(null)} 
+          onHide={handleToggleHide}
+          onDelete={handleDeletePost}
+        />
       )}
 
       <div className="p-6 md:p-8 space-y-6">

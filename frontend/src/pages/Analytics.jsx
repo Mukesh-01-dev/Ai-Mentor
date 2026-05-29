@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useTranslation } from "react-i18next";
+import FloatingAssistant from "../components/common/FloatingAssistant";
 
 const Analytics = () => {
   const { t, i18n } = useTranslation();
@@ -867,6 +868,7 @@ const Analytics = () => {
               </div>
             </div>
           )}
+          <FloatingAssistant />
         </main>
 
       <style>{`

@@ -26,6 +26,7 @@ import {
   AlertTriangle,
   MoreVertical,
 } from "lucide-react";
+import FloatingAssistant from "../components/common/FloatingAssistant";
 
 //helpers
 const getRelativeTime = (dateStr) => {
@@ -1630,6 +1631,7 @@ const latestPostsByCourse = Object.values(
                   </div>
                 </div>
               )}
+              <FloatingAssistant/>
             </main>
           )}
 
@@ -2332,6 +2334,7 @@ const latestPostsByCourse = Object.values(
                   </div>
                 )}
               </div>
+              <FloatingAssistant />
             </main>
           )}
         </div>

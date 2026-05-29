@@ -1,15 +1,24 @@
 import express from "express";
 import Stripe from "stripe";
-// 1️⃣ Import the protect middleware safely
+import rateLimit from "express-rate-limit"; // 1️⃣ Import express-rate-limit
 import { protect } from "../middleware/authMiddleware.js"; 
 
 const router = express.Router();
-
-// ✅ Initialize Stripe safely
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-// ✅ CREATE CHECKOUT SESSION (2️⃣ Added 'protect' middleware here)
-router.post("/create-checkout-session", protect, async (req, res) => {
+// 2️⃣ Configure the rate limiter for payment creations
+const paymentLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 3, // Limit each IP to 3 request per windowMs
+  message: {
+    error: "Too many payment attempts from this IP. Please try again after 15 minutes.",
+  },
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+});
+
+// ✅ CREATE CHECKOUT SESSION (3️⃣ Injected paymentLimiter middleware)
+router.post("/create-checkout-session", protect, paymentLimiter, async (req, res) => {
   try {
     const { course } = req.body;
 
@@ -53,7 +62,7 @@ router.post("/create-checkout-session", protect, async (req, res) => {
         },
       ],
 
-      // ✅ 3️⃣ SECURE FIX: Bind the verified user ID from JWT token to metadata
+      // ✅ SECURE FIX: Bind the verified user ID from JWT token to metadata
       metadata: {
         courseId: course.id.toString(),
         courseTitle: course.title,

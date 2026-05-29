@@ -80,14 +80,21 @@ export default function CoursePreview() {
             try {
                 const metaUrl = `${API_BASE_URL}/api/courses/${courseId}`;
                 const learnUrl = `${API_BASE_URL}/api/courses/${courseId}/learning`;
+                const token = localStorage.getItem("token");
+                const headers = token ? { Authorization: `Bearer ${token}` } : {};
                 const [metaRes, learnRes] = await Promise.all([
-                    fetch(metaUrl),
-                    fetch(learnUrl),
+                    fetch(metaUrl, { headers }),
+                    fetch(learnUrl, { headers }),
                 ]);
                 if (!metaRes.ok) throw new Error("Failed to fetch course meta");
-                if (!learnRes.ok) throw new Error("Failed to fetch course learning");
                 const meta = await metaRes.json();
-                const learning = await learnRes.json();
+                let learning = null;
+                // Safely handle the 403 Forbidden without crashing
+                if (learnRes.ok) {
+                    learning = await learnRes.json();
+                } else {
+                    console.log("User preview mode: Learning data locked until purchase.");
+                }
                 if (!cancelled) {
                     setCourseMeta(meta || {});
                     setLearningData(learning || {});

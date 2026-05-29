@@ -1,9 +1,9 @@
 import express from "express";
 import Razorpay from "razorpay";
 import crypto from "crypto";
+import rateLimit from "express-rate-limit";
 import User from "../models/User.js";
 import { createNotification } from "../controllers/notificationController.js";
-// 1️⃣ Import the protect middleware safely
 import { protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
@@ -26,26 +26,33 @@ const razorpay = new Razorpay({
   key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 
-// ✅ CREATE ORDER (2️⃣ Added 'protect' here)
-router.post("/create-order", protect, async (req, res) => {
+// ✅ Configure the rate limiter for payment creations
+const paymentLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 3, // Limit each IP to 3 requests per windowMs
+  message: {
+    error: "Too many payment attempts from this IP. Please try again after 15 minutes.",
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// ✅ CREATE ORDER
+router.post("/create-order", protect, paymentLimiter, async (req, res) => {
   try {
     const { course } = req.body;
 
     console.log("Incoming course for Razorpay:", course);
 
-    // ✅ Validate course data
     if (
       !course ||
       !course.id ||
       !course.priceValue ||
       Number(course.priceValue) <= 0
     ) {
-      return res.status(400).json({
-        error: "Invalid course data",
-      });
+      return res.status(400).json({ error: "Invalid course data" });
     }
 
-    // ✅ Convert price safely (₹ → paise)
     const amount = Math.round(Number(course.priceValue) * 100);
 
     const options = {
@@ -63,14 +70,11 @@ router.post("/create-order", protect, async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Razorpay Order Error:", error);
-
-    return res.status(500).json({
-      error: "Razorpay order creation failed",
-    });
+    return res.status(500).json({ error: "Razorpay order creation failed" });
   }
 });
 
-// ✅ VERIFY PAYMENT (2️⃣ Added 'protect' here)
+// ✅ VERIFY PAYMENT
 router.post("/verify", protect, async (req, res) => {
   try {
     const {
@@ -79,13 +83,11 @@ router.post("/verify", protect, async (req, res) => {
       razorpay_signature,
       courseId,
       courseTitle,
-      // ❌ REMOVED: userId from req.body to stop ID spoofing attacks
     } = req.body;
 
-    // 3️⃣ SECURE UPGRADE: Grab the user ID straight from the verified JWT token
+    // SECURE: Grab the user ID from verified JWT token (not from req.body)
     const userId = req.user.id;
 
-    // Validate request parameters (Checking verified userId instead of req.body)
     if (
       !razorpay_order_id ||
       !razorpay_payment_id ||
@@ -98,7 +100,6 @@ router.post("/verify", protect, async (req, res) => {
         .json({ success: false, error: "Missing required parameters" });
     }
 
-    // Create signature payload
     const sign = razorpay_order_id + "|" + razorpay_payment_id;
 
     const expectedSign = crypto
@@ -106,9 +107,7 @@ router.post("/verify", protect, async (req, res) => {
       .update(sign.toString())
       .digest("hex");
 
-    // Verify signature
     if (razorpay_signature === expectedSign) {
-      // Payment is successful, update user's purchased courses
       const user = await User.findByPk(userId);
 
       if (!user) {
@@ -119,7 +118,6 @@ router.post("/verify", protect, async (req, res) => {
 
       let purchased = user.purchasedCourses || [];
 
-      // Check duplicate
       const alreadyPurchased = purchased.find(
         (c) => Number(c.courseId) === Number(courseId),
       );

@@ -4,6 +4,7 @@ import Lesson from "./Lesson.js";
 import LessonContent from "./LessonContent.js";
 import User from "./User.js";
 import Preference from "./Preference.js";
+import AIVideo from "./AIVideo.js";
 
 /* ======================
    COURSE → MODULE
@@ -61,4 +62,17 @@ Preference.belongsTo(User, {
     foreignKey: "user_id",
 });
 
-export { Course, Module, Lesson, LessonContent, User, Preference };
+/* ======================
+   LESSON → AI VIDEO
+====================== */
+
+Lesson.hasMany(AIVideo, {
+    foreignKey: "lessonId",
+    as: "aiVideos",
+    onDelete: "CASCADE",
+});
+
+AIVideo.belongsTo(Lesson, {
+    foreignKey: "lessonId",
+});
+export { Course, Module, Lesson, LessonContent, User, AIVideo,Preference };

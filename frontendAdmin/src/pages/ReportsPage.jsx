@@ -212,7 +212,7 @@ function ReportModal({ report, onClose, onActionComplete }) {
   const performAction = async (status, reason) => {
     try {
       setSubmitting(true);
-      await callApi(`/admin/coures-reports/${report.id}`, {
+      await callApi(`/admin/course-reports/${report.id}`, {
         method: "PATCH",
         body: JSON.stringify({ status, ...(reason ? { reason } : {}) }),
       });
@@ -402,7 +402,7 @@ function ReportsPage() {
   const fetchReports = async () => {
     try {
       setLoading(true);
-      const response = await callApi("/admin/coures-reports");
+      const response = await callApi("/admin/course-reports");
       const data = Array.isArray(response?.data) ? response.data : [];
       setReports(data);
     } catch (err) {
@@ -420,7 +420,7 @@ function ReportsPage() {
     if (!reportToDelete) return;
     try {
       setDeleting(true);
-      await callApi(`/admin/coures-reports/${reportToDelete.id}`, {
+      await callApi(`/admin/course-reports/${reportToDelete.id}`, {
         method: "DELETE",
       });
       setReportToDelete(null);

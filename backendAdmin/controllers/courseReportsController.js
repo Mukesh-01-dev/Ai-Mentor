@@ -96,7 +96,7 @@ export const deleteReport = async (req, res) => {
   }
 };
 
-export const getAllCouresReports = async (req, res) => {
+export const getAllCourseReports = async (req, res) => {
   try {
     const reports = await CourseReports.findAll({
       include: [
