@@ -7,6 +7,8 @@ export const passwordSchema = z.string()
   .regex(/[!@#$%^&*(),.?":{}|<>]/, "Password must contain at least one special character");
 
 export const registerSchema = z.object({
+  firstName: z.string().min(1, "First name is required").max(50, "First name too long"),
+  lastName: z.string().min(1, "Last name is required").max(50, "Last name too long"),
   name: z.string().min(2, "Name must be at least 2 characters long"),
   email: z.string().email("Invalid email format"),
   password: passwordSchema,
