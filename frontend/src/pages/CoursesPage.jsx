@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import ReportModal from "../components/common/ReportModal";
 import toast from "react-hot-toast";
 import { AlertTriangle } from "lucide-react";
+import { v4 as uuidv4 } from "uuid";
 
 const CoursesPage = () => {
     const { t } = useTranslation();
@@ -166,139 +167,163 @@ const CoursesPage = () => {
         }
     };
 
-    const handleStripePayment = async () => {
-        if (!selectedCourse || isPurchasing) return;
-        const token = localStorage.getItem("token");
-        const priceValue = Number(selectedCourse.priceValue || 0);
+ const handleStripePayment = async () => {
+    if (!selectedCourse || isPurchasing) return;
+    const token = localStorage.getItem("token");
+    const priceValue = Number(selectedCourse.priceValue || 0);
 
-        try {
-            setIsPurchasing(true);
-            const res = await fetch(`${API_BASE_URL}/api/payment/create-checkout-session`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify({
-                    course: {
-                        id: selectedCourse.id,
-                        title: selectedCourse.title,
-                        priceValue,
-                    },
-                }),
-            });
-            const data = await res.json();
-            if (data.url) {
-                window.location.href = data.url;
-            } else {
-                throw new Error("Payment failed");
-            }
-        } catch (err) {
-            console.error(err);
-            toast.error("Payment error");
-            setIsPurchasing(false);
+    try {
+        setIsPurchasing(true);
+
+        // ✅ Generate idempotency key once per course+user, reuse on retry
+        const storageKey = `idem_stripe_${selectedCourse.id}_${user?.id}`;
+        let idempotencyKey = sessionStorage.getItem(storageKey);
+        if (!idempotencyKey) {
+            idempotencyKey = uuidv4();
+            sessionStorage.setItem(storageKey, idempotencyKey);
         }
-    };
 
-    const handleRazorpayPayment = async () => {
-        if (!selectedCourse || isPurchasing) return;
-        const token = localStorage.getItem("token");
-        const priceValue = Number(selectedCourse.priceValue || 0);
-
-        try {
-            setIsPurchasing(true);
-            const res = await fetch(`${API_BASE_URL}/api/payment/razorpay/create-order`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
+        const res = await fetch(`${API_BASE_URL}/api/payment/create-checkout-session`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+                course: {
+                    id: selectedCourse.id,
+                    title: selectedCourse.title,
+                    priceValue,
                 },
-                body: JSON.stringify({
-                    course: {
-                        id: selectedCourse.id,
-                        priceValue,
-                    },
-                }),
-            });
-            const orderData = await res.json();
+                idempotencyKey,  // ✅ send to backend
+            }),
+        });
+        const data = await res.json();
+        if (data.url) {
+            window.location.href = data.url;
+        } else {
+            throw new Error("Payment failed");
+        }
+    } catch (err) {
+        console.error(err);
+        toast.error("Payment error");
+        setIsPurchasing(false);
+    }
+};
 
-            if (!orderData.orderId) {
-                throw new Error(orderData.error || "Failed to create order");
-            }
+   const handleRazorpayPayment = async () => {
+    if (!selectedCourse || isPurchasing) return;
+    const token = localStorage.getItem("token");
+    const priceValue = Number(selectedCourse.priceValue || 0);
 
-            const options = {
-                key: import.meta.env.VITE_RAZORPAY_KEY_ID || "",
-                amount: orderData.amount,
-                currency: orderData.currency,
-                name: "UpToSkills",
-                description: selectedCourse.title,
-                order_id: orderData.orderId,
-                handler: async function (response) {
-                    try {
-                        const verifyRes = await fetch(`${API_BASE_URL}/api/payment/razorpay/verify`, {
-                            method: "POST",
-                            headers: {
-                                "Content-Type": "application/json",
-                                Authorization: `Bearer ${token}`,
-                            },
-                            body: JSON.stringify({
-                                razorpay_order_id: response.razorpay_order_id,
-                                razorpay_payment_id: response.razorpay_payment_id,
-                                razorpay_signature: response.razorpay_signature,
-                                courseId: selectedCourse.id,
-                                userId: user?.id,
+    try {
+        setIsPurchasing(true);
+
+        // ✅ Generate idempotency key once per course+user, reuse on retry
+        const storageKey = `idem_razorpay_${selectedCourse.id}_${user?.id}`;
+        let idempotencyKey = sessionStorage.getItem(storageKey);
+        if (!idempotencyKey) {
+            idempotencyKey = uuidv4();
+            sessionStorage.setItem(storageKey, idempotencyKey);
+        }
+
+        const res = await fetch(`${API_BASE_URL}/api/payment/razorpay/create-order`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+                course: {
+                    id: selectedCourse.id,
+                    priceValue,
+                },
+                idempotencyKey,  // ✅ send to backend
+            }),
+        });
+        const orderData = await res.json();
+
+        if (!orderData.orderId) {
+            throw new Error(orderData.error || "Failed to create order");
+        }
+
+        const options = {
+            key: import.meta.env.VITE_RAZORPAY_KEY_ID || "",
+            amount: orderData.amount,
+            currency: orderData.currency,
+            name: "UpToSkills",
+            description: selectedCourse.title,
+            order_id: orderData.orderId,
+            handler: async function (response) {
+                try {
+                    const verifyRes = await fetch(`${API_BASE_URL}/api/payment/razorpay/verify`, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${token}`,
+                        },
+                        body: JSON.stringify({
+                            razorpay_order_id: response.razorpay_order_id,
+                            razorpay_payment_id: response.razorpay_payment_id,
+                            razorpay_signature: response.razorpay_signature,
+                            courseId: selectedCourse.id,
+                            courseTitle: selectedCourse.title,
+                            // ✅ userId removed — backend reads it from JWT token
+                        }),
+                    });
+
+                    const verifyData = await verifyRes.json();
+                    if (verifyData.success) {
+                        sessionStorage.removeItem(storageKey); // ✅ clear after success
+                        toast.success("Payment successful!");
+                        window.dispatchEvent(new Event("refreshNotifications"));
+
+                        const [exploreRes, myRes] = await Promise.all([
+                            fetch(`${API_BASE_URL}/api/courses`),
+                            fetch(`${API_BASE_URL}/api/courses/my-courses`, {
+                                headers: { Authorization: `Bearer ${token}` },
                             }),
-                        });
+                        ]);
+                        setExploreCourses(await exploreRes.json());
+                        setMyCourses(await myRes.json());
 
-                        const verifyData = await verifyRes.json();
-                        if (verifyData.success) {
-                            toast.success("Payment successful!");
-                            window.dispatchEvent(new Event("refreshNotifications"));
-
-                            const [exploreRes, myRes] = await Promise.all([
-                                fetch(`${API_BASE_URL}/api/courses`),
-                                fetch(`${API_BASE_URL}/api/courses/my-courses`, {
-                                    headers: { Authorization: `Bearer ${token}` },
-                                }),
-                            ]);
-                            setExploreCourses(await exploreRes.json());
-                            setMyCourses(await myRes.json());
-
-                            setShowEnrollPopup(false);
-                            setSelectedCourse(null);
-                            setActiveTab("my-courses");
-                        } else {
-                            throw new Error(verifyData.error || "Payment verification failed");
-                        }
-                    } catch (err) {
-                        console.error("Verification error:", err);
-                        toast.error(err.message || "Payment verification failed");
+                        setShowEnrollPopup(false);
+                        setSelectedCourse(null);
+                        setActiveTab("my-courses");
+                    } else {
+                        throw new Error(verifyData.error || "Payment verification failed");
                     }
+                } catch (err) {
+                    console.error("Verification error:", err);
+                    toast.error(err.message || "Payment verification failed");
+                }
+            },
+            prefill: {
+                name: user?.name || user?.firstName || "",
+                email: user?.email || "",
+                contact: user?.phone || "9999999999",
+            },
+            theme: { color: "#0f766e" },
+            modal: {
+                ondismiss: () => {
+                    // ✅ Don't clear key on dismiss — reuse same key if they retry
+                    setIsPurchasing(false);
                 },
-                prefill: {
-                    name: user?.name || user?.firstName || "",
-                    email: user?.email || "",
-                    contact: user?.phone || "9999999999",
-                },
-                theme: {
-                    color: "#0f766e",
-                },
-            };
+            },
+        };
 
-            const rzp = new window.Razorpay(options);
-            rzp.on("payment.failed", function (response) {
-                toast.error("Payment failed: " + response.error.description);
-            });
-            rzp.open();
+        const rzp = new window.Razorpay(options);
+        rzp.on("payment.failed", function (response) {
+            toast.error("Payment failed: " + response.error.description);
+        });
+        rzp.open();
 
-        } catch (err) {
-            console.error(err);
-            toast.error(err.message || "Payment error");
-        } finally {
-            setIsPurchasing(false);
-        }
-    };
-
+    } catch (err) {
+        console.error(err);
+        toast.error(err.message || "Payment error");
+        setIsPurchasing(false);
+    }
+};
     /* ================= REPORT ================= */
     const handleReportSubmit = async () => {
         try {

@@ -77,73 +77,85 @@ export default function CoursePreview() {
         const fetchAll = async () => {
             setLoading(true);
             setError(null);
-            try {
-                const metaUrl = `${API_BASE_URL}/api/courses/${courseId}`;
-                const learnUrl = `${API_BASE_URL}/api/courses/${courseId}/learning`;
-                const [metaRes, learnRes] = await Promise.all([
-                    fetch(metaUrl),
-                    fetch(learnUrl),
-                ]);
-                if (!metaRes.ok) throw new Error("Failed to fetch course meta");
-                if (!learnRes.ok) throw new Error("Failed to fetch course learning");
-                const meta = await metaRes.json();
-                const learning = await learnRes.json();
-                if (!cancelled) {
-                    setCourseMeta(meta || {});
-                    setLearningData(learning || {});
-                    // init module open state
-                    const mods = Array.isArray(learning?.modules)
-                        ? learning.modules
-                        : Array.isArray(meta?.modules)
-                            ? meta.modules
-                            : [];
-                    const init = mods.reduce((acc, m, i) => {
-                        acc[m.id ?? `mod-${i}`] = i === 0;
-                        return acc;
-                    }, {});
-                    setOpenModules(init);
-                    // prepare hero image candidates & initial src
-                    const heroPath = safeGet(
-                        meta,
-                        "image",
-                        safeGet(learning, "course.logo", ""),
-                    );
-                    const heroCandidates = buildImageCandidates(heroPath);
-                    heroCandidatesRef.current = heroCandidates;
-                    heroIndexRef.current = 0;
-                    setHeroSrc(heroCandidates[0] || "/ui/course-hero-placeholder.jpg");
-                    // prepare instructor image candidates: brand-first then backend candidates
-                    const brandInstructorPaths = [
-                        "/AI_Tutor_New_UI/Course_Preview/Mascot.jpeg",
-                        "/brankkit/mascot.png",
-                        "/assets/mascot.png",
-                    ];
-                    const backendInstructorCandidates = buildImageCandidates(
-                        safeGet(meta, "instructorPhoto", ""),
-                    );
-                    instructorCandidatesRef.current = [
-                        ...brandInstructorPaths,
-                        ...backendInstructorCandidates,
-                        "/ui/avatar-4.png",
-                    ];
-                    instructorIndexRef.current = 0;
-                    setInstructorSrc(
-                        instructorCandidatesRef.current[0] || "/ui/avatar-4.png",
-                    );
-                    // prepare trust badge candidates (brand-first)
-                    const brandTrustPaths = [
-                        "/AI_Tutor_New_UI/Course_Preview/US.png",
-                        "/brankkit/US.png",
-                        "/assets/US.png",
-                    ];
-                    trustCandidatesRef.current = [
-                        ...brandTrustPaths,
-                        "/ui/trust-badge.png",
-                    ];
-                    trustIndexRef.current = 0;
-                    setTrustSrc(trustCandidatesRef.current[0] || "/ui/trust-badge.png");
-                }
-            } catch (err) {
+       try {
+    const metaUrl = `${API_BASE_URL}/api/courses/${courseId}`;
+    const token = localStorage.getItem("token");
+
+    // ✅ Fetch course meta (public — no auth needed)
+    const metaRes = await fetch(metaUrl);
+    if (!metaRes.ok) throw new Error("Failed to fetch course meta");
+    const meta = await metaRes.json();
+
+    // ✅ Only fetch learning data if user has purchased this course
+    const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+    const hasPurchased = storedUser?.purchasedCourses?.some(
+        (c) => Number(c.courseId) === Number(courseId)
+    );
+
+    let learning = {};
+    if (hasPurchased) {
+        const learnRes = await fetch(`${metaUrl}/learning`, {
+            headers: { Authorization: `Bearer ${token}` },
+        });
+        if (learnRes.ok) learning = await learnRes.json();
+    }
+
+    if (!cancelled) {
+        setCourseMeta(meta || {});
+        setLearningData(learning || {});
+        // init module open state
+        const mods = Array.isArray(learning?.modules)
+            ? learning.modules
+            : Array.isArray(meta?.modules)
+                ? meta.modules
+                : [];
+        const init = mods.reduce((acc, m, i) => {
+            acc[m.id ?? `mod-${i}`] = i === 0;
+            return acc;
+        }, {});
+        setOpenModules(init);
+        // prepare hero image candidates & initial src
+        const heroPath = safeGet(
+            meta,
+            "image",
+            safeGet(learning, "course.logo", ""),
+        );
+        const heroCandidates = buildImageCandidates(heroPath);
+        heroCandidatesRef.current = heroCandidates;
+        heroIndexRef.current = 0;
+        setHeroSrc(heroCandidates[0] || "/ui/course-hero-placeholder.jpg");
+        // prepare instructor image candidates
+        const brandInstructorPaths = [
+            "/AI_Tutor_New_UI/Course_Preview/Mascot.jpeg",
+            "/brankkit/mascot.png",
+            "/assets/mascot.png",
+        ];
+        const backendInstructorCandidates = buildImageCandidates(
+            safeGet(meta, "instructorPhoto", ""),
+        );
+        instructorCandidatesRef.current = [
+            ...brandInstructorPaths,
+            ...backendInstructorCandidates,
+            "/ui/avatar-4.png",
+        ];
+        instructorIndexRef.current = 0;
+        setInstructorSrc(
+            instructorCandidatesRef.current[0] || "/ui/avatar-4.png",
+        );
+        // prepare trust badge candidates
+        const brandTrustPaths = [
+            "/AI_Tutor_New_UI/Course_Preview/US.png",
+            "/brankkit/US.png",
+            "/assets/US.png",
+        ];
+        trustCandidatesRef.current = [
+            ...brandTrustPaths,
+            "/ui/trust-badge.png",
+        ];
+        trustIndexRef.current = 0;
+        setTrustSrc(trustCandidatesRef.current[0] || "/ui/trust-badge.png");
+    }
+    } catch (err) {
                 if (!cancelled) {
                     console.error(err);
                     setError("Failed to load course details. Try reloading.");
@@ -290,6 +302,12 @@ export default function CoursePreview() {
                         title: selectedCourse.title,
                         priceValue,
                     },
+                    idempotencyKey: (() => {
+                    const k = `idem_stripe_${selectedCourse.id}_${user?.id}`;
+                    let key = sessionStorage.getItem(k);
+                    if (!key) { key = crypto.randomUUID(); sessionStorage.setItem(k, key); }
+                    return key;
+                })(),
                 }),
             });
             const data = await res.json();
@@ -313,7 +331,7 @@ export default function CoursePreview() {
         const priceValue = Number(selectedCourse.priceValue || 0);
 
         setIsPurchasing(true);
-        setIsPurchasing(true);
+        
 
         // ✅ Load Razorpay script on demand
         const loaded = await loadRazorpayScript();
@@ -330,7 +348,14 @@ export default function CoursePreview() {
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${token}`,
                 },
-                body: JSON.stringify({ course: { id: selectedCourse.id, priceValue } }),
+                body: JSON.stringify({ course: { id: selectedCourse.id, priceValue } ,
+                  idempotencyKey: (() => {
+                    const k = `idem_razorpay_${selectedCourse.id}_${user?.id}`;
+                    let key = sessionStorage.getItem(k);
+                    if (!key) { key = crypto.randomUUID(); sessionStorage.setItem(k, key); }
+                    return key;
+                })(),
+                }),
             });
             const orderData = await res.json();
 

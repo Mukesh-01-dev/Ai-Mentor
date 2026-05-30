@@ -4,6 +4,7 @@ import Lesson from "./Lesson.js";
 import LessonContent from "./LessonContent.js";
 import User from "./User.js";
 import Preference from "./Preference.js";
+import Payment from "./Payment.js";
 
 /* ======================
    COURSE → MODULE
@@ -61,4 +62,7 @@ Preference.belongsTo(User, {
     foreignKey: "user_id",
 });
 
-export { Course, Module, Lesson, LessonContent, User, Preference };
+User.hasMany(Payment, { foreignKey: "userId", as: "payments" });
+Payment.belongsTo(User, { foreignKey: "userId", as: "user" });
+
+export { Course, Module, Lesson, LessonContent, User, Preference, Payment };
