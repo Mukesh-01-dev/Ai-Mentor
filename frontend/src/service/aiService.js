@@ -17,7 +17,7 @@ export const getAIVideo = async (payload) => {
 
   try {
     data = await response.json();
-  } catch (err) {
+  } catch {
     throw new Error("Server returned empty or invalid JSON");
   }
 

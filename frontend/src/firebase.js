@@ -12,7 +12,7 @@ const firebaseConfig = {
 };
 
 const missingEnvVars = Object.entries(firebaseConfig)
-  .filter(([_, value]) => !value)
+  .filter(([, value]) => !value)
   .map(([key]) => key);
 
 if (missingEnvVars.length > 0) {

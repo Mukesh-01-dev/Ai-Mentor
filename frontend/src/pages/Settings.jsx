@@ -114,7 +114,6 @@ function MobileSettingsDrawer({ open, onClose, onSelect, t }) {
 /* ───────────────────────────────────────────────
    Mobile full-screen modal (individual setting)
 ─────────────────────────────────────────────── */
-// eslint-disable-next-line no-unused-vars
 function MobileModal({ open, onBack, onClose, title, children }) {
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";

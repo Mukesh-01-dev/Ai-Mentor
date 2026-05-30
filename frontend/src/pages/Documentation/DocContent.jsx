@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import DocHeading from '../../components/common/DocElements/DocHeading';
 import DocSection from '../../components/common/DocElements/DocSection';
 

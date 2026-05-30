@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 // frontend/src/context/AuthContext.jsx
 import React, {
   createContext,

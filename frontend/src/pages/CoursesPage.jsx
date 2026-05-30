@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Star, X, BookOpen, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -26,7 +26,6 @@ const CoursesPage = () => {
     const [reportText, setReportText] = useState("");
     const [subType, setSubType] = useState("");
     const [reportType, setReportType] = useState("Select Issue Type");
-    const [reportCourse, setReportCourse] = useState("");
     const [reportLoading, setReportLoading] = useState(false);
 
     const [filters, setFilters] = useState({ category: [], level: [], price: [] });
@@ -379,26 +378,6 @@ const CoursesPage = () => {
             </div>
         );
     }
-
-    const filteredExploreCourses = exploreCourses
-        .filter((course) =>
-            !myCourses.some((c) => courseIdMatches(c, course.id))
-        )
-        .filter((course) => {
-            if (searchQuery.trim() !== "") {
-                return course.title.toLowerCase().includes(searchQuery.toLowerCase());
-            }
-
-            const cat = course.category === "Databases" ? "Database" : course.category;
-            const matchesCategory = filters.category.length === 0 || filters.category.includes(cat);
-            const matchesLevel = filters.level.length === 0 || filters.level.includes(course.level);
-
-            const isFree = course.priceValue === 0 || course.price === "₹0" || course.price === "Free" || !course.price;
-            const type = isFree ? "Free" : "Paid";
-            const matchesPrice = filters.price.length === 0 || filters.price.includes(type);
-
-            return matchesCategory && matchesLevel && matchesPrice;
-        });
 
     // Same filters as filteredExploreCourses but WITHOUT the enrollment exclusion,
     // so enrolled cards stay visible with the "Enrolled" button state.

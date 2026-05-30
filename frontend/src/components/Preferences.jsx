@@ -3,7 +3,7 @@ import axios from "axios";
 import { Loader2, ArrowRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-export const WIZARD_STEPS = [
+const WIZARD_STEPS = [
   {
     id: "explanation_type",
     questionKey: "explanation_type",
@@ -66,20 +66,7 @@ export const WIZARD_STEPS = [
   }
 ];
 
-export const buildAIPromptFromPreferences = (preferences) => {
-  if (!preferences) return "";
 
-  return `
-    The user has specified the following learning preferences:
-    - Explanation Type: ${preferences.explanation_type}
-    - Learning Style: ${preferences.learning_style}
-    - Teaching Pace: ${preferences.teaching_pace}
-    - Example Type: ${preferences.example_type}
-    - Focus Area: ${preferences.focus_area}
-    
-    Please ensure all your explanations and generated contents are aligned with these preferences.
-  `.trim();
-};
 
 let moduleCache = { token: null, data: null, hasExisting: null, loaded: false };
 

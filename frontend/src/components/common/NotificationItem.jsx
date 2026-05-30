@@ -57,7 +57,7 @@ ${unread ? "bg-teal-500/5 border-l-4 border-teal-500" : ""}`}
 
 
             {/* Icon */}
-            <div className="relative mt-1 flex-shrink-0 w-10 h-10 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+            <div className={`relative mt-1 flex-shrink-0 w-10 h-10 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform ${getBgColor(type)}`}>
 
                 {getIcon(type)}
 

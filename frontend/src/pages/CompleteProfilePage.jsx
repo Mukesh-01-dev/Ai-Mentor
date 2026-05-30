@@ -73,22 +73,20 @@ const CompleteProfilePage = () => {
   };
 
   const [avatarPreview, setAvatarPreview] = useState(getInitialAvatar());
+  const [isInitialized, setIsInitialized] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   
   /* ─── Sync form state with user data ─── */
   useEffect(() => {
-    if (user) {
-      if (user.firstName && !firstName) setFirstName(user.firstName);
-      if (user.lastName && !lastName) setLastName(user.lastName);
-      if (user.bio && !bio) setBio(user.bio);
-      
-      // Update preview if user photo becomes available (and user hasn't uploaded one manually)
-      if (user.avatar_url && !avatar) {
-        setAvatarPreview(user.avatar_url);
-      }
+    if (user && !isInitialized) {
+      if (user.firstName) setFirstName(user.firstName);
+      if (user.lastName) setLastName(user.lastName);
+      if (user.bio) setBio(user.bio);
+      if (user.avatar_url) setAvatarPreview(user.avatar_url);
+      setIsInitialized(true);
     }
-  }, [user, avatar]);
+  }, [user, isInitialized]);
 
   /* ─── Password requirements (Google users only) ─── */
   const passwordRequirements = {

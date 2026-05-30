@@ -27,6 +27,12 @@ import {
   Sparkles,
 } from "lucide-react";
 
+const celebrityVideoMap = {
+  "Salman Khan": { video: "/videos/salman.mp4", vtt: "/videos/salman.vtt" },
+  "Modi ji": { video: "/videos/modi.mp4", vtt: "/videos/modi.vtt" },
+  SRK: { video: "/videos/srk.mp4", vtt: "/videos/srk.vtt" },
+};
+
 export default function Learning() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -41,12 +47,6 @@ export default function Learning() {
   const [captions, setCaptions] = useState([]);
   const [activeCaption, setActiveCaption] = useState("");
   const celebrities = ["Salman Khan", "Modi ji", "SRK"];
-
-  const celebrityVideoMap = {
-    "Salman Khan": { video: "/videos/salman.mp4", vtt: "/videos/salman.vtt" },
-    "Modi ji": { video: "/videos/modi.mp4", vtt: "/videos/modi.vtt" },
-    SRK: { video: "/videos/srk.mp4", vtt: "/videos/srk.vtt" },
-  };
 
   const [selectedCelebrity, setSelectedCelebrity] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -176,7 +176,7 @@ export default function Learning() {
       }
     };
     fetchLearningData();
-  }, [courseId]);
+  }, [courseId, user?.purchasedCourses]);
 
   // Reset restore flag on course change
   useEffect(() => {
@@ -231,7 +231,7 @@ export default function Learning() {
           return { start: toSeconds(match[1]), end: toSeconds(match[2]), text: lines.slice(1).join(" ") };
         }).filter(Boolean);
         setCaptions(cues);
-      } catch (err) {
+      } catch {
         setCaptions([]);
       }
     };
@@ -374,7 +374,14 @@ export default function Learning() {
     };
 
     loadVideo();
-  }, [learningData?.currentLesson?.id, selectedCelebrity]);
+  }, [
+    learningData?.currentLesson,
+    selectedCelebrity,
+    user?.purchasedCourses,
+    courseId,
+    aiVideoUrl,
+    saveLessonData,
+  ]);
 
   // Fullscreen change handler
   useEffect(() => {
@@ -420,10 +427,10 @@ export default function Learning() {
   const currentLessonIndex = allLessons.findIndex((lesson) => lesson.id === currentLesson?.id);
 
   // ─── Helper functions ───
-  const saveLessonData = async (lessonId, data) => {
+  const saveLessonData = useCallback(async (lessonId, data) => {
     try {
       const token = localStorage.getItem("token");
-      const mod = modules.find((m) => m.lessons?.some((l) => l.id === currentLesson.id));
+      const mod = modules?.find((m) => m.lessons?.some((l) => l.id === currentLesson?.id));
       const res = await fetch("/api/users/course-progress", {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -432,7 +439,7 @@ export default function Learning() {
           lessonData: { lessonId, data },
           currentLesson: {
             lessonId,
-            moduleTitle: mod.title || "",
+            moduleTitle: mod?.title || "",
           },
           completedLesson: { lessonId },
         }),
@@ -444,9 +451,9 @@ export default function Learning() {
     } catch (error) {
       console.error("Error saving lesson data:", error);
     }
-  };
+  }, [modules, currentLesson, courseId, updateUser]);
 
-  const completeLesson = async (lessonId) => {
+  const completeLesson = useCallback(async (lessonId) => {
     const courseProgress = user?.purchasedCourses?.find(
       (course) => course.courseId === parseInt(courseId)
     )?.progress;
@@ -461,11 +468,11 @@ export default function Learning() {
     else{
       toast.error("Please watch the video before continuing.");
     }
-  };
+  }, [user, courseId]);
 
   const toggleModule = (id) => setExpandedModule((prev) => (prev === id ? null : id));
 
-  const handleLessonClick = (lesson) => {
+  const handleLessonClick = useCallback((lesson) => {
     if (currentLesson?.id === lesson.id) return;
     setGeneratedTextContent(null);
     setAiVideoUrl(null);
@@ -474,13 +481,13 @@ export default function Learning() {
       ?.find((c) => c.courseId === parseInt(courseId))
       ?.progress?.lessonData?.[lesson.id];
     jumpToTimeRef.current = savedData?.watchHistory?.currentTime || 0;
-  };
+  }, [currentLesson, user, courseId]);
 
   const handlePrevious = useCallback(() => {
     if (currentLessonIndex > 0) {
       handleLessonClick(allLessons[currentLessonIndex - 1]);
     }
-  }, [currentLessonIndex, allLessons]);
+  }, [currentLessonIndex, allLessons, handleLessonClick]);
 
   const handleNext = useCallback(async () => {
     if (currentLessonIndex >= allLessons.length - 1) return;
@@ -488,7 +495,7 @@ export default function Learning() {
     if (currentLesson?.id) await completeLesson(currentLesson.id);
     handleLessonClick(allLessons[currentLessonIndex + 1]);
     setIsNavigating(false);
-  }, [currentLessonIndex, allLessons, currentLesson]);
+  }, [currentLessonIndex, allLessons, currentLesson, completeLesson, handleLessonClick]);
 
   const togglePlay = useCallback(() => {
     if (videoRef.current) {

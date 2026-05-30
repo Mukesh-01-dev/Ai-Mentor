@@ -12,7 +12,7 @@ export const useScrollspy = (ids, offset = 100) => {
       for (const id of ids) {
         const element = document.getElementById(id);
         if (element) {
-          const { top, bottom } = element.getBoundingClientRect();
+          const { top } = element.getBoundingClientRect();
           const elementTop = top + window.scrollY;
           
           if (elementTop <= scrollPosition) {

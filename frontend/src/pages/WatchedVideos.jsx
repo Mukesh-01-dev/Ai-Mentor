@@ -32,6 +32,7 @@ const WatchedVideos = () => {
   });
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
 
   const fetchWatchedVideos = async () => {
@@ -75,6 +76,27 @@ const WatchedVideos = () => {
     );
   }
 
+  if (error) {
+    return (
+      <main className="flex-1 p-4 md:p-6 lg:p-8 flex items-center justify-center">
+        <div className="text-center bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/50 p-6 rounded-2xl max-w-md shadow-sm">
+          <p className="text-red-600 dark:text-red-400 font-semibold mb-2">Error Loading Watched Videos</p>
+          <p className="text-muted text-sm mb-4">{error}</p>
+          <button 
+            onClick={() => {
+              setLoading(true);
+              setError(null);
+              fetchWatchedVideos();
+            }} 
+            className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-sm font-semibold transition-all shadow-sm"
+          >
+            Retry
+          </button>
+        </div>
+      </main>
+    );
+  }
+
   // Format last watched date
   const formatLastWatched = (dateString) => {
     const date = new Date(dateString);
@@ -90,7 +112,7 @@ const WatchedVideos = () => {
     return date.toLocaleDateString();
   };
 
- const handleResume = (video) => {
+  const handleResume = (video) => {
     navigate(`/learning/${video.courseId}`, {
       state: { lessonId: video.lessonId },
     });
@@ -104,8 +126,8 @@ const WatchedVideos = () => {
   // Filtered videos based on search and filters
   const filteredVideos = videoData.filter((video) => {
     const matchesSearch =
-  video.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-  (video.course || "").toLowerCase().includes(searchQuery.toLowerCase());
+      video.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (video.course || "").toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCourse =
       courseFilter === "All Courses" || video.course === courseFilter;
     const matchesStatus =
@@ -235,7 +257,7 @@ const WatchedVideos = () => {
                 <img
                   src={video.thumbnail}
                   alt={video.title}
-                 className="w-full h-48 object-cover"
+                  className="w-full h-48 object-cover"
                 />
                 {/* Play overlay */}
                 <button
@@ -357,10 +379,10 @@ const WatchedVideos = () => {
         <div className="absolute bottom-0 left-0 w-full h-1 bg-gray-300 dark:bg-gray-700">
           <div
             className={`h-full ${video.status === "completed"
-                ? "bg-green-500"
-                : video.status === "in-progress"
-                  ? "bg-orange-500"
-                  : "bg-gray-400"
+              ? "bg-green-500"
+              : video.status === "in-progress"
+                ? "bg-orange-500"
+                : "bg-gray-400"
               }`}
             style={{ width: `${video.progress}%` }}
           ></div>
@@ -389,12 +411,11 @@ const WatchedVideos = () => {
 
         {/* Action Buttons */}
         <div className="flex gap-2">
-        <button
-            className={`flex-1 h-10 rounded-lg text-sm font-medium flex items-center justify-center gap-2 ${
-              video.status === "completed"
+          <button
+            className={`flex-1 h-10 rounded-lg text-sm font-medium flex items-center justify-center gap-2 ${video.status === "completed"
                 ? "bg-canvas text-main hover:bg-canvas-alt"
                 : "bg-orange-500 hover:bg-orange-600 text-white"
-            }`}
+              }`}
             onClick={() => handleResume(video)}
           >
             {video.status === "completed" ? (
@@ -419,23 +440,23 @@ const WatchedVideos = () => {
 
   return (
     <>
-        {/* Main Dashboard Content */}
-        <main className="flex-1 p-4 md:p-6 lg:p-8">
-          {/* Page Title */}
-          <div className="mb-6 lg:mb-8">
-            <h1
-              className="text-main text-2xl md:text-3xl font-bold mb-1"
-              style={{ fontFamily: "Poppins, sans-serif" }}
-            >
-              {t("watched.title")}
-            </h1>
-            <p
-              className="text-muted text-sm md:text-base"
-              style={{ fontFamily: "Poppins, sans-serif" }}
-            >
-              {t("watched.subtitle")}
-            </p>
-          </div>
+      {/* Main Dashboard Content */}
+      <main className="flex-1 p-4 md:p-6 lg:p-8">
+        {/* Page Title */}
+        <div className="mb-6 lg:mb-8">
+          <h1
+            className="text-main text-2xl md:text-3xl font-bold mb-1"
+            style={{ fontFamily: "Poppins, sans-serif" }}
+          >
+            {t("watched.title")}
+          </h1>
+          <p
+            className="text-muted text-sm md:text-base"
+            style={{ fontFamily: "Poppins, sans-serif" }}
+          >
+            {t("watched.subtitle")}
+          </p>
+        </div>
 
         <MetricsCards />
         {/* <ContinueWatchingSection /> */}
@@ -461,7 +482,7 @@ const WatchedVideos = () => {
           </div>
         )}
         <FloatingAssistant />
-        </main>
+      </main>
     </>
   );
 };

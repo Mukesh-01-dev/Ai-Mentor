@@ -22,7 +22,7 @@ import {
   Award,
 } from "lucide-react";
 import Preferences from "../components/Preferences";
-import API_BASE_URL, { apiFetch } from "../lib/api";
+import API_BASE_URL from "../lib/api";
 import FloatingAssistant from "../components/common/FloatingAssistant";
 
 const Dashboard = () => {
@@ -81,7 +81,7 @@ const Dashboard = () => {
     };
 
     fetchAllData();
-  }, []);
+  }, [fetchUserProfile]);
   const calculateStats = () => {
     const baseCards = [
       {
