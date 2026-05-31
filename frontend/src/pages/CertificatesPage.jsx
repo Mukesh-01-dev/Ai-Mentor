@@ -15,6 +15,7 @@ import {
 import API_BASE_URL from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 import { useTranslation } from "react-i18next";
+import FloatingAssistant from "../components/common/FloatingAssistant";
 
 const CertificatesPage = () => {
   const { user } = useAuth();
@@ -24,6 +25,11 @@ const CertificatesPage = () => {
   const [loading, setLoading] = useState(true);
   const [downloadingId, setDownloadingId] = useState(null);
   const [showPreview, setShowPreview] = useState(false);
+
+  const [showNameModal, setShowNameModal] =useState(false);
+  const [certificateName, setCertificateName] =useState("");
+  const [selectedCourse, setSelectedCourse] =useState(null);
+  const [nameError, setNameError] =useState("");
 
   const handleClosePreview = useCallback((e) => {
     if (e.key === "Escape") setShowPreview(false);
@@ -67,17 +73,23 @@ const CertificatesPage = () => {
     if (user) fetchCertificates();
   }, [user]);
 
-  const handleDownload = async (courseId, courseTitle) => {
+  const handleDownload = async () => {
     try {
-      setDownloadingId(courseId);
+    if (!selectedCourse) return;
+    setNameError("");
+    if (!certificateName.trim()) {setNameError("Please enter your name");
+      return;
+    }
+      setDownloadingId(selectedCourse.courseId);
       const token = localStorage.getItem("token");
-      const res = await fetch(`${API_BASE_URL}/api/certificate/generate?courseId=${courseId}`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const encodedName = encodeURIComponent(certificateName.trim());
+      const res = await fetch(`${API_BASE_URL}/api/certificate/generate?courseId=${selectedCourse.courseId}&enteredName=${encodedName}`,
+      {headers: {Authorization: `Bearer ${token}`,},
       });
 
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
-        alert(errData.message || "Failed to generate certificate");
+        setNameError(errData.message || "Failed to generate certificate");
         return;
       }
 
@@ -85,15 +97,16 @@ const CertificatesPage = () => {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      const safeName = courseTitle.replace(/[^a-zA-Z0-9]/g, "_");
+      const safeName =selectedCourse.courseTitle.replace(/[^a-zA-Z0-9]/g,"_");
       a.download = `Certificate_${safeName}.pdf`;
       document.body.appendChild(a);
       a.click();
       a.remove();
       window.URL.revokeObjectURL(url);
+      setShowNameModal(false);
     } catch (error) {
       console.error("Certificate download error:", error);
-      alert("Failed to download certificate. Please try again.");
+       setNameError("Failed to download certificate.Please try again.");
     } finally {
       setDownloadingId(null);
     }
@@ -415,13 +428,11 @@ const CertificatesPage = () => {
                         {course.isCompleted ? (
                           <div>
 
-                            <button
-                              onClick={() =>
-                                handleDownload(
-                                  course.courseId,
-                                  course.courseTitle
-                                )
-                              }
+                          <button onClick={() => {
+                               setSelectedCourse(course);
+                               setCertificateName(user?.name || "");
+                               setShowNameModal(true);
+                                }}
                               disabled={downloadingId === course.courseId}
                               className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-amber-500 to-yellow-500 text-white font-semibold rounded-xl hover:from-amber-600 hover:to-yellow-600 disabled:opacity-60 disabled:cursor-wait transition-all shadow-md hover:shadow-lg"
                             >
@@ -650,7 +661,80 @@ const CertificatesPage = () => {
           `}</style>
         </div>
       )}
+
+      {showNameModal && (
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        <div className="w-full max-w-md rounded-3xl bg-white dark:bg-[#1f2937] shadow-2xl border border-gray-200 dark:border-gray-700 p-6">
+
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-2xl font-bold text-gray-800 dark:text-white">
+             Download Certificate
+          </h2>
+
+        <button
+          onClick={() => {
+            setShowNameModal(false);
+            setNameError("");
+          }}
+          className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+        >
+          <X className="w-5 h-5 text-gray-500" />
+        </button>
+       </div>
+
+      <div className="mb-4">
+        <label className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">
+          Enter Your Name
+        </label>
+
+        <input
+          type="text"
+          value={certificateName}
+          onChange={(e) =>
+            setCertificateName(
+              e.target.value
+            ) }
+          placeholder="Enter your name"
+          className="w-full px-4 py-3 rounded-2xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500"
+        />
+        <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+          Minor spelling corrections are allowed.
+          Completely different names are not allowed.
+        </p>
+        {nameError && (
+          <div className="mt-3 text-sm text-red-500 font-medium">
+            {nameError}
+          </div>
+        )}
+      </div>
+
+      <button
+        onClick={handleDownload}
+        disabled={
+          downloadingId ===
+          selectedCourse?.courseId
+        }
+        className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold hover:scale-[1.02] active:scale-[0.98] transition-all"
+      >
+        {downloadingId ===
+        selectedCourse?.courseId ? (
+          <>
+            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            Generating PDF...
+          </>
+        ) : (
+          <>
+            <Download className="w-5 h-5" />
+            Download PDF
+          </>
+        )}
+         </button>
+       </div>
+      </div>
+    )}
+    <FloatingAssistant />
     </main>
+    
   );
 };
 

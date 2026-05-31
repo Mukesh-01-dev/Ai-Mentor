@@ -31,7 +31,13 @@ const Course = sequelize.define("Course", {
     comment: "Course thumbnail path. Example: /uploads/courses/react.png"
   },
 
-  isBookmarked: DataTypes.BOOLEAN,
+  status: {
+    type: DataTypes.STRING,
+    defaultValue: "published",
+    validate: {
+      isIn: [["published", "disabled", "deleted"]],
+    },
+  },
 });
 
 export default Course;

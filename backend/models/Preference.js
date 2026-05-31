@@ -15,30 +15,23 @@ Preference.init(
       allowNull: false,
       unique: true,
     },
-    learning_goal: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-    interested_topics: {
-      type: DataTypes.TEXT,
-      allowNull: false,
-      get() {
-        const rawValue = this.getDataValue('interested_topics');
-        return rawValue ? JSON.parse(rawValue) : [];
-      },
-      set(val) {
-        this.setDataValue('interested_topics', JSON.stringify(val || []));
-      }
-    },
-    experience_level: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-    weekly_commitment: {
+    explanation_type: {
       type: DataTypes.STRING,
       allowNull: false,
     },
     learning_style: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    teaching_pace: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    example_type: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    focus_area: {
       type: DataTypes.STRING,
       allowNull: false,
     },

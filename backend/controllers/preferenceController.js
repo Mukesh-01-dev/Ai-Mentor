@@ -31,25 +31,25 @@ export const createPreferences = async (req, res) => {
     }
 
     const {
-      learning_goal,
-      interested_topics,
-      experience_level,
-      weekly_commitment,
-      learning_style
+      explanation_type,
+      learning_style,
+      teaching_pace,
+      example_type,
+      focus_area
     } = req.body;
 
     // Validate required fields
-    if (!learning_goal || !interested_topics || !experience_level || !weekly_commitment || !learning_style) {
+    if (!explanation_type || !learning_style || !teaching_pace || !example_type || !focus_area) {
       return res.status(400).json({ message: "All required fields must be provided" });
     }
 
     const preferences = await Preference.create({
       user_id: userId,
-      learning_goal,
-      interested_topics,
-      experience_level,
-      weekly_commitment,
-      learning_style
+      explanation_type,
+      learning_style,
+      teaching_pace,
+      example_type,
+      focus_area
     });
 
     res.status(201).json(preferences);
@@ -71,23 +71,23 @@ export const updatePreferences = async (req, res) => {
     }
 
     const {
-      learning_goal,
-      interested_topics,
-      experience_level,
-      weekly_commitment,
-      learning_style
+      explanation_type,
+      learning_style,
+      teaching_pace,
+      example_type,
+      focus_area
     } = req.body;
 
     // Validate required fields
-    if (!learning_goal || !interested_topics || !experience_level || !weekly_commitment || !learning_style) {
+    if (!explanation_type || !learning_style || !teaching_pace || !example_type || !focus_area) {
       return res.status(400).json({ message: "All required fields must be provided" });
     }
 
-    preferences.learning_goal = learning_goal;
-    preferences.interested_topics = interested_topics;
-    preferences.experience_level = experience_level;
-    preferences.weekly_commitment = weekly_commitment;
+    preferences.explanation_type = explanation_type;
     preferences.learning_style = learning_style;
+    preferences.teaching_pace = teaching_pace;
+    preferences.example_type = example_type;
+    preferences.focus_area = focus_area;
 
     await preferences.save();
 

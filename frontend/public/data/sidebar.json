@@ -46,5 +46,11 @@
     "icon": "/AI_Tutor_New_UI/Icons/certificates.svg",
     "label": "Certificates",
     "path": "/certificates"
+  },
+  {
+    "id": "report",
+    "icon": "/AI_Tutor_New_UI/Icons/settings.svg",
+    "label": "Report",
+    "path": "/report"
   }
 ]

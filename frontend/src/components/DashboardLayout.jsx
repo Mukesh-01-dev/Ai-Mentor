@@ -12,6 +12,7 @@ const routeToPage = {
   "/settings": "settings",
   "/watchedvideos": "watched",
   "/certificates": "certificates",
+  "/report": "report",
 };
 
 const DashboardLayout = () => {

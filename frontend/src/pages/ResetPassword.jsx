@@ -3,6 +3,20 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { Eye, EyeOff, Lock, ArrowLeft } from "lucide-react";
 import AuthLayout from "../components/auth/AuthLayout";
 import axios from "axios";
+import { z } from "zod";
+
+const resetPasswordSchema = z.object({
+  password: z.string()
+    .min(8, "Password must be at least 8 characters")
+    .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+    .regex(/[a-z]/, "Password must contain at least one lowercase letter")
+    .regex(/[0-9]/, "Password must contain at least one number")
+    .regex(/[!@#$%^&*(),.?":{}|<>]/, "Password must contain at least one symbol"),
+  confirmPassword: z.string(),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
+});
 
 const ResetPassword = () => {
     const { token } = useParams();
@@ -17,16 +31,13 @@ const ResetPassword = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (password !== confirmPassword) {
-            return setError("Passwords do not match");
-        }
-
         setLoading(true);
         setError("");
 
         try {
+            const validationResult = resetPasswordSchema.parse({ password, confirmPassword });
             await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/auth/reset-password/${token}`, {
-                password,
+                password: validationResult.password,
             });
 
             setSuccess(true);
@@ -34,7 +45,11 @@ const ResetPassword = () => {
                 navigate("/login");
             }, 3000);
         } catch (err) {
-            setError(err.response?.data?.message || err.message);
+            if (err instanceof z.ZodError) {
+                setError(err.errors[0].message);
+            } else {
+                setError(err.response?.data?.message || err.message);
+            }
         } finally {
             setLoading(false);
         }

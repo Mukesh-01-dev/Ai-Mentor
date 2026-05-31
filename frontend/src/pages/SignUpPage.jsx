@@ -6,6 +6,21 @@ import { useAuth } from "../context/AuthContext";
 import AuthLayout from "../components/auth/AuthLayout";
 import SocialLogin from "../components/auth/SocialLogin";
 import toast from "react-hot-toast";
+import { z } from "zod";
+import  API_BASE_URL  from "../lib/api";
+
+const signupSchema = z.object({
+  firstName: z.string().min(1, "First name is required").max(50, "First name too long"),
+  lastName: z.string().min(1, "Last name is required").max(50, "Last name too long"),
+  email: z.string().email("Please enter a valid email address"),
+  username: z.string().min(3, "Username must be at least 3 characters").max(20, "Username too long"),
+  password: z.string()
+    .min(8, "Password must be at least 8 characters")
+    .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+    .regex(/[a-z]/, "Password must contain at least one lowercase letter")
+    .regex(/[0-9]/, "Password must contain at least one number")
+    .regex(/[!@#$%^&*(),.?":{}|<>]/, "Password must contain at least one symbol"),
+});
 
 /* FormInput stays UI-only */
 const FormInput = ({ label, type, placeholder, value, onChange }) => {
@@ -65,24 +80,27 @@ const SignUpPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!isPasswordValid) {
-      toast.error("Please meet all password requirements.");
-      return;
-    }
-
-    setLoading(true);
     try {
-      const response = await fetch(`/api/users/register`, {
+      const validationResult = signupSchema.parse({
+        firstName,
+        lastName,
+        email,
+        username,
+        password,
+      });
+
+      setLoading(true);
+      const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          firstName,
-          lastName,
-          name: username,
-          email,
-          password,
+          firstName: validationResult.firstName,
+          lastName: validationResult.lastName,
+          name: validationResult.username,
+          email: validationResult.email,
+          password: validationResult.password,
         }),
       });
 
@@ -97,7 +115,11 @@ const SignUpPage = () => {
       // Redirect to onboarding for bio + avatar (profile not yet complete)
       navigate("/complete-profile");
     } catch (error) {
-      toast.error(error.message);
+      if (error instanceof z.ZodError) {
+        toast.error(error.errors[0].message);
+      } else {
+        toast.error(error.message);
+      }
     } finally {
       setLoading(false);
     }

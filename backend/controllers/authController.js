@@ -13,7 +13,6 @@ const generateToken = (id) => {
 };
 
 // Centralized logic moved to userUtils.js
-
 const register = async (req, res) => {
   const { name, email, password } = req.body;
 
@@ -30,7 +29,6 @@ const register = async (req, res) => {
     });
 
     await ensureProfileCompleteness(user);
-
     res.status(201).json({
       id: user.id,
       firstName: user.firstName,
@@ -71,7 +69,6 @@ const login = async (req, res) => {
     if (user && user.password && isMatch) {
       console.log("Login successful!");
       await ensureProfileCompleteness(user);
-      
       res.json({
         id: user.id,
         firstName: user.firstName,

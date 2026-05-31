@@ -18,7 +18,7 @@
   /* Admin aliases mapped to shared theme */
   --admin-bg: var(--color-canvas-alt);
   --admin-panel: var(--color-card);
-  --admin-sidebar: #27272a;
+  --admin-sidebar: #6868d8;  
   --admin-sidebar-muted: #3f3f46;
   --admin-primary: var(--color-primary);
 
@@ -145,14 +145,14 @@ button {
 }
 
 .text-gradient {
-  background: linear-gradient(90deg, #4facfe, #7846aa);
+  background: linear-gradient(90deg, var(--color-primary), #7846aa);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
 .btn-gradient {
-  background: linear-gradient(135deg, #2186df, #02ffbb);
+  background: linear-gradient(135deg, var(--color-primary), #02ffbb);
   border: none;
   color: white;
   font-weight: 600;

@@ -5,7 +5,11 @@ import validate from "../middleware/validate.js";
 import { generateVideoSchema } from "../schemas/aiSchema.js";
 import { getCourseAndLessonTitles } from "../controllers/courseController.js";
 import Preferences from "../models/Preference.js";
+<<<<<<< HEAD
 import { videoQueue } from "../queues/videoQueue.js";
+=======
+//import { videoQueue } from "../queues/videoQueue.js";
+>>>>>>> upstream/main
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -97,6 +101,7 @@ router.post("/generate-video", protect, validate(generateVideoSchema), async (re
 
   
     // Added to queue instead of blocking the request
+<<<<<<< HEAD
     const job = await videoQueue.add("generate-video", {
       courseId,
       lessonId,
@@ -113,6 +118,27 @@ router.post("/generate-video", protect, validate(generateVideoSchema), async (re
       status: "processing",
       message: "Video generation started",
     });
+=======
+//     const job = await videoQueue.add("generate-video", {
+//       courseId,
+//       lessonId,
+//       celebrity,
+//       courseTitle,
+//       lessonTitle,
+//       userPreferences,
+//     });
+//
+//     console.log(`📥 Job added to queue: ${job.id}`);
+//
+//     res.json({
+//       jobId: job.id,
+//       status: "processing",
+//       message: "Video generation started",
+//     });
+       
+    // Temporary fallback response since videoQueue is disabled
+    return res.status(501).json({ message: "Video generation is temporarily disabled." });
+>>>>>>> upstream/main
 
   } catch (error) {
     console.error("AI GENERATE ERROR:", error);
