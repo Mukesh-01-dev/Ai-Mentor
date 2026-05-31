@@ -1,6 +1,6 @@
-// backend/routes/payment.js
 import express from "express";
 import Stripe from "stripe";
+import rateLimit from "express-rate-limit";
 import { protect } from "../middleware/authMiddleware.js";
 import Payment from "../models/Payment.js";
 
