@@ -5,8 +5,18 @@ import Payment from "../models/Payment.js";
 import { createNotification } from "../controllers/notificationController.js";
 
 const router = express.Router();
+
+// ✅ Validate required env vars at startup
+if (!process.env.STRIPE_SECRET_KEY) {
+  throw new Error("Missing STRIPE_SECRET_KEY environment variable");
+}
+if (!process.env.STRIPE_WEBHOOK_SECRET) {
+  throw new Error("Missing STRIPE_WEBHOOK_SECRET environment variable");
+}
+
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
+// ⚠️ Stripe webhook MUST use RAW body
 router.post(
   "/webhook",
   express.raw({ type: "application/json" }),
@@ -15,38 +25,49 @@ router.post(
 
     let event;
 
-    // ─────────────────────────────────────────────────
-    // STEP 1: Verify webhook signature (prevents fake webhooks)
-    // ─────────────────────────────────────────────────
+    // ✅ Verify webhook signature
+    // Distinguishes between invalid signature (attack) vs missing secret (config error)
     try {
+      if (!sig) {
+        console.error("[Webhook] Missing stripe-signature header");
+        return res.status(400).send("Missing stripe-signature header");
+      }
       event = stripe.webhooks.constructEvent(
         req.body,
         sig,
         process.env.STRIPE_WEBHOOK_SECRET
       );
     } catch (err) {
-      console.error("❌ Webhook signature error:", err.message);
+      // Invalid signature = possible attack or corrupted payload
+      console.error("[Webhook] ❌ Signature verification failed:", err.message);
       return res.status(400).send(`Webhook Error: ${err.message}`);
     }
 
-    // ─────────────────────────────────────────────────
-    // STEP 2: Handle events
-    // ─────────────────────────────────────────────────
     switch (event.type) {
 
       // ✅ PAYMENT SUCCESS
       case "checkout.session.completed": {
         const session = event.data.object;
-
-        const courseId = session.metadata.courseId;
-        const userId = session.metadata.userId;
-        const courseTitle = session.metadata.courseTitle;
+        const courseId = session.metadata?.courseId;
+        const userId = session.metadata?.userId;
+        const courseTitle = session.metadata?.courseTitle;
 
         console.log(`[Webhook] checkout.session.completed — courseId: ${courseId}, userId: ${userId}`);
 
         try {
-          // Update Payment record status → success
+          // ✅ WEBHOOK IDEMPOTENCY — skip if already processed
+          // Stripe can fire webhooks more than once for reliability
           if (session.id) {
+            const payment = await Payment.findOne({
+              where: { stripeSessionId: session.id },
+            });
+
+            if (payment?.status === "success") {
+              console.log("[Webhook] Payment already processed:", session.id);
+              return res.json({ received: true });
+            }
+
+            // Update Payment record status → success
             await Payment.update(
               {
                 status: "success",
@@ -58,14 +79,12 @@ router.post(
 
           // Find and enroll the user
           const user = await User.findByPk(userId);
-
           if (!user) {
-            console.log("❌ User not found:", userId);
+            console.log("[Webhook] ❌ User not found:", userId);
             return res.status(404).send("User not found");
           }
 
           let purchased = user.purchasedCourses || [];
-
           const alreadyPurchased = purchased.find(
             (c) => Number(c.courseId) === Number(courseId)
           );
@@ -85,7 +104,6 @@ router.post(
             user.changed("purchasedCourses", true);
             await user.save();
 
-            // Send notification
             try {
               await createNotification(user.id, {
                 title: "Course Enrolled 🎉",
@@ -94,21 +112,20 @@ router.post(
                 metadata: { courseId },
               });
             } catch (err) {
-              console.error("Notification error:", err);
+              console.error("[Webhook] Notification error:", err);
             }
 
-            console.log("✅ Course added after Stripe payment:", courseId);
+            console.log("[Webhook] ✅ Course added after Stripe payment:", courseId);
           } else {
-            console.log("⚠️ Course already purchased:", courseId);
+            console.log("[Webhook] ⚠️ Course already purchased:", courseId);
           }
-
         } catch (err) {
-          console.error("❌ DB Error in webhook:", err);
+          console.error("[Webhook] ❌ DB Error:", err);
         }
         break;
       }
 
-      // ✅ SESSION EXPIRED (user abandoned checkout)
+      // ✅ SESSION EXPIRED
       case "checkout.session.expired": {
         const session = event.data.object;
         if (session.id) {
@@ -116,7 +133,7 @@ router.post(
             { status: "failed" },
             { where: { stripeSessionId: session.id } }
           ).catch(console.error);
-          console.log(`[Webhook] Session expired — marked as failed: ${session.id}`);
+          console.log(`[Webhook] Session expired — marked failed: ${session.id}`);
         }
         break;
       }

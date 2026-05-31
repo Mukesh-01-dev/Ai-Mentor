@@ -320,7 +320,6 @@ export default function CoursePreview() {
         const priceValue = Number(selectedCourse.priceValue || 0);
 
         setIsPurchasing(true);
-        setIsPurchasing(true);
 
         // ✅ Load Razorpay script on demand
         const loaded = await loadRazorpayScript();
