@@ -237,10 +237,15 @@ const Analytics = () => {
 
   const updateTaskStatus = async (index, status) => {
     if (!tasks[selectedDate]) return;
-      if (isPastDate(selectedDate)) {
-    alert("Past tasks cannot be modified");
-    return;
-  }
+    if (isPastDate(selectedDate)) {
+      alert("Past tasks cannot be modified");
+      return;
+    }
+
+    const taskList = tasks[selectedDate];
+    const taskToUpdate = taskList[index];
+    const previousStatus = taskToUpdate.status;
+
     setTasks((prev) => {
       const updated = [...prev[selectedDate]];
       updated[index] = { ...updated[index], status };
@@ -847,6 +852,7 @@ const Analytics = () => {
                   <div className="w-3 h-3 rounded-full bg-gradient-to-br from-orange-50 to-yellow-50 border-2 border-[#ff6d34]"></div>
                   <span className="text-xs text-[#2D3436]/70 dark:text-gray-400">{t('analytics.legend_today')}</span>
                 </div>
+              </div>
 
                 <div className="flex flex-col sm:flex-row gap-2 mb-6">
                   <input
@@ -925,78 +931,21 @@ const Analytics = () => {
                           </button>
                         </div>
 
-              <div className="flex flex-col sm:flex-row gap-2 mb-6">
-                <input
-                  value={newTask}
-                  onChange={(e) => setNewTask(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && addTask()}
-                  className="flex-1 min-w-0 border border-[#CCCCCC] dark:border-gray-700 dark:bg-gray-900 dark:text-white p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#ff6d34] transition placeholder:text-gray-400 dark:placeholder:text-gray-500"
-                  placeholder={t('analytics.add_task_placeholder')}
-                />
-
-                <button
-                  onClick={addTask}
-                  className="w-full sm:w-auto bg-[#ff6d34] hover:bg-[#ff6d34]/90 text-white px-4 py-3 rounded-xl transition flex items-center justify-center gap-1 whitespace-nowrap"
-                >
-                  <Plus className="w-4 h-4" />
-                  {t('analytics.add_btn')}
-                </button>
-              </div>
-
-              <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-                {(tasks[selectedDate] || []).length > 0 ? (
-                  (tasks[selectedDate] || []).map((task, i) => (
-                    <div
-                      key={i}
-                      className={`group relative flex items-center gap-3 p-3 rounded-xl transition-all
-                          ${task.status === "Completed"
-                          ? 'bg-[#28A745]/10 dark:bg-[#28A745]/20'
-                          : 'bg-[#F5F5F5] dark:bg-gray-700/50 hover:bg-[#CCCCCC]/30 dark:hover:bg-gray-700'
-                        }`}
-                    >
-                      <div className="flex-shrink-0">
-                        {statusIcons[task.status]}
+                        {task.status === "Completed" && (
+                          <div className="absolute bottom-0 left-0 h-0.5 bg-[#28A745] rounded-full w-full"></div>
+                        )}
                       </div>
-                      <span className={`flex-1 text-sm line-clamp-2 ${task.status === "Completed"
-                        ? 'line-through text-gray-500 dark:text-gray-400'
-                        : 'text-[#2D3436] dark:text-gray-300'
-                        }`}>
-                        {task.text}
-                      </span>
-
-                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <select
-                          value={task.status}
-                          onChange={(e) => updateTaskStatus(i, e.target.value)}
-                          className="bg-white dark:bg-gray-800 border border-[#CCCCCC] dark:border-gray-600 rounded-lg p-1 text-xs focus:outline-none focus:ring-1 focus:ring-[#ff6d34] text-[#2D3436] dark:text-gray-300"
-                        >
-                          <option value="Upcoming">📅 Upcoming</option>
-                          <option value="Ongoing">🔄 Ongoing</option>
-                          <option value="Completed">✅ Done</option>
-                        </select>
-                        <button
-                          onClick={() => deleteTask(i)}
-                          className="text-gray-400 hover:text-red-500 transition p-1"
-                        >
-                          ✕
-                        </button>
+                    ))
+                  ) : (
+                    <div className="text-center py-8">
+                      <div className="inline-flex items-center justify-center w-12 h-12 bg-[#F5F5F5] dark:bg-gray-800 rounded-full mb-3">
+                        <Target className="w-6 h-6 text-gray-400" />
                       </div>
-
-                      {task.status === "Completed" && (
-                        <div className="absolute bottom-0 left-0 h-0.5 bg-[#28A745] rounded-full w-full"></div>
-                      )}
+                      <p className="text-[#2D3436]/60 dark:text-gray-400 text-sm">No tasks for this day</p>
+                      <p className="text-xs text-[#2D3436]/50 dark:text-gray-500 mt-1">Add a task to get started</p>
                     </div>
-                  ))
-                ) : (
-                  <div className="text-center py-8">
-                    <div className="inline-flex items-center justify-center w-12 h-12 bg-[#F5F5F5] dark:bg-gray-800 rounded-full mb-3">
-                      <Target className="w-6 h-6 text-gray-400" />
-                    </div>
-                    <p className="text-[#2D3436]/60 dark:text-gray-400 text-sm">No tasks for this day</p>
-                    <p className="text-xs text-[#2D3436]/50 dark:text-gray-500 mt-1">Add a task to get started</p>
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
 
               {tasks[selectedDate] && tasks[selectedDate].length > 0 && (
                 <div className="mt-4 pt-4 border-t border-[#CCCCCC] dark:border-gray-700">

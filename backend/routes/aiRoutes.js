@@ -54,15 +54,23 @@ router.post("/generate-video", protect, validate(generateVideoSchema), async (re
 
       const filename = cachedVideo.videoUrl.split("/").pop();
 
+      if (cachedVideo.videoUrl === "processing" || cachedVideo.videoUrl === "") {
+        console.log("⏳ Cached video is still processing. Skipping HEAD check.");
+        return res.json({
+          jobId: cachedVideo.jobId,
+          status: "processing",
+          message: "Video is still generating",
+        });
+      }
+
       const videoCheck = await fetch(
         `${process.env.AI_SERVICE_URL}/video-stream/${filename}`,
         { method: "HEAD" }   // lightweight check
       );
 
       if (!videoCheck.ok) {
-
+        console.log("⚠️ Cached video missing. Removing from DB...");
         await cachedVideo.destroy();  // delete bad cache
-
       } else {
         console.log("✅ Cached video verified.");
 
@@ -93,9 +101,42 @@ router.post("/generate-video", protect, validate(generateVideoSchema), async (re
       ? userPreferencesRecord.toJSON()
       : null;
 
-       
-    // Temporary fallback response since videoQueue is disabled
-    return res.status(501).json({ message: "Video generation is temporarily disabled." });
+  
+    // Send request directly to Python AI service
+    const aiServiceResponse = await fetch(`${process.env.AI_SERVICE_URL}/generate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        course: courseTitle,
+        topic: lessonTitle,
+        celebrity: celebrity,
+        preferences: userPreferences,
+      }),
+    });
+
+    if (!aiServiceResponse.ok) {
+      throw new Error("Failed to communicate with AI Service");
+    }
+
+    const aiData = await aiServiceResponse.json();
+
+    // Create a placeholder record in the DB so we can cache it later
+    await AIVideo.create({
+      courseId: courseId,
+      lessonId: lessonId,
+      celebrity: celebrity.toLowerCase(),
+      jobId: aiData.jobId,
+      transcriptName: aiData.text_file,
+      videoUrl: "", // Will be updated when status is ready
+    });
+
+    console.log(`📥 Job started in AI service: ${aiData.jobId}`);
+
+    return res.json({
+      jobId: aiData.jobId,
+      status: "processing",
+      message: "Video generation started",
+    });
 
   } catch (error) {
     console.error("AI GENERATE ERROR:", error);
@@ -155,18 +196,25 @@ router.get("/status/:jobId", protect, async (req, res) => {
 
     const data = await response.json();
 
-    // 🌥️ If video is ready and Cloudinary URL is available, persist it to DB
-    if (data.status === "ready" && data.cloudinary_url) {
+    // 🌥️ If video is ready, persist URL to DB (use Cloudinary or fallback to local proxy)
+    if (data.status === "ready") {
+      let finalUrl = data.cloudinary_url;
+      
+      if (!finalUrl) {
+        finalUrl = `/api/ai/video/0/${jobId}.mp4`;
+        data.cloudinary_url = finalUrl; // inject it so frontend uses it
+      }
+
       try {
         const updated = await AIVideo.update(
-          { videoUrl: data.cloudinary_url },
+          { videoUrl: finalUrl },
           { where: { jobId: String(jobId) } }
         );
         if (updated[0] > 0) {
-          console.log(`☁️ AIVideo DB updated with Cloudinary URL for jobId: ${jobId}`);
+          console.log(`☁️ AIVideo DB updated with URL for jobId: ${jobId}`);
         }
       } catch (dbErr) {
-        console.error("⚠️ Failed to update AIVideo with Cloudinary URL:", dbErr.message);
+        console.error("⚠️ Failed to update AIVideo with URL:", dbErr.message);
       }
     }
 
@@ -187,29 +235,13 @@ router.get("/video/:courseId/:filename", async (req, res) => {
     const pythonVideoUrl =
       `${process.env.AI_SERVICE_URL}/video-stream/${filename}`;
 
-    const response = await fetch(pythonVideoUrl);
-
-    if (!response.ok) {
-      return res.status(404).json({
-        error: "Video not found in AI service",
-      });
-    }
-
-    res.setHeader("Content-Type", "video/mp4");
-    // Streams the response body directly to the client
-    const reader = response.body.getReader();
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      res.write(value);
-    }
-    res.end();
-
+    // Redirect the browser directly to the Python AI service StaticFiles server.
+    // This fully supports HTTP Range Requests (seek, buffering) which the manual proxy broke.
+    res.redirect(pythonVideoUrl);
   } catch (error) {
     console.error("❌ Proxy Error:", error.message);
     res.status(500).json({
-      error: "Failed to load video via proxy",
+      error: "Failed to redirect to video stream",
     });
   }
 });
