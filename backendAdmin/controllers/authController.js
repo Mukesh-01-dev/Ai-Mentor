@@ -92,7 +92,7 @@ export const deleteAdmin = async (req, res) => {
 
 export const getAllAdmins = async (req, res) => {
   try {
-    const admins = await Admin.findAll({ attributes: ["id", "name", "email", "role", "createdAt"], order: [["createdAt", "DESC"]] });
+    const admins = await Admin.findAll({ attributes: ["id", "displayId", "name", "email", "role", "createdAt"], order: [["createdAt", "DESC"]] });
     res.status(200).json({ success: true, data: admins });
   } catch (error) {
     console.error("GET ADMINS ERROR:", error.message);

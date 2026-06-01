@@ -11,6 +11,11 @@ Admin.init(
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
     },
+    displayId: {
+      type: DataTypes.INTEGER,
+      autoIncrement: true,
+      unique: true,
+    },
     name: {
       type: DataTypes.STRING,
       allowNull: false,

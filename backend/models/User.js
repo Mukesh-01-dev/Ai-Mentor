@@ -12,6 +12,11 @@ User.init(
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
     },
+    displayId: {
+      type: DataTypes.INTEGER,
+      autoIncrement: true,
+      unique: true,
+    },
 
     firstName: {
       type: DataTypes.STRING,
