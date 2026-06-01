@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Bell, LogOut, Menu, Search, Settings, ShieldCheck, User, X } from "lucide-react";
+import { Bell, LogOut, Menu, Settings, ShieldCheck, User, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Themetoggle from "../components/common/ThemeToggle";
 
@@ -9,13 +9,12 @@ const seedNotifications = [
   { id: "n3", title: "Weekly digest", message: "New admin analytics are ready.", unread: false, time: "1d ago" },
 ];
 
-const Header = ({ title, onMenuClick, searchQuery = "", onSearchChange }) => {
+const Header = ({ title, onMenuClick }) => {
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [notifications, setNotifications] = useState(seedNotifications);
-  const [internalSearchQuery, setInternalSearchQuery] = useState("");
   const dropdownRef = useRef(null);
   const notificationRef = useRef(null);
 
@@ -32,8 +31,6 @@ const Header = ({ title, onMenuClick, searchQuery = "", onSearchChange }) => {
   const avatarUrl =
     user?.avatar_url || `https://api.dicebear.com/8.x/initials/svg?seed=${encodeURIComponent(displayName)}`;
   const unreadCount = notifications.filter((item) => item.unread).length;
-  const effectiveSearchQuery =
-    typeof onSearchChange === "function" ? searchQuery : internalSearchQuery;
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -86,26 +83,6 @@ const Header = ({ title, onMenuClick, searchQuery = "", onSearchChange }) => {
 
             <div className="hidden lg:block min-w-[120px]">
               <h1 className="text-xl md:text-2xl font-bold tracking-tight capitalize">{title}</h1>
-            </div>
-          </div>
-
-          <div className="flex-1 max-w-md mx-8 hidden md:block">
-            <div className="relative group">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted group-focus-within:text-teal-500 transition-colors w-4 h-4" />
-              <input
-                type="text"
-                placeholder="Search..."
-                value={effectiveSearchQuery}
-                onChange={(event) => {
-                  const value = event.target.value;
-                  if (typeof onSearchChange === "function") {
-                    onSearchChange(value);
-                    return;
-                  }
-                  setInternalSearchQuery(value);
-                }}
-                className="w-full pl-12 pr-4 py-2.5 bg-canvas border border-border rounded-2xl text-sm focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all outline-none"
-              />
             </div>
           </div>
 
