@@ -15,6 +15,7 @@ import {
 import API_BASE_URL from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 import { useTranslation } from "react-i18next";
+import FloatingAssistant from "../components/common/FloatingAssistant";
 
 const CertificatesPage = () => {
   const { user } = useAuth();
@@ -731,8 +732,9 @@ const CertificatesPage = () => {
        </div>
       </div>
     )}
-
+    <FloatingAssistant />
     </main>
+    
   );
 };
 

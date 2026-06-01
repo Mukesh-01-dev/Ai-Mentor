@@ -6,6 +6,7 @@ import API_BASE_URL from "../lib/api";
 import { Play, ChevronDown, ChevronUp, X } from "lucide-react";
 import toast from "react-hot-toast";
 import { loadRazorpayScript } from "../lib/loadRazorpay";
+import CourseFeedback from "../components/common/CourseFeedback";
 /* safe getter */
 function safeGet(obj, path, fallback = undefined) {
     if (!obj || !path) return fallback;
@@ -80,12 +81,22 @@ export default function CoursePreview() {
             try {
                 const metaUrl = `${API_BASE_URL}/api/courses/${courseId}`;
                 const learnUrl = `${API_BASE_URL}/api/courses/${courseId}/learning`;
-                const [metaRes, learnRes] = await Promise.all([
-                    fetch(metaUrl),
-                    fetch(learnUrl),
-                ]);
+                const token = localStorage.getItem("token");
+const [metaRes, learnRes] = await Promise.all([
+    fetch(metaUrl),
+    fetch(learnUrl, {
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
+    }),
+]);
                 if (!metaRes.ok) throw new Error("Failed to fetch course meta");
-                if (!learnRes.ok) throw new Error("Failed to fetch course learning");
+                if (learnRes.status === 401) {
+                  throw new Error("Please login to access course content");
+                   }
+                if (!learnRes.ok) {
+                throw new Error("Failed to fetch course learning");
+                  }
                 const meta = await metaRes.json();
                 const learning = await learnRes.json();
                 if (!cancelled) {
@@ -776,6 +787,9 @@ export default function CoursePreview() {
                                 )}
                             </div>
                         </div>
+
+                        {/* Course Feedback & Ratings */}
+                        <CourseFeedback courseId={courseId} />
                     </div>
                     {/* RIGHT: image (top) then Buy Now (below) */}
                     <div className="lg:col-span-4 flex flex-col items-stretch">

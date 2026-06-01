@@ -22,6 +22,9 @@ import {
   Award,
 } from "lucide-react";
 import Preferences from "../components/Preferences";
+import API_BASE_URL, { apiFetch } from "../lib/api";
+import FloatingAssistant from "../components/common/FloatingAssistant";
+import CourseCardMeta from "../components/common/CourseCardMeta";
 
 const Dashboard = () => {
   const { t } = useTranslation();
@@ -72,7 +75,6 @@ const Dashboard = () => {
         await fetchUserProfile();
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
-        console.log("Error details:", error);
       } finally {
         setLoading(false);
       }
@@ -81,45 +83,47 @@ const Dashboard = () => {
     fetchAllData();
   }, []);
   const calculateStats = () => {
+    const baseCards = [
+      {
+        icon: <Play className="w-5 h-5 text-blue-600" />,
+        value: data?.stats?.inProgress ?? 0,
+        label: "Ongoing Courses",
+        change: "+0%",
+        bgColor: "bg-blue-50",
+        iconBg: "bg-blue-100",
+      },
+      {
+        icon: <CheckCircle className="w-5 h-5 text-green-600" />,
+        value: data?.stats?.completed ?? 0,
+        label: "Completed",
+        change: "+0",
+        bgColor: "bg-green-50",
+        iconBg: "bg-green-100",
+      },
+      {
+        icon: <Award className="w-5 h-5 text-purple-600" />,
+        value: data?.stats?.certificatesEarned ?? 0,
+        label: "Certificates",
+        change: "+0",
+        bgColor: "bg-purple-50",
+        iconBg: "bg-purple-100",
+      },
+      {
+        icon: <Clock className="w-5 h-5 text-orange-600" />,
+        value: "0h",
+        label: "Hours Spent",
+        change: "+0h",
+        bgColor: "bg-orange-50",
+        iconBg: "bg-orange-100",
+      },
+    ];
+
     if (
       !user?.purchasedCourses ||
       !coursesData.statsCards ||
       coursesData.statsCards.length < 4
     ) {
-      return [
-        {
-          icon: <Play className="w-5 h-5 text-blue-600" />,
-          value: data?.stats?.inProgress ?? 0,
-          label: "Ongoing Courses",
-          change: "+0%",
-          bgColor: "bg-blue-50",
-          iconBg: "bg-blue-100",
-        },
-        {
-          icon: <CheckCircle className="w-5 h-5 text-green-600" />,
-          value: data?.stats?.completed ?? 0,
-          label: "Completed",
-          change: "+0",
-          bgColor: "bg-green-50",
-          iconBg: "bg-green-100",
-        },
-        {
-          icon: <Award className="w-5 h-5 text-purple-600" />,
-          value:data?.stats?.certificatesEarned ?? 0,
-          label: "Certificates",
-          change: "+0",
-          bgColor: "bg-purple-50",
-          iconBg: "bg-purple-100",
-        },
-        {
-          icon: <Clock className="w-5 h-5 text-orange-600" />,
-          value: "0h",
-          label: "Hours Spent",
-          change: "+0h",
-          bgColor: "bg-orange-50",
-          iconBg: "bg-orange-100",
-        },
-      ];
+      return baseCards;
     }
 
     let coursesInProgress = 0;
@@ -304,6 +308,40 @@ const Dashboard = () => {
     navigate("/courses", { state: { activeTab: "explore" } });
   };
 
+  const enrollAndPreview = async (course) => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
+    try {
+      // If the course is free, attempt enrollment first
+      const priceValue = Number(course.priceValue || 0);
+        if (priceValue === 0) {
+        const res = await fetch(`${API_BASE_URL}/api/users/purchase-course`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+          body: JSON.stringify({ courseId: course.id, courseTitle: course.title }),
+        });
+        const data = await res.json().catch(() => ({}));
+        // Refresh user profile so purchasedCourses is updated across the app
+        if (typeof fetchUserProfile === 'function') await fetchUserProfile();
+        // notify pages to refresh their course lists
+        window.dispatchEvent(new Event('refreshCourses'));
+      }
+
+      // After ensuring enrollment (or for paid courses), navigate to preview
+      navigate(`/course-preview/${course.id}`);
+    } catch (err) {
+      console.error('Enroll+Preview error:', err);
+      // still navigate to preview so user can complete payment/see enroll UI
+      navigate(`/course-preview/${course.id}`);
+    }
+  };
+
   if (loading) {
     return (
       <main className="flex-1 p-4 md:p-6 lg:p-8 flex items-center justify-center">
@@ -316,32 +354,29 @@ const Dashboard = () => {
   }
 
   return (
-    <main className="flex-1 overflow-x-hidden overflow-y-auto bg-canvas-alt p-6">
-      <Preferences
-        key={localStorage.getItem("token")}
-        mode="modal"
-        onSuccess={() => {
-          console.log("Preferences saved");
-        }}
+    <main className="flex-1 overflow-x-hidden overflow-y-auto bg-canvas-alt p-4">
+      <Preferences 
+        key={localStorage.getItem("token")} 
+        mode="modal" 
+        onSuccess={() => { console.log('Preferences saved') }} 
       />
-      <div className="max-w-7xl pt-16 mx-auto space-y-8">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1  sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {dynamicStatsCards.map((card, index) => {
-            const statLabelKeys = [
-              "ongoing_courses",
-              "completed",
-              "certificates",
-              "hours_spent",
-            ];
-            return (
-              <div
-                key={index}
-                className="bg-card rounded-2xl p-6 shadow-sm border border-border hover:shadow-lg hover:-translate-y-1 hover:border-teal-500/40 transition-all duration-300 cursor-pointer"
-              >
-                <div className="flex items-center justify-between mb-4">
-                  <div className={`p-3 rounded-xl ${card.iconBg}`}>
-                    {card.icon}
+      <div className="max-w-7xl pt-4 mx-auto space-y-5">
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1  sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {dynamicStatsCards.map((card, index) => {
+                const statLabelKeys = ["ongoing_courses", "completed", "certificates", "hours_spent"];
+                return (
+                <div
+                  key={index}
+                  className="bg-card rounded-2xl p-6 shadow-sm border border-border hover:shadow-lg hover:-translate-y-1 hover:border-teal-500/40 transition-all duration-300 cursor-pointer"
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <div className={`p-3 rounded-xl ${card.iconBg}`}>
+                      {card.icon}
+                    </div>
+                    <span className="text-sm font-medium text-green-600">
+                      {card.change}
+                    </span>
                   </div>
                   <span className="text-sm font-medium text-green-600">
                     {card.change}
@@ -358,94 +393,140 @@ const Dashboard = () => {
           })}
         </div>
 
-        <div className="grid grid-cols-1 gap-8">
-          {/* Popular Courses */}
+        {/* Content */}
+        <div className="p-4 space-y-2">
+          <h3 className="text-sm font-semibold text-main line-clamp-2">
+            {course.title}
+          </h3>
 
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-main">
-                {t("dashboard.popular_courses")}
-              </h2>
+          <p className="text-xs text-muted">
+            {course.lessons} • {course.level}
+          </p>
 
-              {/* Buttons */}
-              <div className="flex gap-2">
-                <button
-                  onClick={() => {
-                    document.getElementById("courseSlider").scrollBy({
-                      left: -300,
-                      behavior: "smooth",
-                    });
-                  }}
-                  className="p-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-
-                <button
-                  onClick={() => {
-                    document.getElementById("courseSlider").scrollBy({
-                      left: 300,
-                      behavior: "smooth",
-                    });
-                  }}
-                  className="p-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
+          <div className="flex justify-between items-center mt-2">
+            <span className="font-bold text-green-500">₹999</span>
 
             {/* Slider */}
             <div
               id="courseSlider"
               className="flex gap-6 overflow-x-auto px-3 py-3 pb-6"
             >
-              {coursesData.allCourses.slice(0, 10).map((course, index) => (
-                <div
-                  key={index}
-                  className="bg-card rounded-xl border border-border w-64 flex-shrink-0 shadow-sm transition-all duration-300 ease-out hover:shadow-xl hover:-translate-y-2 hover:scale-[1.03] hover:border-teal-400/50"
-                >
-                  {/* Image */}
-                  <div className="relative h-40">
-                    <img
-                      src={course.image}
-                      alt={course.title}
-                      className="w-full h-full object-cover rounded-t-xl"
-                    />
-
-                    {/* Rating */}
-                    <div className="absolute bottom-2 right-2 bg-black/70 px-2 py-1 rounded-full flex items-center gap-1">
-                      <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
-                      <span className="text-xs text-white font-semibold">
-                        {course.rating}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Content */}
-                  <div className="p-4 space-y-2">
-                    <h3 className="text-sm font-semibold text-main line-clamp-2">
-                      {course.title}
-                    </h3>
-
-                    <p className="text-xs text-muted">
-                      {course.lessons} • {course.level}
-                    </p>
-
-                    <div className="flex justify-between items-center mt-2">
-                      <span className="font-bold text-green-500">
-                        {course.priceValue === 0
-                          ? "Free"
-                          : `₹${course.priceValue}`}
-                      </span>
-
-                      <button
-                        onClick={() => navigate(`/course-preview/${course.id}`)}
-                        className="px-3 py-1.5 text-xs bg-teal-500 text-white rounded-lg hover:bg-teal-600"
-                      >
-                        {t("dashboard.enroll")}
-                      </button>
-                    </div>
+              {t("dashboard.enroll")}
+            </button>
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>
+</div>
+              {/* My Courses Table */}
+              <div className="xl:col-span-2 flex flex-col">
+                <h2 className="text-xl font-bold text-main mb-6">{t("dashboard.my_courses")}</h2>
+                <div className="bg-card rounded-xl border border-border overflow-hidden">
+                  <div className="overflow-x-auto">
+                    {filteredMyCourses.length !== 0 ? (
+                      <table className="w-full">
+                        <thead className="bg-canvas-alt">
+                          <tr>
+                            <th className="px-4 py-4 text-left text-sm font-medium text-muted">
+                              {t("dashboard.course")}
+                            </th>
+                            <th className="px-4 py-4 text-left text-sm font-medium text-muted">
+                              {t("dashboard.progress")}
+                            </th>
+                            <th className="px-4 py-4 text-left text-sm font-medium text-muted">
+                              {t("dashboard.lessons")}
+                            </th>
+                            <th className="px-4 py-4 text-left text-sm font-medium text-muted">
+                              {t("dashboard.level")}
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200">
+                          {filteredMyCourses.map((course, index) => (
+                            <tr key={index} className="hover:bg-canvas-alt">
+                              <td className="px-4 py-4">
+                                <Link
+                                  to={`/learning/${course.id}`}
+                                  className="flex items-center"
+                                >
+                                  <img
+                                    src={course.image}
+                                    alt={course.title}
+                                    className="w-12 h-12 rounded-lg mr-4"
+                                  />
+                                  <div>
+                                    <div className="font-medium text-main hover:text-indigo-600">
+                                      {course.title}
+                                    </div>
+                                    <div className="text-sm text-muted">
+                                      {course.subtitle}
+                                    </div>
+                                  </div>
+                                </Link>
+                              </td>
+                              <td className="px-4 py-4">
+                                <div className="w-20 bg-border rounded-full h-2 mb-1">
+                                  <div
+                                    className={`h-2 rounded-full ${course.progressColor}`}
+                                    style={{ width: `${course.progress}%` }}
+                                  ></div>
+                                </div>
+                                <div className="text-sm text-muted">
+                                  {course.progress}%
+                                </div>
+                              </td>
+                              <td className="px-4 py-4 text-muted">
+                                {course.lessons}
+                              </td>
+                              <td className="px-4 py-4">
+                                <span
+                                  className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${course.levelColor}`}
+                                >
+                                  {course.level}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    ) : normalizedSearchQuery && filteredAllCourses.length > 0 ? (
+                      <div className="p-6">
+                        <p className="text-center text-muted mb-4">
+                          {t("dashboard.fallbackMatchingCourses")}
+                        </p>
+                        <div className="space-y-3">
+                          {filteredAllCourses.slice(0, 6).map((course) => (
+                            <div
+                              key={course.id}
+                              className="flex items-center justify-between p-3 rounded-lg border border-border bg-canvas-alt"
+                            >
+                              <div className="flex items-center min-w-0">
+                                <img
+                                  src={course.image}
+                                  alt={course.title}
+                                  className="w-12 h-12 rounded-lg mr-4"
+                                />
+                                <div className="min-w-0">
+                                  <div className="font-medium text-main truncate">
+                                    {course.title}
+                                  </div>
+                                  <div className="text-sm text-muted truncate">
+                                    {course.category} • {course.level}
+                                  </div>
+                                </div>
+                              </div>
+                              <button
+                                onClick={() => navigate(`/course-preview/${course.id}`)}
+                                className="ml-3 px-3 py-2 bg-teal-500 text-white text-xs font-medium rounded-lg hover:bg-teal-600"
+                              >
+                                {t("dashboard.view")}
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )
+                    })()}
                   </div>
                 </div>
               ))}
@@ -489,6 +570,7 @@ const Dashboard = () => {
                                 src={course.image}
                                 alt={course.title}
                                 className="w-12 h-12 rounded-lg mr-4"
+                                loading="lazy"
                               />
                               <div>
                                 <div className="font-medium text-main hover:text-indigo-600">
@@ -541,6 +623,7 @@ const Dashboard = () => {
                               src={course.image}
                               alt={course.title}
                               className="w-12 h-12 rounded-lg mr-4"
+                              loading="lazy"
                             />
                             <div className="min-w-0">
                               <div className="font-medium text-main truncate">
@@ -552,9 +635,7 @@ const Dashboard = () => {
                             </div>
                           </div>
                           <button
-                            onClick={() =>
-                              navigate(`/course-preview/${course.id}`)
-                            }
+                            onClick={() => enrollAndPreview(course)}
                             className="ml-3 px-3 py-2 bg-teal-500 text-white text-xs font-medium rounded-lg hover:bg-teal-600"
                           >
                             {t("dashboard.view")}
@@ -563,7 +644,21 @@ const Dashboard = () => {
                       ))}
                     </div>
                   </div>
-                ) : null}
+                ) : (
+                  <div className="p-6 text-center text-muted">
+                    <p>
+                      {normalizedSearchQuery
+                        ? t("dashboard.no_courses_search")
+                        : t("dashboard.no_courses_enrolled")}
+                    </p>
+                    <button
+                      className="mt-4 px-4 py-2 bg-teal-500 text-white text-sm font-medium rounded-lg hover:bg-teal-600"
+                      onClick={handleBrowseCourses}
+                    >
+                      {t("dashboard.browse_courses")}
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -588,6 +683,7 @@ const Dashboard = () => {
                             src={item.image}
                             alt={item.title}
                             className="w-12 h-12 rounded-lg mr-4"
+                            loading="lazy"
                           />
                           <div className="flex-1">
                             <h3 className="font-medium text-main mb-1 hover:text-teal-600">
@@ -616,23 +712,11 @@ const Dashboard = () => {
                 </div>
               </div>
             ) : null
-            // <div className="p-6  text-muted">
-            //   <p>
-            //     {normalizedSearchQuery
-            //       ? "No in-progress courses match your search."
-            //       : "Start Learning to get your progress tracked!"}
-            //   </p>
-            //   <button
-            //     className="mt-4 px-4 py-2 bg-teal-500 text-white text-sm font-medium rounded-lg hover:bg-teal-600"
-            //     onClick={() => navigate("/courses")}
-            //   >
-            //     My Courses
-            //   </button>
-            // </div>
             }
           </div>
         </div>
       </div>
+      <FloatingAssistant />
     </main>
   );
 };
