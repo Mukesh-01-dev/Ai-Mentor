@@ -211,7 +211,7 @@ router.post("/verify", protect, async (req, res) => {
           console.error("Failed to create notification:", err);
         }
 
-        console.log("✅ Course added after Razorpay payment:", courseId);
+        
       } else {
         console.log("⚠️ Course already purchased:", courseId);
       }

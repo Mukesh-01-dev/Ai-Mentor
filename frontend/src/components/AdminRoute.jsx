@@ -5,8 +5,6 @@ import { useAuth } from "../context/AuthContext";
 const AdminRoute = () => {
   const { isAuthenticated, user } = useAuth();
 
-  console.log("AdminRoute User:", user);
-
   // Not logged in
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;

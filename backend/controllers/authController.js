@@ -14,7 +14,7 @@ const generateToken = (id) => {
 
 // Centralized logic moved to userUtils.js
 const register = async (req, res) => {
-  const { name, email, password } = req.body;
+  const {firstName, lastName, name, email, password } = req.body;
 
   try {
     const userExists = await User.findOne({ where: { email } });
@@ -23,6 +23,8 @@ const register = async (req, res) => {
     }
 
     const user = await User.create({
+      firstName,
+      lastName,
       name: formatFullName(name, ""), // Standard register provides 'name', we treat as first part if needed
       email,
       password,
@@ -55,19 +57,15 @@ const login = async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    console.log("Login attempt for email:", email);
     const user = await User.findOne({ where: { email } });
 
     if (!user) {
-      console.log("User not found in DB.");
       return res.status(401).json({ message: "Invalid email or password" });
     }
 
     const isMatch = await user.matchPassword(password);
-    console.log("Password match result:", isMatch);
 
     if (user && user.password && isMatch) {
-      console.log("Login successful!");
       await ensureProfileCompleteness(user);
       res.json({
         id: user.id,
@@ -98,7 +96,6 @@ const login = async (req, res) => {
           console.error("Failed to load notificationController or send login notification:", error);
         });
     } else {
-      console.log("Login failed: password mismatch.");
       res.status(401).json({ message: "Invalid email or password" });
     }
   } catch (error) {
@@ -125,7 +122,6 @@ const refreshAvatarInBackground = async (userId, googlePictureUrl) => {
     user.avatar_url = result.secure_url;
     await user.save();
     await ensureProfileCompleteness(user);
-    console.log(`Successfully refreshed/re-hosted avatar to Cloudinary for user ${userId}`);
   } catch (err) {
     console.error("Background avatar refresh failed:", err);
   }
@@ -139,7 +135,6 @@ const googleLogin = async (req, res) => {
       Buffer.from(idToken.split(".")[1], "base64").toString()
     );
 
-    // console.log("Google Login Payload:", JSON.stringify(payload, null, 2));
     const uid = payload.sub;
     const email = payload.email;
     const name = payload.name || email.split("@")[0];

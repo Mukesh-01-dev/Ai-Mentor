@@ -22,6 +22,7 @@ import {
   updateLessonVideoSchema,
   addSubtopicsSchema,
 } from "../schemas/courseSchema.js";
+import feedbackRoutes from "./feedbackRoutes.js";
 
 const router = express.Router();
 
@@ -51,5 +52,8 @@ router
   .route("/:courseId/lessons/:lessonId/video")
   .put(protect, admin, validate(updateLessonVideoSchema), updateLessonVideo);
 router.route("/:courseId/subtopics").post(protect, admin, validate(addSubtopicsSchema), addSubtopics);
+
+// FEEDBACK (nested)
+router.use("/:courseId/feedback", feedbackRoutes);
 
 export default router;

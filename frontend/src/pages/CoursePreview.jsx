@@ -6,6 +6,7 @@ import API_BASE_URL from "../lib/api";
 import { Play, ChevronDown, ChevronUp, X } from "lucide-react";
 import toast from "react-hot-toast";
 import { loadRazorpayScript } from "../lib/loadRazorpay";
+import CourseFeedback from "../components/common/CourseFeedback";
 /* safe getter */
 function safeGet(obj, path, fallback = undefined) {
     if (!obj || !path) return fallback;
@@ -82,20 +83,23 @@ export default function CoursePreview() {
                 const metaUrl = `${API_BASE_URL}/api/courses/${courseId}`;
                 const learnUrl = `${API_BASE_URL}/api/courses/${courseId}/learning`;
                 const token = localStorage.getItem("token");
-                const headers = token ? { Authorization: `Bearer ${token}` } : {};
-                const [metaRes, learnRes] = await Promise.all([
-                    fetch(metaUrl, { headers }),
-                    fetch(learnUrl, { headers }),
-                ]);
+const [metaRes, learnRes] = await Promise.all([
+    fetch(metaUrl),
+    fetch(learnUrl, {
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
+    }),
+]);
                 if (!metaRes.ok) throw new Error("Failed to fetch course meta");
+                if (learnRes.status === 401) {
+                  throw new Error("Please login to access course content");
+                   }
+                if (!learnRes.ok) {
+                throw new Error("Failed to fetch course learning");
+                  }
                 const meta = await metaRes.json();
-                let learning = null;
-                // Safely handle the 403 Forbidden without crashing
-                if (learnRes.ok) {
-                    learning = await learnRes.json();
-                } else {
-                    console.log("User preview mode: Learning data locked until purchase.");
-                }
+                const learning = await learnRes.json();
                 if (!cancelled) {
                     setCourseMeta(meta || {});
                     setLearningData(learning || {});
@@ -793,6 +797,9 @@ export default function CoursePreview() {
                                 )}
                             </div>
                         </div>
+
+                        {/* Course Feedback & Ratings */}
+                        <CourseFeedback courseId={courseId} />
                     </div>
                     {/* RIGHT: image (top) then Buy Now (below) */}
                     <div className="lg:col-span-4 flex flex-col items-stretch">

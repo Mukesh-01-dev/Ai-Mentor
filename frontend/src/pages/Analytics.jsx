@@ -66,7 +66,15 @@ const Analytics = () => {
   const formatDateKey = (date) =>
     `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 
-  // Fetch courses and analytics and Calendar Tasks
+  const isPastDate = (dateKey) => {
+  const selected = new Date(dateKey);
+  selected.setHours(0, 0, 0, 0);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return selected < today;
+};
+
+  // Fetch courses and analytics
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -159,9 +167,16 @@ const Analytics = () => {
   };
 
   const attendance = calculateAttendance();
+  const isSelectedDatePast = selectedDate
+  ? isPastDate(selectedDate)
+  : false;
 
   const addTask = async () => {
     if (!newTask.trim()) return;
+     if (isPastDate(selectedDate)) {
+    alert("Cannot add tasks to past dates");
+    return;
+    }
     const dateKey = selectedDate || formatDateKey(new Date());
     const tempId = `temp-${Date.now()}`;
     const textVal = newTask.trim();
@@ -222,11 +237,10 @@ const Analytics = () => {
 
   const updateTaskStatus = async (index, status) => {
     if (!tasks[selectedDate]) return;
-    const taskToUpdate = tasks[selectedDate][index];
-    if (!taskToUpdate) return;
-    const previousStatus = taskToUpdate.status;
-
-    // 1. Optimistic Update (Update local state status immediately)
+      if (isPastDate(selectedDate)) {
+    alert("Past tasks cannot be modified");
+    return;
+  }
     setTasks((prev) => {
       const updated = [...prev[selectedDate]];
       updated[index] = { ...updated[index], status };
@@ -272,41 +286,13 @@ const Analytics = () => {
 
   const deleteTask = async (index) => {
     if (!tasks[selectedDate]) return;
-    const taskToDelete = tasks[selectedDate][index];
-    if (!taskToDelete) return;
-    const previousTasks = [...tasks[selectedDate]];
-
-    // 1. Optimistic Update (Delete from local state immediately)
-    setTasks((prev) => {
-      const updated = [...prev[selectedDate]];
-      updated.splice(index, 1);
-      return { ...prev, [selectedDate]: updated };
-    });
-
-
-    try {
-      const token = localStorage.getItem("token");
-      const headers = { Authorization: `Bearer ${token}` };
-
-      const response = await fetch(`/api/calendar-tasks/${taskToDelete.id}`, {
-        method: "DELETE",
-        headers,
-      });
-      if (!response.ok) {
-        // Rollback on failure
-        setTasks((prev) => ({
-          ...prev,
-          [selectedDate]: previousTasks,
-        }));
-      }
-    } catch (err) {
-      console.error("Error deleting task:", err);
-      //Rollback on failure
-      setTasks((prev) => ({
-        ...prev,
-        [selectedDate]: previousTasks,
-      }));
-    }
+  if (isPastDate(selectedDate)) {
+    alert("Past tasks cannot be deleted");
+    return;
+  }
+    const updated = [...tasks[selectedDate]];
+    updated.splice(index, 1);
+    setTasks({ ...tasks, [selectedDate]: updated });
   };
 
   const handlePrevMonth = () => {
@@ -324,11 +310,6 @@ const Analytics = () => {
       return d;
     });
   };
-
-  // const getDateKey = (day) =>
-  //   formatDateKey(
-  //     new Date(currentDate.getFullYear(), currentDate.getMonth(), day),
-  //   );
 
   const myCourses =
     user?.purchasedCourses?.map((c) => {
@@ -866,41 +847,83 @@ const Analytics = () => {
                   <div className="w-3 h-3 rounded-full bg-gradient-to-br from-orange-50 to-yellow-50 border-2 border-[#ff6d34]"></div>
                   <span className="text-xs text-[#2D3436]/70 dark:text-gray-400">{t('analytics.legend_today')}</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-gradient-to-br from-green-50 to-emerald-50 border border-[#28A745]"></div>
-                  <span className="text-xs text-[#2D3436]/70 dark:text-gray-400">{t('analytics.legend_all_completed')}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-white dark:bg-[#0F0F0F] border-l-4 border-l-[#FFC107]"></div>
-                  <span className="text-xs text-[#2D3436]/70 dark:text-gray-400">{t('analytics.legend_tasks_pending')}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-[#F5F5F5] dark:bg-[#0F0F0F]/50 border border-[#CCCCCC] dark:border-gray-600"></div>
-                  <span className="text-xs text-[#2D3436]/70 dark:text-gray-400">{t('analytics.legend_other_month')}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span>✅</span>
-                  <span className="text-xs text-[#2D3436]/70 dark:text-gray-400">{t('analytics.status_completed')}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span>🔄</span>
-                  <span className="text-xs text-[#2D3436]/70 dark:text-gray-400">{t('analytics.status_ongoing')}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span>📅</span>
-                  <span className="text-xs text-[#2D3436]/70 dark:text-gray-400">{t('analytics.status_upcoming')}</span>
-                </div>
-              </div>
-            </div>
 
-            {/* TASK PANEL */}
-            <div className="bg-white dark:bg-[#1A1A1A] rounded-2xl p-3 shadow-lg">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-[#2D3436] dark:text-white flex items-center gap-2">
-                  <Target className="w-5 h-5 text-[#ff6d34]" />
-                  {t('analytics.tasks_for_date', { date: selectedDate })}
-                </h3>
-              </div>
+                <div className="flex flex-col sm:flex-row gap-2 mb-6">
+                  <input
+                    disabled={isSelectedDatePast}
+                    value={newTask}
+                    onChange={(e) => setNewTask(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && addTask()}
+                    className="flex-1 min-w-0 border border-[#CCCCCC] dark:border-gray-700 dark:bg-gray-900 dark:text-white p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#ff6d34] transition placeholder:text-gray-400 dark:placeholder:text-gray-500"
+                    placeholder={t('analytics.add_task_placeholder')}
+                  />
+
+                  <button
+                    disabled={isSelectedDatePast}
+                    onClick={addTask}
+                   className={`w-full sm:w-auto px-4 py-3 rounded-xl transition flex items-center justify-center gap-1 whitespace-nowrap
+                    ${
+                    isSelectedDatePast
+                    ? "bg-gray-300 cursor-not-allowed text-white"
+                       : "bg-[#ff6d34] hover:bg-[#ff6d34]/90 text-white"
+                     }`}
+                    >
+                    <Plus className="w-4 h-4" />
+                    {t('analytics.add_btn')}
+                  </button>
+                </div>
+                
+               {isSelectedDatePast && (
+                   <div className="mb-4 p-3 rounded-xl bg-yellow-50 border border-yellow-200 text-yellow-700 text-sm">
+                   This date is in the past. Tasks can be viewed but cannot be modified.
+                    </div>
+                   )}
+
+                <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                  {(tasks[selectedDate] || []).length > 0 ? (
+                    (tasks[selectedDate] || []).map((task, i) => (
+                      <div
+                        key={i}
+                        className={`group relative flex items-center gap-3 p-3 rounded-xl transition-all
+                          ${task.status === "Completed" 
+                            ? 'bg-[#28A745]/10 dark:bg-[#28A745]/20' 
+                            : 'bg-[#F5F5F5] dark:bg-gray-700/50 hover:bg-[#CCCCCC]/30 dark:hover:bg-gray-700'
+                          }`}
+                      >
+                        <div className="flex-shrink-0">
+                          {statusIcons[task.status]}
+                        </div>
+                        <span className={`flex-1 text-sm line-clamp-2 ${
+                          task.status === "Completed" 
+                            ? 'line-through text-gray-500 dark:text-gray-400' 
+                            : 'text-[#2D3436] dark:text-gray-300'
+                        }`}>
+                          {task.text}
+                        </span>
+                        
+                        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <select
+                            disabled={isSelectedDatePast}
+                            value={task.status}
+                            onChange={(e) => updateTaskStatus(i, e.target.value)}
+                            className="bg-white dark:bg-gray-800 border border-[#CCCCCC] dark:border-gray-600 rounded-lg p-1 text-xs focus:outline-none focus:ring-1 focus:ring-[#ff6d34] text-[#2D3436] dark:text-gray-300"
+                          >
+                            <option value="Upcoming">📅 Upcoming</option>
+                            <option value="Ongoing">🔄 Ongoing</option>
+                            <option value="Completed">✅ Done</option>
+                          </select>
+                          <button
+                            disabled={isSelectedDatePast}
+                            onClick={() => deleteTask(i)}
+                           className={`p-1 ${
+                           isSelectedDatePast
+                           ? "text-gray-300 cursor-not-allowed"
+                           : "text-gray-400 hover:text-red-500 transition"
+                           }`}
+                          >
+                            ✕
+                          </button>
+                        </div>
 
               <div className="flex flex-col sm:flex-row gap-2 mb-6">
                 <input

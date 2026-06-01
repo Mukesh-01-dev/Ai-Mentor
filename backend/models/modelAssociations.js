@@ -6,6 +6,7 @@ import User from "./User.js";
 import Preference from "./Preference.js";
 import AIVideo from "./AIVideo.js";
 import CalendarTask from "./CalendarTask.js";
+import CourseFeedback from "./CourseFeedback.js";
 
 /* ======================
    COURSE → MODULE
@@ -90,4 +91,32 @@ CalendarTask.belongsTo(User, {
     foreignKey: "userId",
 });
 
-export { Course, Module, Lesson, LessonContent, User, AIVideo, Preference, CalendarTask };
+/* ======================
+   COURSE → FEEDBACK
+====================== */
+
+Course.hasMany(CourseFeedback, {
+    foreignKey: "courseId",
+    as: "feedbacks",
+    onDelete: "CASCADE",
+});
+
+CourseFeedback.belongsTo(Course, {
+    foreignKey: "courseId",
+});
+
+/* ======================
+   USER → FEEDBACK
+====================== */
+
+User.hasMany(CourseFeedback, {
+    foreignKey: "userId",
+    as: "feedbacks",
+    onDelete: "CASCADE",
+});
+
+CourseFeedback.belongsTo(User, {
+    foreignKey: "userId",
+});
+
+export { Course, Module, Lesson, LessonContent, User, AIVideo, Preference, CalendarTask, CourseFeedback };

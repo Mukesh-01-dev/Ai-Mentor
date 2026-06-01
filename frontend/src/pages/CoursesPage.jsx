@@ -8,6 +8,7 @@ import ReportModal from "../components/common/ReportModal";
 import toast from "react-hot-toast";
 import { AlertTriangle } from "lucide-react";
 import FloatingAssistant from "../components/common/FloatingAssistant";
+import CourseCardMeta from "../components/common/CourseCardMeta";
 
 const CoursesPage = () => {
     const { t } = useTranslation();
@@ -769,6 +770,9 @@ const CoursesPage = () => {
                                                 alt={course.title}
                                                 loading="lazy"
                                             />
+                                            <div className="absolute bottom-2 right-2">
+                                                <CourseCardMeta courseId={course.id} />
+                                            </div>
                                         </div>
 
                                         <div className="p-3 sm:p-4 flex flex-col flex-1 justify-between">
@@ -864,9 +868,8 @@ const CoursesPage = () => {
                                                 alt={course.title}
                                                 loading="lazy"
                                             />
-                                            <div className="absolute bottom-3 right-3 bg-white text-black px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-1 shadow">
-                                                <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
-                                                {course.rating}
+                                            <div className="absolute bottom-2 right-2">
+                                                <CourseCardMeta courseId={course.id} />
                                             </div>
                                         </div>
 
