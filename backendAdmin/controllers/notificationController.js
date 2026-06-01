@@ -21,7 +21,12 @@ const ensureNotificationSeed = async () => {
 export const getAdminNotifications = async (req, res) => {
   try {
     await ensureNotificationSeed();
-    const notifications = await AdminNotification.findAll({ order: [["createdAt", "DESC"]], limit: 30 });
+    const { Op } = await import("sequelize");
+const notifications = await AdminNotification.findAll({
+  where: { title: { [Op.ne]: "cleared" } }, // hide sentinel
+  order: [["createdAt", "DESC"]],
+  limit: 30,
+});
     res.status(200).json({ success: true, data: notifications });
   } catch (error) {
     console.error("GET NOTIFICATIONS ERROR:", error.message);
@@ -56,6 +61,13 @@ export const markNotificationRead = async (req, res) => {
 export const clearAllNotifications = async (req, res) => {
   try {
     await AdminNotification.destroy({ where: {} });
+    // ✅ Create a sentinel record so seed doesn't re-run
+    await AdminNotification.create({
+      title: "cleared",
+      message: "cleared",
+      type: "system",
+      unread: false,
+    });
     res.status(200).json({ success: true, message: "All notifications cleared" });
   } catch (error) {
     console.error("CLEAR NOTIFICATIONS ERROR:", error.message);

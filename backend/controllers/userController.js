@@ -274,12 +274,6 @@ const updateCourseProgress = async (req, res) => {
       user.set("purchasedCourses", courses);
 
       user.changed("purchasedCourses", true);
-      console.log(
-        "Saved lesson data for course:",
-        courseId,
-        "lesson:",
-        lessonData?.lessonId
-      );
     }
 
     user.analytics = user.analytics || {
