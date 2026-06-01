@@ -11,8 +11,12 @@ const ContactMessage = sequelize.define(
     },
 
     userId: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.UUID,
       allowNull: true,
+      references: {
+        model: "Users", //here made correction
+        key: "id",
+      },
     },
 
     email: {

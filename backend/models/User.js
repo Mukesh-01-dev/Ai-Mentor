@@ -1,6 +1,6 @@
 // backend/models/User.js
 import { DataTypes, Model } from "sequelize";
-import bcrypt from "bcryptjs";
+import bcrypt from "bcrypt";
 import { sequelize } from "../config/db.js";
 
 class User extends Model { }
@@ -48,7 +48,10 @@ User.init(
       type: DataTypes.STRING,
       defaultValue: "user",
     },
-
+    status: {
+      type: DataTypes.STRING,
+      defaultValue: "active",
+    },
     bio: {
       type: DataTypes.STRING,
       defaultValue: "",
@@ -79,11 +82,6 @@ User.init(
         completedCourses: 0,
         certificates: 0,
       },
-    },
-
-    learningHoursChart: {
-      type: DataTypes.JSONB,
-      defaultValue: [],
     },
 
     settings: {

@@ -7,6 +7,7 @@ import { PAGE_TITLES } from "./constants/adminNavigation";
 import { ToastProvider } from "./context/ToastContext";
 import CoursesPage from "./pages/CoursesPage";
 import DashboardPage from "./pages/DashboardPage";
+import DiscussionsPage from "./pages/DiscussionsPage";
 import EnrollmentsPage from "./pages/EnrollmentsPage";
 import LoginPage from "./pages/LoginPage";
 import PaymentsPage from "./pages/PaymentsPage";
@@ -25,6 +26,7 @@ const PAGE_COMPONENTS = {
   reports: ReportsPage,
   profile: ProfilePage,
   settings: SettingsPage,
+  discussions: DiscussionsPage,
 };
 
 function App() {

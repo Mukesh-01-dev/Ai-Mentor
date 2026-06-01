@@ -2,17 +2,30 @@ import { useEffect, useState } from "react";
 import { callApi } from "../utils/api";
 import { BookOpen, Users, GraduationCap, CreditCard, ShieldAlert } from "lucide-react";
 
-const Metric = ({ label, value, icon: Icon, color }) => (
-  <article className="rounded-2xl border border-border bg-card p-6 shadow-sm hover:shadow-md transition-shadow">
-    <div className="flex items-center justify-between mb-4">
-      <div className={`p-3 rounded-xl ${color} bg-opacity-10`}>
-        <Icon className={`w-6 h-6 ${color.replace('bg-', 'text-')}`} />
+// Updated Metric component with predictable Tailwind styling arrays
+const Metric = ({ label, value, icon: Icon, type }) => {
+  // Explicit mapping so Tailwind detects and compiles the color utilities correctly
+  const styles = {
+    blue: { bg: "bg-blue-500/10", text: "text-blue-500" },
+    teal: { bg: "bg-teal-500/10", text: "text-teal-500" },
+    purple: { bg: "bg-purple-500/10", text: "text-purple-500" },
+    green: { bg: "bg-green-500/10", text: "text-green-500" },
+  };
+
+  const currentStyle = styles[type] || styles.blue;
+
+  return (
+    <article className="rounded-2xl border border-border bg-card p-6 shadow-sm hover:shadow-md transition-shadow">
+      <div className="flex items-center justify-between mb-4">
+        <div className={`p-3 rounded-xl ${currentStyle.bg}`}>
+          <Icon className={`w-6 h-6 ${currentStyle.text}`} />
+        </div>
       </div>
-    </div>
-    <p className="text-sm font-bold text-muted uppercase tracking-wider">{label}</p>
-    <p className="mt-2 text-3xl font-black">{value}</p>
-  </article>
-);
+      <p className="text-sm font-bold text-muted uppercase tracking-wider">{label}</p>
+      <p className="mt-2 text-3xl font-black">{value}</p>
+    </article>
+  );
+};
 
 function DashboardPage() {
   const [stats, setStats] = useState(null);
@@ -23,7 +36,6 @@ function DashboardPage() {
     const fetchStats = async () => {
       try {
         setLoading(true);
-        // Using the enrollments stats endpoint as it returns a good summary
         const res = await callApi("/admin/enrollments?type=stats");
         if (res.success) {
           setStats(res.data);
@@ -52,25 +64,25 @@ function DashboardPage() {
           label="Total Users" 
           value={stats?.totalUsers || 0} 
           icon={Users} 
-          color="bg-blue-500" 
+          type="blue" 
         />
         <Metric 
           label="Total Courses" 
-          value={stats?.totalCourses || 0} // Note: backend stats endpoint might need courses count added or we can fetch it separately
+          value={stats?.totalCourses || 0} 
           icon={BookOpen} 
-          color="bg-teal-500" 
+          type="teal" 
         />
         <Metric 
           label="Enrollments" 
           value={stats?.totalEnrollments || 0} 
           icon={GraduationCap} 
-          color="bg-purple-500" 
+          type="purple" 
         />
         <Metric 
           label="Total Revenue" 
           value={`Rs ${stats?.totalRevenue || 0}`} 
           icon={CreditCard} 
-          color="bg-green-500" 
+          type="green" 
         />
       </div>
 
@@ -84,4 +96,3 @@ function DashboardPage() {
 }
 
 export default DashboardPage;
-

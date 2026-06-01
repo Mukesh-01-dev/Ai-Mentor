@@ -27,6 +27,7 @@ export const registerAdmin = async (req, res) => {
     const admin = await Admin.create({ name, email, password, role: "admin" });
     res.status(201).json({ id: admin.id, name: admin.name, email: admin.email, role: admin.role });
   } catch (error) {
+    console.error("REGISTER ADMIN ERROR:", error.message);
     res.status(500).json({ message: "Server Error" });
   }
 };
@@ -58,6 +59,7 @@ export const loginAdmin = async (req, res) => {
       res.status(401).json({ message: "Invalid email or password" });
     }
   } catch (error) {
+    console.error("LOGIN ADMIN ERROR:", error.message);
     res.status(500).json({ message: "Server Error" });
   }
 };
@@ -71,7 +73,7 @@ export const getAdminProfile = async (req, res) => {
 };
 
 export const logoutAdmin = async (req, res) => {
-  res.json({ message: "Logged out successfully" });
+  res.json({ message: "Logged out successfully. Please remove your token on the client side." });
 };
 
 export const deleteAdmin = async (req, res) => {
@@ -83,6 +85,7 @@ export const deleteAdmin = async (req, res) => {
     await adminToDelete.destroy();
     res.json({ message: "Admin removed" });
   } catch (error) {
+    console.error("DELETE ADMIN ERROR:", error.message);
     res.status(500).json({ message: "Server Error" });
   }
 };
@@ -92,6 +95,7 @@ export const getAllAdmins = async (req, res) => {
     const admins = await Admin.findAll({ attributes: ["id", "name", "email", "role", "createdAt"], order: [["createdAt", "DESC"]] });
     res.status(200).json({ success: true, data: admins });
   } catch (error) {
+    console.error("GET ADMINS ERROR:", error.message);
     res.status(500).json({ success: false, message: "Server Error" });
   }
 };

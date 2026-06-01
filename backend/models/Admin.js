@@ -1,5 +1,5 @@
 import { DataTypes, Model } from "sequelize";
-import bcrypt from "bcryptjs";
+import bcrypt from "bcrypt";
 import { sequelize } from "../config/db.js";
 
 class Admin extends Model { }

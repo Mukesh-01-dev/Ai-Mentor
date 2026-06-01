@@ -2,6 +2,7 @@ fastapi
 uvicorn
 python-dotenv
 google-genai
+groq
 asyncio
 edge-tts #Added
 requests
