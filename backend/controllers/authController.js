@@ -14,7 +14,7 @@ const generateToken = (id) => {
 
 // Centralized logic moved to userUtils.js
 const register = async (req, res) => {
-  const { name, email, password } = req.body;
+  const {firstName, lastName, name, email, password } = req.body;
 
   try {
     const userExists = await User.findOne({ where: { email } });
@@ -23,6 +23,8 @@ const register = async (req, res) => {
     }
 
     const user = await User.create({
+      firstName,
+      lastName,
       name: formatFullName(name, ""), // Standard register provides 'name', we treat as first part if needed
       email,
       password,
