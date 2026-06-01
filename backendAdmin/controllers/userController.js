@@ -12,6 +12,7 @@ export const getAllUsers = async (req, res) => {
     const users = await User.findAndCountAll({
       attributes: [
         "id",
+        "displayId",
         "name",
         "email",
         "role",
