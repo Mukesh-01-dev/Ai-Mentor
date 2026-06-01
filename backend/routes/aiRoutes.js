@@ -5,6 +5,7 @@ import validate from "../middleware/validate.js";
 import { generateVideoSchema } from "../schemas/aiSchema.js";
 import { getCourseAndLessonTitles } from "../controllers/courseController.js";
 import Preferences from "../models/Preference.js";
+import { getDiscussionInsight } from "../controllers/discussionInsightController.js";
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -266,5 +267,15 @@ router.get("/video/:courseId/:filename", async (req, res) => {
     });
   }
 });
+
+// ----------------------------------------------------
+// Discussion Page AI Insight
+// ----------------------------------------------------
+// POST /api/ai/discussion-insight
+// Body: { message: string, context: { activeView, selectedCourse, postCount } }
+// Returns: { reply: string }
+// The controller enforces a strict system prompt — the AI will only
+// answer questions about the Discussions page.
+router.post("/discussion-insight", protect, getDiscussionInsight);
 
 export default router;

@@ -2,6 +2,8 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useTranslation } from "react-i18next";
+import AiInsightPanel from "../components/AiInsightPanel";
+import useAiInsight from "../hooks/useAiInsight";
 import {
   MessageCircle,
   ThumbsUp,
@@ -162,6 +164,14 @@ const DiscussionsPage = () => {
   const [openDropdown, setOpenDropdown] = useState(null); // stores postId or replyId of open dropdown
 
   const isAdmin = user?.role === "admin";
+
+  // ── AI Insight panel ───────────────────────────────────────────────────────
+  const aiInsight = useAiInsight({
+    activeView,
+    selectedCourse,
+    postCount:
+      activeView === "global" ? globalPosts.length : coursePosts.length,
+  });
 
   const panelRef = useRef(null);
   const lastHandledFocusKeyRef = useRef("");
@@ -2570,6 +2580,18 @@ const DiscussionsPage = () => {
           </main>
         )}
       </div>
+
+      {/* AI Insight Panel */}
+      <AiInsightPanel
+        isOpen={aiInsight.isOpen}
+        onClose={aiInsight.close}
+        onToggle={aiInsight.toggle}
+        messages={aiInsight.messages}
+        input={aiInsight.input}
+        setInput={aiInsight.setInput}
+        loading={aiInsight.loading}
+        handleSubmit={aiInsight.handleSubmit}
+      />
 
       {/* Popup Modal */}
       {popupModal.open && (
