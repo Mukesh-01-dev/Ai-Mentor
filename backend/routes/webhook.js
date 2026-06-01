@@ -3,6 +3,7 @@ import Stripe from "stripe";
 import User from "../models/User.js";
 import Payment from "../models/Payment.js";
 import { createNotification } from "../controllers/notificationController.js";
+import { sequelize } from "../config/db.js";
 
 const router = express.Router();
 
@@ -46,84 +47,75 @@ router.post(
     switch (event.type) {
 
       // ✅ PAYMENT SUCCESS
-      case "checkout.session.completed": {
-        const session = event.data.object;
-        const courseId = session.metadata?.courseId;
-        const userId = session.metadata?.userId;
-        const courseTitle = session.metadata?.courseTitle;
+  case "checkout.session.completed": {
+  const session = event.data.object;
+  const courseId = session.metadata?.courseId;
+  const userId = session.metadata?.userId;
+  const courseTitle = session.metadata?.courseTitle;
 
-        console.log(`[Webhook] checkout.session.completed — courseId: ${courseId}, userId: ${userId}`);
+  const transaction = await sequelize.transaction();
+  try {
+    if (session.id) {
+      const payment = await Payment.findOne({
+        where: { stripeSessionId: session.id }, transaction
+      });
 
-        try {
-          // ✅ WEBHOOK IDEMPOTENCY — skip if already processed
-          // Stripe can fire webhooks more than once for reliability
-          if (session.id) {
-            const payment = await Payment.findOne({
-              where: { stripeSessionId: session.id },
-            });
-
-            if (payment?.status === "success") {
-              console.log("[Webhook] Payment already processed:", session.id);
-              return res.json({ received: true });
-            }
-
-            // Update Payment record status → success
-            await Payment.update(
-              {
-                status: "success",
-                stripePaymentIntentId: session.payment_intent,
-              },
-              { where: { stripeSessionId: session.id } }
-            );
-          }
-
-          // Find and enroll the user
-          const user = await User.findByPk(userId);
-          if (!user) {
-            console.log("[Webhook] ❌ User not found:", userId);
-            return res.status(404).send("User not found");
-          }
-
-          let purchased = user.purchasedCourses || [];
-          const alreadyPurchased = purchased.find(
-            (c) => Number(c.courseId) === Number(courseId)
-          );
-
-          if (!alreadyPurchased) {
-            purchased.push({
-              courseId: Number(courseId),
-              courseTitle: courseTitle || "Course",
-              purchasedAt: new Date(),
-              progress: {
-                completedLessons: [],
-                currentLesson: null,
-              },
-            });
-
-            user.purchasedCourses = purchased;
-            user.changed("purchasedCourses", true);
-            await user.save();
-
-            try {
-              await createNotification(user.id, {
-                title: "Course Enrolled 🎉",
-                message: `You successfully enrolled in ${courseTitle || "a course"}`,
-                type: "course",
-                metadata: { courseId },
-              });
-            } catch (err) {
-              console.error("[Webhook] Notification error:", err);
-            }
-
-            console.log("[Webhook] ✅ Course added after Stripe payment:", courseId);
-          } else {
-            console.log("[Webhook] ⚠️ Course already purchased:", courseId);
-          }
-        } catch (err) {
-          console.error("[Webhook] ❌ DB Error:", err);
-        }
-        break;
+      if (payment?.status === "success") {
+        await transaction.rollback();
+        console.log("[Webhook] Already processed:", session.id);
+        return res.json({ received: true });
       }
+
+      await Payment.update(
+        { status: "success", stripePaymentIntentId: session.payment_intent },
+        { where: { stripeSessionId: session.id }, transaction }
+      );
+    }
+
+    const user = await User.findByPk(userId, { transaction });
+    if (!user) {
+      await transaction.rollback();
+      return res.status(404).send("User not found");
+    }
+
+    let purchased = user.purchasedCourses || [];
+    const alreadyPurchased = purchased.find(
+      (c) => Number(c.courseId) === Number(courseId)
+    );
+
+    if (!alreadyPurchased) {
+      purchased.push({
+        courseId: Number(courseId),
+        courseTitle: courseTitle || "Course",
+        purchasedAt: new Date(),
+        progress: { completedLessons: [], currentLesson: null },
+      });
+      user.purchasedCourses = purchased;
+      user.changed("purchasedCourses", true);
+      await user.save({ transaction });
+    }
+
+    await transaction.commit();
+
+    // Send notification AFTER commit
+    try {
+      await createNotification(user.id, {
+        title: "Course Enrolled 🎉",
+        message: `You successfully enrolled in ${courseTitle || "a course"}`,
+        type: "course",
+        metadata: { courseId },
+      });
+    } catch (err) {
+      console.error("[Webhook] Notification error:", err);
+    }
+
+    console.log("[Webhook] ✅ Payment processed:", courseId);
+  } catch (err) {
+    await transaction.rollback();
+    console.error("[Webhook] ❌ DB Error:", err);
+  }
+  break;
+  }
 
       // ✅ SESSION EXPIRED
       case "checkout.session.expired": {

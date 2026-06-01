@@ -11,10 +11,17 @@ if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error("Missing STRIPE_SECRET_KEY environment variable");
 }
 
+const paymentLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 3,
+  message: { error: "Too many payment attempts. Try again after 15 minutes." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 // ✅ CREATE CHECKOUT SESSION — with idempotency protection
-router.post("/create-checkout-session", protect, async (req, res) => {
+router.post("/create-checkout-session", protect,paymentLimiter, async (req, res) => {
   try {
     const { course, idempotencyKey } = req.body;
     const userId = req.user.id; // ✅ from JWT token — never trust req.body for userId
