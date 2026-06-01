@@ -199,6 +199,7 @@ console.log(usersResult.usersResult);
       const normalizedUsers = usersList.map((user) => ({
         id: `user-${user.id}`,
         rawId: user.id,
+        displayId: user.displayId,
         name: user.name,
         email: user.email,
         role: user.role || "user",
@@ -210,6 +211,7 @@ console.log(usersResult.usersResult);
       const normalizedAdmins = adminsList.map((admin) => ({
         id: `admin-${admin.id}`,
         rawId: admin.id,
+        displayId: admin.displayId,
         name: admin.name,
         email: admin.email,
         role: admin.role || "admin",
@@ -389,7 +391,8 @@ console.log(usersResult.usersResult);
         <table className="w-full min-w-[1000px]">
           <thead className="text-left text-[10px] font-black uppercase tracking-widest text-muted border-b border-border bg-canvas-alt/10">
             <tr>
-              <th className="p-6">Name</th>
+              <th className="p-6">ID</th>
+              <th>Name</th>
               <th>Email</th>
               <th>Type</th>
               <th>Role</th>
@@ -402,7 +405,10 @@ console.log(usersResult.usersResult);
             {visibleAccounts.length > 0 ? (
               visibleAccounts.map((account) => (
                 <tr key={account.id} className="border-b border-border hover:bg-canvas-alt/50 transition-all group">
-                  <td className="p-6">
+                  <td className="p-6 text-muted font-bold">
+                    #{account.displayId || "-"}
+                  </td>
+                  <td>
                     <div className="flex items-center gap-3">
                       <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black uppercase text-[10px] ${
                         account.type === "admin" ? "bg-teal-500/10 text-teal-500" : "bg-blue-500/10 text-blue-500"
@@ -439,7 +445,7 @@ console.log(usersResult.usersResult);
               ))
             ) : (
               <tr>
-                <td colSpan="7" className="p-20 text-center text-muted italic">
+                <td colSpan="8" className="p-20 text-center text-muted italic">
                   <div className="flex flex-col items-center gap-4 opacity-30">
                     <ShieldAlert className="w-12 h-12" />
                     <p className="text-lg font-black uppercase tracking-widest">No accounts matched.</p>
