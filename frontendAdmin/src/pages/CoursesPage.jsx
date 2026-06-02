@@ -4,6 +4,7 @@ import { Plus, X, ChevronDown, SlidersHorizontal, ArrowUpDown, Check, BookOpen }
 import { callApi } from "../utils/api";
 import CourseStatusDropdown from "../components/CourseStatusDropdown";
 import ConfirmDeleteModal from "../components/ConfirmDeleteModal";
+import CourseBuilderModal from "../components/CourseBuilderModal";
 import { useToast } from "../context/ToastContext";
 
 // ─── MultiSelect Dropdown ─────────────────────────────────────────────────────
@@ -156,7 +157,6 @@ function CoursesPage() {
   const [newCourse, setNewCourse] = useState({ title: "", category: "", priceValue: "", currency: "INR" });
   const [submitting, setSubmitting] = useState(false);
 
-  // Delete modal state
   const [deleteModal, setDeleteModal] = useState({
     open: false,
     courseId: null,
@@ -164,6 +164,8 @@ function CoursesPage() {
     enrolledCount: 0,
     isDeleting: false,
   });
+
+  const [builderCourse, setBuilderCourse] = useState(null);
 
   // ── Filter panel toggle ───────────────────────────────────────────────────
   const [showFilters, setShowFilters] = useState(false);
@@ -606,8 +608,15 @@ return (
                     <div className={`font-semibold text-main group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors ${course.status === "deleted" ? "line-through opacity-70" : ""}`}>
                       {course.title}
                     </div>
-                    <div className="text-muted text-[10px] uppercase tracking-tighter mt-0.5">
-                      ID: {course.id}
+                    <div className="text-muted text-[10px] uppercase tracking-tighter mt-0.5 flex gap-2 items-center">
+                      <span>ID: {course.id}</span>
+                      <span>•</span>
+                      <button 
+                        onClick={() => setBuilderCourse(course)}
+                        className="text-purple-500 hover:text-purple-600 font-bold transition-colors"
+                      >
+                        Builder
+                      </button>
                     </div>
                   </td>
                   <td className="pr-4">
@@ -795,6 +804,14 @@ return (
         enrolledCount={deleteModal.enrolledCount}
         isDeleting={deleteModal.isDeleting}
       />
+
+      {/* Course Builder Modal */}
+      {builderCourse && (
+        <CourseBuilderModal
+          course={builderCourse}
+          onClose={() => setBuilderCourse(null)}
+        />
+      )}
     </>
   );
 }

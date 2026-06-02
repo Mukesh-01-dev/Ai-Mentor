@@ -61,3 +61,8 @@ coverage/
 
 */.agents
 
+backend/config/serviceAccountKey.json
+# =====================
+# Local Scripts
+# =====================
+start_ai.bat

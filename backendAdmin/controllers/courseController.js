@@ -1,4 +1,4 @@
-import { Course, AdminNotification } from "../models/index.js";
+import { Course, AdminNotification, Module, Lesson } from "../models/index.js";
 
 // Valid status values
 const VALID_STATUSES = ["published", "disabled", "deleted"];
@@ -215,6 +215,119 @@ export const getCourseEnrollments = async (req, res) => {
     });
   } catch (error) {
     console.error("GET COURSE ENROLLMENTS ERROR:", error.message);
+    res.status(500).json({ success: false, message: "Server Error" });
+  }
+};
+
+/**
+ * @desc    Get Course Syllabus (Modules and Lessons)
+ * @route   GET /api/admin/courses/:id/learning
+ * @access  Private
+ */
+export const getCourseSyllabus = async (req, res) => {
+  try {
+    const courseId = req.params.id;
+    const course = await Course.findByPk(courseId);
+
+    if (!course) {
+      return res.status(404).json({ message: "Course not found" });
+    }
+
+    const modules = await Module.findAll({
+      where: { courseId },
+      order: [["order", "ASC"], ["createdAt", "ASC"]],
+      include: [
+        {
+          model: Lesson,
+          as: "lessons",
+        },
+      ],
+    });
+
+    // Ensure lessons are sorted inside modules
+    const formattedModules = modules.map((mod) => {
+      const plainMod = mod.get({ plain: true });
+      if (plainMod.lessons) {
+        plainMod.lessons.sort((a, b) => a.order - b.order || new Date(a.createdAt) - new Date(b.createdAt));
+      }
+      return plainMod;
+    });
+
+    res.json({
+      modules: formattedModules,
+      course: {
+        id: course.id,
+        title: course.title,
+        subtitle: course.category,
+      },
+    });
+  } catch (error) {
+    console.error("GET COURSE SYLLABUS ERROR:", error.message);
+    res.status(500).json({ success: false, message: "Server Error" });
+  }
+};
+
+/**
+ * @desc    Generate Course Syllabus with AI
+ * @route   POST /api/admin/courses/:id/generate-syllabus
+ * @access  Private
+ */
+export const generateCourseSyllabusWithAI = async (req, res) => {
+  try {
+    const courseId = req.params.id;
+    const course = await Course.findByPk(courseId);
+
+    if (!course) {
+      return res.status(404).json({ message: "Course not found" });
+    }
+
+    // Call Python AI Service
+    const aiUrl = "http://127.0.0.1:8000/generate-syllabus";
+    const aiResponse = await fetch(aiUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        course_title: course.title,
+        category: course.category
+      }),
+    });
+
+    if (!aiResponse.ok) {
+      return res.status(500).json({ message: "AI Service failed to generate syllabus. Please make sure the python server is running." });
+    }
+
+    const data = await aiResponse.json();
+    if (data.error) {
+      return res.status(500).json({ message: data.error });
+    }
+
+    // Insert into DB
+    let moduleOrder = 1;
+    for (const mod of data.modules) {
+      const newModule = await Module.create({
+        courseId: course.id,
+        title: mod.title,
+        order: moduleOrder++
+      });
+
+      let lessonOrder = 1;
+      for (const les of mod.lessons) {
+        await Lesson.create({
+          moduleId: newModule.id,
+          title: les.title,
+          duration: les.duration || "5 mins",
+          type: les.type || "video",
+          order: lessonOrder++
+        });
+      }
+    }
+
+    res.json({ message: "Syllabus generated successfully", data: data });
+  } catch (error) {
+    console.error("GENERATE SYLLABUS ERROR:", error.message);
+    if (error.cause && error.cause.code === 'ECONNREFUSED') {
+      return res.status(500).json({ message: "Python AI Server is not running. Please start it with start_ai.bat" });
+    }
     res.status(500).json({ success: false, message: "Server Error" });
   }
 };

@@ -60,7 +60,7 @@ function AdminSidebar({
       <aside
         className={`fixed lg:fixed top-0 left-0 z-[70] bg-card/70 backdrop-blur-2xl border-r border-border/50 transform transition-all duration-500 ease-out lg:translate-x-0 ${
           mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-        } ${collapsed ? "lg:w-24" : "lg:w-80"} w-80 h-screen overflow-visible`}
+        } ${collapsed ? "lg:w-24" : "lg:w-80"} w-80 h-screen overflow-visible flex flex-col`}
       >
         <button
           onClick={onToggleCollapsed}
@@ -89,8 +89,8 @@ function AdminSidebar({
           </button>
         </div>
 
-        <nav className={`mt-6 px-4 h-[calc(100vh-18rem)] scrollbar-hide ${collapsed ? "overflow-visible" : "overflow-y-auto"}`}>
-          <div className="space-y-3">
+        <nav className={`mt-4 px-4 flex-1 scrollbar-hide ${collapsed ? "overflow-visible" : "overflow-y-auto"}`}>
+          <div className="space-y-3 pb-6">
             {NAV_ITEMS.map(([id, label]) => {
               const Icon = ICONS[id] || LayoutDashboard;
               const active = page === id;
@@ -125,7 +125,7 @@ function AdminSidebar({
           </div>
         </nav>
 
-        <div className="absolute bottom-8 left-0 right-0 px-4">
+        <div className="p-4 border-t border-border/20 bg-card/50 shrink-0">
           <div className={`cursor-default p-0.5 rounded-4xl bg-linear-to-br from-teal-500/30 via-blue-500/20 to-transparent`}>
             <div className={`bg-card dark:bg-slate-900 rounded-[1.9rem] transition-all duration-300 ${collapsed ? "p-1" : "p-4 flex items-center"}`}>
               <img

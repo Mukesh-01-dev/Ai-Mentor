@@ -13,6 +13,8 @@ import {
   updateCourseStatus,
   deleteCourseHard,
   getCourseEnrollments,
+  getCourseSyllabus,
+  generateCourseSyllabusWithAI,
 } from "../controllers/courseController.js";
 import {
   getAllUsers,
@@ -56,6 +58,8 @@ router.post("/courses", protectAdmin, createCourse);
 router.patch("/courses/:id/status", protectAdmin, updateCourseStatus);
 router.delete("/courses/:id", protectAdmin, superAdminOnly, deleteCourseHard);
 router.get("/courses/:id/enrollments", protectAdmin, getCourseEnrollments);
+router.get("/courses/:id/learning", protectAdmin, getCourseSyllabus);
+router.post("/courses/:id/generate-syllabus", protectAdmin, generateCourseSyllabusWithAI);
 router.get("/users", protectAdmin, getAllUsers);
 router.patch("/users/:id/status", protectAdmin, superAdminOnly, updateUserStatus);
 router.delete("/users/:id", protectAdmin, superAdminOnly, deleteUser);
