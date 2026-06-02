@@ -759,11 +759,21 @@ const CoursesPage = () => {
                                         <div className="relative h-32 sm:h-40">
 
                                             <img
-                                                src={course.image}
-                                                className="w-full h-full object-cover"
-                                                alt={course.title}
-                                                loading="lazy"
-                                            />
+    src={
+        course.title === "React Fundamentals"
+            ? "/AI_Tutor_New_UI/Dashboard/react_fundamentals_logo.png"
+            : course.title === "Python For AI"
+            ? "/AI_Tutor_New_UI/Dashboard/python_for_ai_logo.png"
+            : course.title === "AI Ethics & Bias"
+            ? "/AI_Tutor_New_UI/Dashboard/data_analytics.png"
+            : course.title === "MongoDB Fundamentals"
+            ? "/AI_Tutor_New_UI/Dashboard/MongoDB.png"
+            : "/AI_Tutor_New_UI/Dashboard/logo.png"
+    }
+    className="w-full h-full object-cover"
+    alt={course.title}
+    loading="lazy"
+/>
                                         </div>
 
                                         <div className="p-3 sm:p-4 flex flex-col flex-1 justify-between">
@@ -853,12 +863,22 @@ const CoursesPage = () => {
                                     >
                                         <div className="relative h-32 sm:h-40">
 
-                                            <img
-                                                src={course.image}
-                                                className="w-full h-full object-cover"
-                                                alt={course.title}
-                                                loading="lazy"
-                                            />
+                                          <img
+    src={
+        course.title === "React Fundamentals"
+            ? "/AI_Tutor_New_UI/Dashboard/react_fundamentals_logo.png"
+            : course.title === "Python For AI"
+            ? "/AI_Tutor_New_UI/Dashboard/python_for_ai_logo.png"
+            : course.title === "AI Ethics & Bias"
+            ? "/AI_Tutor_New_UI/Dashboard/data_analytics.png"
+            : course.title === "MongoDB Fundamentals"
+            ? "/AI_Tutor_New_UI/Dashboard/MongoDB.png"
+            : "/AI_Tutor_New_UI/Dashboard/logo.png"
+    }
+    className="w-full h-full object-cover"
+    alt={course.title}
+    loading="lazy"
+/>
                                             <div className="absolute bottom-3 right-3 bg-white text-black px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-1 shadow">
                                                 <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
                                                 {course.rating}

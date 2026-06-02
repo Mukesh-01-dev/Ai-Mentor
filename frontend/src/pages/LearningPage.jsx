@@ -305,27 +305,39 @@ export default function Learning() {
           };
 
           const data = await getAIVideo(payload);
+          console.log("AI RESPONSE =", data);
 
-          if (data?.videoUrl) {
+          if (data?.jobId || data?.videoUrl || data?.cloudinary_url) {
             let isReady = data.cached || false;
             let attempts = 0;
 
-            if (!isReady) {
-              while (!isReady && attempts < 60) {
-                const statusRes = await fetch(`/api/ai/status/${data.jobId}`, {
-                  headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-                });
-                const statusData = await statusRes.json();
-                if (statusData.status === "ready") {
-                  isReady = true;
-                  if (statusData.cloudinary_url) data.videoUrl = statusData.cloudinary_url;
-                  break;
-                }
-                if (statusData.status === "failed") throw new Error("Video generation failed.");
-                attempts++;
-                await new Promise((r) => setTimeout(r, 1000));
-              }
-            }
+           if (!isReady) {
+  while (!isReady && attempts < 60) {
+    const statusRes = await fetch(`/api/ai/status/${data.jobId}`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    });
+
+    const statusData = await statusRes.json();
+
+    console.log("STATUS DATA =", statusData);
+
+    if (statusData.status === "ready") {
+      isReady = true;
+
+      if (statusData.cloudinary_url) {
+        data.videoUrl = statusData.cloudinary_url;
+      }
+
+      break;
+    }
+
+    attempts++;
+
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+  }
+}
 
             if (!isReady) throw new Error("Video generation timed out.");
 
@@ -334,7 +346,7 @@ export default function Learning() {
               lastCelebrityRef.current !== selectedCelebrity
             ) return;
 
-            setAiVideoUrl(data.videoUrl);
+            setAiVideoUrl(data.videoUrl || data.cloudinary_url);
 
             if (data.transcriptName) {
               try {

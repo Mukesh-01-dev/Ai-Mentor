@@ -433,11 +433,21 @@ const Analytics = () => {
                             <td className="px-6 py-4">
                               <Link to={`/learning/${course.id}`} className="flex items-center gap-4">
                                 <div className="relative">
-                                  <img 
-                                    src={course.image} 
-                                    alt="" 
-                                    className="w-12 h-12 rounded-xl object-cover group-hover:scale-105 transition-transform duration-300" 
-                                  />
+                                  <img
+  src={
+    course.title === "React Fundamentals"
+      ? "/AI_Tutor_New_UI/Dashboard/react_fundamentals_logo.png"
+      : course.title === "Python For AI"
+      ? "/AI_Tutor_New_UI/Dashboard/python_for_ai_logo.png"
+      : course.title === "AI Ethics & Bias"
+      ? "/AI_Tutor_New_UI/Dashboard/data_analytics.png"
+      : course.title === "MongoDB Fundamentals"
+      ? "/AI_Tutor_New_UI/Dashboard/MongoDB.png"
+      : "/AI_Tutor_New_UI/Dashboard/logo.png"
+  }
+  alt={course.title}
+  className="w-12 h-12 rounded-xl object-cover group-hover:scale-105 transition-transform duration-300"
+/>
                                   <div className="absolute inset-0 rounded-xl bg-[#ff6d34] opacity-0 group-hover:opacity-10 transition-opacity"></div>
                                 </div>
                                 <div>

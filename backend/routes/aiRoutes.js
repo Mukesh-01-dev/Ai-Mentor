@@ -115,7 +115,29 @@ router.post("/generate-video", protect, validate(generateVideoSchema), async (re
 //     });
        
     // Temporary fallback response since videoQueue is disabled
-    return res.status(501).json({ message: "Video generation is temporarily disabled." });
+   const response = await fetch(
+  `${process.env.AI_SERVICE_URL}/generate`,
+  {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      course: courseTitle,
+      topic: lessonTitle,
+      celebrity,
+      preferences: userPreferences,
+    }),
+  }
+);
+
+if (!response.ok) {
+  throw new Error("AI service request failed");
+}
+
+const data = await response.json();
+
+return res.json(data);
 
   } catch (error) {
     console.error("AI GENERATE ERROR:", error);

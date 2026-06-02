@@ -26,6 +26,7 @@
     {
       "id": 1,
       "title": "React Fundamentals",
+       "image": "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800",
       "status": "In Progress",
       "progress": 75,
       "lessons": "18 of 24 lessons",

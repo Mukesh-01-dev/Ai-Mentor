@@ -25,6 +25,19 @@ import Preferences from "../components/Preferences";
 import API_BASE_URL, { apiFetch } from "../lib/api";
 import FloatingAssistant from "../components/common/FloatingAssistant";
 
+// Add this here
+const getImageUrl = (image) => {
+  if (!image) {
+    return "https://via.placeholder.com/400x250?text=Course";
+  }
+
+  if (image.startsWith("http")) {
+    return image;
+  }
+
+  return `${API_BASE_URL}${image}`;
+};
+
 const Dashboard = () => {
   const { t } = useTranslation();
   const [coursesData, setCoursesData] = useState({
@@ -68,6 +81,18 @@ const Dashboard = () => {
         }
 
         const allCourses = await coursesRes.json();
+
+console.log("ALL COURSES DATA:");
+console.log(allCourses);
+
+allCourses.forEach((course) => {
+  console.log({
+    id: course.id,
+    title: course.title,
+    image: course.image,
+  });
+});
+console.log(allCourses);
         const { statsCards } = await statsRes.json();
 
         setCoursesData({ allCourses, statsCards });
@@ -446,13 +471,25 @@ const Dashboard = () => {
                   className="bg-card rounded-xl border border-border w-64 flex-shrink-0 shadow-sm transition-all duration-300 ease-out hover:shadow-xl hover:-translate-y-2 hover:scale-[1.03] hover:border-teal-400/50"
                 >
                   {/* Image */}
+
                   <div className="relative h-40">
-                    <img
-                      src={course.image}
-                      alt={course.title}
-                      className="w-full h-full object-cover rounded-t-xl"
-                      loading="lazy"
-                    />
+ <img
+  src={
+  course.title === "React Fundamentals"
+    ? "/AI_Tutor_New_UI/Dashboard/react_fundamentals_logo.png"
+    : course.title === "Python For AI"
+    ? "/AI_Tutor_New_UI/Dashboard/python_for_ai_logo.png"
+    : course.title === "AI Ethics & Bias"
+    ? "/AI_Tutor_New_UI/Dashboard/data_analytics.png"
+    : course.title === "MongoDB Fundamentals"
+    ? "/AI_Tutor_New_UI/Dashboard/MongoDB.png"
+    : course.title === "PostgreSQL"
+? "/AI_Tutor_New_UI/Dashboard/logo.png"
+    : "/AI_Tutor_New_UI/Dashboard/logo.png"
+}
+  alt={course.title}
+  className="w-full h-full object-cover rounded-t-xl"
+/>
 
                     {/* Rating */}
                     <div className="absolute bottom-2 right-2 bg-black/70 px-2 py-1 rounded-full flex items-center gap-1">
@@ -532,12 +569,24 @@ const Dashboard = () => {
                               to={`/learning/${course.id}`}
                               className="flex items-center"
                             >
-                              <img
-                                src={course.image}
-                                alt={course.title}
-                                className="w-12 h-12 rounded-lg mr-4"
-                                loading="lazy"
-                              />
+                            <img
+  src={
+    course.title === "React Fundamentals"
+      ? "/AI_Tutor_New_UI/Dashboard/react_fundamentals_logo.png"
+      : course.title === "Python For AI"
+      ? "/AI_Tutor_New_UI/Dashboard/python_for_ai_logo.png"
+      : course.title === "AI Ethics & Bias"
+      ? "/AI_Tutor_New_UI/Dashboard/data_analytics.png"
+      : course.title === "PostgreSQL"
+      ? "/AI_Tutor_New_UI/Dashboard/postgresql.png"
+      : course.title === "MongoDB Fundamentals"
+      ? "/AI_Tutor_New_UI/Dashboard/MongoDB.png"
+      : "/AI_Tutor_New_UI/Dashboard/react_fundamentals_logo.png"
+  }
+  alt={course.title}
+  className="w-12 h-12 rounded-lg mr-4"
+  loading="lazy"
+/>
                               <div>
                                 <div className="font-medium text-main hover:text-indigo-600">
                                   {course.title}
@@ -585,12 +634,21 @@ const Dashboard = () => {
                           className="flex items-center justify-between p-3 rounded-lg border border-border bg-canvas-alt"
                         >
                           <div className="flex items-center min-w-0">
-                            <img
-                              src={course.image}
-                              alt={course.title}
-                              className="w-12 h-12 rounded-lg mr-4"
-                              loading="lazy"
-                            />
+                          <img
+  src={
+    course.title === "React Fundamentals"
+      ? "/AI_Tutor_New_UI/Dashboard/react_fundamentals_logo.png"
+      : course.title === "Python For AI"
+      ? "/AI_Tutor_New_UI/Dashboard/python_for_ai_logo.png"
+      : course.title === "AI Ethics & Bias"
+      ? "/AI_Tutor_New_UI/Dashboard/data_analytics.png"
+      : course.title === "MongoDB Fundamentals"
+      ? "/AI_Tutor_New_UI/Dashboard/MongoDB.png"
+      : "/AI_Tutor_New_UI/Dashboard/logo.png"
+  }
+  alt={course.title}
+  className="w-full h-full object-cover rounded-t-xl"
+/>
                             <div className="min-w-0">
                               <div className="font-medium text-main truncate">
                                 {course.title}
@@ -645,12 +703,24 @@ const Dashboard = () => {
                           to={`/course-preview/${item.id}`}
                           className="flex items-center flex-1"
                         >
-                          <img
-                            src={item.image}
-                            alt={item.title}
-                            className="w-12 h-12 rounded-lg mr-4"
-                            loading="lazy"
-                          />
+ <img
+  src={
+    item.title === "React Fundamentals"
+      ? "/AI_Tutor_New_UI/Dashboard/react_fundamentals_logo.png"
+      : item.title === "Python For AI"
+      ? "/AI_Tutor_New_UI/Dashboard/python_for_ai_logo.png"
+      : item.title === "AI Ethics & Bias"
+      ? "/AI_Tutor_New_UI/Dashboard/data_analytics.png"
+      : item.title === "PostgreSQL"
+      ? "/AI_Tutor_New_UI/Dashboard/postgresql.png"
+      : item.title === "MongoDB Fundamentals"
+      ? "/AI_Tutor_New_UI/Dashboard/MongoDB.png"
+      : "/AI_Tutor_New_UI/Dashboard/react_fundamentals_logo.png"
+  }
+  alt={item.title}
+  className="w-12 h-12 rounded-lg mr-4"
+  loading="lazy"
+/>
                           <div className="flex-1">
                             <h3 className="font-medium text-main mb-1 hover:text-teal-600">
                               {item.title}
