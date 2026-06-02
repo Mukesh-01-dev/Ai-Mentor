@@ -13,6 +13,8 @@ import {
   updateCourseStatus,
   deleteCourseHard,
   getCourseEnrollments,
+  getCourseSyllabus,
+  generateCourseSyllabusWithAI,
 } from "../controllers/courseController.js";
 import {
   getAllUsers,
@@ -23,6 +25,10 @@ import {
   getAllEnrollments,
   getAllPayments,
   getAllReports,
+  getAllDiscussions,
+  hideDiscussion,
+  unhideDiscussion,
+  deleteDiscussion
 } from "../controllers/dataController.js";
 import {
   getAdminNotifications,
@@ -30,7 +36,7 @@ import {
   markNotificationRead,
   clearAllNotifications,
 } from "../controllers/notificationController.js";
-import { getAllCouresReports } from "../controllers/couresReportsController.js";
+import { getAllCourseReports,updateReportStatus,deleteReport, } from "../controllers/courseReportsController.js";
 import { protectAdmin, superAdminOnly } from "../middleware/adminAuthMiddleware.js";
 
 const router = express.Router();
@@ -52,10 +58,13 @@ router.post("/courses", protectAdmin, createCourse);
 router.patch("/courses/:id/status", protectAdmin, updateCourseStatus);
 router.delete("/courses/:id", protectAdmin, superAdminOnly, deleteCourseHard);
 router.get("/courses/:id/enrollments", protectAdmin, getCourseEnrollments);
+router.get("/courses/:id/learning", protectAdmin, getCourseSyllabus);
+router.post("/courses/:id/generate-syllabus", protectAdmin, generateCourseSyllabusWithAI);
 router.get("/users", protectAdmin, getAllUsers);
 router.patch("/users/:id/status", protectAdmin, superAdminOnly, updateUserStatus);
 router.delete("/users/:id", protectAdmin, superAdminOnly, deleteUser);
 router.get("/reports", protectAdmin, getAllReports);
+router.get("/discussions", protectAdmin, getAllDiscussions);
 router.get("/admins", protectAdmin, getAllAdmins);
 
 // Notifications
@@ -64,7 +73,14 @@ router.patch("/notifications/mark-all-read", protectAdmin, markAllNotificationsR
 router.patch("/notifications/:id/read", protectAdmin, markNotificationRead);
 router.delete("/notifications/clear", protectAdmin, clearAllNotifications);
 
-//coures Report
-router.get("/coures-reports", getAllCouresReports);
+//course Report
+router.get("/course-reports", protectAdmin, getAllCourseReports);
+router.patch("/course-reports/:id", protectAdmin, updateReportStatus);
+router.delete("/course-reports/:id", protectAdmin, deleteReport);
+
+// DISCUSSION MODERATION ROUTES
+router.put("/discussions/:id/hide", protectAdmin, hideDiscussion);
+router.put("/discussions/:id/unhide", protectAdmin, unhideDiscussion);
+router.delete("/discussions/:id", protectAdmin, deleteDiscussion);
 
 export default router;

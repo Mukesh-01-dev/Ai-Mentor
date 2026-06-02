@@ -116,7 +116,7 @@ function ActionMenu({ account, onAction, isSuperAdmin }) {
               className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-orange-500 hover:bg-orange-500/5"
             >
               <UserX className="w-4 h-4" />
-              Put On Hold
+               Dismiss
             </button>
           ) : (
             <button
@@ -155,7 +155,7 @@ function UsersPage() {
   const [isAddAdminOpen, setIsAddAdminOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
-  const [activeFilter, setActiveFilter] = useState("admin");
+  const [activeFilter, setActiveFilter] = useState(null);
   const [page, setPage] = useState(1);
 const [totalPages, setTotalPages] = useState(1);
   const [formData, setFormData] = useState({

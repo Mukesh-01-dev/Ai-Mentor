@@ -26,6 +26,7 @@ import {
   AlertTriangle,
   MoreVertical,
 } from "lucide-react";
+import FloatingAssistant from "../components/common/FloatingAssistant";
 
 //helpers
 const getRelativeTime = (dateStr) => {
@@ -151,6 +152,45 @@ const DiscussionsPage = () => {
 
   // Dropdown state
   const [openDropdown, setOpenDropdown] = useState(null); // stores postId or replyId of open dropdown
+
+  // Custom category selector state
+  const [categoryPickerOpen, setCategoryPickerOpen] = useState(false);
+  const [filterPickerOpen, setFilterPickerOpen] = useState(false);
+  const [categoryPickerPos, setCategoryPickerPos] = useState("bottom");
+  const [filterPickerPos, setFilterPickerPos] = useState("bottom");
+  const categoryPickerRef = useRef(null);
+  const filterPickerRef = useRef(null);
+
+  // Measure available space and decide open direction
+  // Panel max height ≈ 210px. Only open upward when space below is tight
+  // AND there is more room above than below.
+  const PANEL_HEIGHT = 220;
+
+  const openCategoryPicker = () => {
+    setFilterPickerOpen(false);
+    if (categoryPickerRef.current) {
+      const rect = categoryPickerRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+      setCategoryPickerPos(
+        spaceBelow < PANEL_HEIGHT && spaceAbove > spaceBelow ? "top" : "bottom"
+      );
+    }
+    setCategoryPickerOpen((o) => !o);
+  };
+
+  const openFilterPicker = () => {
+    setCategoryPickerOpen(false);
+    if (filterPickerRef.current) {
+      const rect = filterPickerRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+      setFilterPickerPos(
+        spaceBelow < PANEL_HEIGHT && spaceAbove > spaceBelow ? "top" : "bottom"
+      );
+    }
+    setFilterPickerOpen((o) => !o);
+  };
 
   const isAdmin = user?.role === "admin";
 
@@ -738,6 +778,18 @@ const latestPostsByCourse = Object.values(
       document.removeEventListener('click', handleClickOutside);
     };
   }, [openDropdown]);
+
+  // Close category pickers when clicking outside
+  useEffect(() => {
+    const handleOutside = (e) => {
+      if (categoryPickerRef.current && !categoryPickerRef.current.contains(e.target))
+        setCategoryPickerOpen(false);
+      if (filterPickerRef.current && !filterPickerRef.current.contains(e.target))
+        setFilterPickerOpen(false);
+    };
+    document.addEventListener("mousedown", handleOutside);
+    return () => document.removeEventListener("mousedown", handleOutside);
+  }, []);
 
   // Handlers for like, dislike, and reply actions that update the appropriate post list on success
   const handleLike = async (postId, source) => {
@@ -1579,6 +1631,7 @@ const latestPostsByCourse = Object.values(
                   </div>
                 </div>
               )}
+              <FloatingAssistant/>
             </main>
           )}
 
@@ -1671,43 +1724,59 @@ const latestPostsByCourse = Object.values(
                   </div>
                   <div className="flex items-center justify-between mt-3 flex-wrap gap-3">
                     <div className="flex items-center gap-3">
-                      <div className="relative">
-                        <select
-                          value={globalCategory}
-                          onChange={(e) => setGlobalCategory(e.target.value)}
-                          className="
-    appearance-none
-    pl-4 pr-10 py-2
-    bg-[#ff6d34]
-    hover:bg-[#e65f2c]
-    text-white
-    font-semibold
-    rounded-lg
-    shadow-md
-    border border-[#ff6d34]
-    focus:outline-none
-    focus:ring-2
-    focus:ring-[#00bea3]
-    cursor-pointer
-    transition
-    duration-200
-  "
+                      {/* ── Category picker (post composer) ── */}
+                      <div className="relative" ref={categoryPickerRef}>
+                        {/* Trigger button */}
+                        <button
+                          type="button"
+                          onClick={() => openCategoryPicker()}
+                          className={`flex items-center gap-2 pl-4 pr-3 py-2.5 rounded-xl border text-sm font-semibold transition-all duration-200 min-w-[160px] justify-between
+                            ${globalCategory
+                              ? "bg-teal-500/10 border-teal-500/40 text-teal-600 dark:text-teal-400 hover:bg-teal-500/20"
+                              : "bg-input border-border text-muted hover:border-primary hover:text-main"
+                            }`}
                         >
-                          <option value="" className="bg-white text-[#2D3436]">
-                            Select Category *
-                          </option>
+                          <span className="truncate">{globalCategory || "Select Category *"}</span>
+                          <ChevronDown className={`w-4 h-4 flex-shrink-0 transition-transform duration-200 ${categoryPickerOpen ? "rotate-180" : ""}`} />
+                        </button>
 
-                          {GLOBAL_CATEGORIES.map((c) => (
-                            <option
-                              key={c}
-                              value={c}
-                              className="bg-white text-[#2D3436]"
-                            >
-                              {c}
-                            </option>
-                          ))}
-                        </select>
-                        <ChevronDown className="w-4 h-4 text-white/80 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        {/* Floating pill panel */}
+                        {categoryPickerOpen && (
+                          <div className={`absolute left-0 z-50 w-64 animate-in fade-in zoom-in-95 duration-200 ${
+                            categoryPickerPos === "top"
+                              ? "bottom-full mb-2 slide-in-from-bottom-2"
+                              : "top-full mt-2 slide-in-from-top-2"
+                          }`}>
+                            <div className="bg-card/95 dark:bg-slate-900/95 backdrop-blur-xl border border-border dark:border-teal-500/20 rounded-2xl shadow-[0_20px_40px_-8px_rgba(0,0,0,0.3)] dark:shadow-[0_20px_40px_-8px_rgba(13,148,136,0.2)] p-4">
+                              <p className="text-[10px] font-black text-muted uppercase tracking-widest mb-3">Select Category</p>
+                              <div className="flex flex-wrap gap-2">
+                                {GLOBAL_CATEGORIES.map((c) => (
+                                  <button
+                                    key={c}
+                                    type="button"
+                                    onClick={() => { setGlobalCategory(c); setCategoryPickerOpen(false); }}
+                                    className={`px-3.5 py-1.5 text-xs rounded-xl font-bold transition-all duration-200 ${
+                                      globalCategory === c
+                                        ? "bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-md shadow-teal-500/25 scale-[1.03]"
+                                        : "bg-canvas-alt dark:bg-teal-900/30 text-main dark:text-teal-100 hover:bg-teal-500/15 border border-border dark:border-teal-500/30 hover:border-teal-500/50"
+                                    }`}
+                                  >
+                                    {c}
+                                  </button>
+                                ))}
+                              </div>
+                              {globalCategory && (
+                                <button
+                                  type="button"
+                                  onClick={() => { setGlobalCategory(""); setCategoryPickerOpen(false); }}
+                                  className="mt-3 w-full text-[10px] font-black uppercase tracking-wider text-red-400 hover:text-red-300 transition-colors bg-red-400/10 hover:bg-red-400/20 px-3 py-1.5 rounded-lg"
+                                >
+                                  Clear
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        )}
                       </div>
                       <span
                         className={`text-sm ${
@@ -1742,22 +1811,66 @@ const latestPostsByCourse = Object.values(
                     </h2>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="relative">
-                      <select
-                        value={globalCategoryFilter}
-                        onChange={(e) =>
-                          setGlobalCategoryFilter(e.target.value)
-                        }
-                        className="appearance-none pl-3 pr-8 py-1.5 bg-card border border-border rounded-lg text-sm text-muted focus:outline-none cursor-pointer"
+                    {/* ── Category filter picker ── */}
+                    <div className="relative" ref={filterPickerRef}>
+                      {/* Trigger button */}
+                      <button
+                        type="button"
+                        onClick={() => openFilterPicker()}
+                        className={`flex items-center gap-2 pl-3 pr-2.5 py-1.5 rounded-xl border text-sm font-semibold transition-all duration-200
+                          ${globalCategoryFilter !== "All Categories"
+                            ? "bg-teal-500/10 border-teal-500/40 text-teal-600 dark:text-teal-400 hover:bg-teal-500/20"
+                            : "bg-input border-border text-muted hover:border-primary hover:text-main"
+                          }`}
                       >
-                        <option>{t("discussions.all_categories")}</option>
-                        {GLOBAL_CATEGORIES.map((c) => (
-                          <option key={c} value={c}>
-                            {getCategoryLabel(c)}
-                          </option>
-                        ))}
-                      </select>
-                      <ChevronDown className="w-4 h-4 text-muted absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        <span className="max-w-[120px] truncate text-xs">
+                          {globalCategoryFilter === "All Categories"
+                            ? t("discussions.all_categories")
+                            : getCategoryLabel(globalCategoryFilter)}
+                        </span>
+                        <ChevronDown className={`w-3.5 h-3.5 flex-shrink-0 transition-transform duration-200 ${filterPickerOpen ? "rotate-180" : ""}`} />
+                      </button>
+
+                      {/* Floating pill panel */}
+                      {filterPickerOpen && (
+                        <div className={`absolute right-0 z-50 w-56 animate-in fade-in zoom-in-95 duration-200 ${
+                          filterPickerPos === "top"
+                            ? "bottom-full mb-2 slide-in-from-bottom-2"
+                            : "top-full mt-2 slide-in-from-top-2"
+                        }`}>
+                          <div className="bg-card/95 dark:bg-slate-900/95 backdrop-blur-xl border border-border dark:border-teal-500/20 rounded-2xl shadow-[0_20px_40px_-8px_rgba(0,0,0,0.3)] dark:shadow-[0_20px_40px_-8px_rgba(13,148,136,0.2)] p-4">
+                            <p className="text-[10px] font-black text-muted uppercase tracking-widest mb-3">Filter by Category</p>
+                            <div className="flex flex-wrap gap-2">
+                              {/* All option */}
+                              <button
+                                type="button"
+                                onClick={() => { setGlobalCategoryFilter("All Categories"); setFilterPickerOpen(false); }}
+                                className={`px-3.5 py-1.5 text-xs rounded-xl font-bold transition-all duration-200 ${
+                                  globalCategoryFilter === "All Categories"
+                                    ? "bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-md shadow-teal-500/25 scale-[1.03]"
+                                    : "bg-canvas-alt dark:bg-teal-900/30 text-main dark:text-teal-100 hover:bg-teal-500/15 border border-border dark:border-teal-500/30 hover:border-teal-500/50"
+                                }`}
+                              >
+                                {t("discussions.all_categories")}
+                              </button>
+                              {GLOBAL_CATEGORIES.map((c) => (
+                                <button
+                                  key={c}
+                                  type="button"
+                                  onClick={() => { setGlobalCategoryFilter(c); setFilterPickerOpen(false); }}
+                                  className={`px-3.5 py-1.5 text-xs rounded-xl font-bold transition-all duration-200 ${
+                                    globalCategoryFilter === c
+                                      ? "bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-md shadow-teal-500/25 scale-[1.03]"
+                                      : "bg-canvas-alt dark:bg-teal-900/30 text-main dark:text-teal-100 hover:bg-teal-500/15 border border-border dark:border-teal-500/30 hover:border-teal-500/50"
+                                  }`}
+                                >
+                                  {getCategoryLabel(c)}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                     <TrendingUp className="w-4 h-4 text-muted" />
                     {["Recent", "Popular"].map((s) => (
@@ -2221,6 +2334,7 @@ const latestPostsByCourse = Object.values(
                   </div>
                 )}
               </div>
+              <FloatingAssistant />
             </main>
           )}
         </div>

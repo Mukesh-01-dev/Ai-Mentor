@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Flag, Mail, Phone, FileText, Award, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import API_BASE_URL from "../lib/api";
+import FloatingAssistant from "../components/common/FloatingAssistant";
 
 const ReportPage = () => {
   const [form, setForm] = useState({
@@ -21,7 +22,11 @@ const ReportPage = () => {
     if (!form.email.trim()) return "Email is required.";
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) return "Please enter a valid email address.";
     if (!form.phone.trim()) return "Phone number is required.";
-    if (!/^[0-9+\-\s()]{7,15}$/.test(form.phone.trim())) return "Please enter a valid phone number.";
+    if (
+      !/^\+?[0-9\s\-()]{7,15}$/.test(form.phone.trim()) ||
+      (form.phone.trim().match(/\d/g) || []).length < 10
+    )
+      return "Please enter a valid phone number (min. 10 digits).";
     if (!form.description.trim()) return "Please describe your complaint.";
     if (form.description.trim().length < 20) return "Description must be at least 20 characters.";
     return null;
@@ -40,7 +45,7 @@ const ReportPage = () => {
 
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`${API_BASE_URL}/api/coures-reports`, {
+      const response = await fetch(`${API_BASE_URL}/api/course-reports`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -95,6 +100,7 @@ const ReportPage = () => {
   }
 
   return (
+    <main>
     <div className="p-6 md:p-10 max-w-2xl mx-auto">
       {/* Header */}
       <div className="mb-10">
@@ -222,6 +228,8 @@ const ReportPage = () => {
         Reports are reviewed within 24–48 hours. For urgent issues, contact support directly.
       </p>
     </div>
+    <FloatingAssistant />
+    </main>
   );
 };
 

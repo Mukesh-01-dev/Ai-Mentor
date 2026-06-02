@@ -22,6 +22,9 @@ import {
   Award,
 } from "lucide-react";
 import Preferences from "../components/Preferences";
+import API_BASE_URL, { apiFetch } from "../lib/api";
+import FloatingAssistant from "../components/common/FloatingAssistant";
+import CourseCardMeta from "../components/common/CourseCardMeta";
 
 const Dashboard = () => {
   const { t } = useTranslation();
@@ -72,54 +75,55 @@ const Dashboard = () => {
         await fetchUserProfile();
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
-        console.log("Error details:", error);
       } finally {
         setLoading(false);
       }
     };
 
     fetchAllData();
-  }, []);
+  }, [fetchUserProfile]);
   const calculateStats = () => {
+    const baseCards = [
+      {
+        icon: <Play className="w-5 h-5 text-blue-600" />,
+        value: data?.stats?.inProgress ?? 0,
+        label: "Ongoing Courses",
+        change: "+0%",
+        bgColor: "bg-blue-50",
+        iconBg: "bg-blue-100",
+      },
+      {
+        icon: <CheckCircle className="w-5 h-5 text-green-600" />,
+        value: data?.stats?.completed ?? 0,
+        label: "Completed",
+        change: "+0",
+        bgColor: "bg-green-50",
+        iconBg: "bg-green-100",
+      },
+      {
+        icon: <Award className="w-5 h-5 text-purple-600" />,
+        value: data?.stats?.certificatesEarned ?? 0,
+        label: "Certificates",
+        change: "+0",
+        bgColor: "bg-purple-50",
+        iconBg: "bg-purple-100",
+      },
+      {
+        icon: <Clock className="w-5 h-5 text-orange-600" />,
+        value: "0h",
+        label: "Hours Spent",
+        change: "+0h",
+        bgColor: "bg-orange-50",
+        iconBg: "bg-orange-100",
+      },
+    ];
+
     if (
       !user?.purchasedCourses ||
       !coursesData.statsCards ||
       coursesData.statsCards.length < 4
     ) {
-      return [
-        {
-          icon: <Play className="w-5 h-5 text-blue-600" />,
-          value: data?.stats?.inProgress ?? 0,
-          label: "Ongoing Courses",
-          change: "+0%",
-          bgColor: "bg-blue-50",
-          iconBg: "bg-blue-100",
-        },
-        {
-          icon: <CheckCircle className="w-5 h-5 text-green-600" />,
-          value: data?.stats?.completed ?? 0,
-          label: "Completed",
-          change: "+0",
-          bgColor: "bg-green-50",
-          iconBg: "bg-green-100",
-        },
-        {
-          icon: <Award className="w-5 h-5 text-purple-600" />,
-          value:data?.stats?.certificatesEarned ?? 0,
-          label: "Certificates",
-          change: "+0",
-          bgColor: "bg-purple-50",
-          iconBg: "bg-purple-100",
-        },
-        {
-          icon: <Clock className="w-5 h-5 text-orange-600" />,
-          value: "0h",
-          label: "Hours Spent",
-          change: "+0h",
-          bgColor: "bg-orange-50",
-          iconBg: "bg-orange-100",
-        },
-      ];
+      return baseCards;
     }
 
     let coursesInProgress = 0;
@@ -304,6 +308,40 @@ const Dashboard = () => {
     navigate("/courses", { state: { activeTab: "explore" } });
   };
 
+  const enrollAndPreview = async (course) => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
+    try {
+      // If the course is free, attempt enrollment first
+      const priceValue = Number(course.priceValue || 0);
+        if (priceValue === 0) {
+        const res = await fetch(`${API_BASE_URL}/api/users/purchase-course`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+          body: JSON.stringify({ courseId: course.id, courseTitle: course.title }),
+        });
+        const data = await res.json().catch(() => ({}));
+        // Refresh user profile so purchasedCourses is updated across the app
+        if (typeof fetchUserProfile === 'function') await fetchUserProfile();
+        // notify pages to refresh their course lists
+        window.dispatchEvent(new Event('refreshCourses'));
+      }
+
+      // After ensuring enrollment (or for paid courses), navigate to preview
+      navigate(`/course-preview/${course.id}`);
+    } catch (err) {
+      console.error('Enroll+Preview error:', err);
+      // still navigate to preview so user can complete payment/see enroll UI
+      navigate(`/course-preview/${course.id}`);
+    }
+  };
+
   if (loading) {
     return (
       <main className="flex-1 p-4 md:p-6 lg:p-8 flex items-center justify-center">
@@ -411,14 +449,12 @@ const Dashboard = () => {
                       src={course.image}
                       alt={course.title}
                       className="w-full h-full object-cover rounded-t-xl"
+                      loading="lazy"
                     />
 
-                    {/* Rating */}
-                    <div className="absolute bottom-2 right-2 bg-black/70 px-2 py-1 rounded-full flex items-center gap-1">
-                      <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
-                      <span className="text-xs text-white font-semibold">
-                        {course.rating}
-                      </span>
+                    {/* Rating & Reviews */}
+                    <div className="absolute bottom-2 right-2">
+                      <CourseCardMeta courseId={course.id} />
                     </div>
                   </div>
 
@@ -432,20 +468,26 @@ const Dashboard = () => {
                       {course.lessons} • {course.level}
                     </p>
 
-                    <div className="flex justify-between items-center mt-2">
-                      <span className="font-bold text-green-500">
-                        {course.priceValue === 0
-                          ? "Free"
-                          : `₹${course.priceValue}`}
-                      </span>
+                    {(() => {
+                      const isEnrolled = Array.isArray(user?.purchasedCourses) && user.purchasedCourses.some(c => String(c?.id ?? c?.courseId ?? c?.course?.id) === String(course.id));
+                      return (
+                        <div className="flex justify-between items-center mt-2">
+                          <span className="font-bold text-green-500">
+                            {course.priceValue === 0
+                              ? "Free"
+                              : `₹${course.priceValue}`}
+                          </span>
 
-                      <button
-                        onClick={() => navigate(`/course-preview/${course.id}`)}
-                        className="px-3 py-1.5 text-xs bg-teal-500 text-white rounded-lg hover:bg-teal-600"
-                      >
-                        {t("dashboard.enroll")}
-                      </button>
-                    </div>
+                          <button
+                            onClick={() => enrollAndPreview(course)}
+                            disabled={isEnrolled}
+                            className={`px-3 py-1.5 text-xs rounded-lg ${isEnrolled ? 'bg-emerald-100 text-emerald-700 cursor-default' : 'bg-teal-500 text-white hover:bg-teal-600'}`}
+                          >
+                            {isEnrolled ? 'Enrolled' : t("dashboard.enroll")}
+                          </button>
+                        </div>
+                      )
+                    })()}
                   </div>
                 </div>
               ))}
@@ -489,6 +531,7 @@ const Dashboard = () => {
                                 src={course.image}
                                 alt={course.title}
                                 className="w-12 h-12 rounded-lg mr-4"
+                                loading="lazy"
                               />
                               <div>
                                 <div className="font-medium text-main hover:text-indigo-600">
@@ -541,6 +584,7 @@ const Dashboard = () => {
                               src={course.image}
                               alt={course.title}
                               className="w-12 h-12 rounded-lg mr-4"
+                              loading="lazy"
                             />
                             <div className="min-w-0">
                               <div className="font-medium text-main truncate">
@@ -552,9 +596,7 @@ const Dashboard = () => {
                             </div>
                           </div>
                           <button
-                            onClick={() =>
-                              navigate(`/course-preview/${course.id}`)
-                            }
+                            onClick={() => enrollAndPreview(course)}
                             className="ml-3 px-3 py-2 bg-teal-500 text-white text-xs font-medium rounded-lg hover:bg-teal-600"
                           >
                             {t("dashboard.view")}
@@ -563,7 +605,21 @@ const Dashboard = () => {
                       ))}
                     </div>
                   </div>
-                ) : null}
+                ) : (
+                  <div className="p-6 text-center text-muted">
+                    <p>
+                      {normalizedSearchQuery
+                        ? t("dashboard.no_courses_search")
+                        : t("dashboard.no_courses_enrolled")}
+                    </p>
+                    <button
+                      className="mt-4 px-4 py-2 bg-teal-500 text-white text-sm font-medium rounded-lg hover:bg-teal-600"
+                      onClick={handleBrowseCourses}
+                    >
+                      {t("dashboard.browse_courses")}
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -588,6 +644,7 @@ const Dashboard = () => {
                             src={item.image}
                             alt={item.title}
                             className="w-12 h-12 rounded-lg mr-4"
+                            loading="lazy"
                           />
                           <div className="flex-1">
                             <h3 className="font-medium text-main mb-1 hover:text-teal-600">
@@ -616,23 +673,11 @@ const Dashboard = () => {
                 </div>
               </div>
             ) : null
-            // <div className="p-6  text-muted">
-            //   <p>
-            //     {normalizedSearchQuery
-            //       ? "No in-progress courses match your search."
-            //       : "Start Learning to get your progress tracked!"}
-            //   </p>
-            //   <button
-            //     className="mt-4 px-4 py-2 bg-teal-500 text-white text-sm font-medium rounded-lg hover:bg-teal-600"
-            //     onClick={() => navigate("/courses")}
-            //   >
-            //     My Courses
-            //   </button>
-            // </div>
             }
           </div>
         </div>
       </div>
+      <FloatingAssistant />
     </main>
   );
 };

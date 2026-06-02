@@ -1,11 +1,13 @@
 import React, { Suspense, lazy } from "react";
 import { Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
+
 import ProtectedRoute from "./components/ProtectedRoute";
+import AdminRoute from "./components/AdminRoute";
 import DashboardLayout from "./components/DashboardLayout";
 import LoadingSpinner from "./components/common/LoadingSpinner";
 
-// Lazy Loading 
+// Lazy Loading
 const LoginPage = lazy(() => import("./pages/LoginPage"));
 const SignUpPage = lazy(() => import("./pages/SignUpPage"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -22,22 +24,39 @@ const CertificatesPage = lazy(() => import("./pages/CertificatesPage"));
 const ReportPage = lazy(() => import("./pages/ReportPage"));
 const Success = lazy(() => import("./pages/Success"));
 const NotFound = lazy(() => import("./pages/NotFound"));
-const DocumentationPage = lazy(() => import("./pages/Documentation/DocumentationPage"));
+const DocumentationPage = lazy(() =>
+  import("./pages/Documentation/DocumentationPage")
+);
+
 import CompleteProfilePage from "./pages/CompleteProfilePage";
 import "./App.css";
 
 // Redirect from root
 const RootRedirect = () => {
   const { isAuthenticated, user } = useAuth();
+
   if (!isAuthenticated) return <Navigate to="/login" replace />;
-  return <Navigate to={user?.isProfileComplete ? "/dashboard" : "/complete-profile"} replace />;
+
+  return (
+    <Navigate
+      to={user?.isProfileComplete ? "/dashboard" : "/complete-profile"}
+      replace
+    />
+  );
 };
 
 // Public routes (block logged-in users)
 const PublicRoutes = () => {
   const { isAuthenticated, user } = useAuth();
+
   if (!isAuthenticated) return <Outlet />;
-  return <Navigate to={user?.isProfileComplete ? "/dashboard" : "/complete-profile"} replace />;
+
+  return (
+    <Navigate
+      to={user?.isProfileComplete ? "/dashboard" : "/complete-profile"}
+      replace
+    />
+  );
 };
 
 const App = () => {
@@ -45,10 +64,10 @@ const App = () => {
     <Suspense fallback={<LoadingSpinner />}>
       <Routes>
 
-        {/* Root redirect */}
+        {/* ROOT */}
         <Route path="/" element={<RootRedirect />} />
 
-        {/* Public routes */}
+        {/* PUBLIC ROUTES */}
         <Route element={<PublicRoutes />}>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignUpPage />} />
@@ -56,13 +75,15 @@ const App = () => {
           <Route path="/reset-password/:token" element={<ResetPassword />} />
         </Route>
 
-        {/* Documentation Route - Public and independent of PublicRoutes wrapper so it's accessible whether logged in or not */}
+        {/* PUBLIC DOCUMENTATION */}
         <Route path="/documentation" element={<DocumentationPage />} />
 
-        {/* Protected routes */}
+        {/* =========================
+            PROTECTED ROUTES (USER)
+        ========================= */}
         <Route element={<ProtectedRoute />}>
-          {/* Complete Profile Route */}
           <Route path="/complete-profile" element={<CompleteProfilePage />} />
+
           <Route element={<DashboardLayout />}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/analytics" element={<Analytics />} />
@@ -75,12 +96,24 @@ const App = () => {
             <Route path="/learning/:id" element={<LearningPage />} />
             <Route path="/success" element={<Success />} />
           </Route>
-          <Route path="/course-preview/:courseId" element={<CoursePreview />} />
+
+          <Route
+            path="/course-preview/:courseId"
+            element={<CoursePreview />}
+          />
+
+          {/* =========================
+              ADMIN ROUTES (RBAC FIX)
+          ========================= */}
+          <Route element={<AdminRoute />}>
+            <Route path="/admin" element={<div>Admin Dashboard</div>} />
+            <Route path="/admin/users" element={<div>Manage Users</div>} />
+            <Route path="/admin/courses" element={<div>Manage Courses</div>} />
+          </Route>
         </Route>
-        {/* Catch-all route for 404 Not Found */}
+
+        {/* 404 */}
         <Route path="*" element={<NotFound />} />
-
-
 
       </Routes>
     </Suspense>

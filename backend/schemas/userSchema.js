@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { passwordSchema } from "./authSchema.js";
 
 export const updateProfileSchema = z.object({
   firstName: z.string().min(1, "First name is required").optional(),
@@ -9,29 +10,29 @@ export const updateProfileSchema = z.object({
 
 export const changePasswordSchema = z.object({
   currentPassword: z.string().min(1, "Current password is required"),
-  newPassword: z.string()
-    .min(6, "New password must be at least 6 characters long")
-    .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
-    .regex(/[!@#$%^&*(),.?":{}|<>]/, "Password must contain at least one special character"),
+  newPassword: passwordSchema,
 });
-
 export const purchaseCourseSchema = z.object({
   courseId: z.union([z.string(), z.number()]).transform((val) => Number(val)),
   courseTitle: z.string().min(1, "Course title is required"),
 });
 
 export const courseProgressSchema = z.object({
-  courseId: z.union([z.string(), z.number()]).transform((val) => Number(val)),
+  courseId: z.union([z.string(), z.number()])
+    .transform((val) => Number(val)),
+
   lessonData: z.object({
-    lessonId: z.string().min(1, "Lesson ID is required"),
+    lessonId: z.union([z.string(), z.number()]),
     data: z.any(),
   }).optional(),
+
   currentLesson: z.object({
-    lessonId: z.string().min(1, "Lesson ID is required"),
+    lessonId: z.union([z.string(), z.number()]),
     moduleTitle: z.string().optional(),
   }).optional(),
+
   completedLesson: z.object({
-    lessonId: z.string().min(1, "Lesson ID is required"),
+    lessonId: z.union([z.string(), z.number()]),
     completedAt: z.string().or(z.date()).optional(),
   }).optional(),
 });

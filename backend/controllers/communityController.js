@@ -3,6 +3,7 @@ import User from "../models/User.js";
 import Report from "../models/Report.js";
 import crypto from "crypto";
 import { createNotification } from "./notificationController.js";
+import AdminNotification from "../models/AdminNotification.js";
 
 // @desc    Get course community stats (list of courses with post counts)
 // @route   GET /api/community/courses
@@ -62,7 +63,7 @@ const getCourseDiscussions = async (req, res) => {
     }
 
     const posts = await CommunityPost.findAll({
-      where: { type: "course", courseId: parseInt(courseId) },
+      where: { type: "course", courseId: parseInt(courseId), hiddenAt: null },
       include: [
         { model: User, as: "author", attributes: ["id", "name", "email", "avatar_url", "googleId"] },
       ],
@@ -90,7 +91,7 @@ const getGlobalDiscussions = async (req, res) => {
   try {
     const { category, sort } = req.query;
 
-    const where = { type: "global" };
+    const where = { type: "global", hiddenAt: null };
     if (category && category !== "All Categories") {
       where.category = category;
     }
@@ -381,7 +382,7 @@ const getAllCoursePosts = async (req, res) => {
     const { sort } = req.query;
 
     const posts = await CommunityPost.findAll({
-      where: { type: "course" },
+      where: { type: "course", hiddenAt: null },
       include: [
         { model: User, as: "author", attributes: ["id", "name", "email", "avatar_url", "googleId"] },
       ],
@@ -480,6 +481,13 @@ const reportContent = async (req, res) => {
         },
       });
     }
+    
+    // Also notify the admin dashboard
+    await AdminNotification.create({
+      title: isCommentReport ? "Comment Reported" : "Discussion Post Reported",
+      message: `${reporterName} reported a ${contentLabel}. ${reasonOrDescription}`,
+      type: "report",
+    });
 
     res.status(201).json({ message: "Report submitted successfully", report });
   } catch (error) {
