@@ -8,6 +8,8 @@ import cloudinary from "../config/cloudinary.js";
 import admin from "firebase-admin";
 
 // Initialize Firebase Admin SDK using environment variables (no secret file needed)
+// Firebase temporarily disabled
+/*
 if (!admin.apps.length) {
   admin.initializeApp({
     credential: admin.credential.cert({
@@ -17,6 +19,7 @@ if (!admin.apps.length) {
     }),
   });
 }
+*/
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {

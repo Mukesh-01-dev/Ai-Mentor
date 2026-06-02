@@ -13,7 +13,7 @@ from pydantic import BaseModel
 import json
 from google import genai
 from groq import Groq
-from config import (
+from backend.config import (
     GEMINI_API_KEY,
     GROQ_API_KEY,
     CLOUDINARY_CLOUD_NAME,

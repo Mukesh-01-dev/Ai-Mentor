@@ -16,7 +16,27 @@ import API_BASE_URL from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 import { useTranslation } from "react-i18next";
 import FloatingAssistant from "../components/common/FloatingAssistant";
+const getCourseImage = (course) => {
+  switch (course.courseTitle) {
+    case "React Fundamentals":
+      return "/AI_Tutor_New_UI/Dashboard/react_fundamentals_logo.png";
 
+    case "Python For AI":
+      return "/AI_Tutor_New_UI/Dashboard/python_for_ai_logo.png";
+
+    case "AI Ethics & Bias":
+      return "/AI_Tutor_New_UI/Dashboard/data_analytics.png";
+
+    case "PostgreSQL":
+      return "/AI_Tutor_New_UI/Dashboard/postgresql.png";
+
+    case "MongoDB Fundamentals":
+      return "/AI_Tutor_New_UI/Dashboard/MongoDB.png";
+
+    default:
+      return "/AI_Tutor_New_UI/Dashboard/react_fundamentals_logo.png";
+  }
+};
 const CertificatesPage = () => {
   const { user } = useAuth();
   const { t } = useTranslation();
@@ -344,26 +364,26 @@ const CertificatesPage = () => {
                       )}
 
                       {/* Course Image */}
-                      <div className="relative h-44 overflow-hidden">
-                        {course.courseImage || course.image ? (
-                          <img
-                            src={course.courseImage || course.image}
-                            alt={course.courseTitle}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center">
-                            <BookOpen className="w-12 h-12 text-gray-400" />
-                          </div>
-                        )}
-                        {/* Gradient overlay */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-                        {course.category && (
-                          <span className="absolute bottom-3 left-3 px-2.5 py-1 text-xs font-semibold text-white bg-white/20 backdrop-blur-sm rounded-full">
-                            {course.category}
-                          </span>
-                        )}
-                      </div>
+<div className="relative h-44 overflow-hidden">
+  <img
+    src={
+      course.courseImage ||
+      course.image ||
+      getCourseImage(course)
+    }
+    alt={course.courseTitle}
+    className="w-full h-full object-cover"
+  />
+
+  {/* Gradient overlay */}
+  <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+
+  {course.category && (
+    <span className="absolute bottom-3 left-3 px-2.5 py-1 text-xs font-semibold text-white bg-white/20 backdrop-blur-sm rounded-full">
+      {course.category}
+    </span>
+  )}
+</div>
 
                       {/* Content */}
                       <div className="p-5">
