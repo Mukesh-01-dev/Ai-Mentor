@@ -25,7 +25,7 @@ const DashboardLayout = () => {
     (location.pathname.startsWith("/learning") ? "courses" : "dashboard");
 
   return (
-    <div className="min-h-screen bg-canvas-alt flex flex-col">
+    <div className="min-h-dvh bg-canvas-alt flex flex-col">
       <Header />
       <Sidebar activePage={activePage} />
       <div

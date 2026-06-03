@@ -75,7 +75,7 @@ const Sidebar = ({ activePage = "dashboard" }) => {
         </div>
       )}
 
-      <div className={`fixed lg:fixed top-18.5 left-0 z-[70] bg-card/70 backdrop-blur-2xl border-r border-border/80 transform transition-all duration-500 ease-out lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"} ${sidebarCollapsed ? "lg:w-24" : "lg:w-80"} w-80 h-[calc(100vh-4.625rem)] flex flex-col overflow-visible`}>
+      <div className={`fixed lg:fixed top-18.5 left-0 z-[70] bg-card/70 backdrop-blur-2xl border-r border-border/80 transform transition-all duration-500 ease-out lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"} ${sidebarCollapsed ? "lg:w-24" : "lg:w-80"} w-80 h-[calc(100dvh-4.625rem)] flex flex-col overflow-visible`}>
 
         <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} className="hidden lg:flex absolute -right-5 top-8 w-10 h-10 bg-card border border-border rounded-xl items-center justify-center hover:bg-teal-500 hover:text-white transition-all shadow-xl z-80">
           <ChevronRight className={`w-5 h-5 transition-transform duration-500 ${sidebarCollapsed ? "" : "rotate-180"}`} />
