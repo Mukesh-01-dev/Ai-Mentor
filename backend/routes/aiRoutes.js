@@ -5,6 +5,7 @@ import validate from "../middleware/validate.js";
 import { generateVideoSchema } from "../schemas/aiSchema.js";
 import { getCourseAndLessonTitles } from "../controllers/courseController.js";
 import Preferences from "../models/Preference.js";
+import { videoQueue } from "../queues/videoQueue.js";
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -102,38 +103,20 @@ router.post("/generate-video", protect, validate(generateVideoSchema), async (re
       : null;
 
   
-    // Send request directly to Python AI service
-    const aiServiceResponse = await fetch(`${process.env.AI_SERVICE_URL}/generate`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        course: courseTitle,
-        topic: lessonTitle,
-        celebrity: celebrity,
-        preferences: userPreferences,
-      }),
+    // Added to queue instead of blocking the request
+    const job = await videoQueue.add("generate-video", {
+      courseId,
+      lessonId,
+      celebrity,
+      courseTitle,
+      lessonTitle,
+      userPreferences,
     });
 
-    if (!aiServiceResponse.ok) {
-      throw new Error("Failed to communicate with AI Service");
-    }
+    console.log(`📥 Job added to queue: ${job.id}`);
 
-    const aiData = await aiServiceResponse.json();
-
-    // Create a placeholder record in the DB so we can cache it later
-    await AIVideo.create({
-      courseId: courseId,
-      lessonId: lessonId,
-      celebrity: celebrity.toLowerCase(),
-      jobId: aiData.jobId,
-      transcriptName: aiData.text_file,
-      videoUrl: "", // Will be updated when status is ready
-    });
-
-    console.log(`📥 Job started in AI service: ${aiData.jobId}`);
-
-    return res.json({
-      jobId: aiData.jobId,
+    res.json({
+      jobId: job.id,
       status: "processing",
       message: "Video generation started",
     });
