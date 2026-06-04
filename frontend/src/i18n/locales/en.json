@@ -141,6 +141,7 @@
     "lessons": "lessons",
     "loading": "Loading courses...",
     "confirm_enrollment": "Confirm Enrollment",
+    "no_courses": "No courses found at the moment. Please check back later!",
     "enrolled_courses": "Enrolled Courses",
     "enrolled_short": "Enrolled",
     "explore_short": "Explore",

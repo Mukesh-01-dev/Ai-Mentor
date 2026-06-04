@@ -122,7 +122,13 @@ cd backend && npm run dev
 cd frontend && npm run dev
 
 # Terminal 3 — AI Service
+
 cd ai_service && .\venv\Scripts\activate && cd backend && uvicorn api:app --reload --port 8000
+
+OR 
+
+.\start_ai.bat
+
 ```
 
 Then open **http://localhost:5173** in your browser.

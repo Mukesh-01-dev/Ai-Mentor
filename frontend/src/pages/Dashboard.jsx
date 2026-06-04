@@ -22,6 +22,9 @@ import {
   Award,
 } from "lucide-react";
 import Preferences from "../components/Preferences";
+import API_BASE_URL, { apiFetch } from "../lib/api";
+import FloatingAssistant from "../components/common/FloatingAssistant";
+import CourseCardMeta from "../components/common/CourseCardMeta";
 
 const Dashboard = () => {
   const { t } = useTranslation();
@@ -45,37 +48,35 @@ const Dashboard = () => {
           "Content-Type": "application/json",
         };
 
-        const [coursesRes, statsRes,res] = await Promise.all([
+        const [coursesResult, statsResult, certResult] = await Promise.allSettled([
           fetch("/api/courses", { headers }),
           fetch("/api/courses/stats/cards", { headers }),
-          fetch("/api/certificate/list", {headers}),
+          fetch("/api/certificate/list", { headers }),
         ]);
 
-        if (res.ok) {
+        const coursesRes = coursesResult.status === "fulfilled" ? coursesResult.value : null;
+        const statsRes = statsResult.status === "fulfilled" ? statsResult.value : null;
+        const res = certResult.status === "fulfilled" ? certResult.value : null;
+
+        if (res && res.ok) {
           const json = await res.json();
           setData(json);
-        }
-         if (!res.ok) {
+        } else if (res && !res.ok) {
           console.error(`Failed to fetch certificates: ${res.status}`);
         }
-        if (!coursesRes.ok) {
-          throw new Error(`Courses API failed: ${coursesRes.status}`);
+        if (!coursesRes || !coursesRes.ok) {
+          throw new Error(`Courses API failed: ${coursesRes?.status}`);
         }
-        if (!statsRes.ok) {
-          throw new Error(`Stats API failed: ${statsRes.status}`);
+        if (!statsRes || !statsRes.ok) {
+          throw new Error(`Stats API failed: ${statsRes?.status}`);
         }
 
         const allCourses = await coursesRes.json();
         const { statsCards } = await statsRes.json();
 
-        console.log("Fetched allCourses:", allCourses);
-        console.log("Fetched statsCards:", statsCards);
-
         setCoursesData({ allCourses, statsCards });
-        await fetchUserProfile();
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
-        console.log("Error details:", error);
       } finally {
         setLoading(false);
       }
@@ -83,49 +84,49 @@ const Dashboard = () => {
 
     fetchAllData();
   }, []);
+
   const calculateStats = () => {
-    console.log("Calculating stats with user:", user);
-    console.log("coursesData:", coursesData);
+    const baseCards = [
+      {
+        icon: <Play className="w-5 h-5 text-blue-600" />,
+        value: data?.stats?.inProgress ?? 0,
+        label: "Ongoing Courses",
+        change: "+0%",
+        bgColor: "bg-blue-50",
+        iconBg: "bg-blue-100",
+      },
+      {
+        icon: <CheckCircle className="w-5 h-5 text-green-600" />,
+        value: data?.stats?.completed ?? 0,
+        label: "Completed",
+        change: "+0",
+        bgColor: "bg-green-50",
+        iconBg: "bg-green-100",
+      },
+      {
+        icon: <Award className="w-5 h-5 text-purple-600" />,
+        value: data?.stats?.certificatesEarned ?? 0,
+        label: "Certificates",
+        change: "+0",
+        bgColor: "bg-purple-50",
+        iconBg: "bg-purple-100",
+      },
+      {
+        icon: <Clock className="w-5 h-5 text-orange-600" />,
+        value: "0h",
+        label: "Hours Spent",
+        change: "+0h",
+        bgColor: "bg-orange-50",
+        iconBg: "bg-orange-100",
+      },
+    ];
 
     if (
       !user?.purchasedCourses ||
       !coursesData.statsCards ||
       coursesData.statsCards.length < 4
     ) {
-      return [
-        {
-          icon: <Play className="w-5 h-5 text-blue-600" />,
-          value: data?.stats?.inProgress ?? 0,
-          label: "Ongoing Courses",
-          change: "+0%",
-          bgColor: "bg-blue-50",
-          iconBg: "bg-blue-100",
-        },
-        {
-          icon: <CheckCircle className="w-5 h-5 text-green-600" />,
-          value: data?.stats?.completed ?? 0,
-          label: "Completed",
-          change: "+0",
-          bgColor: "bg-green-50",
-          iconBg: "bg-green-100",
-        },
-        {
-          icon: <Award className="w-5 h-5 text-purple-600" />,
-          value:data?.stats?.certificatesEarned ?? 0,
-          label: "Certificates",
-          change: "+0",
-          bgColor: "bg-purple-50",
-          iconBg: "bg-purple-100",
-        },
-        {
-          icon: <Clock className="w-5 h-5 text-orange-600" />,
-          value: "0h",
-          label: "Hours Spent",
-          change: "+0h",
-          bgColor: "bg-orange-50",
-          iconBg: "bg-orange-100",
-        },
-      ];
+      return baseCards;
     }
 
     let coursesInProgress = 0;
@@ -175,14 +176,10 @@ const Dashboard = () => {
       },
     ];
 
-    console.log("Calculated stats result:", result);
     return result;
   };
 
   const dynamicStatsCards = calculateStats();
-
-  console.log("Creating myCourses with user:", user);
-  console.log("coursesData.allCourses:", coursesData.allCourses);
 
   const myCourses = coursesData.allCourses
     .filter((course) =>
@@ -224,13 +221,8 @@ const Dashboard = () => {
         progressColor: "bg-indigo-600",
       };
 
-      console.log("Mapped course:", courseData);
       return courseData;
     });
-
-  console.log("Final myCourses:", myCourses);
-
-  console.log("Creating continueLearning");
 
   const continueLearning = coursesData.allCourses
     .filter((course) =>
@@ -285,8 +277,6 @@ const Dashboard = () => {
         image: course.image,
         progressColor: progress > 75 ? "bg-cyan-600" : "bg-orange-400",
       };
-
-      console.log("Mapped continueLearning item:", continueData);
       return continueData;
     });
 
@@ -317,10 +307,42 @@ const Dashboard = () => {
     );
   });
 
-  console.log("Final continueLearning:", continueLearning);
-
   const handleBrowseCourses = () => {
     navigate("/courses", { state: { activeTab: "explore" } });
+  };
+
+  const enrollAndPreview = async (course) => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
+    try {
+      // If the course is free, attempt enrollment first
+      const priceValue = Number(course.priceValue || 0);
+      if (priceValue === 0) {
+        const res = await fetch(`${API_BASE_URL}/api/users/purchase-course`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+          body: JSON.stringify({ courseId: course.id, courseTitle: course.title }),
+        });
+        const data = await res.json().catch(() => ({}));
+        // Refresh user profile so purchasedCourses is updated across the app
+        if (typeof fetchUserProfile === 'function') await fetchUserProfile();
+        // notify pages to refresh their course lists
+        window.dispatchEvent(new Event('refreshCourses'));
+      }
+
+      // After ensuring enrollment (or for paid courses), navigate to preview
+      navigate(`/course-preview/${course.id}`);
+    } catch (err) {
+      console.error('Enroll+Preview error:', err);
+      // still navigate to preview so user can complete payment/see enroll UI
+      navigate(`/course-preview/${course.id}`);
+    }
   };
 
   if (loading) {
@@ -430,14 +452,12 @@ const Dashboard = () => {
                       src={course.image}
                       alt={course.title}
                       className="w-full h-full object-cover rounded-t-xl"
+                      loading="lazy"
                     />
 
-                    {/* Rating */}
-                    <div className="absolute bottom-2 right-2 bg-black/70 px-2 py-1 rounded-full flex items-center gap-1">
-                      <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
-                      <span className="text-xs text-white font-semibold">
-                        {course.rating}
-                      </span>
+                    {/* Rating & Reviews */}
+                    <div className="absolute bottom-2 right-2">
+                      <CourseCardMeta courseId={course.id} />
                     </div>
                   </div>
 
@@ -451,20 +471,26 @@ const Dashboard = () => {
                       {course.lessons} • {course.level}
                     </p>
 
-                    <div className="flex justify-between items-center mt-2">
-                      <span className="font-bold text-green-500">
-                        {course.priceValue === 0
-                          ? "Free"
-                          : `₹${course.priceValue}`}
-                      </span>
+                    {(() => {
+                      const isEnrolled = Array.isArray(user?.purchasedCourses) && user.purchasedCourses.some(c => String(c?.id ?? c?.courseId ?? c?.course?.id) === String(course.id));
+                      return (
+                        <div className="flex justify-between items-center mt-2">
+                          <span className="font-bold text-green-500">
+                            {course.priceValue === 0
+                              ? "Free"
+                              : `₹${course.priceValue}`}
+                          </span>
 
-                      <button
-                        onClick={() => navigate(`/course-preview/${course.id}`)}
-                        className="px-3 py-1.5 text-xs bg-teal-500 text-white rounded-lg hover:bg-teal-600"
-                      >
-                        {t("dashboard.enroll")}
-                      </button>
-                    </div>
+                          <button
+                            onClick={() => enrollAndPreview(course)}
+                            disabled={isEnrolled}
+                            className={`px-3 py-1.5 text-xs rounded-lg ${isEnrolled ? 'bg-emerald-100 text-emerald-700 cursor-default' : 'bg-teal-500 text-white hover:bg-teal-600'}`}
+                          >
+                            {isEnrolled ? 'Enrolled' : t("dashboard.enroll")}
+                          </button>
+                        </div>
+                      )
+                    })()}
                   </div>
                 </div>
               ))}
@@ -508,6 +534,7 @@ const Dashboard = () => {
                                 src={course.image}
                                 alt={course.title}
                                 className="w-12 h-12 rounded-lg mr-4"
+                                loading="lazy"
                               />
                               <div>
                                 <div className="font-medium text-main hover:text-indigo-600">
@@ -560,6 +587,7 @@ const Dashboard = () => {
                               src={course.image}
                               alt={course.title}
                               className="w-12 h-12 rounded-lg mr-4"
+                              loading="lazy"
                             />
                             <div className="min-w-0">
                               <div className="font-medium text-main truncate">
@@ -571,9 +599,7 @@ const Dashboard = () => {
                             </div>
                           </div>
                           <button
-                            onClick={() =>
-                              navigate(`/course-preview/${course.id}`)
-                            }
+                            onClick={() => enrollAndPreview(course)}
                             className="ml-3 px-3 py-2 bg-teal-500 text-white text-xs font-medium rounded-lg hover:bg-teal-600"
                           >
                             {t("dashboard.view")}
@@ -582,7 +608,21 @@ const Dashboard = () => {
                       ))}
                     </div>
                   </div>
-                ) : null}
+                ) : (
+                  <div className="p-6 text-center text-muted">
+                    <p>
+                      {normalizedSearchQuery
+                        ? t("dashboard.no_courses_search")
+                        : t("dashboard.no_courses_enrolled")}
+                    </p>
+                    <button
+                      className="mt-4 px-4 py-2 bg-teal-500 text-white text-sm font-medium rounded-lg hover:bg-teal-600"
+                      onClick={handleBrowseCourses}
+                    >
+                      {t("dashboard.browse_courses")}
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -607,6 +647,7 @@ const Dashboard = () => {
                             src={item.image}
                             alt={item.title}
                             className="w-12 h-12 rounded-lg mr-4"
+                            loading="lazy"
                           />
                           <div className="flex-1">
                             <h3 className="font-medium text-main mb-1 hover:text-teal-600">
@@ -635,23 +676,11 @@ const Dashboard = () => {
                 </div>
               </div>
             ) : null
-            // <div className="p-6  text-muted">
-            //   <p>
-            //     {normalizedSearchQuery
-            //       ? "No in-progress courses match your search."
-            //       : "Start Learning to get your progress tracked!"}
-            //   </p>
-            //   <button
-            //     className="mt-4 px-4 py-2 bg-teal-500 text-white text-sm font-medium rounded-lg hover:bg-teal-600"
-            //     onClick={() => navigate("/courses")}
-            //   >
-            //     My Courses
-            //   </button>
-            // </div>
             }
           </div>
         </div>
       </div>
+      <FloatingAssistant />
     </main>
   );
 };

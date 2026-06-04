@@ -7,6 +7,7 @@ import AuthLayout from "../components/auth/AuthLayout";
 import SocialLogin from "../components/auth/SocialLogin";
 import toast from "react-hot-toast";
 import { z } from "zod";
+import  API_BASE_URL  from "../lib/api";
 
 const signupSchema = z.object({
   firstName: z.string().min(1, "First name is required").max(50, "First name too long"),
@@ -89,7 +90,7 @@ const SignUpPage = () => {
       });
 
       setLoading(true);
-      const response = await fetch(`/api/users/register`, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

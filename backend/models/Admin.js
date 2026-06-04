@@ -1,5 +1,5 @@
 import { DataTypes, Model } from "sequelize";
-import bcrypt from "bcryptjs";
+import bcrypt from "bcrypt";
 import { sequelize } from "../config/db.js";
 
 class Admin extends Model { }
@@ -30,6 +30,10 @@ Admin.init(
     role: {
       type: DataTypes.ENUM("superAdmin", "admin"),
       defaultValue: "admin",
+    },
+    status: {
+      type: DataTypes.ENUM("active", "on-hold"),
+      defaultValue: "active",
     },
   },
   {

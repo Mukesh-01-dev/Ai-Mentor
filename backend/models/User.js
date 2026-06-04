@@ -1,6 +1,6 @@
 // backend/models/User.js
 import { DataTypes, Model } from "sequelize";
-import bcrypt from "bcryptjs";
+import bcrypt from "bcrypt";
 import { sequelize } from "../config/db.js";
 
 class User extends Model { }
@@ -45,8 +45,15 @@ User.init(
     },
 
     role: {
-      type: DataTypes.STRING,
+      type: DataTypes.ENUM("user", "admin", "superadmin"),
       defaultValue: "user",
+      allowNull: false,
+    },
+
+    status: {
+      type: DataTypes.ENUM("active", "on-hold"),
+      defaultValue: "active",
+      allowNull: false,
     },
 
     bio: {
@@ -79,11 +86,6 @@ User.init(
         completedCourses: 0,
         certificates: 0,
       },
-    },
-
-    learningHoursChart: {
-      type: DataTypes.JSONB,
-      defaultValue: [],
     },
 
     settings: {

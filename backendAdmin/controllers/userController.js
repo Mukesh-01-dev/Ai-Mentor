@@ -2,13 +2,58 @@ import { User } from "../models/index.js";
 
 export const getAllUsers = async (req, res) => {
   try {
-    const users = await User.findAll({
-      attributes: ["id", "name", "email", "role", "status", "purchasedCourses", "createdAt"],
+    // page aur limit query se lo
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+
+    // skip calculate karo
+    const offset = (page - 1) * limit;
+
+    const { search, status } = req.query;
+const { Op } = await import("sequelize");
+
+const where = {};
+
+if (search) {
+  where[Op.or] = [
+    { name: { [Op.iLike]: `%${search}%` } },
+    { email: { [Op.iLike]: `%${search}%` } },
+  ];
+}
+
+if (status && status !== "all") {
+  where.status = status;
+}
+
+const users = await User.findAndCountAll({
+  attributes: [
+    "id",
+    "name",
+    "email",
+    "role",
+    "purchasedCourses",
+    "createdAt",
+    "status",
+  ],
+  where,
+  limit,
+  offset,
+  order: [["createdAt", "DESC"]],
+});
+
+    res.status(200).json({
+      success: true,
+      totalUsers: users.count,
+      currentPage: page,
+      totalPages: Math.ceil(users.count / limit),
+      data: users.rows,
     });
-    res.status(200).json({ success: true, data: users });
   } catch (error) {
-    console.error("GET USERS ERROR:", error);
-    res.status(500).json({ success: false, message: "Server Error: " + error.message });
+    console.error("GET USERS ERROR:", error.message || error);
+    res.status(500).json({
+      success: false,
+      message: "Server Error: " + error.message,
+    });
   }
 };
 
@@ -31,7 +76,7 @@ export const updateUserStatus = async (req, res) => {
 
     res.status(200).json({ success: true, data: user });
   } catch (error) {
-    console.error("UPDATE STATUS ERROR:", error);
+    console.error("UPDATE STATUS ERROR:", error.message || error);
     res.status(500).json({ success: false, message: "Server Error: " + error.message });
   }
 };
@@ -47,7 +92,7 @@ export const deleteUser = async (req, res) => {
     await user.destroy();
     res.status(200).json({ success: true, message: "User deleted successfully" });
   } catch (error) {
-    console.error("DELETE USER ERROR:", error);
+    console.error("DELETE USER ERROR:", error.message || error);
     res.status(500).json({ success: false, message: "Server Error: " + error.message });
   }
 };

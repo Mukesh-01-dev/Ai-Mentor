@@ -18,7 +18,7 @@ const Course = sequelize.define("Course", {
   level: DataTypes.STRING,
 
   price: DataTypes.STRING,
-  priceValue: DataTypes.INTEGER,
+  priceValue: DataTypes.FLOAT,
   currency: DataTypes.STRING,
 
   rating: DataTypes.FLOAT,
@@ -38,14 +38,6 @@ const Course = sequelize.define("Course", {
       isIn: [["published", "disabled", "deleted"]],
     },
   },
-
-  deletedAt: {
-    type: DataTypes.DATE,
-    allowNull: true,
-    defaultValue: null,
-  },
-
-  isBookmarked: DataTypes.BOOLEAN,
 });
 
 export default Course;

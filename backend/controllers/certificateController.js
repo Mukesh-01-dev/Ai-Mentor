@@ -1,6 +1,33 @@
 import Course from "../models/Course.js";
 import { generateCertificatePDF } from "../templates/certificateTemplate.js";
 
+const normalizeName = (name = "") => {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z\s]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+};
+
+const isValidSimilarName = (originalName, enteredName) => {
+  const original = normalizeName(originalName);
+  const entered = normalizeName(enteredName);
+
+  if (!entered || entered.length < 3) return false;
+  if (original === entered) return true;
+  if (original.includes(entered) ||entered.includes(original)){
+    return true;
+  }
+  let matchCount = 0;
+  for (let char of entered) {
+    if (original.includes(char)) {
+      matchCount++;
+    }
+  }
+  const similarity =matchCount / Math.max(original.length, entered.length);
+  return similarity >= 0.7;
+};
+
 export const getCertificates = async (req, res) => {
   try {
     const user = req.user;
@@ -82,11 +109,18 @@ export const getCertificates = async (req, res) => {
 
 export const generateCertificate = async (req, res) => {
   try {
-    const { courseId } = req.query;
+    const { courseId,enteredName } = req.query;
     if (!courseId) return res.status(400).json({ message: "courseId is required" });
 
     const user = req.user;
     if (!user) return res.status(404).json({ message: "User not found" });
+
+    const originalName = user.name || "";
+    // Validate entered name
+    if (enteredName && !isValidSimilarName(originalName,enteredName)) {
+      return res.status(400).json({message:"Entered name is too different from your account name.",});
+    }
+    const finalName =enteredName?.trim() || originalName;
 
     const purchasedCourses = user.purchasedCourses || [];
     const pCourse = purchasedCourses.find(c => Number(c.courseId) === Number(courseId));
@@ -98,10 +132,9 @@ export const generateCertificate = async (req, res) => {
     
     // Format date text
     const dateText = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-    const studentName = user.name || "Student Name";
 
     // Call function to generate PDF
-    const pdfBytes = await generateCertificatePDF(studentName, courseTitle, dateText);
+    const pdfBytes = await generateCertificatePDF(finalName, courseTitle, dateText);
     
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", `attachment; filename=Certificate_${courseId}.pdf`);

@@ -1,8 +1,10 @@
+import { Op } from "sequelize";
 import CommunityPost from "../models/CommunityPost.js";
 import User from "../models/User.js";
 import Report from "../models/Report.js";
 import crypto from "crypto";
 import { createNotification } from "./notificationController.js";
+import AdminNotification from "../models/AdminNotification.js";
 
 // @desc    Get course community stats (list of courses with post counts)
 // @route   GET /api/community/courses
@@ -62,7 +64,7 @@ const getCourseDiscussions = async (req, res) => {
     }
 
     const posts = await CommunityPost.findAll({
-      where: { type: "course", courseId: parseInt(courseId) },
+      where: { type: "course", courseId: parseInt(courseId), hiddenAt: null },
       include: [
         { model: User, as: "author", attributes: ["id", "name", "email", "avatar_url", "googleId"] },
       ],
@@ -90,7 +92,7 @@ const getGlobalDiscussions = async (req, res) => {
   try {
     const { category, sort } = req.query;
 
-    const where = { type: "global" };
+    const where = { type: "global", hiddenAt: null };
     if (category && category !== "All Categories") {
       where.category = category;
     }
@@ -381,7 +383,7 @@ const getAllCoursePosts = async (req, res) => {
     const { sort } = req.query;
 
     const posts = await CommunityPost.findAll({
-      where: { type: "course" },
+      where: { type: "course", hiddenAt: null },
       include: [
         { model: User, as: "author", attributes: ["id", "name", "email", "avatar_url", "googleId"] },
       ],
@@ -453,8 +455,10 @@ const reportContent = async (req, res) => {
       description: description || null,
     });
 
-    // Notify all admin users with a clear moderation message
-    const admins = await User.findAll({ where: { role: "admin" } });
+    // Notify all admin and superAdmin users with a clear moderation message
+    const admins = await User.findAll({
+      where: { role: { [Op.in]: ["admin", "superAdmin"] } },
+    });
     const reporterName = req.user?.name || "A user";
     const isCommentReport = Boolean(replyId);
     const contentLabel = isCommentReport ? "comment" : "discussion post";
@@ -480,6 +484,13 @@ const reportContent = async (req, res) => {
         },
       });
     }
+    
+    // Also notify the admin dashboard
+    await AdminNotification.create({
+      title: isCommentReport ? "Comment Reported" : "Discussion Post Reported",
+      message: `${reporterName} reported a ${contentLabel}. ${reasonOrDescription}`,
+      type: "report",
+    });
 
     res.status(201).json({ message: "Report submitted successfully", report });
   } catch (error) {

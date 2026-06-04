@@ -5,11 +5,21 @@ import { useToast } from "../context/ToastContext";
 
 function ActionMenu({ account, onAction, isSuperAdmin }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [position, setPosition] = useState({
+    top: 0,
+    left: 0,
+  });
+
+  const buttonRef = useRef(null);
   const menuRef = useRef(null);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(event.target) &&
+        !buttonRef.current?.contains(event.target)
+      ) {
         setIsOpen(false);
       }
     };
@@ -17,35 +27,96 @@ function ActionMenu({ account, onAction, isSuperAdmin }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  if (!isSuperAdmin) return <div className="text-muted opacity-20"><MoreVertical className="w-5 h-5" /></div>;
+  const toggleMenu = () => {
+    if (!buttonRef.current) return;
+
+    const rect =
+      buttonRef.current.getBoundingClientRect();
+
+    const menuWidth = 220;
+    const menuHeight = 180;
+
+    let left = rect.right - menuWidth;
+    let top = rect.bottom + 10;
+
+    // prevent left overflow
+    if (left < 10) {
+      left = 10;
+    }
+
+    // open upward if no space below
+    if (
+      window.innerHeight - rect.bottom <
+      menuHeight
+    ) {
+      top =
+        rect.top -
+        menuHeight -
+        10;
+    }
+
+    setPosition({ top, left });
+
+    setIsOpen((prev) => !prev);
+  };
+
+  if (!isSuperAdmin) {
+    return (
+      <div className="flex justify-end pr-2 opacity-20">
+        <MoreVertical className="w-5 h-5 text-muted" />
+      </div>
+    );
+  }
 
   const status = account.status || "active";
 
   return (
-    <div className="relative" ref={menuRef}>
+    <>
       <button
-        onClick={() => setIsOpen(!isOpen)}
         className="p-2 rounded-xl hover:bg-canvas-alt transition-all text-muted hover:text-main"
+        ref={buttonRef}
+        onClick={toggleMenu}
       >
         <MoreVertical className="w-5 h-5" />
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-48 rounded-2xl bg-card border border-border shadow-2xl z-50 overflow-hidden py-2 animate-in fade-in zoom-in-95 duration-200">
-          <div className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-muted border-b border-border/50 mb-1">
+        <div
+          ref={menuRef}
+          style={{
+            position: "fixed",
+            top: position.top,
+            left: position.left,
+            width: "220px",
+          }}
+          className="
+            z-[9999]
+            rounded-2xl
+            bg-card
+            border
+            border-border
+            shadow-2xl
+            overflow-hidden
+            py-2
+            animate-in
+            fade-in
+            zoom-in-95
+            duration-200
+          "
+        >
+          <div className="text-center px-4 py-2 text-[10px] font-black uppercase tracking-widest text-muted border-b border-border/50">
             Actions
           </div>
-          
           {status === "active" ? (
             <button
               onClick={() => {
                 onAction(account, "on-hold");
                 setIsOpen(false);
               }}
-              className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-orange-500 hover:bg-orange-500/5 transition-all"
+              className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-orange-500 hover:bg-orange-500/5"
             >
               <UserX className="w-4 h-4" />
-              Put On Hold
+               Dismiss
             </button>
           ) : (
             <button
@@ -53,7 +124,7 @@ function ActionMenu({ account, onAction, isSuperAdmin }) {
                 onAction(account, "active");
                 setIsOpen(false);
               }}
-              className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-teal-500 hover:bg-teal-500/5 transition-all"
+              className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-teal-500 hover:bg-teal-500/5"
             >
               <UserCheck className="w-4 h-4" />
               Activate
@@ -65,14 +136,14 @@ function ActionMenu({ account, onAction, isSuperAdmin }) {
               onAction(account, "delete");
               setIsOpen(false);
             }}
-            className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-red-500 hover:bg-red-500/5 transition-all"
+            className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-red-500 hover:bg-red-500/5"
           >
             <Trash2 className="w-4 h-4" />
             Delete Account
           </button>
         </div>
       )}
-    </div>
+    </>
   );
 }
 
@@ -85,11 +156,20 @@ function UsersPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
   const [activeFilter, setActiveFilter] = useState(null);
+  const [page, setPage] = useState(1);
+const [totalPages, setTotalPages] = useState(1);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
   });
+  const [deleteModal, setDeleteModal] = useState({
+  open: false,
+  account: null,
+});
+const [search, setSearch] = useState("");
+const [debouncedSearch, setDebouncedSearch] = useState("");
+const [statusFilter, setStatusFilter] = useState("all");
 
   const currentAdmin = JSON.parse(localStorage.getItem("user") || "{}");
   const isSuperAdmin = currentAdmin?.role === "superadmin";
@@ -98,13 +178,18 @@ function UsersPage() {
     try {
       setLoading(true);
       const [usersResult, adminsResult] = await Promise.allSettled([
-        callApi("/admin/users"),
+        callApi(`/admin/users?page=${page}&limit=10&search=${debouncedSearch}&status=${statusFilter}`),
         callApi("/admin/admins"),
       ]);
 
       const usersList = usersResult.status === "fulfilled"
-        ? (Array.isArray(usersResult.value?.data) ? usersResult.value.data : [])
-        : [];
+   ? (Array.isArray(usersResult.value?.data)
+      ? usersResult.value.data
+      : [])
+  : [];
+  if (usersResult.status === "fulfilled") {
+  setTotalPages(usersResult.value?. totalPages || 1);
+}
       const adminsList = adminsResult.status === "fulfilled"
         ? (Array.isArray(adminsResult.value?.data) ? adminsResult.value.data : [])
         : [];
@@ -131,7 +216,7 @@ function UsersPage() {
         email: admin.email,
         role: admin.role || "admin",
         type: "admin",
-        status: "active", // Admins are always active for now
+        status: admin.status || "active",
         createdAt: admin.createdAt,
       }));
 
@@ -148,42 +233,159 @@ function UsersPage() {
     }
   };
 
-  useEffect(() => {
-    fetchAccounts();
-  }, []);
+  // Debounce — wait 500ms after user stops typing
+// But clear instantly when search is empty
+useEffect(() => {
+  if (search === "") {
+    setDebouncedSearch("");
+    setPage(1);
+    return;
+  }
+  // Clear results immediately and show loading
+  setAccounts([]);
+  setLoading(true);
+  
+  const timer = setTimeout(() => {
+    setDebouncedSearch(search);
+    setPage(1);
+  }, 500);
+  return () => clearTimeout(timer);
+}, [search]);
+
+useEffect(() => {
+  fetchAccounts();
+}, [page, debouncedSearch, statusFilter]);
+
+useEffect(() => {
+  setPage(1);
+}, [statusFilter]);
 
   const handleAction = async (account, action) => {
     if (!isSuperAdmin) return;
 
-    if (action === "delete") {
-      if (!window.confirm(`Are you sure you want to delete ${account.name}? This action cannot be undone.`)) return;
-      try {
-        const endpoint = account.type === "admin" ? `/admin/${account.rawId}` : `/admin/users/${account.rawId}`;
-        await callApi(endpoint, { method: "DELETE" });
-        fetchAccounts();
-      } catch (err) {
-        showToast("Failed to delete account: " + err.message, "error");
-      }
-    } else if (action === "active" || action === "on-hold") {
+   if (action === "delete") {
+       setDeleteModal({
+       open: true,
+       account,
+      });
+    return;
+} else if (action === "active" || action === "on-hold") {
       try {
         if (account.type === "admin") {
-          showToast("Admin status cannot be changed yet.", "warning");
-          return;
+          if (currentAdmin?.id && account.rawId === currentAdmin.id) {
+            showToast("You cannot suspend yourself.", "warning");
+            return;
+          }
+          if (account.role === "superadmin") {
+            showToast("Super admin status cannot be changed.", "warning");
+            return;
+          }
         }
-        await callApi(`/admin/users/${account.rawId}/status`, {
+        const endpoint =
+          account.type === "admin"
+            ? `/admin/admins/${account.rawId}/status`
+            : `/admin/users/${account.rawId}/status`;
+
+        await callApi(endpoint, {
           method: "PATCH",
           body: JSON.stringify({ status: action }),
         });
+        showToast(`Account status updated to ${action}`, "success");
         fetchAccounts();
       } catch (err) {
         showToast("Failed to update status: " + err.message, "error");
       }
     }
   };
+  const confirmDelete = async () => {
+  const account = deleteModal.account;
+  if (!account) return;
+  try {
+    // Prevent self delete
+    if (
+      currentAdmin?.id &&
+      account.rawId === currentAdmin.id
+    ) {
+      showToast("You cannot delete yourself.", "warning");
+      return;
+    }
+    // Prevent deleting superadmin
+    if (account.role === "superadmin") {
+      showToast("Super Admin cannot be deleted.", "warning");
+      return;
+    }
+    const endpoint =
+      account.type === "admin"
+        ? `/admin/${account.rawId}`
+        : `/admin/users/${account.rawId}`;
 
+    await callApi(endpoint, {
+      method: "DELETE",
+    });
+    showToast(
+      `${account.name} deleted successfully`,
+      "success"
+    );
+    setDeleteModal({
+      open: false,
+      account: null,
+    });
+    await fetchAccounts();
+  } catch (err) {
+    showToast(
+      "Failed to delete account: " + err.message,
+      "error"
+    );
+  }
+};
   const onFieldChange = (event) => {
     const { name, value } = event.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const validateAdminForm = () => {
+    const { name, email, password } = formData;
+
+    if (!name || name.trim().length < 2) {
+      return "Name must be at least 2 characters.";
+    }
+    if (/\d/.test(name)) {
+      return "Name must not contain numbers.";
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email || !emailRegex.test(email)) {
+      return "Please enter a valid email address.";
+    }
+
+    if (!password || password.length < 8) {
+      return "Password must be at least 8 characters.";
+    }
+    if (!/[A-Z]/.test(password)) {
+      return "Password must contain at least one uppercase letter.";
+    }
+    if (!/[0-9]/.test(password)) {
+      return "Password must contain at least one number.";
+    }
+    if (!/[^A-Za-z0-9]/.test(password)) {
+      return "Password must contain at least one special character.";
+    }
+
+    return null;
+  };
+
+  const getPasswordStrength = (password) => {
+    if (!password) return { score: 0, label: "", color: "" };
+    let score = 0;
+    if (password.length >= 8) score++;
+    if (/[A-Z]/.test(password)) score++;
+    if (/[0-9]/.test(password)) score++;
+    if (/[^A-Za-z0-9]/.test(password)) score++;
+    if (password.length >= 12) score++;
+    if (score <= 1) return { score, label: "Weak", color: "bg-red-500" };
+    if (score === 2) return { score, label: "Fair", color: "bg-orange-500" };
+    if (score === 3) return { score, label: "Good", color: "bg-yellow-500" };
+    return { score, label: "Strong", color: "bg-teal-500" };
   };
 
   const onCreateAdmin = async (event) => {
@@ -192,6 +394,12 @@ function UsersPage() {
 
     if (!isSuperAdmin) {
       setSubmitError("Only superadmin can add other admins.");
+      return;
+    }
+
+    const validationError = validateAdminForm();
+    if (validationError) {
+      setSubmitError(validationError);
       return;
     }
 
@@ -216,19 +424,32 @@ function UsersPage() {
     }
   };
 
-  const visibleAccounts = activeFilter
-    ? accounts.filter((item) => item.type === activeFilter)
-    : accounts;
+  const visibleAccounts = accounts.filter((item) => {
+  // Type filter (Admins/Users toggle)
+  if (activeFilter && item.type !== activeFilter) return false;
 
-  if (loading && accounts.length === 0) return <div className="p-10 text-center text-muted italic">Fetching accounts...</div>;
-  if (error && accounts.length === 0) return <div className="p-10 text-center text-red-500">Error: {error}</div>;
+  // Status filter — hide admins when "dismissed" selected
+  if (statusFilter === "on-hold" && item.type === "admin") return false;
+
+  // Search filter — also apply to admins on frontend
+  if (search && item.type === "admin") {
+    const q = search.toLowerCase();
+    const nameMatch = item.name?.toLowerCase().includes(q);
+    const emailMatch = item.email?.toLowerCase().includes(q);
+    if (!nameMatch && !emailMatch) return false;
+  }
+
+  return true;
+});
+
+ if (error && accounts.length === 0) return <div className="p-10 text-center text-red-500">Error: {error}</div>;
 
   return (
     <>
       <div className="border-b border-border p-6 md:p-8 flex flex-wrap items-center justify-between gap-3 bg-linear-to-r from-canvas-alt/30 to-transparent">
         <h2 className="text-3xl font-black uppercase tracking-tight text-main">Manage Users</h2>
 
-        <div className="flex items-center gap-2 p-1 bg-canvas rounded-2xl border border-border">
+          <div className="flex items-center gap-2 p-1 bg-canvas rounded-2xl border border-border">
           <button
             type="button"
             onClick={() => setActiveFilter((prev) => (prev === "admin" ? null : "admin"))}
@@ -265,6 +486,62 @@ function UsersPage() {
           </button>
         </div>
       </div>
+      <div className="px-8 py-4 border-b border-border flex items-center gap-3 justify-between">
+        <input
+          type="text"
+          placeholder="Search by name or email..."
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(1);
+          }}
+          className="h-10 px-4 rounded-xl border border-border bg-canvas text-sm font-medium text-main focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10 outline-none transition-all flex-1"
+        />
+        <select
+          value={statusFilter}
+          onChange={(e) => {
+            setStatusFilter(e.target.value);
+            setPage(1);
+          }}
+          className="h-10 px-4 rounded-xl border border-border bg-canvas text-sm font-bold text-muted focus:border-teal-500 outline-none transition-all"
+        >
+          <option value="all">All Status</option>
+          <option value="active">Active</option>
+          <option value="on-hold">Dismissed</option>
+        </select>
+        {search && (
+          <button
+            onClick={() => { 
+              setSearch(""); 
+              setDebouncedSearch("");
+              setPage(1); 
+            }}
+            className="h-10 px-4 rounded-xl border border-border text-sm font-bold text-muted hover:bg-canvas-alt transition-all"
+          >
+            ✕ Clear
+          </button>
+        )}
+
+        {/* Count Summary */}
+        <div className="flex items-center gap-4 ml-auto text-[11px] font-black uppercase tracking-widest text-muted">
+          <span>
+            Total: <span className="text-main">{visibleAccounts.length}</span>
+          </span>
+          <span className="text-border">|</span>
+          <span>
+            Users: <span className="text-blue-500">
+              {visibleAccounts.filter(a => a.type === "user").length}
+            </span>
+          </span>
+          <span className="text-border">|</span>
+          <span>
+            Admins: <span className="text-teal-500">
+              {visibleAccounts.filter(a => a.type === "admin").length}
+            </span>
+          </span>
+        </div>
+      </div>
+
       <div className="overflow-x-auto">
         <table className="w-full min-w-[1000px]">
           <thead className="text-left text-[10px] font-black uppercase tracking-widest text-muted border-b border-border bg-canvas-alt/10">
@@ -319,17 +596,46 @@ function UsersPage() {
               ))
             ) : (
               <tr>
-                <td colSpan="7" className="p-20 text-center text-muted italic">
+              <td colSpan="7" className="p-20 text-center text-muted italic">
+                {loading ? (
+                  <div className="flex flex-col items-center gap-4 opacity-50">
+                    <div className="w-8 h-8 border-4 border-teal-500 border-t-transparent rounded-full animate-spin" />
+                    <p className="text-sm font-black uppercase tracking-widest">Searching...</p>
+                  </div>
+                ) : (
                   <div className="flex flex-col items-center gap-4 opacity-30">
                     <ShieldAlert className="w-12 h-12" />
                     <p className="text-lg font-black uppercase tracking-widest">No accounts matched.</p>
                   </div>
-                </td>
-              </tr>
+                )}
+              </td>
+            </tr>
             )}
           </tbody>
         </table>
+
       </div>
+      <div className="flex items-center justify-center gap-4 py-6">
+  <button
+    disabled={page === 1}
+    onClick={() => setPage(page - 1)}
+    className="px-4 py-2 rounded-lg border border-border disabled:opacity-50"
+  >
+    Prev
+  </button>
+
+  <span className="font-bold">
+    Page {page} of {totalPages}
+  </span>
+
+  <button
+    disabled={page === totalPages}
+    onClick={() => setPage(page + 1)}
+    className="px-4 py-2 rounded-lg border border-border disabled:opacity-50"
+  >
+    Next
+  </button>
+</div>
 
       {isAddAdminOpen && (
         <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
@@ -377,9 +683,37 @@ function UsersPage() {
                   value={formData.password}
                   onChange={onFieldChange}
                   required
-                  minLength={6}
+                  minLength={8}
                   className="w-full h-12 px-5 rounded-2xl bg-canvas border border-border focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10 outline-hidden transition-all font-bold text-main"
                 />
+                {formData.password && (() => {
+                  const strength = getPasswordStrength(formData.password);
+                  return (
+                    <div className="space-y-1.5 pt-1">
+                      <div className="flex gap-1">
+                        {[1, 2, 3, 4].map((i) => (
+                          <div
+                            key={i}
+                            className={`h-1 flex-1 rounded-full transition-all duration-300 ${
+                              strength.score >= i ? strength.color : "bg-border"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                      <p className={`text-[10px] font-black uppercase tracking-widest ${
+                        strength.score <= 1 ? "text-red-500" :
+                        strength.score === 2 ? "text-orange-500" :
+                        strength.score === 3 ? "text-yellow-500" :
+                        "text-teal-500"
+                      }`}>
+                        {strength.label} password
+                      </p>
+                    </div>
+                  );
+                })()}
+                <p className="text-[10px] text-muted font-medium ml-1">
+                  Min 8 chars · Uppercase · Number · Special character
+                </p>
               </div>
 
               <div className="flex items-start gap-3 p-4 rounded-2xl bg-teal-500/5 border border-teal-500/10">
@@ -412,6 +746,95 @@ function UsersPage() {
           </div>
         </div>
       )}
+      {deleteModal.open && (
+  <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+    <div className="w-full max-w-lg rounded-3xl border border-border bg-card shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+      {/* Header */}
+      <div className="p-6 border-b border-border bg-linear-to-r from-red-500/5 to-transparent flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-black uppercase tracking-tight text-main">
+            Delete Account
+          </h2>
+          <p className="text-xs text-muted mt-1 font-medium">
+            This action cannot be undone.
+          </p>
+        </div>
+        <button
+          onClick={() =>
+            setDeleteModal({
+              open: false,
+              account: null,
+            })
+          }
+          className="w-10 h-10 rounded-xl border border-border flex items-center justify-center hover:bg-red-500 hover:text-white transition-all"
+        >
+          <XIcon />
+        </button>
+      </div>
+      {/* Body */}
+      <div className="p-6 space-y-5">
+        <div className="flex items-start gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-red-500/10 text-red-500 flex items-center justify-center shrink-0">
+            <Trash2 className="w-6 h-6" />
+          </div>
+          <div>
+            <h3 className="font-black text-main tracking-tight">
+              Are you sure you want to delete{" "}
+              <span className="text-red-500">
+                {deleteModal.account?.name}
+              </span>
+              ?
+            </h3>
+            <p className="text-sm text-muted mt-2 leading-relaxed">
+              Deleting this account will permanently remove
+              access and related data. This action cannot
+              be undone.
+            </p>
+          </div>
+        </div>
+        {/* User Info */}
+        <div className="rounded-2xl border border-border bg-canvas p-4 space-y-2">
+          <div className="flex justify-between text-sm">
+            <span className="text-muted font-bold uppercase text-[10px] tracking-widest">
+              Email
+            </span>
+            <span className="text-main font-semibold">
+              {deleteModal.account?.email}
+            </span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span className="text-muted font-bold uppercase text-[10px] tracking-widest">
+              Role
+            </span>
+            <span className="text-main font-semibold uppercase">
+              {deleteModal.account?.role}
+            </span>
+          </div>
+        </div>
+        {/* Buttons */}
+        <div className="flex gap-3 pt-2">
+          <button
+            onClick={() =>
+              setDeleteModal({
+                open: false,
+                account: null,
+              })
+            }
+            className="flex-1 h-14 rounded-2xl border border-border font-black uppercase tracking-widest text-[11px] hover:bg-canvas-alt transition-all"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={confirmDelete}
+            className="flex-1 h-14 rounded-2xl bg-red-500 text-white font-black uppercase tracking-widest text-[11px] hover:bg-red-600 shadow-xl shadow-red-500/20 transition-all"
+          >
+            Delete Account
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
     </>
   );
 }

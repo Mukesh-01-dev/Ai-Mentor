@@ -3,11 +3,13 @@ import { AdminNotification, Course, User, Admin } from "../models/index.js";
 const ensureNotificationSeed = async () => {
   await AdminNotification.sync();
   if (await AdminNotification.count() > 0) return;
+  
   const [latestCourse, latestUser, latestAdmin] = await Promise.all([
     Course.findOne({ attributes: ["title", "createdAt"], order: [["createdAt", "DESC"]] }),
     User.findOne({ attributes: ["name", "createdAt"], order: [["createdAt", "DESC"]] }),
     Admin.findOne({ attributes: ["name", "createdAt"], order: [["createdAt", "DESC"]] }),
   ]);
+
   const seedRows = [];
   if (latestUser) seedRows.push({ title: "New user joined", message: `${latestUser.name || "A user"} created a new account.`, type: "user", unread: true, createdAt: latestUser.createdAt, updatedAt: latestUser.createdAt });
   if (latestCourse) seedRows.push({ title: "Course update", message: `${latestCourse.title || "A course"} is available in catalog.`, type: "course", unread: true, createdAt: latestCourse.createdAt, updatedAt: latestCourse.createdAt });
@@ -19,9 +21,15 @@ const ensureNotificationSeed = async () => {
 export const getAdminNotifications = async (req, res) => {
   try {
     await ensureNotificationSeed();
-    const notifications = await AdminNotification.findAll({ order: [["createdAt", "DESC"]], limit: 30 });
+    const { Op } = await import("sequelize");
+const notifications = await AdminNotification.findAll({
+  where: { title: { [Op.ne]: "cleared" } }, // hide sentinel
+  order: [["createdAt", "DESC"]],
+  limit: 30,
+});
     res.status(200).json({ success: true, data: notifications });
   } catch (error) {
+    console.error("GET NOTIFICATIONS ERROR:", error.message);
     res.status(500).json({ success: false, message: "Server Error" });
   }
 };
@@ -31,6 +39,7 @@ export const markAllNotificationsRead = async (req, res) => {
     await AdminNotification.update({ unread: false }, { where: { unread: true } });
     res.status(200).json({ success: true, message: "All notifications marked as read" });
   } catch (error) {
+    console.error("MARK ALL READ ERROR:", error.message);
     res.status(500).json({ success: false, message: "Server Error" });
   }
 };
@@ -44,6 +53,7 @@ export const markNotificationRead = async (req, res) => {
     await notification.save();
     res.status(200).json({ success: true, data: notification });
   } catch (error) {
+    console.error("MARK READ ERROR:", error.message);
     res.status(500).json({ success: false, message: "Server Error" });
   }
 };
@@ -51,8 +61,16 @@ export const markNotificationRead = async (req, res) => {
 export const clearAllNotifications = async (req, res) => {
   try {
     await AdminNotification.destroy({ where: {} });
+    // ✅ Create a sentinel record so seed doesn't re-run
+    await AdminNotification.create({
+      title: "cleared",
+      message: "cleared",
+      type: "system",
+      unread: false,
+    });
     res.status(200).json({ success: true, message: "All notifications cleared" });
   } catch (error) {
+    console.error("CLEAR NOTIFICATIONS ERROR:", error.message);
     res.status(500).json({ success: false, message: "Server Error" });
   }
 };

@@ -5,6 +5,18 @@ import { Op } from "sequelize";
 import sendEmail from "../utils/sendEmail.js";
 import { ensureProfileCompleteness, formatFullName } from "../utils/userUtils.js";
 import cloudinary from "../config/cloudinary.js";
+import admin from "firebase-admin";
+
+// Initialize Firebase Admin SDK using environment variables (no secret file needed)
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert({
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
+    }),
+  });
+}
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -13,9 +25,8 @@ const generateToken = (id) => {
 };
 
 // Centralized logic moved to userUtils.js
-
 const register = async (req, res) => {
-  const { name, email, password } = req.body;
+  const {firstName, lastName, name, email, password } = req.body;
 
   try {
     const userExists = await User.findOne({ where: { email } });
@@ -24,13 +35,14 @@ const register = async (req, res) => {
     }
 
     const user = await User.create({
+      firstName,
+      lastName,
       name: formatFullName(name, ""), // Standard register provides 'name', we treat as first part if needed
       email,
       password,
     });
 
     await ensureProfileCompleteness(user);
-
     res.status(201).json({
       id: user.id,
       firstName: user.firstName,
@@ -57,21 +69,16 @@ const login = async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    console.log("Login attempt for email:", email);
     const user = await User.findOne({ where: { email } });
 
     if (!user) {
-      console.log("User not found in DB.");
       return res.status(401).json({ message: "Invalid email or password" });
     }
 
     const isMatch = await user.matchPassword(password);
-    console.log("Password match result:", isMatch);
 
     if (user && user.password && isMatch) {
-      console.log("Login successful!");
       await ensureProfileCompleteness(user);
-      
       res.json({
         id: user.id,
         firstName: user.firstName,
@@ -101,7 +108,6 @@ const login = async (req, res) => {
           console.error("Failed to load notificationController or send login notification:", error);
         });
     } else {
-      console.log("Login failed: password mismatch.");
       res.status(401).json({ message: "Invalid email or password" });
     }
   } catch (error) {
@@ -109,6 +115,7 @@ const login = async (req, res) => {
     res.status(500).json({ message: "Server Error" });
   }
 };
+
 // Background task to refresh/re-host avatar to Cloudinary without blocking login
 const refreshAvatarInBackground = async (userId, googlePictureUrl) => {
   try {
@@ -124,11 +131,9 @@ const refreshAvatarInBackground = async (userId, googlePictureUrl) => {
       overwrite: true,
     });
 
-    // Persist the new permanent Cloudinary URL, then recompute profile completeness
     user.avatar_url = result.secure_url;
     await user.save();
     await ensureProfileCompleteness(user);
-    console.log(`Successfully refreshed/re-hosted avatar to Cloudinary for user ${userId}`);
   } catch (err) {
     console.error("Background avatar refresh failed:", err);
   }
@@ -138,17 +143,26 @@ const googleLogin = async (req, res) => {
   try {
     const { idToken } = req.body;
 
-    const payload = JSON.parse(
-      Buffer.from(idToken.split(".")[1], "base64").toString()
-    );
+    // ✅ SECURE: Verify Firebase ID token using Firebase Admin SDK.
+    // Validates signature, expiry, project (aud), and issuer automatically.
+    let decodedToken;
+    try {
+      decodedToken = await admin.auth().verifyIdToken(idToken);
+    } catch (verifyError) {
+      console.error("Google token verification failed:", verifyError.message);
+      return res.status(401).json({ message: "Invalid Google token" });
+    }
 
-    // console.log("Google Login Payload:", JSON.stringify(payload, null, 2));
-    const uid = payload.sub;
-    const email = payload.email;
-    const name = payload.name || email.split("@")[0];
-    let firstName = payload.given_name || "";
-    let lastName = payload.family_name || "";
-    const avatar_url = payload.picture || null;
+    if (!decodedToken.email_verified) {
+      return res.status(401).json({ message: "Google email not verified" });
+    }
+
+    const uid = decodedToken.uid;
+    const email = decodedToken.email;
+    const name = decodedToken.name || email.split("@")[0];
+    let firstName = decodedToken.given_name || decodedToken.name?.split(" ")[0] || "";
+    let lastName = decodedToken.family_name || decodedToken.name?.split(" ").slice(1).join(" ") || "";
+    const avatar_url = decodedToken.picture || null;
 
     // Fallback if given_name and family_name are missing
     if (!firstName && !lastName && name) {
@@ -179,7 +193,6 @@ const googleLogin = async (req, res) => {
         changed = true;
       }
 
-      // Pre-fill missing names/avatar from Google if they are empty
       if (!user.firstName && firstName) {
         user.firstName = firstName;
         changed = true;
@@ -192,8 +205,7 @@ const googleLogin = async (req, res) => {
         user.avatar_url = avatar_url;
         changed = true;
       }
-      
-      // Update name if components changed
+
       if (changed) {
         user.name = formatFullName(user.firstName, user.lastName);
         await user.save();
@@ -208,7 +220,6 @@ const googleLogin = async (req, res) => {
       const isMissing = !user.avatar_url;
 
       if (isNewUser) {
-        // For new users, we wait (sync) to ensure their first impression is perfect and initials don't flicker
         try {
           const result = await cloudinary.uploader.upload(avatar_url, {
             folder: "user_avatars",
@@ -219,10 +230,8 @@ const googleLogin = async (req, res) => {
           await user.save();
         } catch (err) {
           console.error("Sync avatar re-hosting failed:", err);
-          // Fallback: the response will still use the Google URL if Cloudinary fails
         }
       } else if (isCurrentlyGoogleHosted || isMissing) {
-        // For returning users, keep it backgrounded (async) to maintain instant speed
         refreshAvatarInBackground(user.id, avatar_url);
       }
     }
