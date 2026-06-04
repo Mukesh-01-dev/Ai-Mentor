@@ -714,7 +714,7 @@ const generateCourseSyllabusWithAI = async (req, res) => {
     // Call Python AI Service
     // We assume backendAdmin can access AI service via process.env.BACKEND_URL or hardcode
     // Let's use the Python AI server URL (it runs on 8000)
-    const aiUrl = "http://127.0.0.1:8000/generate-syllabus";
+    const aiUrl = `${process.env.AI_SERVICE_URL}/generate-syllabus`;
     const aiResponse = await fetch(aiUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
