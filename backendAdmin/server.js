@@ -30,12 +30,11 @@ app.use(
   cors({
     origin: allowedOrigins,
     credentials: true,
-  })
+  }),
 );
 
 // ================= ROUTES =================
 app.use("/api/admin", adminRoutes);
-app.use("/admin", adminRoutes);
 
 // Health check endpoint
 app.get("/health", (req, res) => {
@@ -60,7 +59,9 @@ const startServer = async () => {
   try {
     await connectDB();
     app.listen(PORT, () => {
-      console.log(`✅ Backend Admin Server running on http://localhost:${PORT}`);
+      console.log(
+        `✅ Backend Admin Server running on http://localhost:${PORT}`,
+      );
     });
   } catch (error) {
     console.error("❌ Failed to start server:", error.message);

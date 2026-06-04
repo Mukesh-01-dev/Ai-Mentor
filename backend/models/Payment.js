@@ -1,7 +1,7 @@
 import { DataTypes, Model } from "sequelize";
 import { sequelize } from "../config/db.js";
 
-class Payment extends Model {}
+class Payment extends Model { }
 
 Payment.init(
   {
@@ -42,8 +42,9 @@ Payment.init(
 
     // status: initiated | processing | success | failed
     status: {
-      type: DataTypes.STRING,
+      type: DataTypes.ENUM("initiated", "processing", "success", "failed"),
       defaultValue: "initiated",
+      allowNull: false,
     },
 
     // The UUID generated on the client — prevents duplicate charges
@@ -55,8 +56,9 @@ Payment.init(
 
     // Payment gateway: "stripe" | "razorpay"
     gateway: {
-      type: DataTypes.STRING,
+      type: DataTypes.ENUM("stripe", "razorpay"),
       defaultValue: "stripe",
+      allowNull: false,
     },
 
     // Stripe fields

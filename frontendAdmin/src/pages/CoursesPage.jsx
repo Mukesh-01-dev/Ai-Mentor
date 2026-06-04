@@ -167,8 +167,22 @@ function CoursesPage() {
 
   const [builderCourse, setBuilderCourse] = useState(null);
 
+  // ── Enrollment Modal ──────────────────────────────────────────────────────
+const [enrollmentModal, setEnrollmentModal] = useState({
+  open: false,
+  courseId: null,
+  courseTitle: "",
+  enrolledUsers: [],
+  enrolledCount: 0,
+  loading: false,
+});
+
   // ── Filter panel toggle ───────────────────────────────────────────────────
   const [showFilters, setShowFilters] = useState(false);
+
+  // ── Search Hooks ──────────────────────────────────────────────────────────
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
 
   // ── Filter state ──────────────────────────────────────────────────────────
   const [selectedCategories, setSelectedCategories] = useState([]);
@@ -185,10 +199,13 @@ function CoursesPage() {
   );
 
   // ── Fetch ─────────────────────────────────────────────────────────────────
-  const fetchCourses = async () => {
+  const fetchCourses = async (searchQuery = "") => {
     try {
       setLoading(true);
-      const response = await callApi("/admin/courses");
+      const endpoint = searchQuery 
+        ? `/admin/courses?search=${encodeURIComponent(searchQuery)}` 
+        : "/admin/courses";
+      const response = await callApi(endpoint);
       const coursesList = Array.isArray(response?.data)
         ? response.data
         : Array.isArray(response)
@@ -202,7 +219,30 @@ function CoursesPage() {
     }
   };
 
-  useEffect(() => { fetchCourses(); }, []);
+      // Debounce effect logic loop
+      // Initial load on mount
+useEffect(() => {
+  fetchCourses("");
+}, []);
+
+// Debounce effect for search
+    useEffect(() => {
+      if (search === "") {
+        fetchCourses("");
+        return;
+      }
+
+      // Clear immediately and show spinner
+      setCourses([]);
+      setLoading(true);
+
+      const timer = setTimeout(() => {
+        setDebouncedSearch(search);
+        fetchCourses(search);
+      }, 500);
+
+      return () => clearTimeout(timer);
+    }, [search]);
 
   // ── Filtered + sorted courses ─────────────────────────────────────────────
   const filteredCourses = useMemo(() => {
@@ -292,6 +332,7 @@ function CoursesPage() {
     setMinPrice("");
     setMaxPrice("");
     setSortBy("newest");
+    setSearch("");
   };
   // ── Add course ────────────────────────────────────────────────────────────
   const handleAddCourse = async (e) => {
@@ -433,6 +474,34 @@ const closeDeleteModal = useCallback(() => {
 }, [deleteModal.isDeleting]);
 
 /**
+ * Opens enrollment details modal for a course.
+ */
+const handleViewEnrollments = useCallback(async (course) => {
+  // Open modal immediately with loading state
+  setEnrollmentModal({
+    open: true,
+    courseId: course.id,
+    courseTitle: course.title,
+    enrolledUsers: [],
+    enrolledCount: 0,
+    loading: true,
+  });
+
+  try {
+    const data = await callApi(`/admin/courses/${course.id}/enrollments`);
+    setEnrollmentModal((prev) => ({
+      ...prev,
+      enrolledUsers: data.enrolledUsers || [],
+      enrolledCount: data.enrolledCount || 0,
+      loading: false,
+    }));
+  } catch (err) {
+    showToast("Failed to load enrollments: " + err.message, "error");
+    setEnrollmentModal((prev) => ({ ...prev, loading: false }));
+  }
+}, []);
+
+/**
  * Status badge color helper.
  */
 const getRowClass = (status) => {
@@ -441,7 +510,7 @@ const getRowClass = (status) => {
   return "";
 };
 
-if (loading && courses.length === 0)
+if (loading && courses.length === 0 && search === "")
   return (
     <div className="p-10 text-center text-muted">
       Loading courses...
@@ -459,10 +528,32 @@ return (
   <>
     {/* ── Header ──────────────────────────────────────────────────────────── */}
     <div className="border-b border-border px-4 py-4 sm:px-6 md:px-8 sm:py-6 flex flex-wrap gap-3 items-center justify-between">
-      <h2 className="text-2xl sm:text-3xl font-semibold">
-        Active Courses
-      </h2>
-      <div className="flex gap-2 items-center">
+        <div className="flex flex-col gap-1 flex-1 min-w-[240px]">
+          <h2 className="text-2xl sm:text-3xl font-semibold">
+            Active Courses
+          </h2>
+        </div>
+
+        <div className="flex flex-wrap gap-2 items-center w-full sm:w-auto">
+          {/* Integrated Search Element */}
+          <div className="relative flex-1 sm:flex-initial min-w-[200px]">
+            <input
+              type="text"
+              placeholder="Search title or category..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="h-9 sm:h-10 w-full sm:w-64 pl-4 pr-8 rounded-xl border border-border bg-canvas text-xs font-medium text-main focus:border-teal-500 outline-none transition-all"
+            />
+            {search && (
+              <button 
+                onClick={() => setSearch("")} 
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted hover:text-red-500 transition-colors"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
           <button
             type="button"
             onClick={() => setShowAddModal(true)}
@@ -556,8 +647,11 @@ return (
             <SortDropdown value={sortBy} onChange={setSortBy} />
           </div>
           {/* Active chips + Clear All */}
-          {hasActiveFilters && (
+          {(hasActiveFilters || search) && (
             <div className="flex flex-wrap gap-1.5 items-center">
+              {search && (
+                <FilterChip label={`Search: ${search}`} onRemove={() => setSearch("")} />
+              )}
               {chips.map((chip, i) => (
                 <FilterChip key={i} label={chip.label} onRemove={chip.onRemove} />
               ))}
@@ -575,10 +669,10 @@ return (
       </div>
 
       {/* ── Results summary bar ──────────────────────────────────────────────── */}
-      {hasActiveFilters && (
+      {(hasActiveFilters || search) && (
         <div className="px-4 sm:px-6 md:px-8 py-2 flex items-center gap-2 text-[10px] text-muted font-semibold uppercase tracking-wider border-b border-border bg-canvas-alt/20">
           <span className="text-teal-500 font-black">{filteredCourses.length}</span>
-          <span>of {courses.length} courses match</span>
+          <span>match results found</span>
         </div>
       )}
 
@@ -609,15 +703,22 @@ return (
                       {course.title}
                     </div>
                     <div className="text-muted text-[10px] uppercase tracking-tighter mt-0.5 flex gap-2 items-center">
-                      <span>ID: {course.id}</span>
-                      <span>•</span>
-                      <button 
-                        onClick={() => setBuilderCourse(course)}
-                        className="text-purple-500 hover:text-purple-600 font-bold transition-colors"
-                      >
-                        Builder
-                      </button>
-                    </div>
+                    <span>ID: {course.id}</span>
+                    <span>•</span>
+                    <button
+                      onClick={() => setBuilderCourse(course)}
+                      className="text-purple-500 hover:text-purple-600 font-bold transition-colors"
+                    >
+                      Builder
+                    </button>
+                    <span>•</span>
+                    <button
+                      onClick={() => handleViewEnrollments(course)}
+                      className="text-teal-500 hover:text-teal-600 font-bold transition-colors"
+                    >
+                      Students
+                    </button>
+                  </div>
                   </td>
                   <td className="pr-4">
                     <span className="px-2.5 py-1 rounded-lg bg-canvas-alt border border-border text-[11px] font-bold uppercase tracking-tight text-muted">
@@ -648,7 +749,7 @@ return (
             ) : (
               <tr>
                 <td colSpan="6">
-                  <EmptyState onClear={clearAll} />
+                  <EmptyState onClear={clearAll} loading={loading} />
                 </td>
               </tr>
             )}
@@ -656,7 +757,6 @@ return (
         </table>
       </div>
 
-      {/* Add Course Modal */}
       {/* Mobile card list (hidden on desktop) */}
       <div className="sm:hidden divide-y divide-border">
         {filteredCourses.length > 0 ? (
@@ -668,7 +768,7 @@ return (
                   <p className="text-muted text-[10px] uppercase tracking-tighter mt-0.5">ID: {course.id}</p>
                 </div>
                 <span className="text-teal-500 font-black text-[9px] uppercase tracking-widest shrink-0 mt-0.5">
-                  Published
+                  {course.status || "published"}
                 </span>
               </div>
               <div className="flex flex-wrap gap-1.5 mt-2.5 items-center">
@@ -693,7 +793,7 @@ return (
             </div>
           ))
         ) : (
-          <EmptyState onClear={clearAll} />
+          <EmptyState onClear={clearAll} loading={loading} />
         )}
       </div>
 
@@ -812,12 +912,94 @@ return (
           onClose={() => setBuilderCourse(null)}
         />
       )}
+
+      {/* ── Enrollment Details Modal ─────────────────────────────────────────── */}
+      {enrollmentModal.open && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-card border border-border w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+            
+            {/* Header */}
+            <div className="p-6 border-b border-border flex items-center justify-between bg-gradient-to-r from-teal-500/5 to-transparent">
+              <div>
+                <h3 className="text-lg font-bold text-main tracking-tight uppercase">
+                  Enrolled Students
+                </h3>
+                <p className="text-xs text-muted mt-0.5 font-medium truncate max-w-[300px]">
+                  {enrollmentModal.courseTitle}
+                </p>
+              </div>
+              <button
+                onClick={() => setEnrollmentModal((prev) => ({ ...prev, open: false }))}
+                className="w-9 h-9 rounded-xl border border-border flex items-center justify-center hover:bg-red-500 hover:text-white transition-all"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Total count badge */}
+            <div className="px-6 py-3 border-b border-border bg-canvas-alt/20 flex items-center gap-2">
+              <span className="text-[10px] font-black uppercase tracking-widest text-muted">
+                Total Enrolled:
+              </span>
+              <span className="bg-teal-500 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full">
+                {enrollmentModal.enrolledCount} students
+              </span>
+            </div>
+
+            {/* Students list */}
+            <div className="max-h-[400px] overflow-y-auto">
+              {enrollmentModal.loading ? (
+                <div className="flex flex-col items-center justify-center py-16 gap-3 opacity-50">
+                  <div className="w-8 h-8 border-4 border-teal-500 border-t-transparent rounded-full animate-spin" />
+                  <p className="text-xs font-black uppercase tracking-widest text-muted">Loading students...</p>
+                </div>
+              ) : enrollmentModal.enrolledUsers.length > 0 ? (
+                <div className="divide-y divide-border">
+                  {enrollmentModal.enrolledUsers.map((user, index) => (
+                    <div key={user.id} className="px-6 py-4 flex items-center gap-3 hover:bg-canvas-alt transition-colors">
+                      <div className="w-9 h-9 rounded-xl bg-teal-500/10 text-teal-500 flex items-center justify-center font-black text-[11px] uppercase shrink-0">
+                        {user.name?.charAt(0) || "?"}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-bold text-main text-sm truncate">{user.name}</p>
+                        <p className="text-muted text-[11px] truncate">{user.email}</p>
+                      </div>
+                      <span className="text-[10px] font-black text-muted uppercase tracking-widest shrink-0">
+                        #{index + 1}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-16 gap-3 opacity-40">
+                  <div className="w-12 h-12 rounded-2xl bg-canvas-alt border border-border flex items-center justify-center">
+                    <BookOpen className="w-5 h-5 text-muted" />
+                  </div>
+                  <p className="text-sm font-bold text-muted">No students enrolled yet</p>
+                </div>
+              )}
+            </div>
+
+          </div>
+        </div>
+      )}
     </>
   );
 }
 
 // ─── Empty State ──────────────────────────────────────────────────────────────
-function EmptyState({ onClear }) {
+function EmptyState({ onClear, loading }) {
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 px-4 gap-4 text-center opacity-50 animate-in fade-in duration-200">
+        {/* Animated Teal Spinner */}
+        <div className="w-8 h-8 border-4 border-teal-500 border-t-transparent rounded-full animate-spin" />
+        {/* Verbatim Matching Text Styling */}
+        <p className="text-sm font-black uppercase tracking-widest text-muted italic">Searching...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col items-center justify-center py-16 px-4 gap-3 text-center animate-in fade-in duration-300">
       <div className="w-14 h-14 rounded-2xl bg-canvas-alt border border-border flex items-center justify-center">
@@ -825,7 +1007,7 @@ function EmptyState({ onClear }) {
       </div>
       <div>
         <p className="text-main font-bold">No courses match your filters</p>
-        <p className="text-muted text-sm mt-1">Try adjusting or clearing the active filters above.</p>
+        <p className="text-muted text-sm mt-1">Try adjusting or clearing the active filters or search phrases above.</p>
       </div>
     </div>
   );

@@ -160,8 +160,10 @@ const purchasedCourses =
 
 const hasAccess = purchasedCourses.includes(String(course.id));
 
-// Allow admins to access
-if (!hasAccess && req.user.role !== "admin") {
+const priceValue = parseFloat(course.priceValue) || 0;
+const isFreeOrOne = priceValue <= 1;
+
+if (!hasAccess && req.user.role !== "admin" && !isFreeOrOne) {
   return res.status(403).json({
     message: "Access denied. Please purchase/enroll in this course.",
   });

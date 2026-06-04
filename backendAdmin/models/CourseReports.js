@@ -13,6 +13,11 @@ export const CourseReports = sequelize.define(
     userId: {
       type: DataTypes.UUID,
       allowNull: false,
+      references: {
+        model: "Users", 
+        key: "id",
+      },
+      onDelete: "CASCADE", 
     },
 
     reportType: {
