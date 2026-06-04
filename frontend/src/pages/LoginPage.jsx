@@ -106,7 +106,7 @@ const LoginPage = () => {
               type={showPassword ? "text" : "password"}
               className="w-full px-3 py-2 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:ring-2 focus:ring-teal-500 outline-none dark:bg-slate-900 dark:border-gray-700 dark:text-white"
               placeholder="••••••••"
-              value={password}
+              value={password} 
               onChange={(e) => setPassword(e.target.value)}
             />
             <button

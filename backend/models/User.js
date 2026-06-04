@@ -45,13 +45,17 @@ User.init(
     },
 
     role: {
-      type: DataTypes.STRING,
+      type: DataTypes.ENUM("user", "admin", "superadmin"),
       defaultValue: "user",
+      allowNull: false,
     },
+
     status: {
-      type: DataTypes.STRING,
+      type: DataTypes.ENUM("active", "on-hold"),
       defaultValue: "active",
+      allowNull: false,
     },
+
     bio: {
       type: DataTypes.STRING,
       defaultValue: "",

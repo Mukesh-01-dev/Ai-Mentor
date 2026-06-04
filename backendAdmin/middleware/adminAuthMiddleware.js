@@ -22,6 +22,10 @@ export const protectAdmin = async (req, res, next) => {
       return res.status(401).json({ message: "Admin not found" });
     }
 
+    if (req.admin.status === "on-hold") {
+      return res.status(403).json({ message: "Your account has been suspended" });
+    }
+
     next();
   } catch (error) {
     res.status(401).json({ message: "Not authorized to access this route" });
