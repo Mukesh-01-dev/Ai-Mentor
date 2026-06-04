@@ -2,10 +2,12 @@ import jwt from "jsonwebtoken";
 import { Admin } from "../models/index.js";
 import { adminLoginSchema, adminRegisterSchema } from "../schemas/adminAuthSchema.js";
 
-const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: "30d",
-  });
+const generateToken = (id, role) => {
+  return jwt.sign(
+    { id, role },
+    process.env.JWT_SECRET,
+    { expiresIn: "30d" }
+  );
 };
 
 export const registerAdmin = async (req, res) => {
@@ -56,8 +58,8 @@ export const loginAdmin = async (req, res) => {
         name: admin.name, 
         email: admin.email, 
         role: admin.role, 
+        token: generateToken(admin.id, admin.role)
         status: admin.status,
-        token: generateToken(admin.id) 
       });
     } else {
       res.status(401).json({ message: "Invalid email or password" });
