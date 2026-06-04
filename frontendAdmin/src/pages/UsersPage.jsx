@@ -343,12 +343,63 @@ useEffect(() => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const validateAdminForm = () => {
+    const { name, email, password } = formData;
+
+    if (!name || name.trim().length < 2) {
+      return "Name must be at least 2 characters.";
+    }
+    if (/\d/.test(name)) {
+      return "Name must not contain numbers.";
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email || !emailRegex.test(email)) {
+      return "Please enter a valid email address.";
+    }
+
+    if (!password || password.length < 8) {
+      return "Password must be at least 8 characters.";
+    }
+    if (!/[A-Z]/.test(password)) {
+      return "Password must contain at least one uppercase letter.";
+    }
+    if (!/[0-9]/.test(password)) {
+      return "Password must contain at least one number.";
+    }
+    if (!/[^A-Za-z0-9]/.test(password)) {
+      return "Password must contain at least one special character.";
+    }
+
+    return null;
+  };
+
+  const getPasswordStrength = (password) => {
+    if (!password) return { score: 0, label: "", color: "" };
+    let score = 0;
+    if (password.length >= 8) score++;
+    if (/[A-Z]/.test(password)) score++;
+    if (/[0-9]/.test(password)) score++;
+    if (/[^A-Za-z0-9]/.test(password)) score++;
+    if (password.length >= 12) score++;
+    if (score <= 1) return { score, label: "Weak", color: "bg-red-500" };
+    if (score === 2) return { score, label: "Fair", color: "bg-orange-500" };
+    if (score === 3) return { score, label: "Good", color: "bg-yellow-500" };
+    return { score, label: "Strong", color: "bg-teal-500" };
+  };
+
   const onCreateAdmin = async (event) => {
     event.preventDefault();
     setSubmitError(null);
 
     if (!isSuperAdmin) {
       setSubmitError("Only superadmin can add other admins.");
+      return;
+    }
+
+    const validationError = validateAdminForm();
+    if (validationError) {
+      setSubmitError(validationError);
       return;
     }
 
@@ -635,6 +686,34 @@ useEffect(() => {
                   minLength={8}
                   className="w-full h-12 px-5 rounded-2xl bg-canvas border border-border focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10 outline-hidden transition-all font-bold text-main"
                 />
+                {formData.password && (() => {
+                  const strength = getPasswordStrength(formData.password);
+                  return (
+                    <div className="space-y-1.5 pt-1">
+                      <div className="flex gap-1">
+                        {[1, 2, 3, 4].map((i) => (
+                          <div
+                            key={i}
+                            className={`h-1 flex-1 rounded-full transition-all duration-300 ${
+                              strength.score >= i ? strength.color : "bg-border"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                      <p className={`text-[10px] font-black uppercase tracking-widest ${
+                        strength.score <= 1 ? "text-red-500" :
+                        strength.score === 2 ? "text-orange-500" :
+                        strength.score === 3 ? "text-yellow-500" :
+                        "text-teal-500"
+                      }`}>
+                        {strength.label} password
+                      </p>
+                    </div>
+                  );
+                })()}
+                <p className="text-[10px] text-muted font-medium ml-1">
+                  Min 8 chars · Uppercase · Number · Special character
+                </p>
               </div>
 
               <div className="flex items-start gap-3 p-4 rounded-2xl bg-teal-500/5 border border-teal-500/10">
