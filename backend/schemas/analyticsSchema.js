@@ -6,7 +6,6 @@ export const studySessionSchema = z.object({
       required_error: "Hours is required",
       invalid_type_error: "Hours must be a number",
     })
-    .refine((val) => !isNaN(val), { message: "Hours cannot be NaN" })
     .gt(0, "Hours must be greater than 0")
     .lte(24, "Hours cannot be greater than 24"),
   date: z
