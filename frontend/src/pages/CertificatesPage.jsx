@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Award,
   Download,
@@ -11,6 +11,7 @@ import {
   Eye,
   X,
   Sparkles,
+  AlertCircle,
 } from "lucide-react";
 import API_BASE_URL from "../lib/api";
 import { useAuth } from "../context/AuthContext";
@@ -20,6 +21,7 @@ import FloatingAssistant from "../components/common/FloatingAssistant";
 const CertificatesPage = () => {
   const { user } = useAuth();
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -732,7 +734,16 @@ const CertificatesPage = () => {
        </div>
       </div>
     )}
-    <FloatingAssistant />
+    {/* Issue Button */}
+<button
+  onClick={() => navigate("/report")}
+  className="fixed bottom-6 right-24 z-50 flex items-center gap-2 px-4 py-3 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg transition-all duration-300"
+>
+  <AlertCircle className="w-5 h-5" />
+  <span className="hidden md:inline">Issue</span>
+</button>
+
+<FloatingAssistant />
     </main>
     
   );
