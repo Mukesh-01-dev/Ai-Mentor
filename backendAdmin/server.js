@@ -19,13 +19,16 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+const allowedOrigins = [
+  process.env.FRONTEND_ADMIN_URL || "http://localhost:5174",
+  ...(process.env.NODE_ENV !== "production"
+    ? ["http://localhost:3000", "http://localhost:5173"]
+    : []),
+];
+
 app.use(
   cors({
-    origin: [
-      process.env.FRONTEND_ADMIN_URL || "http://localhost:5174",
-      "http://localhost:3000",
-      "http://localhost:5173",
-    ],
+    origin: allowedOrigins,
     credentials: true,
   })
 );

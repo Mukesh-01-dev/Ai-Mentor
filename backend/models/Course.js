@@ -18,7 +18,7 @@ const Course = sequelize.define("Course", {
   level: DataTypes.STRING,
 
   price: DataTypes.STRING,
-  priceValue: DataTypes.INTEGER,
+  priceValue: DataTypes.FLOAT,
   currency: DataTypes.STRING,
 
   rating: DataTypes.FLOAT,

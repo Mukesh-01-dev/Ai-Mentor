@@ -14,6 +14,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { callApi } from "../utils/api";
+import { useToast } from "../context/ToastContext";
 
 const REJECT_PRESETS = [
   "Insufficient evidence provided",
@@ -204,6 +205,7 @@ function DeleteConfirmModal({ report, onCancel, onConfirm, submitting }) {
 function ReportModal({ report, onClose, onActionComplete }) {
   const [submitting, setSubmitting] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
+  const { showToast } = useToast();
 
   const isCertificate =
     report?.reportType?.toLowerCase() === "certificate" ||
@@ -220,7 +222,7 @@ function ReportModal({ report, onClose, onActionComplete }) {
       onClose();
     } catch (err) {
       console.error(err);
-      alert(`Failed to update report: ${err.message}`);
+      showToast(err.message || "Failed to update report", "error");
     } finally {
       setSubmitting(false);
     }
@@ -319,8 +321,8 @@ function ReportModal({ report, onClose, onActionComplete }) {
                     report.status === "resolved"
                       ? "bg-green-500/10 text-green-400 border-green-500/20"
                       : report.status === "rejected"
-                      ? "bg-red-500/10 text-red-400 border-red-500/20"
-                      : "bg-orange-500/10 text-orange-400 border-orange-500/20"
+                        ? "bg-red-500/10 text-red-400 border-red-500/20"
+                        : "bg-orange-500/10 text-orange-400 border-orange-500/20"
                   }`}
                 >
                   {report.status}
@@ -389,6 +391,8 @@ const STATUS_FILTERS = [
 ];
 
 function ReportsPage() {
+  const { showToast } = useToast();
+
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -397,7 +401,6 @@ function ReportsPage() {
   const [reportToDelete, setReportToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [activeFilter, setActiveFilter] = useState("all");
-
 
   const fetchReports = async () => {
     try {
@@ -427,7 +430,7 @@ function ReportsPage() {
       await fetchReports();
     } catch (err) {
       console.error(err);
-      alert(`Failed to delete report: ${err.message}`);
+      showToast(err.message || "Failed to delete report", "error");
     } finally {
       setDeleting(false);
     }
@@ -439,7 +442,7 @@ function ReportsPage() {
   const certificateCount = reports.filter(
     (r) =>
       r.reportType?.toLowerCase() === "certificate" ||
-      r.subType?.toLowerCase()?.includes("certificate")
+      r.subType?.toLowerCase()?.includes("certificate"),
   ).length;
 
   const filterCounts = {
@@ -449,10 +452,9 @@ function ReportsPage() {
     rejected: rejectedCount,
   };
 
-  const filteredReports = reports
-    .filter((r) =>
-      statusFilter === "all" ? true : r.status === statusFilter
-    )
+  const filteredReports = reports.filter((r) =>
+    statusFilter === "all" ? true : r.status === statusFilter,
+  );
 
   if (loading)
     return (
@@ -533,10 +535,10 @@ function ReportsPage() {
               f.value === "pending"
                 ? "bg-orange-500 text-white border-orange-500 shadow-lg shadow-orange-500/20"
                 : f.value === "resolved"
-                ? "bg-green-500 text-white border-green-500 shadow-lg shadow-green-500/20"
-                : f.value === "rejected"
-                ? "bg-red-500 text-white border-red-500 shadow-lg shadow-red-500/20"
-                : "bg-teal-500 text-white border-teal-500 shadow-lg shadow-teal-500/20";
+                  ? "bg-green-500 text-white border-green-500 shadow-lg shadow-green-500/20"
+                  : f.value === "rejected"
+                    ? "bg-red-500 text-white border-red-500 shadow-lg shadow-red-500/20"
+                    : "bg-teal-500 text-white border-teal-500 shadow-lg shadow-teal-500/20";
             return (
               <button
                 key={f.value}
@@ -637,8 +639,8 @@ function ReportsPage() {
                             report.status === "resolved"
                               ? "bg-green-500/10 text-green-400 border-green-500/20"
                               : report.status === "rejected"
-                              ? "bg-red-500/10 text-red-400 border-red-500/20"
-                              : "bg-orange-500/10 text-orange-400 border-orange-500/20"
+                                ? "bg-red-500/10 text-red-400 border-red-500/20"
+                                : "bg-orange-500/10 text-orange-400 border-orange-500/20"
                           }`}
                         >
                           {report.status}

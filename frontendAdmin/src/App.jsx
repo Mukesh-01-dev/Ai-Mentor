@@ -15,6 +15,7 @@ import UsersPage from "./pages/UsersPage";
 import ReportsPage from "./pages/ReportsPage";
 import ProfilePage from "./pages/ProfilePage";
 import SettingsPage from "./pages/SettingsPage";
+import NotFoundPage from "./pages/NotFoundPage";
 
 
 const PAGE_COMPONENTS = {
@@ -35,16 +36,23 @@ function App() {
   const [page, setPage] = useState("courses");
   const [mobileNav, setMobileNav] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [isNotFound, setIsNotFound] = useState(false);
 
   useEffect(() => {
-    const pathName = location.pathname.replace("/", "");     
-    if (PAGE_COMPONENTS[pathName]) {
-      setPage(pathName);
-    }
-  }, [location.pathname]);
+  const pathName = location.pathname.replace("/", "");
+  if (pathName === "" || pathName === "dashboard") {
+    setPage("dashboard");
+    setIsNotFound(false);
+  } else if (PAGE_COMPONENTS[pathName]) {
+    setPage(pathName);
+    setIsNotFound(false);
+  } else {
+    setIsNotFound(true); // ✅ 404!
+  }
+}, [location.pathname]);
 
   const title = useMemo(() => PAGE_TITLES[page] ?? PAGE_TITLES.dashboard, [page]);
-  const CurrentPage = PAGE_COMPONENTS[page] ?? DashboardPage;
+  const CurrentPage = PAGE_COMPONENTS[page];
   const isLoginRoute = location.pathname === "/login";
 
   if (isLoginRoute) {
@@ -54,6 +62,15 @@ function App() {
   if (!token) {
     return <Navigate to="/login" replace />;
   }
+
+  if (isNotFound) {
+  return (
+    <ToastProvider>
+      <NotFoundPage />
+      <Toast />
+    </ToastProvider>
+  );
+}
 
   return (
     <ToastProvider>
@@ -71,10 +88,10 @@ function App() {
           <Header title={title} onMenuClick={() => setMobileNav(true)} />
 
           <section className="p-4 md:p-8">
-            <div className="rounded-2xl bg-card border border-border overflow-hidden shadow-[0_2px_8px_rgba(26,26,26,0.06)]">
-              <CurrentPage />
-            </div>
-          </section>
+          <div className="rounded-2xl bg-card border border-border overflow-hidden shadow-[0_2px_8px_rgba(26,26,26,0.06)]">
+            {CurrentPage ? <CurrentPage /> : <DashboardPage />}
+          </div>
+        </section>
         </main>
       </div>
       <Toast />

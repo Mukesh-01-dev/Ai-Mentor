@@ -1,20 +1,29 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { Star, X, BookOpen, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import API_BASE_URL from "../lib/api";
+import { loadRazorpayScript } from "../lib/loadRazorPay";
 import { useTranslation } from "react-i18next";
 import ReportModal from "../components/common/ReportModal";
 import toast from "react-hot-toast";
 import { AlertTriangle } from "lucide-react";
 import FloatingAssistant from "../components/common/FloatingAssistant";
+import CourseCardMeta from "../components/common/CourseCardMeta";
 
 const CoursesPage = () => {
     const { t } = useTranslation();
     const [activeTab, setActiveTab] = useState("my-courses");
     const { user } = useAuth();
     const navigate = useNavigate();
-    const scrollRef = useRef(null);
+    const scrollNodeRef = useRef(null);
+    const dragData = useRef({
+        isDown: false,
+        startX: 0,
+        scrollLeftVal: 0,
+        hasMoved: false,
+        wheelTimeout: null
+    });
 
     /* ================= STATE ================= */
     const [exploreCourses, setExploreCourses] = useState([]);
@@ -31,6 +40,7 @@ const CoursesPage = () => {
 
     const [filters, setFilters] = useState({ category: [], level: [], price: [] });
     const [showFilters, setShowFilters] = useState(false);
+    const [idempotencyKey, setIdempotencyKey] = useState(null);
 
     const toggleFilter = (field, value) => {
         setFilters(prev => {
@@ -139,16 +149,175 @@ const CoursesPage = () => {
 
     /* ================= SCROLL HANDLERS ================= */
     const scrollLeft = () => {
-        if (scrollRef.current) {
-            scrollRef.current.scrollBy({ left: -320, behavior: "smooth" });
+        if (scrollNodeRef.current) {
+            scrollNodeRef.current.scrollBy({ left: -320, behavior: "smooth" });
         }
     };
 
     const scrollRight = () => {
-        if (scrollRef.current) {
-            scrollRef.current.scrollBy({ left: 320, behavior: "smooth" });
+        if (scrollNodeRef.current) {
+            scrollNodeRef.current.scrollBy({ left: 320, behavior: "smooth" });
         }
     };
+
+    const handleMouseDown = useCallback((e) => {
+        const el = scrollNodeRef.current;
+        if (!el || e.button !== 0) return; // Only drag with left click
+
+        dragData.current.isDown = true;
+        dragData.current.hasMoved = false;
+        el.style.scrollSnapType = "none"; // Temporarily disable snapping during drag
+        el.style.cursor = "grabbing";
+        dragData.current.startX = e.pageX - el.offsetLeft;
+        dragData.current.scrollLeftVal = el.scrollLeft;
+    }, []);
+
+    const handleMouseLeave = useCallback(() => {
+        const el = scrollNodeRef.current;
+        if (!el) return;
+
+        if (dragData.current.isDown) {
+            el.style.scrollSnapType = "x mandatory";
+        }
+        dragData.current.isDown = false;
+        el.style.cursor = "grab";
+    }, []);
+
+    const handleMouseUp = useCallback(() => {
+        const el = scrollNodeRef.current;
+        if (!el) return;
+
+        if (dragData.current.isDown) {
+            el.style.scrollSnapType = "x mandatory";
+        }
+        dragData.current.isDown = false;
+        el.style.cursor = "grab";
+    }, []);
+
+    const handleMouseMove = useCallback((e) => {
+        const el = scrollNodeRef.current;
+        if (!el || !dragData.current.isDown) return;
+
+        const x = e.pageX - el.offsetLeft;
+        const walk = (x - dragData.current.startX) * 1.5; // Scroll speed factor
+        if (Math.abs(x - dragData.current.startX) > 5) {
+            dragData.current.hasMoved = true;
+        }
+        e.preventDefault();
+        el.scrollLeft = dragData.current.scrollLeftVal - walk;
+    }, []);
+
+    const handleWheel = useCallback((e) => {
+        const el = scrollNodeRef.current;
+        if (!el) return;
+
+        // Use deltaX if present (Shift+Scroll / trackpad swipe), otherwise deltaY
+        const delta = e.deltaX !== 0 ? e.deltaX : e.deltaY;
+        if (delta === 0) return;
+
+        // Only intercept if we can scroll horizontally in the target direction
+        const canScrollLeft = el.scrollLeft > 0;
+        const canScrollRight = Math.ceil(el.scrollLeft) < el.scrollWidth - el.clientWidth;
+
+        if ((delta < 0 && canScrollLeft) || (delta > 0 && canScrollRight)) {
+            e.preventDefault();
+
+            el.style.scrollSnapType = "none";
+            el.scrollLeft += delta;
+
+            if (dragData.current.wheelTimeout) {
+                clearTimeout(dragData.current.wheelTimeout);
+            }
+            dragData.current.wheelTimeout = setTimeout(() => {
+                if (scrollNodeRef.current) {
+                    scrollNodeRef.current.style.scrollSnapType = "x mandatory";
+                }
+            }, 150);
+        }
+    }, []);
+
+    const handleClick = useCallback((e) => {
+        if (dragData.current.hasMoved) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+    }, []);
+
+    // Callback ref to manage attaching/detaching listeners
+    const setScrollRef = useCallback((node) => {
+        if (scrollNodeRef.current) {
+            const oldEl = scrollNodeRef.current;
+            oldEl.removeEventListener("mousedown", handleMouseDown);
+            oldEl.removeEventListener("mouseleave", handleMouseLeave);
+            oldEl.removeEventListener("mouseup", handleMouseUp);
+            oldEl.removeEventListener("mousemove", handleMouseMove);
+            oldEl.removeEventListener("wheel", handleWheel);
+            oldEl.removeEventListener("click", handleClick, true);
+            if (dragData.current.wheelTimeout) {
+                clearTimeout(dragData.current.wheelTimeout);
+                dragData.current.wheelTimeout = null;
+            }
+        }
+
+        scrollNodeRef.current = node;
+
+        if (node) {
+            node.addEventListener("mousedown", handleMouseDown);
+            node.addEventListener("mouseleave", handleMouseLeave);
+            node.addEventListener("mouseup", handleMouseUp);
+            node.addEventListener("mousemove", handleMouseMove);
+            node.addEventListener("wheel", handleWheel, { passive: false });
+            node.addEventListener("click", handleClick, true);
+            node.style.cursor = "grab";
+        }
+    }, [handleMouseDown, handleMouseLeave, handleMouseUp, handleMouseMove, handleWheel, handleClick]);
+
+    // Global arrow key scroll handler for Explore Courses section
+    useEffect(() => {
+        if (activeTab !== "explore") return;
+
+        const handleGlobalKeyDown = (e) => {
+            const el = scrollNodeRef.current;
+            if (!el) return;
+
+            // Ignore keypress if focus is inside an input, textarea or editable field
+            const activeEl = document.activeElement;
+            if (activeEl && (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA" || activeEl.isContentEditable)) {
+                return;
+            }
+
+            if (e.key === "ArrowLeft") {
+                e.preventDefault();
+                el.style.scrollSnapType = "none";
+                el.scrollBy({ left: -320, behavior: "smooth" });
+
+                if (dragData.current.wheelTimeout) {
+                    clearTimeout(dragData.current.wheelTimeout);
+                }
+                dragData.current.wheelTimeout = setTimeout(() => {
+                    if (scrollNodeRef.current) {
+                        scrollNodeRef.current.style.scrollSnapType = "x mandatory";
+                    }
+                }, 400);
+            } else if (e.key === "ArrowRight") {
+                e.preventDefault();
+                el.style.scrollSnapType = "none";
+                el.scrollBy({ left: 320, behavior: "smooth" });
+
+                if (dragData.current.wheelTimeout) {
+                    clearTimeout(dragData.current.wheelTimeout);
+                }
+                dragData.current.wheelTimeout = setTimeout(() => {
+                    if (scrollNodeRef.current) {
+                        scrollNodeRef.current.style.scrollSnapType = "x mandatory";
+                    }
+                }, 400);
+            }
+        };
+
+        window.addEventListener("keydown", handleGlobalKeyDown);
+        return () => window.removeEventListener("keydown", handleGlobalKeyDown);
+    }, [activeTab]);
 
     /* ================= ENROLL & PAYMENT ================= */
     const [isPurchasing, setIsPurchasing] = useState(false);
@@ -216,6 +385,7 @@ const CoursesPage = () => {
                         title: selectedCourse.title,
                         priceValue,
                     },
+                    idempotencyKey: crypto.randomUUID(),
                 }),
             });
             const data = await res.json();
@@ -244,13 +414,16 @@ const CoursesPage = () => {
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${token}`,
                 },
-                body: JSON.stringify({
-                    course: {
-                        id: selectedCourse.id,
-                        priceValue,
-                    },
-                }),
-            });
+            body: JSON.stringify({
+            course: {
+                id: selectedCourse.id,
+                title: selectedCourse.title,
+                priceValue,
+            },
+            idempotencyKey,
+            }),
+                        });
+           
             const orderData = await res.json();
 
             if (!orderData.orderId) {
@@ -764,6 +937,9 @@ const CoursesPage = () => {
                                                 alt={course.title}
                                                 loading="lazy"
                                             />
+                                            <div className="absolute bottom-2 right-2">
+                                                <CourseCardMeta courseId={course.id} />
+                                            </div>
                                         </div>
 
                                         <div className="p-3 sm:p-4 flex flex-col flex-1 justify-between">
@@ -821,8 +997,9 @@ const CoursesPage = () => {
 
                             {/* Horizontal Scroll Row */}
                             <div
-                                ref={scrollRef}
-                                className="flex gap-4 overflow-x-auto pb-4 no-scrollbar snap-x snap-mandatory"
+                                ref={setScrollRef}
+                                tabIndex="0"
+                                className="flex gap-4 overflow-x-auto pb-4 no-scrollbar snap-x snap-mandatory focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2DD4BF] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 rounded-3xl"
                             >
 
 
@@ -859,9 +1036,8 @@ const CoursesPage = () => {
                                                 alt={course.title}
                                                 loading="lazy"
                                             />
-                                            <div className="absolute bottom-3 right-3 bg-white text-black px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-1 shadow">
-                                                <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
-                                                {course.rating}
+                                            <div className="absolute bottom-2 right-2">
+                                                <CourseCardMeta courseId={course.id} />
                                             </div>
                                         </div>
 
@@ -891,6 +1067,7 @@ const CoursesPage = () => {
                                                     onClick={() => {
                                                         if (!isEnrolled) {
                                                             setSelectedCourse(course);
+                                                            setIdempotencyKey(crypto.randomUUID());
                                                             setShowEnrollPopup(true);
                                                         }
                                                     }}
@@ -923,7 +1100,7 @@ const CoursesPage = () => {
                 <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
                     <div className="bg-white w-full max-w-md rounded-2xl p-4 sm:p-6 relative mx-4">
                         <button
-                            onClick={() => setShowEnrollPopup(false)}
+                            onClick={() => { setShowEnrollPopup(false); setIdempotencyKey(null); }}
                             className="absolute top-4 right-4"
                         >
                             <X />

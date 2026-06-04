@@ -274,12 +274,6 @@ const updateCourseProgress = async (req, res) => {
       user.set("purchasedCourses", courses);
 
       user.changed("purchasedCourses", true);
-      console.log(
-        "Saved lesson data for course:",
-        courseId,
-        "lesson:",
-        lessonData?.lessonId
-      );
     }
 
     user.analytics = user.analytics || {
@@ -482,7 +476,24 @@ const updateUserProfile = async (req, res) => {
     user.firstName = req.body.firstName ?? user.firstName;
     user.lastName = req.body.lastName ?? user.lastName;
     user.name = formatFullName(user.firstName, user.lastName);
-    user.email = req.body.email ?? user.email;
+    // Check email change
+if (
+  req.body.email &&
+  req.body.email.trim().toLowerCase() !==
+    user.email.trim().toLowerCase()
+) {
+  const emailExists = await User.findOne({
+    where: {
+      email: req.body.email.trim().toLowerCase(),
+    },
+  });
+  if (emailExists) {
+    return res.status(400).json({
+      message: "Email already in use",
+    });
+  }
+  user.email = req.body.email.trim().toLowerCase();
+}
     user.bio = req.body.bio ?? user.bio;
 
     await user.save();

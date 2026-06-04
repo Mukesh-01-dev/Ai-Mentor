@@ -1,3 +1,4 @@
+import { Op } from "sequelize";
 import CommunityPost from "../models/CommunityPost.js";
 import User from "../models/User.js";
 import Report from "../models/Report.js";
@@ -454,8 +455,10 @@ const reportContent = async (req, res) => {
       description: description || null,
     });
 
-    // Notify all admin users with a clear moderation message
-    const admins = await User.findAll({ where: { role: "admin" } });
+    // Notify all admin and superAdmin users with a clear moderation message
+    const admins = await User.findAll({
+      where: { role: { [Op.in]: ["admin", "superAdmin"] } },
+    });
     const reporterName = req.user?.name || "A user";
     const isCommentReport = Boolean(replyId);
     const contentLabel = isCommentReport ? "comment" : "discussion post";

@@ -22,7 +22,7 @@ if (connectionString) {
     dialectOptions: {
       ssl: {
         require: true,
-        rejectUnauthorized: true,
+        rejectUnauthorized: false,
       },
     },
   });

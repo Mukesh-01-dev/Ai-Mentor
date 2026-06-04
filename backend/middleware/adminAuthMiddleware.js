@@ -21,6 +21,10 @@ const protectAdmin = async (req, res, next) => {
         return res.status(401).json({ message: "Admin not found" });
       }
 
+      if (admin.status === "on-hold") {
+        return res.status(403).json({ message: "Your account has been suspended" });
+      }
+
       req.admin = admin;
       next();
     } catch (error) {

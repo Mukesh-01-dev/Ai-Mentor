@@ -1,9 +1,9 @@
-// backend/server.js
+import "dotenv/config";
 import express from "express";
-import dotenv from "dotenv";
 import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
+
 
 import { connectDB, sequelize } from "./config/db.js";
 
@@ -24,6 +24,7 @@ import preferenceRoutes from "./routes/preferenceRoutes.js";
 import contactUsRoutes from "./routes/contactus.js"; // ✅ fixed import
 import reportRoutes from "./routes/reportRoutes.js";
 import docsRoutes from "./routes/docsRoutes.js";
+import calendarTaskRoutes from "./routes/calendarTaskRoutes.js";
 import helmet from "helmet";
 
 // ================= MODELS =================
@@ -32,8 +33,8 @@ import "./models/Notification.js";
 import "./models/Report.js";
 import "./models/modelAssociations.js";
 import "./models/Contactmessage.js";
+import "./models/Payment.js";
 
-dotenv.config();
 
 import { validateEnv } from "./env-validator.js";
 validateEnv();
@@ -83,6 +84,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/certificate", certificateRoutes);
 app.use("/api/preferences", preferenceRoutes);
 app.use("/api/contactus", contactUsRoutes); // ✅ added route
+app.use("/api/calendar-tasks", calendarTaskRoutes);
 app.use("/api/course-reports", reportRoutes);
 app.use("/api/docs", docsRoutes);
 
