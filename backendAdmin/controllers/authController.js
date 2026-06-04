@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 import { Admin } from "../models/index.js";
-import { adminLoginSchema, adminRegisterSchema } from "../schemas/adminAuthSchema.js";
+import { adminLoginSchema, adminRegisterSchema,changePasswordSchema } from "../schemas/adminAuthSchema.js";
 
 const generateToken = (id, role) => {
   return jwt.sign(
@@ -106,6 +106,50 @@ export const getAllAdmins = async (req, res) => {
   }
 };
 
+export const changePassword = async (req, res) => {
+
+    const validation = changePasswordSchema.safeParse(req.body);
+  
+  if (!validation.success) {
+    return res.status(400).json({ 
+      message: "Validation failed", 
+      errors: validation.error.errors 
+    });
+  }
+
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!req.admin) {
+      return res.status(401).json({ message: "Not authorized" });
+    }
+
+    const admin = await Admin.findByPk(req.admin.id);
+
+    if (!admin) {
+      return res.status(404).json({ message: "Admin not found" });
+    }
+
+    if (!admin.password) {
+      return res
+        .status(400)
+        .json({ message: "Password is not set for this account" });
+    }
+
+    const isMatch = await admin.matchPassword(currentPassword);
+
+    if (!isMatch) {
+      return res.status(400).json({ message: "Current password incorrect" });
+    }
+
+    admin.password = newPassword;
+
+    await admin.save();
+
+    res.json({ message: "Password updated successfully" });
+  } catch (error) {
+    console.error("CHANGE PASSWORD ERROR:", error);
+    res.status(500).json({ message: "Server error" });
 export const updateAdminStatus = async (req, res) => {
   try {
     const { id } = req.params;
