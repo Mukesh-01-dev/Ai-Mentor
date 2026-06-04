@@ -31,7 +31,7 @@ Payment.init(
     },
 
     amount: {
-      type: DataTypes.INTEGER, // stored in paise (₹499 = 49900)
+      type: DataTypes.BIGINT, // stored in paise (₹499 = 49900)
       allowNull: false,
     },
 
