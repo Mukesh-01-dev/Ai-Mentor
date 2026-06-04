@@ -1,15 +1,13 @@
-// frontend/src/context/AuthContext.jsx
 import React, {
   createContext,
   useContext,
   useState,
   useEffect,
   useCallback,
-  useRef,
 } from "react";
 import { signOut } from "firebase/auth";
-import { auth } from "../firebase.js"; 
-import { apiFetch } from "../lib/api";
+import { auth } from "../firebase";
+import { apiFetch } from '../lib/api';
 
 const AuthContext = createContext();
 
@@ -39,6 +37,7 @@ export const AuthProvider = ({ children }) => {
     }
   });
 
+  // Verify token existance on mount
   useEffect(() => {
     const token = localStorage.getItem("token");
     const storedUser = localStorage.getItem("user");
@@ -52,6 +51,7 @@ export const AuthProvider = ({ children }) => {
   const login = (userData) => {
     setIsAuthenticated(true);
 
+    // Normalize user data to ensure all required fields exist
     const newUser = {
       ...userData,
       token: userData.token || localStorage.getItem("token"),
@@ -65,6 +65,7 @@ export const AuthProvider = ({ children }) => {
     setUser(newUser);
     localStorage.setItem("token", newUser.token);
     localStorage.setItem("user", JSON.stringify(newUser));
+    // Clear skip flags on every login to ensure onboarding triggers correctly
     localStorage.removeItem("preferencesSkipped");
   };
 
@@ -73,45 +74,39 @@ export const AuthProvider = ({ children }) => {
       const token = localStorage.getItem("token");
       if (!token) return;
 
-      const response = await apiFetch("/api/users/profile");
-      if (!response || !response.ok) return;
+      const response = await apiFetch('/api/users/profile');
+      if (!response) return;
+      if (response.ok) {
+        const userData = await response.json();
 
-      const userData = await response.json();
+        const newUser = {
+          ...userData,
+          token: localStorage.getItem("token"),
+          avatar_url: userData.avatar_url || null,
+          isProfileComplete: userData.isProfileComplete ?? false,
+          isGoogleUser: userData.isGoogleUser ?? false,
+          googleId: userData.googleId ?? null,
+          hasPassword: userData.hasPassword ?? false,
+        };
 
-      const newUser = {
-        ...userData,
-        token: localStorage.getItem("token"),
-        avatar_url: userData.avatar_url || null,
-        isProfileComplete: userData.isProfileComplete ?? false,
-        isGoogleUser: userData.isGoogleUser ?? false,
-        googleId: userData.googleId ?? null,
-        hasPassword: userData.hasPassword ?? false,
-      };
-
-      setUser(prev => {
-        if (JSON.stringify(prev) === JSON.stringify(newUser)) return prev;
+        setUser(newUser);
         localStorage.setItem("user", JSON.stringify(newUser));
-        return newUser;
-      });
+      }
     } catch (error) {
       console.error("Error fetching user profile:", error);
     }
   }, []);
 
-  const hasFetchedProfile = useRef(false);
-
+  // Fetch profile details whenever authenticated state becomes true
   useEffect(() => {
-    if (isAuthenticated && !hasFetchedProfile.current) {
-      hasFetchedProfile.current = true;
+    if (isAuthenticated) {
       fetchUserProfile();
     }
   }, [isAuthenticated, fetchUserProfile]);
 
   const logout = async () => {
     try {
-      if (auth) {
-        await signOut(auth);
-      }
+      await signOut(auth);
     } catch (error) {
       console.error("Firebase sign out error:", error);
     }
@@ -119,12 +114,14 @@ export const AuthProvider = ({ children }) => {
     setIsAuthenticated(false);
     setUser(null);
 
+    // Clear specific course progress records first if needed
     Object.keys(localStorage).forEach((key) => {
       if (key.startsWith("course-progress-")) {
         localStorage.removeItem(key);
       }
     });
 
+    // Safety: Clear everything to prevent stale data
     localStorage.clear();
   };
 
@@ -154,5 +151,9 @@ export const AuthProvider = ({ children }) => {
     fetchUserProfile,
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
