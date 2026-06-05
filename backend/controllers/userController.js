@@ -613,11 +613,20 @@ const completeProfile = async (req, res) => {
     }
 
     // All users: bio (required if not already set)
-    if (bio && bio.trim().length > 0) {
-      user.bio = bio;
-    } else if (!user.bio || user.bio.trim().length === 0) {
-      return res.status(400).json({ message: "Bio is required" });
-    }
+if (bio && bio.trim().length > 0) {
+  const trimmedBio = bio.trim();
+
+  // Enforce backend bio length limit
+  if (trimmedBio.length > 500) {
+    return res.status(400).json({
+      message: "Bio content cannot exceed 500 characters.",
+    });
+  }
+
+  user.bio = trimmedBio;
+} else if (!user.bio || user.bio.trim().length === 0) {
+  return res.status(400).json({ message: "Bio is required" });
+}
 
     // Avatar upload via Cloudinary (required if not already set)
     if (req.file) {
