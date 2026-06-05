@@ -1,3 +1,7 @@
+import {
+  adminLoginSchema,
+  adminRegisterSchema,
+} from "../schemas/adminAuthSchema.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import { sequelize } from "../config/db.js";
@@ -325,11 +329,16 @@ const generateToken = (id) => {
 // @route   POST /api/admin/register
 // @access  Private/SuperAdmin
 const registerAdmin = async (req, res) => {
-  const { name, email, password } = req.body;
+  const validation = adminRegisterSchema.safeParse(req.body);
 
-  if (!name || !email || !password) {
-    return res.status(400).json({ message: "Name, email and password are required" });
-  }
+if (!validation.success) {
+  return res.status(400).json({
+    message: "Validation failed",
+    errors: validation.error.issues,
+  });
+}
+
+const { name, email, password } = validation.data;
 
   try {
     const adminExists = await Admin.findOne({ where: { email } });
@@ -360,7 +369,17 @@ const registerAdmin = async (req, res) => {
 // @route   POST /api/admin/login
 // @access  Public
 const loginAdmin = async (req, res) => {
-  const { email, password } = req.body;
+  console.log(req.body);
+  const validation = adminLoginSchema.safeParse(req.body);
+
+if (!validation.success) {
+  return res.status(400).json({
+  message: "Validation failed",
+  errors: validation.error.issues,
+});
+}
+
+const { email, password } = validation.data;
 
   try {
     const admin = await Admin.findOne({ where: { email } });
@@ -1016,4 +1035,4 @@ export {
   getAllReports,
   getCourseSyllabus,
   generateCourseSyllabusWithAI,
-};
+}; 
