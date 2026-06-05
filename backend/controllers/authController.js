@@ -7,15 +7,22 @@ import { ensureProfileCompleteness, formatFullName } from "../utils/userUtils.js
 import cloudinary from "../config/cloudinary.js";
 import admin from "firebase-admin";
 
-// Initialize Firebase Admin SDK using environment variables (no secret file needed)
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
-    }),
-  });
+// Initialize Firebase Admin SDK ONLY if real keys are provided
+if (!admin.apps.length && process.env.FIREBASE_PRIVATE_KEY && process.env.FIREBASE_PRIVATE_KEY.length > 50) {
+  try {
+    admin.initializeApp({
+      credential: admin.credential.cert({
+        projectId: process.env.FIREBASE_PROJECT_ID,
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+        privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n"),
+      }),
+    });
+    console.log("🔥 Firebase initialized successfully");
+  } catch (err) {
+    console.warn("⚠️ Firebase failed to initialize. Google Login will not work.");
+  }
+} else {
+  console.warn("⚠️ No valid Firebase keys found in .env. Skipping Firebase init.");
 }
 
 const generateToken = (id) => {
