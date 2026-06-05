@@ -25,6 +25,7 @@ import Preferences from "../components/Preferences";
 import API_BASE_URL, { apiFetch } from "../lib/api";
 import FloatingAssistant from "../components/common/FloatingAssistant";
 import CourseCardMeta from "../components/common/CourseCardMeta";
+import { Helmet } from "react-helmet-async";
 
 const Dashboard = () => {
   const { t } = useTranslation();
@@ -358,6 +359,15 @@ const Dashboard = () => {
 
   return (
     <main className="flex-1 overflow-x-hidden overflow-y-auto bg-canvas-alt p-6">
+      <Helmet>
+            <title>Dashboard | UptoSkills</title>
+            <meta 
+                name="description" 
+                content="Track your learning progress, enrolled courses and certificates on UptoSkills." 
+            />
+            <meta property="og:title" content="Dashboard | UptoSkills" />
+            <meta property="og:type" content="website" />
+        </Helmet>
       <Preferences
         key={localStorage.getItem("token")}
         mode="modal"

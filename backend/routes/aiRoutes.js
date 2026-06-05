@@ -147,7 +147,7 @@ router.post("/generate-video", protect, validate(generateVideoSchema), async (re
 // ----------------------------------------------------
 // Proxy Transcript Content from Python
 // ----------------------------------------------------
-router.get("/transcript/:filename", async (req, res) => {
+router.get("/transcript/:filename", protect,async (req, res) => {
   try {
     const { filename } = req.params;
 

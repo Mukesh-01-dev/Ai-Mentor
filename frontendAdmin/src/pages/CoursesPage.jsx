@@ -174,6 +174,8 @@ const [enrollmentModal, setEnrollmentModal] = useState({
   courseTitle: "",
   enrolledUsers: [],
   enrolledCount: 0,
+  currentPage: 1,
+  totalPages: 1,
   loading: false,
 });
 
@@ -474,7 +476,30 @@ const closeDeleteModal = useCallback(() => {
 }, [deleteModal.isDeleting]);
 
 /**
- * Opens enrollment details modal for a course.
+ * Fetches a specific page of enrolled students for the currently-open modal.
+ */
+const loadEnrollmentPage = useCallback(async (courseId, page) => {
+  setEnrollmentModal((prev) => ({ ...prev, loading: true }));
+  try {
+    const data = await callApi(
+      `/admin/courses/${courseId}/enrollments?page=${page}&limit=10`
+    );
+    setEnrollmentModal((prev) => ({
+      ...prev,
+      enrolledUsers: data.enrolledUsers || [],
+      enrolledCount: data.enrolledCount || 0,
+      currentPage: data.currentPage || page,
+      totalPages: data.totalPages || 1,
+      loading: false,
+    }));
+  } catch (err) {
+    showToast("Failed to load enrollments: " + err.message, "error");
+    setEnrollmentModal((prev) => ({ ...prev, loading: false }));
+  }
+}, []);
+
+/**
+ * Opens enrollment details modal for a course (always starts at page 1).
  */
 const handleViewEnrollments = useCallback(async (course) => {
   // Open modal immediately with loading state
@@ -484,15 +509,21 @@ const handleViewEnrollments = useCallback(async (course) => {
     courseTitle: course.title,
     enrolledUsers: [],
     enrolledCount: 0,
+    currentPage: 1,
+    totalPages: 1,
     loading: true,
   });
 
   try {
-    const data = await callApi(`/admin/courses/${course.id}/enrollments`);
+    const data = await callApi(
+      `/admin/courses/${course.id}/enrollments?page=1&limit=10`
+    );
     setEnrollmentModal((prev) => ({
       ...prev,
       enrolledUsers: data.enrolledUsers || [],
       enrolledCount: data.enrolledCount || 0,
+      currentPage: data.currentPage || 1,
+      totalPages: data.totalPages || 1,
       loading: false,
     }));
   } catch (err) {
@@ -947,7 +978,7 @@ return (
             </div>
 
             {/* Students list */}
-            <div className="max-h-[400px] overflow-y-auto">
+            <div className="max-h-[360px] overflow-y-auto">
               {enrollmentModal.loading ? (
                 <div className="flex flex-col items-center justify-center py-16 gap-3 opacity-50">
                   <div className="w-8 h-8 border-4 border-teal-500 border-t-transparent rounded-full animate-spin" />
@@ -955,20 +986,24 @@ return (
                 </div>
               ) : enrollmentModal.enrolledUsers.length > 0 ? (
                 <div className="divide-y divide-border">
-                  {enrollmentModal.enrolledUsers.map((user, index) => (
-                    <div key={user.id} className="px-6 py-4 flex items-center gap-3 hover:bg-canvas-alt transition-colors">
-                      <div className="w-9 h-9 rounded-xl bg-teal-500/10 text-teal-500 flex items-center justify-center font-black text-[11px] uppercase shrink-0">
-                        {user.name?.charAt(0) || "?"}
+                  {enrollmentModal.enrolledUsers.map((user, index) => {
+                    const globalIndex =
+                      (enrollmentModal.currentPage - 1) * 10 + index + 1;
+                    return (
+                      <div key={user.id} className="px-6 py-4 flex items-center gap-3 hover:bg-canvas-alt transition-colors">
+                        <div className="w-9 h-9 rounded-xl bg-teal-500/10 text-teal-500 flex items-center justify-center font-black text-[11px] uppercase shrink-0">
+                          {user.name?.charAt(0) || "?"}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-bold text-main text-sm truncate">{user.name}</p>
+                          <p className="text-muted text-[11px] truncate">{user.email}</p>
+                        </div>
+                        <span className="text-[10px] font-black text-muted uppercase tracking-widest shrink-0">
+                          #{globalIndex}
+                        </span>
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="font-bold text-main text-sm truncate">{user.name}</p>
-                        <p className="text-muted text-[11px] truncate">{user.email}</p>
-                      </div>
-                      <span className="text-[10px] font-black text-muted uppercase tracking-widest shrink-0">
-                        #{index + 1}
-                      </span>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center py-16 gap-3 opacity-40">
@@ -979,6 +1014,49 @@ return (
                 </div>
               )}
             </div>
+
+            {/* Pagination footer — only shown when there is more than one page */}
+            {enrollmentModal.totalPages > 1 && (
+              <div className="px-6 py-3 border-t border-border flex items-center justify-between bg-canvas-alt/20">
+                <button
+                  type="button"
+                  disabled={enrollmentModal.currentPage <= 1 || enrollmentModal.loading}
+                  onClick={() =>
+                    loadEnrollmentPage(
+                      enrollmentModal.courseId,
+                      enrollmentModal.currentPage - 1
+                    )
+                  }
+                  className="h-8 px-3 rounded-lg border border-border text-[11px] font-bold uppercase tracking-widest text-muted hover:text-main hover:bg-canvas-alt transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  ← Prev
+                </button>
+
+                <span className="text-[11px] font-black text-muted uppercase tracking-widest">
+                  Page{" "}
+                  <span className="text-teal-500">{enrollmentModal.currentPage}</span>
+                  {" "}of{" "}
+                  <span className="text-main">{enrollmentModal.totalPages}</span>
+                </span>
+
+                <button
+                  type="button"
+                  disabled={
+                    enrollmentModal.currentPage >= enrollmentModal.totalPages ||
+                    enrollmentModal.loading
+                  }
+                  onClick={() =>
+                    loadEnrollmentPage(
+                      enrollmentModal.courseId,
+                      enrollmentModal.currentPage + 1
+                    )
+                  }
+                  className="h-8 px-3 rounded-lg border border-border text-[11px] font-bold uppercase tracking-widest text-muted hover:text-main hover:bg-canvas-alt transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  Next →
+                </button>
+              </div>
+            )}
 
           </div>
         </div>

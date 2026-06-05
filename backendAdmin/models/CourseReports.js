@@ -57,5 +57,6 @@ export const CourseReports = sequelize.define(
   },
   {
     timestamps: true,
+    tableName: "CourseReports",
   },
 );

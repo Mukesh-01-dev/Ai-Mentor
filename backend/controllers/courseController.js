@@ -128,7 +128,10 @@ const getMyCourses = async (req, res) => {
     );
   } catch (error) {
     console.error("MY COURSES ERROR:", error);
-    res.json([]);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch your courses. Please try again.",
+    });
   }
 };
 
