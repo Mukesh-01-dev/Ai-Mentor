@@ -4,7 +4,7 @@ import { sequelize } from "../config/db.js";
 const Course = sequelize.define("Course", {
   id: {
     type: DataTypes.INTEGER,
-    autoIncrement: true,   // ✅ ADD THIS
+    autoIncrement: true,
     primaryKey: true,
   },
 
@@ -12,23 +12,26 @@ const Course = sequelize.define("Course", {
   category: DataTypes.STRING,
   categoryColor: DataTypes.STRING,
 
-  lessons: DataTypes.STRING,
-  lessonsCount: DataTypes.INTEGER,
+  // ✅ Numeric — enables sorting, filtering, and calculations
+  lessons: DataTypes.INTEGER,
 
   level: DataTypes.STRING,
 
-  price: DataTypes.STRING,
-  priceValue: DataTypes.FLOAT,
+  // ✅ Single numeric price field — format as "₹999" on the frontend
+  price: {
+    type: DataTypes.FLOAT,
+    comment: "Raw price value. Example: 999.00",
+  },
   currency: DataTypes.STRING,
 
   rating: DataTypes.FLOAT,
 
-  students: DataTypes.STRING,
-  studentsCount: DataTypes.INTEGER,
+  // ✅ Numeric — enables aggregation across courses
+  students: DataTypes.INTEGER,
 
   image: {
     type: DataTypes.STRING,
-    comment: "Course thumbnail path. Example: /uploads/courses/react.png"
+    comment: "Course thumbnail path. Example: /uploads/courses/react.png",
   },
 
   status: {
