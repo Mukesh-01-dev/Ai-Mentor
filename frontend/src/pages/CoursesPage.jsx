@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { Helmet } from "react-helmet-async";
 import { Star, X, BookOpen, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -621,6 +622,20 @@ const CoursesPage = () => {
     }
     return (
         <>
+            <Helmet>
+            <title>Courses | UptoSkills</title>
+            <meta 
+                name="description" 
+                content="Browse and enroll in top online courses on UptoSkills. Learn React, Web Development, Databases and more." 
+            />
+            <meta property="og:title" content="Courses | UptoSkills" />
+            <meta 
+                property="og:description" 
+                content="Browse and enroll in top online courses on UptoSkills." 
+            />
+            <meta property="og:type" content="website" />
+            </Helmet>
+
             {/* ══════ HERO ══════ */}
             <div className="relative bg-gradient-to-br from-teal-700 via-teal-600 to-teal-800 pt-10 sm:pt-12 lg:pt-16 pb-8 sm:pb-10 lg:pb-12 px-4 sm:px-6 lg:px-8">
                 <div

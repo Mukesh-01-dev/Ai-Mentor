@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 
 import { useNavigate, useParams } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { useAuth } from "../context/AuthContext";
 import { getAIVideo } from "../service/aiService";
 import VideoPlayer from "../components/video/VideoPlayer";
@@ -726,6 +727,19 @@ export default function Learning() {
 
   return (
     <>
+      <Helmet>
+        <title>
+          {currentLesson?.title 
+            ? `${currentLesson.title} | UptoSkills` 
+            : "Learning | UptoSkills"}
+        </title>
+        <meta
+          name="description"
+          content={`Watch ${currentLesson?.title || "lesson"} on UptoSkills and level up your skills.`}
+        />
+        <meta property="og:title" content={`${currentLesson?.title} | UptoSkills`} />
+        <meta property="og:type" content="website" />
+      </Helmet>
       {/* Breadcrumb */}
       <div className="bg-card border-b border-border px-6 py-3 grid grid-flow-col-dense">
         <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-muted mt-2">

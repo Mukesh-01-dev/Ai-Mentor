@@ -457,7 +457,7 @@ const reportContent = async (req, res) => {
 
     // Notify all admin and superAdmin users with a clear moderation message
     const admins = await User.findAll({
-      where: { role: { [Op.in]: ["admin", "superAdmin"] } },
+      where: { role: { [Op.in]: ["admin", "superadmin"] } },
     });
     const reporterName = req.user?.name || "A user";
     const isCommentReport = Boolean(replyId);
