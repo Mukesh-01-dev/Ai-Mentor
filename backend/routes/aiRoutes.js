@@ -7,6 +7,19 @@ import { getCourseAndLessonTitles } from "../controllers/courseController.js";
 import dotenv from "dotenv";
 dotenv.config();
 import { fileURLToPath } from "url";
+import { rateLimiter } from "../middleware/rateLimiter.js";
+
+const transcriptLimiter = rateLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: "Too many requests for transcripts. Please try again later.",
+});
+
+const videoLimiter = rateLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 50,
+  message: "Too many requests for video streams. Please try again later.",
+});
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -146,7 +159,7 @@ router.post("/generate-video", protect, async (req, res) => {
 // ----------------------------------------------------
 // Proxy Transcript Content from Python
 // ----------------------------------------------------
-router.get("/transcript/:filename", async (req, res) => {
+router.get("/transcript/:filename", transcriptLimiter, async (req, res) => {
   try {
     const { filename } = req.params;
 
@@ -220,7 +233,7 @@ router.get("/status/:jobId", protect, async (req, res) => {
 // ----------------------------------------------------
 // 3. Proxy Video Stream from Python (The "Middleman")
 // ----------------------------------------------------
-router.get("/video/:courseId/:filename", async (req, res) => {
+router.get("/video/:courseId/:filename", videoLimiter, async (req, res) => {
   try {
     const { courseId, filename } = req.params;
 
