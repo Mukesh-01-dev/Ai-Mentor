@@ -263,11 +263,16 @@ const googleLogin = async (req, res) => {
 const forgotPassword = async (req, res) => {
   const { email } = req.body;
 
+  // Identical response whether or not the account exists (prevents user enumeration)
+  const genericResponse = {
+    message: "If an account exists for this email, a reset link has been sent.",
+  };
+
   try {
     const user = await User.findOne({ where: { email } });
 
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(200).json(genericResponse);
     }
 
     const resetToken = crypto.randomBytes(20).toString("hex");
@@ -301,7 +306,7 @@ const forgotPassword = async (req, res) => {
         html,
       });
 
-      res.status(200).json({ message: "Email sent" });
+      res.status(200).json(genericResponse);
     } catch (err) {
       console.error("Email could not be sent", err);
       user.resetPasswordToken = null;
