@@ -197,13 +197,24 @@ export const deleteCourseHard = async (req, res) => {
 };
 
 /**
- * @desc    Get enrolled user count for a specific course (used by delete confirmation modal)
- * @route   GET /api/admin/courses/:id/enrollments
+ * @desc    Get enrolled users for a specific course with pagination
+ * @route   GET /api/admin/courses/:id/enrollments?page=1&limit=10
  * @access  Private
+ *
+ * NOTE: Enrollment data is stored as JSONB in User.purchasedCourses rather than
+ * in a relational join table, so we cannot apply SQL LIMIT/OFFSET before the
+ * filter step. We fetch all users, filter the enrolled subset, then slice
+ * in-memory — consistent with how every other handler that touches this field
+ * works (e.g. deleteCourseHard).
  */
 export const getCourseEnrollments = async (req, res) => {
   try {
     const { id } = req.params;
+
+    // Pagination params (mirrors getAllUsers in userController.js)
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
 
     // Validate the course exists before reporting enrollments, so a bad/unknown
     // id returns 404 instead of a misleading empty enrollment list.
@@ -216,16 +227,26 @@ export const getCourseEnrollments = async (req, res) => {
       attributes: ["id", "name", "email", "purchasedCourses"],
     });
 
+    // Filter users enrolled in this course
     const enrolledUsers = allUsers.filter((user) => {
       const purchased = user.purchasedCourses || [];
       return purchased.some((c) => Number(c.courseId) === Number(id));
     });
 
+    const totalEnrolled = enrolledUsers.length;
+    const totalPages = Math.ceil(totalEnrolled / limit) || 1;
+
+    // Apply in-memory pagination on the filtered list
+    const paginatedUsers = enrolledUsers.slice(offset, offset + limit);
+
     res.status(200).json({
       success: true,
       courseId: id,
-      enrolledCount: enrolledUsers.length,
-      enrolledUsers: enrolledUsers.map((u) => {
+      enrolledCount: totalEnrolled,
+      currentPage: page,
+      totalPages,
+      limit,
+      enrolledUsers: paginatedUsers.map((u) => {
         // Surface when the user enrolled, using the purchaseDate stored on the
         // matching purchasedCourses entry (set at purchase time).
         const enrollment = (u.purchasedCourses || []).find(
