@@ -3,6 +3,7 @@ import Razorpay from "razorpay";
 import crypto from "crypto";
 import rateLimit from "express-rate-limit";
 import User from "../models/User.js";
+import { sequelize } from "../config/db.js";
 import { createNotification } from "../controllers/notificationController.js";
 import { protect } from "../middleware/authMiddleware.js";
 import Payment from "../models/Payment.js";
@@ -157,73 +158,89 @@ router.post("/verify", protect, async (req, res) => {
       .digest("hex");
 
     if (razorpay_signature === expectedSign) {
+   let user;
+const transaction = await sequelize.transaction();
+try {
+  const payment = await Payment.findOne({
+    where: {
+      razorpayOrderId: razorpay_order_id,
+    },
+    transaction,
+  });
+  if (payment) {
+    await payment.update(
+      {
+        status: "success",
+        razorpayPaymentId: razorpay_payment_id,
+      },
+      { transaction }
+    );
+  }
+  console.log(
+    `[Payment] 💰 Payment verified | OrderId: ${razorpay_order_id} | PaymentId: ${razorpay_payment_id} | Status: success`
+  );
 
-       const payment = await Payment.findOne({
-      where: {
-        razorpayOrderId: razorpay_order_id,
+  user = await User.findByPk(userId, { transaction });
+
+  if (!user) {
+    await transaction.rollback();
+
+    return res.status(404).json({
+      success: false,
+      error: "User not found",
+    });
+  }
+
+  let purchased = user.purchasedCourses || [];
+
+  const alreadyPurchased = purchased.find(
+    (c) => Number(c.courseId) === Number(courseId)
+  );
+  if (!alreadyPurchased) {
+    purchased.push({
+      courseId: Number(courseId),
+      courseTitle: courseTitle || "Course",
+      purchaseDate: new Date(),
+      progress: {
+        completedLessons: [],
+        currentLesson: null,
       },
     });
 
-    if (payment) {
-      await payment.update({
-        status: "success",
-        razorpayPaymentId: razorpay_payment_id,
-      });
-    }
-    console.log(`[Payment] 💰 Payment verified | OrderId: ${razorpay_order_id} | PaymentId: ${razorpay_payment_id} | Status: success`);
-      const user = await User.findByPk(userId);
+    user.purchasedCourses = purchased;
+    user.changed("purchasedCourses", true);
 
-      if (!user) {
-        return res
-          .status(404)
-          .json({ success: false, error: "User not found" });
-      }
+    await user.save({ transaction });
+  }
 
-      let purchased = user.purchasedCourses || [];
+  await transaction.commit();
 
-      const alreadyPurchased = purchased.find(
-        (c) => Number(c.courseId) === Number(courseId),
-      );
+} catch (err) {
+  if (!transaction.finished) {
+    await transaction.rollback();
+  }
+  throw err;
+}
 
-      if (!alreadyPurchased) {
-        purchased.push({
-          courseId: Number(courseId),
-          courseTitle: courseTitle || "Course",
-          purchaseDate: new Date(),
-          progress: {
-            completedLessons: [],
-            currentLesson: null,
-          },
-        });
-
-        user.purchasedCourses = purchased;
-        user.changed("purchasedCourses", true);
-        await user.save();
-
-        try {
-          await createNotification(user.id, {
-            title: "Course Enrolled 🎉",
-            message: `You successfully enrolled in ${courseTitle || "a course"}`,
-            type: "course",
-            metadata: { courseId },
-          });
-        } catch (err) {
-          console.error("Failed to create notification:", err);
-        }
-
-        
-      } else {
-        console.log("⚠️ Course already purchased:", courseId);
-      }
-
-      return res
-        .status(200)
-        .json({ success: true, message: "Payment verified successfully" });
-    } else {
-      return res
-        .status(400)
-        .json({ success: false, error: "Invalid signature" });
-    }
+try {
+  await createNotification(user.id, {
+    title: "Course Enrolled 🎉",
+    message: `You successfully enrolled in ${courseTitle || "a course"}`,
+    type: "course",
+    metadata: { courseId },
+  });
+} catch (err) {
+  console.error("Failed to create notification:", err);
+}
+return res.status(200).json({
+  success: true,
+  message: "Payment verified successfully",
+});
+     } else {
+  return res
+    .status(400)
+    .json({ success: false, error: "Invalid signature" });
+}
   } catch (error) {
     console.error("❌ Razorpay Verify Error:", error);
     console.log(`[Payment] ❌ Invalid signature | OrderId: ${razorpay_order_id} | Status: failed`);
