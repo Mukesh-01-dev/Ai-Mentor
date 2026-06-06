@@ -1,23 +1,90 @@
-import React, { useState } from 'react';
-import { Bot, X, MessageCircle, ChevronRight } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Bot, X, MessageCircle} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import axios from "axios";
 
-const FloatingAssistant = ({
-    page = "default",
-    onNavigateSetting
-  }) => {
+const FloatingAssistant = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [chatStep, setChatStep] = useState(0); // 0: initial, 1: explore course response
-  const [settingsStep, setSettingsStep] = useState(0);
   const navigate = useNavigate();
 
   const handleToggle = () => {
     setIsOpen(!isOpen);
-    if (!isOpen) {
-      setChatStep(0); // Reset when opened
-      setSettingsStep(0);
-    }
   };
+
+const [messages, setMessages] = useState([
+  {
+    sender: "assistant",
+    text: "Hello! I'm your AI Mentor Assistant. How can I help you today?"
+  }
+]);
+
+const [input, setInput] = useState("");
+const [loading, setLoading] = useState(false);
+
+const messagesEndRef = useRef(null);
+
+useEffect(() => {
+  messagesEndRef.current?.scrollIntoView({
+    behavior: "smooth",
+  });
+}, [messages]);
+
+const sendMessage = async () => {
+  if (!input.trim()) return;
+
+  const userMessage = input;
+
+  setMessages((prev) => [
+    ...prev,
+    {
+      sender: "user",
+      text: userMessage,
+    },
+  ]);
+
+  setInput("");
+
+  try {
+    setLoading(true);
+
+    const token = localStorage.getItem("token");
+
+    const { data } = await axios.post(
+      "/api/assistant/chat",
+      {
+        message: userMessage,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    console.log("Assistant Response:", data);
+
+    setMessages((prev) => [
+      ...prev,
+      {
+        sender: "assistant",
+        text: data.reply,
+        route: data.route || null,
+      },
+    ]);
+  } catch (error) {
+    setMessages((prev) => [
+      ...prev,
+      {
+        sender: "assistant",
+        text:
+          error?.response?.data?.message ||
+          "Sorry, something went wrong.",
+      },
+    ]);
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
@@ -36,428 +103,71 @@ const FloatingAssistant = ({
           </div>
 
           {/* Chat Body */}
-          <div className="p-4 bg-canvas h-64 overflow-y-auto flex flex-col gap-3">
-            {page !== "settings" && (
-              <>
-            {/* Initial Greeting */}
-            <div className="flex gap-2">
-              <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center shrink-0">
-                <Bot className="w-4 h-4 text-teal-600" />
-              </div>
-              <div className="bg-canvas-alt border border-border p-3 rounded-2xl rounded-tl-none text-sm text-main shadow-sm">
-                HELLO! I'm your learning assistant. How can I help you today?
-              </div>
-            </div>
-
-            {/* Step 0: Suggestion to explore courses */}
-            {chatStep === 0 && (
-              <div className="flex flex-col gap-2 pl-10 mt-2 animate-in fade-in zoom-in-95 duration-300 delay-150 fill-mode-both">
-                <button 
-                  onClick={() => setChatStep(1)}
-                  className="bg-teal-500/10 hover:bg-teal-500/20 text-teal-600 border border-teal-500/20 px-4 py-2 rounded-xl text-sm font-medium transition-colors text-left flex justify-between items-center"
+          <div className="p-4 bg-canvas h-80 overflow-y-auto flex flex-col gap-3">
+            {messages.map((msg, index) => (
+              <div
+                key={index}
+                className={`flex ${
+                  msg.sender === "user"
+                    ? "justify-end"
+                    : "justify-start"
+                }`}
+              >
+                <div
+                  className={`max-w-[80%] p-3 rounded-2xl text-sm ${
+                    msg.sender === "user"
+                      ? "bg-teal-500 text-white rounded-tr-none"
+                      : "bg-canvas-alt border border-border rounded-tl-none"
+                  }`}
                 >
-                  Explore Courses
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-            )}
+                  {msg.text}
 
-            {/* Step 1: Response and navigation */}
-            {chatStep === 1 && (
-              <>
-                <div className="flex justify-end gap-2 animate-in fade-in slide-in-from-right-4 duration-300">
-                  <div className="bg-teal-500 text-white p-3 rounded-2xl rounded-tr-none text-sm shadow-sm">
-                    Explore Courses
-                  </div>
-                </div>
-                <div className="flex gap-2 animate-in fade-in slide-in-from-left-4 duration-300 delay-150 fill-mode-both">
-                  <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center shrink-0">
-                    <Bot className="w-4 h-4 text-teal-600" />
-                  </div>
-                  <div className="bg-canvas-alt border border-border p-3 rounded-2xl rounded-tl-none text-sm text-main shadow-sm flex flex-col gap-3">
-                    <p>Awesome! We have a wide variety of popular courses you can buy and enroll in today to upgrade your skills.</p>
-                    <button 
-                      onClick={() => {
-                        handleToggle();
-                        navigate('/courses', { state: { activeTab: 'explore' } });
-                      }}
-                      className="bg-teal-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-teal-600 transition-colors self-start shadow-md shadow-teal-500/20"
-                    >
-                      Browse Courses Now
-                    </button>
-                  </div>
-                </div>
-              </>
-            )}
-          </>
-        )}
-        {page === "settings" && settingsStep === 0 && (
-          <>
-            <div className="flex gap-2">
-              <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center shrink-0">
-                <Bot className="w-4 h-4 text-teal-600" />
-              </div>
-
-              <div className="bg-canvas-alt border border-border p-3 rounded-2xl rounded-tl-none text-sm text-main shadow-sm">
-                Hello! I can help you navigate your settings.
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-2 pl-10 mt-2">
-              <button
-                onClick={() => setSettingsStep(1)}
-                className="bg-teal-500/10 hover:bg-teal-500/20 text-teal-600 border border-teal-500/20 px-4 py-2 rounded-xl text-sm font-medium text-left flex justify-between items-center"
-              >
-                Profile Settings
-                <ChevronRight className="w-4 h-4" />
-              </button>
-
-              <button
-                onClick={() => setSettingsStep(2)}
-                className="bg-teal-500/10 hover:bg-teal-500/20 text-teal-600 border border-teal-500/20 px-4 py-2 rounded-xl text-sm font-medium text-left flex justify-between items-center"
-              >
-                Notification Settings
-                <ChevronRight className="w-4 h-4" />
-              </button>
-
-              <button
-                onClick={() => setSettingsStep(3)}
-                className="bg-teal-500/10 hover:bg-teal-500/20 text-teal-600 border border-teal-500/20 px-4 py-2 rounded-xl text-sm font-medium text-left flex justify-between items-center"
-              >
-                Password & Security
-                <ChevronRight className="w-4 h-4" />
-              </button>
-
-              <button
-                onClick={() => setSettingsStep(4)}
-                className="bg-teal-500/10 hover:bg-teal-500/20 text-teal-600 border border-teal-500/20 px-4 py-2 rounded-xl text-sm font-medium text-left flex justify-between items-center"
-              >
-                Preferences
-                <ChevronRight className="w-4 h-4" />
-              </button>
-
-              <button
-                onClick={() => setSettingsStep(5)}
-                className="bg-teal-500/10 hover:bg-teal-500/20 text-teal-600 border border-teal-500/20 px-4 py-2 rounded-xl text-sm font-medium text-left flex justify-between items-center"
-              >
-                Appearance Settings
-                <ChevronRight className="w-4 h-4" />
-              </button>
-
-              <button
-                onClick={() => setSettingsStep(6)}
-                className="bg-teal-500/10 hover:bg-teal-500/20 text-teal-600 border border-teal-500/20 px-4 py-2 rounded-xl text-sm font-medium text-left flex justify-between items-center"
-              >
-                Language Settings
-                <ChevronRight className="w-4 h-4" />
-              </button>
-
-              <button
-                onClick={() => setSettingsStep(7)}
-                className="bg-red-500/10 hover:bg-red-500/20 text-red-600 border border-red-500/20 px-4 py-2 rounded-xl text-sm font-medium text-left flex justify-between items-center"
-              >
-                Delete My Account
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          </>
-        )}
-        {page === "settings" && settingsStep === 1 && (
-              <>
-                <div className="flex justify-end">
-                  <div className="bg-teal-500 text-white p-3 rounded-2xl rounded-tr-none text-sm">
-                    Profile Settings
-                  </div>
-                </div>
-
-                <div className="flex gap-2">
-                  <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center shrink-0">
-                    <Bot className="w-4 h-4 text-teal-600" />
-                  </div>
-
-                  <div className="bg-canvas-alt border border-border p-3 rounded-2xl rounded-tl-none text-sm text-main flex flex-col gap-3">
-                    <p>
-                      You can update your profile information, avatar and bio here.
-                    </p>
-
-                    <div className="flex gap-2">
+                  {msg.route && (
+                    <div className="mt-3">
                       <button
-                        onClick={() => {
-                          handleToggle();
-
-                          if (onNavigateSetting) {
-                            onNavigateSetting("profile");
-                          }
-                        }}
-                        className="bg-teal-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold"
+                        onClick={() => navigate(msg.route)}
+                        className="bg-teal-500 text-white px-3 py-1 rounded-lg text-xs"
                       >
-                        Open Profile Settings
-                      </button>
-
-                      <button
-                        onClick={() => setSettingsStep(0)}
-                        className="border border-border px-3 py-1.5 rounded-lg text-xs"
-                      >
-                        Back
+                        Go To Page
                       </button>
                     </div>
-                  </div>
+                  )}
                 </div>
-              </>
+              </div>
+            ))}
+
+            {loading && (
+              <div className="text-sm text-gray-500">
+                Assistant is typing...
+              </div>
             )}
 
-            {page === "settings" && settingsStep === 2 && (
-            <>
-              <div className="flex justify-end">
-                <div className="bg-teal-500 text-white p-3 rounded-2xl rounded-tr-none text-sm">
-                  Notification Settings
-                </div>
-              </div>
+            <div ref={messagesEndRef} />
 
-              <div className="flex gap-2">
-                <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center shrink-0">
-                  <Bot className="w-4 h-4 text-teal-600" />
-                </div>
-
-                <div className="bg-canvas-alt border border-border p-3 rounded-2xl rounded-tl-none text-sm text-main flex flex-col gap-3">
-                  <p>
-                    Manage email notifications, push notifications and course updates.
-                  </p>
-
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => {
-                        handleToggle();
-
-                        if (onNavigateSetting) {
-                          onNavigateSetting("notifications");
-                        }
-                      }}
-                      className="bg-teal-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold"
-                    >
-                      Open Notifications
-                    </button>
-
-                    <button
-                      onClick={() => setSettingsStep(0)}
-                      className="border border-border px-3 py-1.5 rounded-lg text-xs"
-                    >
-                      Back
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
-
-          {page === "settings" && settingsStep === 3 && (
-            <>
-              <div className="flex justify-end">
-                <div className="bg-teal-500 text-white p-3 rounded-2xl rounded-tr-none text-sm">
-                  Password & Security
-                </div>
-              </div>
-
-              <div className="flex gap-2">
-                <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center shrink-0">
-                  <Bot className="w-4 h-4 text-teal-600" />
-                </div>
-
-                <div className="bg-canvas-alt border border-border p-3 rounded-2xl rounded-tl-none text-sm text-main flex flex-col gap-3">
-                  <p>
-                    Change your password and security settings.
-                  </p>
-
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => {
-                        handleToggle();
-
-                        if (onNavigateSetting) {
-                          onNavigateSetting("password_security");
-                        }
-                      }}
-                      className="bg-teal-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold"
-                    >
-                      Open Security Settings
-                    </button>
-
-                    <button
-                      onClick={() => setSettingsStep(0)}
-                      className="border border-border px-3 py-1.5 rounded-lg text-xs"
-                    >
-                      Back
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
-
-          {page === "settings" && settingsStep === 4 && (
-            <>
-              <div className="flex justify-end">
-                <div className="bg-teal-500 text-white p-3 rounded-2xl rounded-tr-none text-sm">
-                  Preferences
-                </div>
-              </div>
-
-              <div className="flex gap-2">
-                <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center shrink-0">
-                  <Bot className="w-4 h-4 text-teal-600" />
-                </div>
-
-                <div className="bg-canvas-alt border border-border p-3 rounded-2xl rounded-tl-none text-sm text-main flex flex-col gap-3">
-                  <p>
-                    Customize your learning interests and AI recommendations.
-                  </p>
-
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => {
-                        handleToggle();
-                        onNavigateSetting?.("preferences");
-                      }}
-                      className="bg-teal-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold"
-                    >
-                      Open Preferences
-                    </button>
-
-                    <button
-                      onClick={() => setSettingsStep(0)}
-                      className="border border-border px-3 py-1.5 rounded-lg text-xs"
-                    >
-                      Back
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
-
-          {page === "settings" && settingsStep === 5 && (
-            <>
-              <div className="flex justify-end">
-                <div className="bg-teal-500 text-white p-3 rounded-2xl rounded-tr-none text-sm">
-                  Appearance Settings
-                </div>
-              </div>
-
-              <div className="flex gap-2">
-                <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center shrink-0">
-                  <Bot className="w-4 h-4 text-teal-600" />
-                </div>
-
-                <div className="bg-canvas-alt border border-border p-3 rounded-2xl rounded-tl-none text-sm text-main flex flex-col gap-3">
-                  <p>
-                    Change your theme and personalize how the platform looks.
-                  </p>
-
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => {
-                        handleToggle();
-                        onNavigateSetting?.("appearance");
-                      }}
-                      className="bg-teal-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold"
-                    >
-                      Open Appearance
-                    </button>
-
-                    <button
-                      onClick={() => setSettingsStep(0)}
-                      className="border border-border px-3 py-1.5 rounded-lg text-xs"
-                    >
-                      Back
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
-
-          {page === "settings" && settingsStep === 6 && (
-            <>
-              <div className="flex justify-end">
-                <div className="bg-teal-500 text-white p-3 rounded-2xl rounded-tr-none text-sm">
-                  Language Settings
-                </div>
-              </div>
-
-              <div className="flex gap-2">
-                <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center shrink-0">
-                  <Bot className="w-4 h-4 text-teal-600" />
-                </div>
-
-                <div className="bg-canvas-alt border border-border p-3 rounded-2xl rounded-tl-none text-sm text-main flex flex-col gap-3">
-                  <p>
-                    Select your preferred language for the platform.
-                  </p>
-
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => {
-                        handleToggle();
-                        onNavigateSetting?.("language");
-                      }}
-                      className="bg-teal-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold"
-                    >
-                      Open Language Settings
-                    </button>
-
-                    <button
-                      onClick={() => setSettingsStep(0)}
-                      className="border border-border px-3 py-1.5 rounded-lg text-xs"
-                    >
-                      Back
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
-
-          {page === "settings" && settingsStep === 7 && (
-            <>
-              <div className="flex justify-end">
-                <div className="bg-red-500 text-white p-3 rounded-2xl rounded-tr-none text-sm">
-                  Delete My Account
-                </div>
-              </div>
-
-              <div className="flex gap-2">
-                <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center shrink-0">
-                  <Bot className="w-4 h-4 text-red-600" />
-                </div>
-
-                <div className="bg-canvas-alt border border-red-200 p-3 rounded-2xl rounded-tl-none text-sm text-main flex flex-col gap-3">
-                  <p>
-                    Account deletion is permanent and cannot be undone.
-                  </p>
-
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => {
-                        handleToggle();
-                        onNavigateSetting?.("delete_account");
-                      }}
-                      className="bg-red-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold"
-                    >
-                      Continue
-                    </button>
-
-                    <button
-                      onClick={() => setSettingsStep(0)}
-                      className="border border-border px-3 py-1.5 rounded-lg text-xs"
-                    >
-                      Back
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
           </div>
+          <div className="border-t border-border p-3 flex gap-2">
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                sendMessage();
+              }
+            }}
+            placeholder="Ask me anything..."
+            className="flex-1 border border-border rounded-lg px-3 py-2 text-sm"
+          />
+
+          <button
+            onClick={sendMessage}
+            disabled={loading}
+            className="bg-teal-500 text-white px-4 py-2 rounded-lg"
+          >
+            Send
+          </button>
+        </div>
+
         </div>
       )}
 

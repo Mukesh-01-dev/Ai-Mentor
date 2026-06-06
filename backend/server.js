@@ -26,6 +26,8 @@ import reportRoutes from "./routes/reportRoutes.js";
 import docsRoutes from "./routes/docsRoutes.js";
 import calendarTaskRoutes from "./routes/calendarTaskRoutes.js";
 import helmet from "helmet";
+import chatRoutes from "./routes/chatRoutes.js";
+import assistantRoutes from "./routes/assistantRoutes.js";
 
 // ================= MODELS =================
 import "./models/CommunityPost.js";
@@ -87,6 +89,8 @@ app.use("/api/contactus", contactUsRoutes); // ✅ added route
 app.use("/api/calendar-tasks", calendarTaskRoutes);
 app.use("/api/course-reports", reportRoutes);
 app.use("/api/docs", docsRoutes);
+app.use("/api/chat", chatRoutes);
+app.use("/api/assistant", assistantRoutes);
 
 // ================= 404 HANDLER =================
 app.use((req, res) => {
