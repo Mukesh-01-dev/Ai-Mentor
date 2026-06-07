@@ -231,56 +231,68 @@ const updateCourseProgress = async (req, res) => {
   try {
     if (!req.user) return res.status(401).json({ message: "Not authorized" });
 
+    // 👇 Add this log to see exactly what's coming in
+    console.log("📥 course-progress body:", JSON.stringify(req.body, null, 2));
+
     const user = await User.findByPk(req.user.id);
     if (!user) return res.status(404).json({ message: "User not found" });
 
     const { courseId, lessonData, currentLesson, completedLesson } = req.body;
+
+    // 👇 Guard: courseId is required
+    if (!courseId) {
+      return res.status(400).json({ message: "courseId is required" });
+    }
 
     let courses = [...(user.purchasedCourses || [])];
     let courseIndex = courses.findIndex(
       (c) => Number(c.courseId) === Number(courseId)
     );
 
-    if (courseIndex !== -1) {
-      let progress = courses[courseIndex].progress || {
-        completedLessons: [],
-        currentLesson: null,
-        lessonData: {},
-      };
-
-      if (!progress.lessonData) progress.lessonData = {};
-
-      if (lessonData && lessonData.lessonId) {
-        progress.lessonData[lessonData.lessonId] = {
-          ...progress.lessonData[lessonData.lessonId],
-          ...lessonData.data,
-        };
-      }
-
-      if (currentLesson) {
-        progress.currentLesson = currentLesson;
-      }
-
-      if (
-        completedLesson &&
-        !progress.completedLessons.some(
-          (l) => l.lessonId === completedLesson.lessonId
-        )
-      ) {
-        progress.completedLessons.push(completedLesson);
-      }
-
-      courses[courseIndex].progress = progress;
-      user.set("purchasedCourses", courses);
-
-      user.changed("purchasedCourses", true);
-      console.log(
-        "Saved lesson data for course:",
-        courseId,
-        "lesson:",
-        lessonData?.lessonId
-      );
+    if (courseIndex === -1) {
+      // 👇 Don't crash — just skip progress update if course not found
+      console.warn(`⚠️ Course ${courseId} not found in purchasedCourses for user ${req.user.id}`);
+      return res.json({
+        message: "Progress skipped — course not in purchased list",
+        purchasedCourses: user.purchasedCourses,
+      });
     }
+
+    let progress = courses[courseIndex].progress || {
+      completedLessons: [],
+      currentLesson: null,
+      lessonData: {},
+    };
+
+    if (!progress.lessonData) progress.lessonData = {};
+    if (!progress.completedLessons) progress.completedLessons = [];
+
+    // 👇 Save lesson-level data (watch history, AI video, transcript)
+    if (lessonData && lessonData.lessonId != null) {
+      const key = String(lessonData.lessonId); // 👈 always use string key
+      progress.lessonData[key] = {
+        ...(progress.lessonData[key] || {}),
+        ...lessonData.data,
+      };
+      console.log(`💾 Saved lesson data for course:${courseId} lesson:${key}`);
+    }
+
+    if (currentLesson) {
+      progress.currentLesson = currentLesson;
+    }
+
+    if (
+      completedLesson &&
+      !progress.completedLessons.some(
+        (l) => l.lessonId === completedLesson.lessonId
+      )
+    ) {
+      progress.completedLessons.push(completedLesson);
+    }
+
+    courses[courseIndex].progress = progress;
+    user.set("purchasedCourses", courses);
+    user.changed("purchasedCourses", true);
 
     user.analytics = user.analytics || {
       totalHours: 0,
@@ -292,13 +304,14 @@ const updateCourseProgress = async (req, res) => {
     };
 
     await user.save();
+
     res.json({
       message: "Progress updated successfully",
       purchasedCourses: user.purchasedCourses,
     });
   } catch (error) {
-    console.error("PROGRESS ERROR:", error);
-    res.status(500).json({ message: "Server error" });
+    console.error("PROGRESS ERROR:", error.message, error.stack);
+    res.status(500).json({ message: "Server error", detail: error.message });
   }
 };
 

@@ -153,13 +153,14 @@ export default function Learning() {
               hasRestoredProgressRef.current = true;
               const savedData = userProgress.lessonData?.[initialLesson.id];
               if (savedData?.generatedTextContent) {
-                setGeneratedTextContent(savedData.generatedTextContent);
-                if (savedData.aiVideoUrl) setAiVideoUrl(savedData.aiVideoUrl);
-                if (savedData.celebrity) {
-                  setSelectedCelebrity(savedData.celebrity);
-                  lastCelebrityRef.current = savedData.celebrity;
-                }
+              setGeneratedTextContent(savedData.generatedTextContent);
+              if (savedData.aiVideoUrl) setAiVideoUrl(savedData.aiVideoUrl);
+              if (savedData.celebrity) {
+                setSelectedCelebrity(savedData.celebrity);
+                lastCelebrityRef.current = savedData.celebrity;
+                lastLessonIdRef.current = initialLesson.id; // ← prevents re-fetch on restore
               }
+            }
               if (savedData?.watchHistory?.currentTime) {
                 jumpToTimeRef.current = savedData.watchHistory.currentTime;
               }
@@ -299,8 +300,8 @@ export default function Learning() {
         try {
           const payload = {
             courseId: parseInt(courseId),
-            lessonId: learningData.currentLesson.id,
-            celebrity: selectedCelebrity.split(" ")[0].toLowerCase(), // ✅ sends "salman"
+            lessonId: String(learningData.currentLesson.id), // ← must be String
+            celebrity: selectedCelebrity.split(" ")[0].toLowerCase(),
           };
 
           console.log("AI PAYLOAD:", payload);
@@ -312,6 +313,7 @@ export default function Learning() {
 
             if (!isReady) {
               while (!isReady && attempts < 60) {
+                await new Promise((r) => setTimeout(r, 2000)); // ← 2s instead of 1s
                 const statusRes = await fetch(`/api/ai/status/${data.jobId}`, {
                   headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
                 });
@@ -323,7 +325,6 @@ export default function Learning() {
                 }
                 if (statusData.status === "failed") throw new Error("Video generation failed.");
                 attempts++;
-                await new Promise((r) => setTimeout(r, 1000));
               }
             }
 
@@ -338,21 +339,27 @@ export default function Learning() {
 
             if (data.transcriptName) {
               try {
+                await new Promise((r) => setTimeout(r, 500)); // ← wait for file to be written
                 const trRes = await fetch(`/api/ai/transcript/${data.transcriptName}`, {
                   headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
                 });
                 if (trRes.ok) {
                   const trData = await trRes.json();
                   setGeneratedTextContent(trData.content);
+                  saveLessonData(learningData.currentLesson.id, { // ← moved here
+                    generatedTextContent: trData.content || "",
+                    aiVideoUrl: data.videoUrl,
+                    celebrity: selectedCelebrity,
+                  });
                 }
               } catch (trErr) {
                 console.error("Transcript error:", trErr);
               }
-            }
+}
 
             setIsPlaying(true);
             saveLessonData(learningData.currentLesson.id, {
-              generatedTextContent: data.textContent || "",
+              generatedTextContent: generatedTextContent || "",
               aiVideoUrl: data.videoUrl,
               celebrity: selectedCelebrity,
             });
