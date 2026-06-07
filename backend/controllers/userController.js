@@ -381,15 +381,8 @@ watchedVideos.push({
     const metrics = {
       totalHours: (totalSeconds / 60).toFixed(1),
       videosCompleted: completedCount,
-<<<<<<< HEAD
-      avgSession: videoData.length > 0
-      ? `${Math.round((totalSeconds / 60) / videoData.length)}min`
-      : "0min",
-      learningStreak: "3 days",
-=======
       avgSession: `${avgMinutes}m ${avgRemainingSeconds}s`,
       learningStreak: `${uniqueDays.size} days`,
->>>>>>> upstream/main
     };
 
     res.json({

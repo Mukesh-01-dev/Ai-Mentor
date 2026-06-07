@@ -35,20 +35,6 @@ const WatchedVideos = () => {
   const [error, setError] = useState(null);
 
 
-<<<<<<< HEAD
-        if (response.ok) {
-          setVideoData(data.videos);
-          setMetrics(data.metrics);
-          setCourses(data.courses || []);
-        } else {
-          console.error("Error fetching watched videos:", data.message);
-        }
-      } catch (error) {
-        console.error("Error fetching watched videos:", error);
-        setError("Failed to load watched videos. Please try again.");
-      } finally {
-        setLoading(false);
-=======
   const fetchWatchedVideos = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -66,7 +52,6 @@ const WatchedVideos = () => {
       } else {
         console.error("Error fetching watched videos:", data.message);
         setError("Failed to load watched videos.");
->>>>>>> upstream/main
       }
     } catch (err) {
       console.error("Error fetching watched videos:", err);
