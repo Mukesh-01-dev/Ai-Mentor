@@ -271,11 +271,24 @@ const getStatsCards = async (req, res) => {
    ADMIN STUBS (UNCHANGED)
 ========================= */
 const addCourse = async (req, res) => {
-  res.status(501).json({ message: "addCourse not implemented" });
+  try {
+    const course = await Course.create({
+      ...req.body,
+      status: "published",
+    });
+    res.status(201).json(course);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to add course", error: error.message });
+  }
 };
 
 const deleteCourse = async (req, res) => {
-  res.status(501).json({ message: "deleteCourse not implemented" });
+  try {
+    await Course.destroy({ where: { id: req.params.id } });
+    res.json({ message: "Course deleted" });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to delete course" });
+  }
 };
 
 const updateLessonVideo = async (req, res) => {
@@ -287,11 +300,102 @@ const addSubtopics = async (req, res) => {
 };
 
 const addLessons = async (req, res) => {
-  res.status(501).json({ message: "addLessons not implemented" });
+  try {
+    const { courseId, moduleId } = req.params;
+    const { lessons } = req.body;
+    
+    // Auto-increment order
+    const maxOrder = await Lesson.max('order', { where: { moduleId } }) || 0;
+    
+    const createdLessons = await Promise.all(lessons.map((l, index) => 
+      Lesson.create({
+        moduleId,
+        title: l.title,
+        duration: l.duration || "5 mins",
+        type: l.type || "video",
+        order: maxOrder + index + 1
+      })
+    ));
+
+    res.status(201).json(createdLessons);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to add lessons" });
+  }
 };
 
 const addModules = async (req, res) => {
-  res.status(501).json({ message: "addModules not implemented" });
+  try {
+    const { courseId } = req.params;
+    const { modules } = req.body;
+
+    const maxOrder = await Module.max('order', { where: { courseId } }) || 0;
+
+    const createdModules = await Promise.all(modules.map((m, index) => 
+      Module.create({
+        courseId,
+        title: m.title,
+        order: maxOrder + index + 1
+      })
+    ));
+
+    res.status(201).json(createdModules);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to add modules" });
+  }
+};
+
+const generateCourseSyllabusWithAI = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const course = await Course.findByPk(id);
+    if (!course) return res.status(404).json({ message: "Course not found" });
+
+    // 1. Call Python AI Service
+    const aiResponse = await fetch(`${process.env.AI_SERVICE_URL}/generate-syllabus`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        course_title: course.title,
+        category: course.category
+      }),
+    });
+
+    if (!aiResponse.ok) {
+      return res.status(500).json({ message: "AI Service failed to generate syllabus" });
+    }
+
+    const data = await aiResponse.json();
+    if (data.error) {
+       return res.status(500).json({ message: data.error });
+    }
+
+    // 2. Insert into DB
+    let moduleOrder = 1;
+    for (const mod of data.modules) {
+      const newModule = await Module.create({
+        courseId: course.id,
+        title: mod.title,
+        order: moduleOrder++
+      });
+
+      let lessonOrder = 1;
+      for (const les of mod.lessons) {
+        await Lesson.create({
+          moduleId: newModule.id,
+          title: les.title,
+          duration: les.duration || "5 mins",
+          type: les.type || "video",
+          order: lessonOrder++
+        });
+      }
+    }
+
+    res.json({ message: "Syllabus generated successfully", data: data });
+
+  } catch (error) {
+    console.error("GENERATE SYLLABUS ERROR:", error);
+    res.status(500).json({ message: "Server error" });
+  }
 };
 
 /* =========================
@@ -310,4 +414,5 @@ export {
   addSubtopics,
   addLessons,
   addModules,
+  generateCourseSyllabusWithAI,
 };

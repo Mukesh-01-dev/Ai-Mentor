@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 
 import { useNavigate, useParams } from "react-router-dom";
@@ -6,11 +7,8 @@ import { useAuth } from "../context/AuthContext";
 import { getAIVideo } from "../service/aiService";
 import VideoPlayer from "../components/video/VideoPlayer";
 import AITranscript from "../components/video/AITranscript";
-<<<<<<< HEAD
 import API_BASE_URL from "../lib/api";
-=======
 import toast from "react-hot-toast";
->>>>>>> upstream/main
 
 import {
   ChevronLeft,
@@ -29,6 +27,7 @@ import {
   User,
   X,
   Sparkles,
+  Star,
 } from "lucide-react";
 
 export default function Learning() {
@@ -40,6 +39,7 @@ export default function Learning() {
   const [expandedModule, setExpandedModule] = useState(null);
   const [celebritySearch, setCelebritySearch] = useState("");
   const [isCelebrityModalOpen, setIsCelebrityModalOpen] = useState(false);
+  const [showFeedbackPanel, setShowFeedbackPanel] = useState(false);
 
   // Captions state
   const [captions, setCaptions] = useState([]);
@@ -315,31 +315,11 @@ export default function Learning() {
             let attempts = 0;
 
             if (!isReady) {
-<<<<<<< HEAD
-              console.log("⏳ Video not cached. Polling for status...");
-              while (!isReady && attempts < 180) {
-=======
               while (!isReady && attempts < 60) {
->>>>>>> upstream/main
                 const statusRes = await fetch(`/api/ai/status/${data.jobId}`, {
                   headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
                 });
                 const statusData = await statusRes.json();
-<<<<<<< HEAD
-                  if (statusData.status === "ready") {
-                   isReady = true;
-
-                  if (statusData.cloudinary_url) {
-                     console.log("🎥 Using Cloudinary URL:", statusData.cloudinary_url);
-                       data.videoUrl = statusData.cloudinary_url;
-                        }
-
-                      break;
-                       }
-                    if (statusData.status === "failed") throw new Error("Video generation failed on server.");
-                attempts++;
-                await new Promise(r => setTimeout(r, 2000));
-=======
                 if (statusData.status === "ready") {
                   isReady = true;
                   if (statusData.cloudinary_url) data.videoUrl = statusData.cloudinary_url;
@@ -348,7 +328,6 @@ export default function Learning() {
                 if (statusData.status === "failed") throw new Error("Video generation failed.");
                 attempts++;
                 await new Promise((r) => setTimeout(r, 1000));
->>>>>>> upstream/main
               }
             }
 
@@ -450,12 +429,7 @@ export default function Learning() {
   const saveLessonData = async (lessonId, data) => {
     try {
       const token = localStorage.getItem("token");
-<<<<<<< HEAD
       const res = await fetch(`${API_BASE_URL}/api/users/course-progress`, {
-=======
-      const mod = modules.find((m) => m.lessons?.some((l) => l.id === currentLesson.id));
-      const res = await fetch("/api/users/course-progress", {
->>>>>>> upstream/main
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
@@ -489,7 +463,6 @@ export default function Learning() {
       console.log("Lesson already completed, skipping");
       return;
     }
-<<<<<<< HEAD
 
     try {
       const token = localStorage.getItem("token");
@@ -517,10 +490,6 @@ export default function Learning() {
       }
     } catch (error) {
       console.error("Error updating progress:", error);
-=======
-    else{
-      toast.error("Please watch the video before continuing.");
->>>>>>> upstream/main
     }
   };
 
@@ -624,7 +593,6 @@ export default function Learning() {
       if (Math.abs(vidCurrentTime - lastSavedTimeRef.current) >= 5) {
         lastSavedTimeRef.current = vidCurrentTime;
         if (learningData?.currentLesson && isFinite(vidDuration) && vidDuration > 0 && !isNaN(currentProgressPercent)) {
-<<<<<<< HEAD
            const formatDurationString = (secs) => {
              const m = Math.floor(secs / 60);
              const s = Math.floor(secs % 60);
@@ -647,26 +615,6 @@ export default function Learning() {
                status: safeProgress >= 95 ? "completed" : "in-progress"
              }
            });
-=======
-          const formatDurationString = (secs) => {
-            const m = Math.floor(secs / 60);
-            const s = Math.floor(secs % 60);
-            return `${m}:${s < 10 ? "0" : ""}${s}`;
-          };
-          const safeProgress = Math.max(0, Math.min(100, currentProgressPercent));
-          saveLessonData(learningData.currentLesson.id, {
-            watchHistory: {
-              currentTime: vidCurrentTime,
-              duration: vidDuration,
-              progressPercent: safeProgress,
-              lastWatched: new Date().toISOString(),
-              title: learningData.currentLesson.title || "Lesson Video",
-              thumbnail: "https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=1000&auto=format&fit=crop",
-              formattedDuration: formatDurationString(vidDuration),
-              status: safeProgress >= 95 ? "completed" : "in-progress",
-            },
-          });
->>>>>>> upstream/main
         }
       }
 
@@ -910,7 +858,7 @@ export default function Learning() {
             })()}
           </div>
 
-          <div className="flex items-center justify-end sm:justify-start w-full">
+          <div className="flex items-center justify-end sm:justify-start w-full gap-2">
             <button
               onClick={() => setIsCelebrityModalOpen(true)}
               className="flex items-center gap-2 px-3 py-2 sm:px-4 bg-linear-to-r from-purple-600 to-blue-600 text-white rounded-lg text-xs sm:text-sm"
@@ -922,6 +870,20 @@ export default function Learning() {
                   {selectedCelebrity.split(" ")[0]}
                 </span>
               )}
+            </button>
+
+            {/* Rate this Course — compact chip */}
+            <button
+              onClick={() => setShowFeedbackPanel(prev => !prev)}
+              title={showFeedbackPanel ? "Hide reviews" : "Rate this course"}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold border transition-all active:scale-95 ${
+                showFeedbackPanel
+                  ? "bg-amber-400 border-amber-400 text-slate-900"
+                  : "bg-transparent border-amber-400/60 text-amber-500 dark:text-amber-400 hover:bg-amber-400/10"
+              }`}
+            >
+              <Star className="w-3.5 h-3.5 fill-current" />
+              Rate
             </button>
           </div>
         </div>
@@ -1076,6 +1038,35 @@ export default function Learning() {
                 <ChevronRight className="w-5 h-5" />
               </button>
             </div>
+
+            {/* Rate Course Modal Popup */}
+            {showFeedbackPanel && createPortal(
+              <div
+                className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200"
+                onClick={(e) => {
+                  if (e.target === e.currentTarget) setShowFeedbackPanel(false);
+                }}
+              >
+                <div className="relative w-full max-w-xl rounded-2xl shadow-2xl bg-white dark:bg-slate-900 overflow-hidden border border-slate-200 dark:border-slate-700">
+                  {/* Close button */}
+                  <button
+                    onClick={() => setShowFeedbackPanel(false)}
+                    className="absolute top-3.5 right-3.5 z-10 p-1.5 rounded-lg bg-white/80 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors shadow"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                  <div className="p-1">
+                    <CourseFeedback
+                      courseId={courseId}
+                      formOnly={true}
+                      onSubmitSuccess={() => setShowFeedbackPanel(false)}
+                      onDeleteSuccess={() => setShowFeedbackPanel(false)}
+                    />
+                  </div>
+                </div>
+              </div>,
+              document.body
+            )}
           </div>
         </div>
 

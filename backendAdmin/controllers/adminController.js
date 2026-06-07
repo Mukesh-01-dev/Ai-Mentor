@@ -124,6 +124,38 @@ const Course = sequelize.define(
   }
 );
 
+const Module = sequelize.define(
+  "Module",
+  {
+    id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
+    courseId: { type: DataTypes.INTEGER, allowNull: false },
+    title: DataTypes.STRING,
+    order: DataTypes.INTEGER,
+  },
+  { timestamps: true, tableName: "Modules" }
+);
+
+const Lesson = sequelize.define(
+  "Lesson",
+  {
+    id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
+    moduleId: { type: DataTypes.INTEGER, allowNull: false },
+    title: DataTypes.STRING,
+    duration: DataTypes.STRING,
+    type: DataTypes.STRING,
+    youtubeUrl: DataTypes.STRING,
+    order: DataTypes.INTEGER,
+  },
+  { timestamps: true, tableName: "Lessons" }
+);
+
+// Setup Course Builder Associations
+Course.hasMany(Module, { foreignKey: "courseId", as: "modules" });
+Module.belongsTo(Course, { foreignKey: "courseId" });
+
+Module.hasMany(Lesson, { foreignKey: "moduleId", as: "lessons" });
+Lesson.belongsTo(Module, { foreignKey: "moduleId" });
+
 const CommunityPost = sequelize.define(
   "CommunityPost",
   {
@@ -852,6 +884,118 @@ const createCourse = async (req, res) => {
   }
 };
 
+// @desc    Get Course Syllabus (Modules and Lessons)
+// @route   GET /api/admin/courses/:id/learning
+// @access  Private
+const getCourseSyllabus = async (req, res) => {
+  try {
+    const courseId = req.params.id;
+    const course = await Course.findByPk(courseId);
+
+    if (!course) {
+      return res.status(404).json({ message: "Course not found" });
+    }
+
+    const modules = await Module.findAll({
+      where: { courseId },
+      order: [["order", "ASC"], ["createdAt", "ASC"]],
+      include: [
+        {
+          model: Lesson,
+          as: "lessons",
+        },
+      ],
+    });
+
+    // Ensure lessons are sorted inside modules
+    const formattedModules = modules.map((mod) => {
+      const plainMod = mod.get({ plain: true });
+      if (plainMod.lessons) {
+        plainMod.lessons.sort((a, b) => a.order - b.order || new Date(a.createdAt) - new Date(b.createdAt));
+      }
+      return plainMod;
+    });
+
+    res.json({
+      modules: formattedModules,
+      course: {
+        id: course.id,
+        title: course.title,
+        subtitle: course.category,
+      },
+    });
+  } catch (error) {
+    console.error("GET COURSE SYLLABUS ERROR:", error.message);
+    res.status(500).json({ success: false, message: "Server Error" });
+  }
+};
+
+// @desc    Generate Course Syllabus with AI
+// @route   POST /api/admin/courses/:id/generate-syllabus
+// @access  Private
+const generateCourseSyllabusWithAI = async (req, res) => {
+  try {
+    const courseId = req.params.id;
+    const course = await Course.findByPk(courseId);
+
+    if (!course) {
+      return res.status(404).json({ message: "Course not found" });
+    }
+
+    // Call Python AI Service
+    // We assume backendAdmin can access AI service via process.env.BACKEND_URL or hardcode
+    // Let's use the Python AI server URL (it runs on 8000)
+    const aiUrl = "http://127.0.0.1:8000/generate-syllabus";
+    const aiResponse = await fetch(aiUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        course_title: course.title,
+        category: course.category
+      }),
+    });
+
+    if (!aiResponse.ok) {
+      return res.status(500).json({ message: "AI Service failed to generate syllabus. Please make sure the python server is running." });
+    }
+
+    const data = await aiResponse.json();
+    if (data.error) {
+      return res.status(500).json({ message: data.error });
+    }
+
+    // Insert into DB
+    let moduleOrder = 1;
+    for (const mod of data.modules) {
+      const newModule = await Module.create({
+        courseId: course.id,
+        title: mod.title,
+        order: moduleOrder++
+      });
+
+      let lessonOrder = 1;
+      for (const les of mod.lessons) {
+        await Lesson.create({
+          moduleId: newModule.id,
+          title: les.title,
+          duration: les.duration || "5 mins",
+          type: les.type || "video",
+          order: lessonOrder++
+        });
+      }
+    }
+
+    res.json({ message: "Syllabus generated successfully", data: data });
+  } catch (error) {
+    console.error("GENERATE SYLLABUS ERROR:", error.message);
+    // Return a better error if fetch failed due to AI server not running
+    if (error.cause && error.cause.code === 'ECONNREFUSED') {
+      return res.status(500).json({ message: "Python AI Server is not running. Please start it with start_ai.bat" });
+    }
+    res.status(500).json({ success: false, message: "Server Error" });
+  }
+};
+
 export {
   Admin,
   registerAdmin,
@@ -870,4 +1014,6 @@ export {
   markNotificationRead,
   clearAllNotifications,
   getAllReports,
+  getCourseSyllabus,
+  generateCourseSyllabusWithAI,
 };
