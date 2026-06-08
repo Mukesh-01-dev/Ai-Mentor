@@ -177,6 +177,23 @@ const editCommunityPost = async (req, res) => {
 
     const post = await CommunityPost.findByPk(req.params.id);
     if (!post) return res.status(404).json({ message: "Post not found" });
+    // Check enrollment for course posts
+if (post.type === "course") {
+  const user = await User.findByPk(req.user.id);
+
+  const purchasedCourses = user?.purchasedCourses || [];
+
+  const isEnrolled = purchasedCourses.some(
+    c => c.id === post.courseId || c.courseId === post.courseId
+  );
+
+  if (!isEnrolled) {
+    return res.status(403).json({
+      message:
+        "You must be enrolled in this course to interact with its community posts",
+    });
+  }
+}
 
     if (post.userId !== req.user.id) {
       return res.status(403).json({ message: "You can only edit your own posts" });
@@ -209,6 +226,23 @@ const deleteCommunityPost = async (req, res) => {
 
     const post = await CommunityPost.findByPk(req.params.id);
     if (!post) return res.status(404).json({ message: "Post not found" });
+    // Check enrollment for course posts
+if (post.type === "course") {
+  const user = await User.findByPk(req.user.id);
+
+  const purchasedCourses = user?.purchasedCourses || [];
+
+  const isEnrolled = purchasedCourses.some(
+    c => c.id === post.courseId || c.courseId === post.courseId
+  );
+
+  if (!isEnrolled) {
+    return res.status(403).json({
+      message:
+        "You must be enrolled in this course to interact with its community posts",
+    });
+  }
+}
 
     if (post.userId !== req.user.id) {
       return res.status(403).json({ message: "You can only delete your own posts" });
