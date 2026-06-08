@@ -10,6 +10,7 @@ from fastapi import FastAPI, BackgroundTasks
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+import json
 from google import genai
 from groq import Groq
 from config import (
@@ -65,6 +66,10 @@ class LessonRequest(BaseModel):
     topic: str
     celebrity: str
     preferences: dict | None = None
+
+class SyllabusRequest(BaseModel):
+    course_title: str
+    category: str | None = None
 
 # --------------------------
 # Helpers
@@ -130,6 +135,68 @@ def get_status(job_id: str):
         return {"status": status_data}
 
     return status_data
+
+# --------------------------
+# Generate Syllabus Endpoint
+# --------------------------
+@app.post("/generate-syllabus")
+def generate_syllabus(data: SyllabusRequest):
+    prompt = f"""
+    Create a highly structured course syllabus for a course titled '{data.course_title}'.
+    Category: {data.category or 'General Education'}
+    
+    You MUST respond with ONLY a valid JSON object. Do not include markdown formatting like ```json.
+    
+    The JSON structure must match this exactly:
+    {{
+      "modules": [
+        {{
+          "title": "Module 1: Introduction",
+          "lessons": [
+            {{
+              "title": "Lesson 1: Basics",
+              "duration": "5 mins",
+              "type": "video"
+            }}
+          ]
+        }}
+      ]
+    }}
+    
+    Requirements:
+    - Create exactly 3 modules.
+    - Each module should have exactly 2 lessons.
+    - All lesson types should be "video".
+    """
+
+    try:
+        print("⚡ Trying Gemini Primary Model for Syllabus...")
+        response = gemini_client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt
+        )
+        text = response.text.strip()
+        if text.startswith("```json"): text = text[7:]
+        if text.startswith("```"): text = text[3:]
+        if text.endswith("```"): text = text[:-3]
+        return json.loads(text.strip())
+    except Exception as e:
+        print(f"❌ Gemini failed: {e}. Trying Groq...")
+        try:
+            groq_response = groq_client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=[{ "role": "user", "content": prompt }],
+                temperature=0.7,
+                max_tokens=1000,
+            )
+            text = groq_response.choices[0].message.content.strip()
+            if text.startswith("```json"): text = text[7:]
+            if text.startswith("```"): text = text[3:]
+            if text.endswith("```"): text = text[:-3]
+            return json.loads(text.strip())
+        except Exception as e2:
+            print(f"❌ Groq failed: {e2}")
+            return {"error": "Failed to generate syllabus"}
 
 # --------------------------
 # Generate Lesson Endpoint
