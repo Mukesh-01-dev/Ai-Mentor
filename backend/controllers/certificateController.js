@@ -128,6 +128,43 @@ export const generateCertificate = async (req, res) => {
     if (!pCourse) return res.status(404).json({ message: "Course not found for this user" });
     
     const dbCourse = await Course.findByPk(courseId);
+    
+    let totalLessons = 0;
+    if (dbCourse) {
+      const lessonsText = typeof dbCourse.lessons === "string" ? dbCourse.lessons : null;
+
+      if (typeof dbCourse.lessonsCount === "number" && !Number.isNaN(dbCourse.lessonsCount)) {
+        totalLessons = dbCourse.lessonsCount;
+      } else if (lessonsText) {
+        const parsedFromOf = lessonsText.includes(" of ") ? parseInt(lessonsText.split(" of ")[1]) : NaN;
+        const parsedFromFirst = Number.isNaN(parsedFromOf) ? parseInt(lessonsText.split(" ")[0]) : parsedFromOf;
+        totalLessons = Number.isNaN(parsedFromFirst) ? 0 : parsedFromFirst;
+      } else {
+        totalLessons = 0;
+      }
+    } else {
+      totalLessons = 10;
+    }
+
+    const completedLessonsList = pCourse.progress?.completedLessons || [];
+    let completedLessons = completedLessonsList.length;
+
+    const lessonData = pCourse.progress?.lessonData || {};
+    let actualCompleted = Object.values(lessonData).filter(l => l.watchHistory?.progressPercent >= 95).length;
+    if (actualCompleted > completedLessons) {
+      completedLessons = actualCompleted;
+    }
+
+    if (completedLessons > totalLessons && totalLessons > 0) completedLessons = totalLessons;
+
+    const isCompleted = totalLessons > 0 && completedLessons >= totalLessons;
+
+    if (!isCompleted) {
+      return res.status(403).json({
+        message: "You must complete the course before generating a certificate",
+      });
+    }
+
     const courseTitle = pCourse.courseTitle || dbCourse?.title || "Unknown Course";
     
     // Format date text

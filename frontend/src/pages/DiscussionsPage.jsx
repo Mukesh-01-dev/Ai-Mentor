@@ -104,10 +104,14 @@ const DiscussionsPage = () => {
   const [coursePosts, setCoursePosts] = useState([]);
   const [coursePostsLoading, setCoursePostsLoading] = useState(false);
   const [courseSort, setCourseSort] = useState("Recent");
+  const [coursePostsPage, setCoursePostsPage] = useState(1);
+  const [coursePostsTotalPages, setCoursePostsTotalPages] = useState(1);
   const [selectedCourse, setSelectedCourse] = useState(null); // { courseId, courseName }
   const [panelPosts, setPanelPosts] = useState([]);
   const [panelLoading, setPanelLoading] = useState(false);
   const [panelSort, setPanelSort] = useState("Recent");
+  const [panelPage, setPanelPage] = useState(1);
+  const [panelTotalPages, setPanelTotalPages] = useState(1);
   const [panelReplyText, setPanelReplyText] = useState("");
   const [panelReplyingTo, setPanelReplyingTo] = useState(null);
   const [panelReplyInputText, setPanelReplyInputText] = useState("");
@@ -118,6 +122,8 @@ const DiscussionsPage = () => {
   const [globalPosts, setGlobalPosts] = useState([]);
   const [globalLoading, setGlobalLoading] = useState(false);
   const [globalSort, setGlobalSort] = useState("Recent");
+  const [globalPage, setGlobalPage] = useState(1);
+  const [globalTotalPages, setGlobalTotalPages] = useState(1);
   const [globalCategoryFilter, setGlobalCategoryFilter] =
     useState("All Categories");
   const [globalContent, setGlobalContent] = useState("");
@@ -270,15 +276,21 @@ const DiscussionsPage = () => {
 
   // Course community - all posts across courses
   const fetchCoursePosts = useCallback(
-    async (sort) => {
+    async (sort, page = 1) => {
       setCoursePostsLoading(true);
       try {
-        const q = sort === "Popular" ? "?sort=popular" : "";
+        const queryParts = [`page=${page}`, `limit=10`];
+        if (sort === "Popular") queryParts.push("sort=popular");
+        const q = queryParts.length > 0 ? "?" + queryParts.join("&") : "";
         const res = await fetch(`/api/community/course-posts${q}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!res.ok) throw new Error();
-        setCoursePosts(await res.json());
+        const posts = await res.json();
+        const totalPages = parseInt(res.headers.get("X-Pages") || "1", 10);
+        setCoursePostsPage(page);
+        setCoursePostsTotalPages(totalPages);
+        setCoursePosts(posts);
       } catch {
         setCoursePosts([]);
       } finally {
@@ -305,11 +317,13 @@ const latestPostsByCourse = Object.values(
   
   // Course panel - posts for a specific course
   const fetchPanelPosts = useCallback(
-    async (courseId, sort) => {
+    async (courseId, sort, page = 1) => {
       setPanelLoading(true);
       setPanelRequiresEnrollment(false);
       try {
-        const q = sort === "Popular" ? "?sort=popular" : "";
+        const queryParts = [`page=${page}`, `limit=10`];
+        if (sort === "Popular") queryParts.push("sort=popular");
+        const q = queryParts.length > 0 ? "?" + queryParts.join("&") : "";
         const res = await fetch(`/api/community/course/${courseId}${q}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -331,7 +345,11 @@ const latestPostsByCourse = Object.values(
         }
 
         if (!res.ok) throw new Error();
-        setPanelPosts(await res.json());
+        const posts = await res.json();
+        const totalPages = parseInt(res.headers.get("X-Pages") || "1", 10);
+        setPanelPage(page);
+        setPanelTotalPages(totalPages);
+        setPanelPosts(posts);
       } catch (error) {
         console.error("Error fetching panel posts:", error);
         setPanelPosts([]);
@@ -344,17 +362,23 @@ const latestPostsByCourse = Object.values(
 
   // Global posts
   const fetchGlobalPosts = useCallback(
-    async (cat, sort) => {
+    async (cat, sort, page = 1) => {
       setGlobalLoading(true);
       try {
         const params = new URLSearchParams();
+        params.set("page", page);
+        params.set("limit", 10);
         if (cat && cat !== "All Categories") params.set("category", cat);
         if (sort === "Popular") params.set("sort", "popular");
         const res = await fetch(`/api/community/global?${params}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!res.ok) throw new Error();
-        setGlobalPosts(await res.json());
+        const posts = await res.json();
+        const totalPages = parseInt(res.headers.get("X-Pages") || "1", 10);
+        setGlobalPage(page);
+        setGlobalTotalPages(totalPages);
+        setGlobalPosts(posts);
       } catch {
         setGlobalPosts([]);
       } finally {
@@ -736,17 +760,17 @@ const latestPostsByCourse = Object.values(
   }, [fetchAllCourses]);
 
   useEffect(() => {
-    if (activeView === "courseCommunity") fetchCoursePosts(courseSort);
-  }, [activeView, courseSort, fetchCoursePosts]);
+    if (activeView === "courseCommunity") fetchCoursePosts(courseSort, coursePostsPage);
+  }, [activeView, courseSort, coursePostsPage, fetchCoursePosts]);
 
   useEffect(() => {
     if (activeView === "global")
-      fetchGlobalPosts(globalCategoryFilter, globalSort);
-  }, [activeView, globalCategoryFilter, globalSort, fetchGlobalPosts]);
+      fetchGlobalPosts(globalCategoryFilter, globalSort, globalPage);
+  }, [activeView, globalCategoryFilter, globalSort, globalPage, fetchGlobalPosts]);
 
   useEffect(() => {
-    if (selectedCourse) fetchPanelPosts(selectedCourse.courseId, panelSort);
-  }, [selectedCourse, panelSort, fetchPanelPosts]);
+    if (selectedCourse) fetchPanelPosts(selectedCourse.courseId, panelSort, panelPage);
+  }, [selectedCourse, panelSort, panelPage, fetchPanelPosts]);
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
@@ -953,7 +977,10 @@ const latestPostsByCourse = Object.values(
                     {["Recent", "Popular"].map((s) => (
                       <button
                         key={s}
-                        onClick={() => setCourseSort(s)}
+                        onClick={() => {
+                          setCourseSort(s);
+                          setCoursePostsPage(1);
+                        }}
                         className={`px-4 py-1.5 text-sm rounded-md font-medium transition-colors ${
                           courseSort === s
                             ? "bg-red-500 text-white"
@@ -981,12 +1008,13 @@ const latestPostsByCourse = Object.values(
                       {allCourses.map((c) => (
                         <button
                           key={c.id}
-                          onClick={() =>
+                          onClick={() => {
+                            setPanelPage(1);
                             setSelectedCourse({
                               courseId: c.id,
                               courseName: c.title,
-                            })
-                          }
+                            });
+                          }}
                           className="bg-card border border-border rounded-xl p-4 text-left hover:border-indigo-500 transition-colors"
                         >
                           <h3 className="font-semibold text-main">{c.title}</h3>
@@ -1004,12 +1032,13 @@ const latestPostsByCourse = Object.values(
                         .map((post) => (
                         <div
                           key={post.id}
-                          onClick={() =>
+                          onClick={() => {
+                            setPanelPage(1);
                             setSelectedCourse({
                               courseId: post.courseId,
                               courseName: courseNameForPost(post),
-                            })
-                          }
+                            });
+                          }}
                           className={`bg-card border border-border rounded-xl p-3 sm:p-4 md:p-5 shadow-sm hover:border-indigo-500/50 cursor-pointer transition-colors ${
                             post.hiddenAt ? "opacity-60" : ""
                           }`}
@@ -1062,6 +1091,27 @@ const latestPostsByCourse = Object.values(
                       ))}
                     </div>
 
+                    {/* course posts pagination controls */}
+                    <div className="flex items-center justify-center gap-3 py-4 mt-6 mb-4">
+                      <button
+                        disabled={coursePostsPage === 1 || coursePostsLoading}
+                        onClick={() => setCoursePostsPage(coursePostsPage - 1)}
+                        className="px-3 py-1.5 text-xs font-medium rounded-lg border border-border disabled:opacity-50 disabled:cursor-not-allowed hover:bg-canvas transition-colors"
+                      >
+                        Prev
+                      </button>
+                      <span className="text-xs font-semibold text-muted">
+                        Page {coursePostsPage} of {coursePostsTotalPages}
+                      </span>
+                      <button
+                        disabled={coursePostsPage === coursePostsTotalPages || coursePostsLoading}
+                        onClick={() => setCoursePostsPage(coursePostsPage + 1)}
+                        className="px-3 py-1.5 text-xs font-medium rounded-lg border border-border disabled:opacity-50 disabled:cursor-not-allowed hover:bg-canvas transition-colors"
+                      >
+                        Next
+                      </button>
+                    </div>
+
                     {/* quick-start: select a course to start new discussion */}
                     <div className="mt-8">
                       <h3 className="text-sm font-semibold text-muted mb-3 uppercase tracking-wide">
@@ -1071,12 +1121,13 @@ const latestPostsByCourse = Object.values(
                         {allCourses.map((c) => (
                           <button
                             key={c.id}
-                            onClick={() =>
+                            onClick={() => {
+                              setPanelPage(1);
                               setSelectedCourse({
                                 courseId: c.id,
                                 courseName: c.title,
-                              })
-                            }
+                              });
+                            }}
                             className="px-4 py-2 bg-card border border-border rounded-lg text-sm text-main hover:border-indigo-500 transition-colors"
                           >
                             {c.title}
@@ -1128,7 +1179,10 @@ const latestPostsByCourse = Object.values(
                     {["Recent", "Popular"].map((s) => (
                       <button
                         key={s}
-                        onClick={() => setPanelSort(s)}
+                        onClick={() => {
+                          setPanelSort(s);
+                          setPanelPage(1);
+                        }}
                         className={`flex-1 py-2.5 text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${
                           panelSort === s
                             ? "bg-indigo-600/10 text-indigo-500 border-b-2 border-indigo-500"
@@ -1597,6 +1651,27 @@ const latestPostsByCourse = Object.values(
                     )}
                   </div>
 
+                  {/* panel pagination controls */}
+                  <div className="flex items-center justify-center gap-3 py-3 border-t border-border shrink-0 bg-canvas-alt/50">
+                    <button
+                      disabled={panelPage === 1 || panelLoading}
+                      onClick={() => setPanelPage(panelPage - 1)}
+                      className="px-3 py-1 text-xs font-medium rounded-lg border border-border disabled:opacity-50 disabled:cursor-not-allowed hover:bg-canvas transition-colors"
+                    >
+                      Prev
+                    </button>
+                    <span className="text-xs font-semibold text-muted">
+                      Page {panelPage} of {panelTotalPages}
+                    </span>
+                    <button
+                      disabled={panelPage === panelTotalPages || panelLoading}
+                      onClick={() => setPanelPage(panelPage + 1)}
+                      className="px-3 py-1 text-xs font-medium rounded-lg border border-border disabled:opacity-50 disabled:cursor-not-allowed hover:bg-canvas transition-colors"
+                    >
+                      Next
+                    </button>
+                  </div>
+
                   {/* panel input */}
                   <div className="p-2 sm:p-3 border-t border-border shrink-0">
                     <div className="flex items-center gap-2">
@@ -1844,7 +1919,7 @@ const latestPostsByCourse = Object.values(
                               {/* All option */}
                               <button
                                 type="button"
-                                onClick={() => { setGlobalCategoryFilter("All Categories"); setFilterPickerOpen(false); }}
+                                onClick={() => { setGlobalCategoryFilter("All Categories"); setGlobalPage(1); setFilterPickerOpen(false); }}
                                 className={`px-3.5 py-1.5 text-xs rounded-xl font-bold transition-all duration-200 ${
                                   globalCategoryFilter === "All Categories"
                                     ? "bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-md shadow-teal-500/25 scale-[1.03]"
@@ -1857,7 +1932,7 @@ const latestPostsByCourse = Object.values(
                                 <button
                                   key={c}
                                   type="button"
-                                  onClick={() => { setGlobalCategoryFilter(c); setFilterPickerOpen(false); }}
+                                  onClick={() => { setGlobalCategoryFilter(c); setGlobalPage(1); setFilterPickerOpen(false); }}
                                   className={`px-3.5 py-1.5 text-xs rounded-xl font-bold transition-all duration-200 ${
                                     globalCategoryFilter === c
                                       ? "bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-md shadow-teal-500/25 scale-[1.03]"
@@ -1876,7 +1951,10 @@ const latestPostsByCourse = Object.values(
                     {["Recent", "Popular"].map((s) => (
                       <button
                         key={s}
-                        onClick={() => setGlobalSort(s)}
+                        onClick={() => {
+                          setGlobalSort(s);
+                          setGlobalPage(1);
+                        }}
                         className={`px-4 py-1.5 text-sm rounded-md font-medium transition-colors ${
                           globalSort === s
                             ? "bg-red-500 text-white"
@@ -2331,6 +2409,29 @@ const latestPostsByCourse = Object.values(
                         )}
                       </div>
                     ))}
+                  </div>
+                )}
+
+                {/* Global posts pagination controls */}
+                {!globalLoading && globalPosts.length > 0 && (
+                  <div className="flex items-center justify-center gap-3 py-6 mt-6">
+                    <button
+                      disabled={globalPage === 1 || globalLoading}
+                      onClick={() => setGlobalPage(globalPage - 1)}
+                      className="px-4 py-2 text-sm font-medium rounded-lg border border-border disabled:opacity-50 disabled:cursor-not-allowed hover:bg-canvas transition-colors"
+                    >
+                      Prev
+                    </button>
+                    <span className="text-sm font-semibold text-muted">
+                      Page {globalPage} of {globalTotalPages}
+                    </span>
+                    <button
+                      disabled={globalPage === globalTotalPages || globalLoading}
+                      onClick={() => setGlobalPage(globalPage + 1)}
+                      className="px-4 py-2 text-sm font-medium rounded-lg border border-border disabled:opacity-50 disabled:cursor-not-allowed hover:bg-canvas transition-colors"
+                    >
+                      Next
+                    </button>
                   </div>
                 )}
               </div>

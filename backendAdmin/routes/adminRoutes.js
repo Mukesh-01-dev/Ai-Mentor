@@ -6,6 +6,7 @@ import {
   deleteAdmin,
   logoutAdmin,
   getAllAdmins,
+  changePassword,
   updateAdminStatus,
 } from "../controllers/authController.js";
 import {
@@ -50,6 +51,7 @@ router.post("/register", protectAdmin, superAdminOnly, registerAdmin);
 router.get("/profile", protectAdmin, getAdminProfile);
 router.post("/logout", protectAdmin, logoutAdmin);
 router.delete("/:id", protectAdmin, superAdminOnly, deleteAdmin);
+router.put("/change-password", protectAdmin,changePassword);
 
 // Admin data routes
 router.get("/enrollments", protectAdmin, getAllEnrollments);

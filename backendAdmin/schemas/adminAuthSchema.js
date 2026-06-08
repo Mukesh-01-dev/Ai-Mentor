@@ -19,3 +19,8 @@ export const adminRegisterSchema = z.object({
   email: z.string().email({ message: "Invalid email address format" }),
   password: adminPasswordSchema
 });
+
+export const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, "Current password is required"),
+  newPassword: adminPasswordSchema,
+});

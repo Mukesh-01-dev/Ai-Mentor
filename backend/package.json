@@ -12,6 +12,7 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@google/genai": "^2.7.0",
     "@google/generative-ai": "^0.24.1",
     "assert": "^2.1.0",
     "bcrypt": "^6.0.0",

@@ -54,12 +54,16 @@ const CompleteProfilePage = () => {
   const showAvatarField = user?.isNewUser || !user?.avatar_url?.trim();
 
   /* ─── Form state ─── */
-  const [firstName, setFirstName] = useState(user?.firstName || "");
-  const [lastName, setLastName] = useState(user?.lastName || "");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [bio, setBio] = useState(user?.bio || "");
-  const [avatar, setAvatar] = useState(null);
+//Lazy initialize form fields with existing user data (if any) to allow editing before submission
+const [firstName, setFirstName] = useState(() => user?.firstName || "");
+const [lastName, setLastName] = useState(() => user?.lastName || "");
+const [bio, setBio] = useState(() => user?.bio || "");
+const [password, setPassword] = useState("");
+const [showPassword, setShowPassword] = useState(false);
+const [avatar, setAvatar] = useState(null);
+const [loading, setLoading] = useState(false);
+const [errors, setErrors] = useState({});
+
   
   // Pre-fill avatar preview with existing URL, or a DiceBear fallback for Google users without a photo
   const getInitialAvatar = () => {
@@ -72,24 +76,7 @@ const CompleteProfilePage = () => {
     return null;
   };
 
-  const [avatarPreview, setAvatarPreview] = useState(getInitialAvatar());
-  const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState({});
-  
-  /* ─── Sync form state with user data ─── */
-  useEffect(() => {
-    if (user) {
-      if (user.firstName && !firstName) setFirstName(user.firstName);
-      if (user.lastName && !lastName) setLastName(user.lastName);
-      if (user.bio && !bio) setBio(user.bio);
-      
-      // Update preview if user photo becomes available (and user hasn't uploaded one manually)
-      if (user.avatar_url && !avatar) {
-        setAvatarPreview(user.avatar_url);
-      }
-    }
-  }, [user, avatar]);
-
+const [avatarPreview, setAvatarPreview] = useState(() => getInitialAvatar());
   /* ─── Password requirements (Google users only) ─── */
   const passwordRequirements = {
     length: password.length >= 8,
