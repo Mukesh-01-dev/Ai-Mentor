@@ -300,8 +300,11 @@ const addCourse = async (req, res) => {
 
 const deleteCourse = async (req, res) => {
   try {
-    await Course.destroy({ where: { id: req.params.id } });
-    res.json({ message: "Course deleted" });
+    const deletedCount = await Course.destroy({ where: { id: req.params.id } });
+    if (deletedCount === 0) {
+      return res.status(404).json({ message: "Course not found" });
+    }
+    res.json({ message: "Course deleted successfully" });
   } catch (error) {
     res.status(500).json({ message: "Failed to delete course" });
   }
