@@ -1,15 +1,43 @@
-import React, { useMemo } from "react";
+import React, { useEffect,useState } from "react";
 import { Camera } from "lucide-react";
 
 const ProfilePage = () => {
-  const user = useMemo(() => {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+  const fetchProfile = async () => {
     try {
-      const raw = localStorage.getItem("user");
-      return raw ? JSON.parse(raw) : null;
-    } catch {
-      return null;
+      const token = localStorage.getItem("token");
+
+      const res = await fetch("/api/admin/profile", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to fetch profile");
+      }
+
+      const data = await res.json();
+      setUser(data);
+    } catch (error) {
+      console.error("Profile fetch error:", error);
+    } finally {
+      setLoading(false);
     }
-  }, []);
+  };
+
+  fetchProfile();
+}, []);
+
+if (loading) {
+  return (
+    <div className="p-8">
+      Loading...
+    </div>
+  );
+} 
 
   const firstName = user?.firstName || user?.name?.split(" ")[0] || "Admin";
   const lastName = user?.lastName || user?.name?.split(" ")[1] || "";

@@ -7,15 +7,22 @@ import { ensureProfileCompleteness, formatFullName } from "../utils/userUtils.js
 import cloudinary from "../config/cloudinary.js";
 import admin from "firebase-admin";
 
-// Initialize Firebase Admin SDK using environment variables (no secret file needed)
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
-    }),
-  });
+// Initialize Firebase Admin SDK ONLY if real keys are provided
+if (!admin.apps.length && process.env.FIREBASE_PRIVATE_KEY && process.env.FIREBASE_PRIVATE_KEY.length > 50) {
+  try {
+    admin.initializeApp({
+      credential: admin.credential.cert({
+        projectId: process.env.FIREBASE_PROJECT_ID,
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+        privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n"),
+      }),
+    });
+    console.log("🔥 Firebase initialized successfully");
+  } catch (err) {
+    console.warn("⚠️ Firebase failed to initialize. Google Login will not work.");
+  }
+} else {
+  console.warn("⚠️ No valid Firebase keys found in .env. Skipping Firebase init.");
 }
 
 const generateToken = (id) => {
@@ -263,11 +270,16 @@ const googleLogin = async (req, res) => {
 const forgotPassword = async (req, res) => {
   const { email } = req.body;
 
+  // Identical response whether or not the account exists (prevents user enumeration)
+  const genericResponse = {
+    message: "If an account exists for this email, a reset link has been sent.",
+  };
+
   try {
     const user = await User.findOne({ where: { email } });
 
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(200).json(genericResponse);
     }
 
     const resetToken = crypto.randomBytes(20).toString("hex");
@@ -301,7 +313,7 @@ const forgotPassword = async (req, res) => {
         html,
       });
 
-      res.status(200).json({ message: "Email sent" });
+      res.status(200).json(genericResponse);
     } catch (err) {
       console.error("Email could not be sent", err);
       user.resetPasswordToken = null;

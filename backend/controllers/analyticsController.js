@@ -71,11 +71,14 @@ const recordStudySession = async (req, res) => {
     analytics.dailyHours = parseFloat(((analytics.dailyHours || 0) + hours).toFixed(4));
 
     analytics.studySessions.push({
-      date: sessionDate,
-      hours: hours,
-    });
+  date: sessionDate,
+  hours: hours,
+});
 
-    user.analytics = analytics;
+// Keep only the latest 90 study sessions
+analytics.studySessions = analytics.studySessions.slice(-90);
+
+user.analytics = analytics;
     // For JSONB, we need to tell Sequelize that the object has changed
     user.changed("analytics", true);
     await user.save();

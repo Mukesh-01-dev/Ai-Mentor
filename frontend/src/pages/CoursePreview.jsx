@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import Header from "../components/Header";
 import { useAuth } from "../context/AuthContext";
 import API_BASE_URL from "../lib/api";
@@ -534,6 +535,17 @@ const [metaRes, learnRes] = await Promise.all([
         user.purchasedCourses.some((c) => Number(c.courseId) === Number(courseId));
     return (
         <div className="min-h-screen bg-canvas text-main">
+            <Helmet>
+            <title>{title ? `${title} | UptoSkills` : "Course | UptoSkills"}</title>
+            <meta 
+                name="description" 
+                content={`Learn ${title} on UptoSkills. ${subtitle || "Enroll now and start learning today."}`}
+            />
+            <meta property="og:title" content={`${title} | UptoSkills`} />
+            <meta property="og:description" content={`Learn ${title} on UptoSkills.`} />
+            <meta property="og:image" content={heroSrc} />
+            <meta property="og:type" content="website" />
+        </Helmet>
             <Header />
             <main className="max-w-[1280px] mx-auto px-4 py-8 lg:py-16 mt-6">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">

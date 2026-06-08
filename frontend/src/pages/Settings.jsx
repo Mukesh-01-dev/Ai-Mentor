@@ -234,7 +234,13 @@ export default function Settings() {
       setProfilePopup(true);
     } catch (error) {
       console.error("Error updating profile:", error.response?.data || error);
-      toast.error("Failed to update profile.");
+      toast.error(error.response?.data?.message ||"Failed to update profile.");
+      setFormData({
+      firstName: user.firstName || "",
+      lastName: user.lastName || "",
+      email: user.email || "",
+      bio: user.bio || "",
+  });
     } finally { setLoading(false); }
   };
 

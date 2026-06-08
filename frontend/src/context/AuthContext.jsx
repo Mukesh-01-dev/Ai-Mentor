@@ -5,6 +5,7 @@ import React, {
   useState,
   useEffect,
   useCallback,
+  useRef,
 } from "react";
 import { signOut } from "firebase/auth";
 import { auth } from "../firebase.js"; 
@@ -73,30 +74,35 @@ export const AuthProvider = ({ children }) => {
       if (!token) return;
 
       const response = await apiFetch("/api/users/profile");
-      if (!response) return;
-      if (response.ok) {
-        const userData = await response.json();
+      if (!response || !response.ok) return;
 
-        const newUser = {
-          ...userData,
-          token: localStorage.getItem("token"),
-          avatar_url: userData.avatar_url || null,
-          isProfileComplete: userData.isProfileComplete ?? false,
-          isGoogleUser: userData.isGoogleUser ?? false,
-          googleId: userData.googleId ?? null,
-          hasPassword: userData.hasPassword ?? false,
-        };
+      const userData = await response.json();
 
-        setUser(newUser);
+      const newUser = {
+        ...userData,
+        token: localStorage.getItem("token"),
+        avatar_url: userData.avatar_url || null,
+        isProfileComplete: userData.isProfileComplete ?? false,
+        isGoogleUser: userData.isGoogleUser ?? false,
+        googleId: userData.googleId ?? null,
+        hasPassword: userData.hasPassword ?? false,
+      };
+
+      setUser(prev => {
+        if (JSON.stringify(prev) === JSON.stringify(newUser)) return prev;
         localStorage.setItem("user", JSON.stringify(newUser));
-      }
+        return newUser;
+      });
     } catch (error) {
       console.error("Error fetching user profile:", error);
     }
   }, []);
 
+  const hasFetchedProfile = useRef(false);
+
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && !hasFetchedProfile.current) {
+      hasFetchedProfile.current = true;
       fetchUserProfile();
     }
   }, [isAuthenticated, fetchUserProfile]);

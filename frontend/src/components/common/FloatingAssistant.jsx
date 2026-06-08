@@ -1,11 +1,31 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Bot, X, MessageCircle} from 'lucide-react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { Bot, X, MessageCircle, ChevronRight} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import axios from "axios";
 
 const FloatingAssistant = () => {
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
+
+  // Resize boundaries and dimension states
+  const [dimensions, setDimensions] = useState({ width: 320, height: 380 });
+  const [isResizing, setIsResizing] = useState(false);
+  
+  const resizeData = useRef({ startWidth: 0, startHeight: 0, startX: 0, startY: 0 });
+
+  const MIN_WIDTH = 300;
+  const MAX_WIDTH = 500;
+  const MIN_HEIGHT = 320;
+
+  // Compute a tighter maximum height to completely avoid the dashboard top navbar
+  const getMaxHeight = () => {
+    const navbarHeight = 80; 
+    const bottomPadding = 110; // Account for the floating action action items spacing
+    const availableHeight = window.innerHeight - navbarHeight - bottomPadding;
+    
+    // Hard cap at 480px to keep it clean and localized inside the dashboard views
+    return Math.max(MIN_HEIGHT, Math.min(480, availableHeight));
+  };
 
   const handleToggle = () => {
     setIsOpen(!isOpen);
@@ -85,14 +105,90 @@ const sendMessage = async () => {
     setLoading(false);
   }
 };
+  // Capture the starting dimensions when a user mouse-downs a resize handle
+  const handleResizeStart = (e) => {
+    e.preventDefault();
+    setIsResizing(true);
+    resizeData.current = {
+      startWidth: dimensions.width,
+      startHeight: dimensions.height,
+      startX: e.clientX,
+      startY: e.clientY,
+    };
+  };
+
+  // Global mouse tracking computations
+  const handleResizeMove = useCallback((e) => {
+    if (!isResizing) return;
+
+    // Fixed in bottom-right: dragging left (-delta) increases width, dragging up (-delta) increases height
+    const deltaX = e.clientX - resizeData.current.startX;
+    const deltaY = e.clientY - resizeData.current.startY;
+
+    const newWidth = resizeData.current.startWidth - deltaX;
+    const newHeight = resizeData.current.startHeight - deltaY;
+
+    setDimensions({
+      width: Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, newWidth)),
+      height: Math.max(MIN_HEIGHT, Math.min(getMaxHeight(), newHeight)),
+    });
+  }, [isResizing]);
+
+  const handleResizeStop = useCallback(() => {
+    setIsResizing(false);
+  }, []);
+
+  // Clamps layout immediately if the active size configuration breaks threshold boundaries
+  useEffect(() => {
+    if (isOpen) {
+      const maxH = getMaxHeight();
+      if (dimensions.height > maxH) {
+        setDimensions(prev => ({ ...prev, height: maxH }));
+      }
+    }
+  }, [isOpen, window.innerHeight]);
+
+  // Window listeners capture smooth dragging even if the cursor temporarily drifts out of the container
+  useEffect(() => {
+    if (isResizing) {
+      window.addEventListener('mousemove', handleResizeMove);
+      window.addEventListener('mouseup', handleResizeStop);
+    }
+    return () => {
+      window.removeEventListener('mousemove', handleResizeMove);
+      window.removeEventListener('mouseup', handleResizeStop);
+    };
+  }, [isResizing, handleResizeMove, handleResizeStop]);
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end select-none">
       {/* Chat Window */}
       {isOpen && (
-        <div className="mb-4 w-80 bg-card border border-border rounded-2xl shadow-2xl overflow-hidden animate-in slide-in-from-bottom-2 fade-in duration-200">
+        <div 
+          style={{ width: `${dimensions.width}px`, height: `${dimensions.height}px` }}
+          className="mb-4 bg-card border border-border rounded-2xl shadow-2xl flex flex-col overflow-hidden relative animate-in slide-in-from-bottom-2 fade-in duration-200"
+        >
+          {/* ================= RESIZE HANDLES ================= */}
+          {/* Top-Left Corner Diagonal Handle */}
+          <div 
+            onMouseDown={handleResizeStart}
+            className="absolute top-0 left-0 w-4 h-4 cursor-nwse-resize z-50"
+            title="Resize window"
+          />
+          {/* Left Structural Side Handle */}
+          <div 
+            onMouseDown={handleResizeStart}
+            className="absolute top-0 left-0 w-1.5 h-full cursor-ew-resize z-40"
+          />
+          {/* Top Structural Edge Handle */}
+          <div 
+            onMouseDown={handleResizeStart}
+            className="absolute top-0 left-0 w-full h-1.5 cursor-ns-resize z-40"
+          />
+          {/* ================================================== */}
+
           {/* Header */}
-          <div className="bg-gradient-to-r from-teal-500 to-teal-600 p-4 text-white flex justify-between items-center shadow-md">
+          <div className="bg-gradient-to-r from-teal-500 to-teal-600 p-4 text-white flex justify-between items-center shadow-md shrink-0 pointer-events-auto">
             <div className="flex items-center gap-2">
               <Bot className="w-5 h-5" />
               <h3 className="font-semibold text-sm">Assistant</h3>

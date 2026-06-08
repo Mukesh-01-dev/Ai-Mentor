@@ -595,6 +595,10 @@ Includes:
 * Cloudinary credentials
 * SMTP credentials
 * AI service URL
+* Firebase Admin SDK Credentials (for Google OAuth validation)
+* Stripe Integration keys & Webhook Secrets (for billing verification)
+* Razorpay Integration API keys (for merchant processing)
+* Super Admin Configuration Seed Parameters
 
 ---
 
@@ -621,6 +625,12 @@ SMTP_HOST=
 SMTP_PORT=
 SMTP_USER=
 SMTP_PASS=
+STRIPE_SECRET_KEY=
+FIREBASE_PROJECT_ID=
+FIREBASE_CLIENT_EMAIL=
+FIREBASE_PRIVATE_KEY=
+RAZORPAY_KEY_ID
+RAZORPAY_KEY_SECRET
 ```
 
 ---

@@ -56,11 +56,22 @@
   --color-transcript-bg: var(--color-transcript-bg);
 }
 
+html,
+body,
+#root {
+  height: 100%;
+  /* Use dynamic viewport height so macOS browsers (Safari/Chrome) recompute
+     correctly after minimize/restore — fixes the bottom gap. dvh == vh on desktop. */
+  min-height: 100dvh;
+}
+
 body {
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
     "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
     sans-serif;
-  background-color: var(--color-canvas);
+  /* Match the dashboard shell (bg-canvas-alt) so a transient height gap never
+     shows a contrasting strip. */
+  background-color: var(--color-canvas-alt);
   color: var(--color-text-main);
 }
 
