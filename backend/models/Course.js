@@ -4,31 +4,80 @@ import { sequelize } from "../config/db.js";
 const Course = sequelize.define("Course", {
   id: {
     type: DataTypes.INTEGER,
-    autoIncrement: true,   // ✅ ADD THIS
+    autoIncrement: true,
     primaryKey: true,
   },
 
-  title: DataTypes.STRING,
-  category: DataTypes.STRING,
-  categoryColor: DataTypes.STRING,
+  title: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    validate: {
+      notEmpty: {
+        msg: "Title is required",
+      },
+    },
+  },
 
-  lessons: DataTypes.STRING,
-  lessonsCount: DataTypes.INTEGER,
+  category: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    validate: {
+      notEmpty: {
+        msg: "Category is required",
+      },
+    },
+  },
 
-  level: DataTypes.STRING,
+  categoryColor: {
+    type: DataTypes.STRING,
+  },
 
-  price: DataTypes.STRING,
-  priceValue: DataTypes.INTEGER,
-  currency: DataTypes.STRING,
+  lessons: {
+    type: DataTypes.STRING,
+  },
 
-  rating: DataTypes.FLOAT,
+  lessonsCount: {
+    type: DataTypes.INTEGER,
+  },
 
-  students: DataTypes.STRING,
-  studentsCount: DataTypes.INTEGER,
+  level: {
+    type: DataTypes.STRING,
+  },
+
+  price: {
+    type: DataTypes.STRING,
+  },
+
+  priceValue: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    validate: {
+      min: {
+        args: [0],
+        msg: "Price value cannot be negative",
+      },
+    },
+  },
+
+  currency: {
+    type: DataTypes.STRING,
+  },
+
+  rating: {
+    type: DataTypes.FLOAT,
+  },
+
+  students: {
+    type: DataTypes.STRING,
+  },
+
+  studentsCount: {
+    type: DataTypes.INTEGER,
+  },
 
   image: {
     type: DataTypes.STRING,
-    comment: "Course thumbnail path. Example: /uploads/courses/react.png"
+    comment: "Course thumbnail path. Example: /uploads/courses/react.png",
   },
 
   status: {

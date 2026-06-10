@@ -38,9 +38,6 @@ const formatCourse = (course) => ({
   isBookmarked: course.isBookmarked,
 });
 
-/* =========================
-   GET ALL COURSES (DB)
-========================= */
 const getCourses = async (req, res) => {
   try {
     const courses = await Course.findAll({
@@ -55,9 +52,6 @@ const getCourses = async (req, res) => {
   }
 };
 
-/* =========================
-   GET COURSE BY ID (DB)
-========================= */
 const getCourseById = async (req, res) => {
   try {
     const courseId = String(req.params.id);
