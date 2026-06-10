@@ -9,18 +9,37 @@ export const getAllUsers = async (req, res) => {
     // skip calculate karo
     const offset = (page - 1) * limit;
 
-    const users = await User.findAndCountAll({
-      attributes: [
-        "id",
-        "name",
-        "email",
-        "role",
-        "purchasedCourses",
-        "createdAt",
-      ],
-      limit,
-      offset,
-    });
+    const { search, status } = req.query;
+const { Op } = await import("sequelize");
+
+const where = {};
+
+if (search) {
+  where[Op.or] = [
+    { name: { [Op.iLike]: `%${search}%` } },
+    { email: { [Op.iLike]: `%${search}%` } },
+  ];
+}
+
+if (status && status !== "all") {
+  where.status = status;
+}
+
+const users = await User.findAndCountAll({
+  attributes: [
+    "id",
+    "name",
+    "email",
+    "role",
+    "purchasedCourses",
+    "createdAt",
+    "status",
+  ],
+  where,
+  limit,
+  offset,
+  order: [["createdAt", "DESC"]],
+});
 
     res.status(200).json({
       success: true,

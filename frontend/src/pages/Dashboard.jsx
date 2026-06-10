@@ -25,6 +25,7 @@ import Preferences from "../components/Preferences";
 import API_BASE_URL, { apiFetch } from "../lib/api";
 import FloatingAssistant from "../components/common/FloatingAssistant";
 import CourseCardMeta from "../components/common/CourseCardMeta";
+import { Helmet } from "react-helmet-async";
 
 // Add this here
 const getImageUrl = (image) => {
@@ -61,24 +62,27 @@ const Dashboard = () => {
           "Content-Type": "application/json",
         };
 
-        const [coursesRes, statsRes,res] = await Promise.all([
+        const [coursesResult, statsResult, certResult] = await Promise.allSettled([
           fetch("/api/courses", { headers }),
           fetch("/api/courses/stats/cards", { headers }),
-          fetch("/api/certificate/list", {headers}),
+          fetch("/api/certificate/list", { headers }),
         ]);
 
-        if (res.ok) {
+        const coursesRes = coursesResult.status === "fulfilled" ? coursesResult.value : null;
+        const statsRes = statsResult.status === "fulfilled" ? statsResult.value : null;
+        const res = certResult.status === "fulfilled" ? certResult.value : null;
+
+        if (res && res.ok) {
           const json = await res.json();
           setData(json);
-        }
-         if (!res.ok) {
+        } else if (res && !res.ok) {
           console.error(`Failed to fetch certificates: ${res.status}`);
         }
-        if (!coursesRes.ok) {
-          throw new Error(`Courses API failed: ${coursesRes.status}`);
+        if (!coursesRes || !coursesRes.ok) {
+          throw new Error(`Courses API failed: ${coursesRes?.status}`);
         }
-        if (!statsRes.ok) {
-          throw new Error(`Stats API failed: ${statsRes.status}`);
+        if (!statsRes || !statsRes.ok) {
+          throw new Error(`Stats API failed: ${statsRes?.status}`);
         }
 
         const allCourses = await coursesRes.json();
@@ -97,7 +101,6 @@ console.log(allCourses);
         const { statsCards } = await statsRes.json();
 
         setCoursesData({ allCourses, statsCards });
-        await fetchUserProfile();
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
       } finally {
@@ -106,7 +109,8 @@ console.log(allCourses);
     };
 
     fetchAllData();
-  }, [fetchUserProfile]);
+  }, []);
+
   const calculateStats = () => {
     const baseCards = [
       {
@@ -342,7 +346,7 @@ console.log(allCourses);
     try {
       // If the course is free, attempt enrollment first
       const priceValue = Number(course.priceValue || 0);
-        if (priceValue === 0) {
+      if (priceValue === 0) {
         const res = await fetch(`${API_BASE_URL}/api/users/purchase-course`, {
           method: 'POST',
           headers: {
@@ -380,6 +384,15 @@ console.log(allCourses);
 
   return (
     <main className="flex-1 overflow-x-hidden overflow-y-auto bg-canvas-alt p-6">
+      <Helmet>
+            <title>Dashboard | UptoSkills</title>
+            <meta 
+                name="description" 
+                content="Track your learning progress, enrolled courses and certificates on UptoSkills." 
+            />
+            <meta property="og:title" content="Dashboard | UptoSkills" />
+            <meta property="og:type" content="website" />
+        </Helmet>
       <Preferences
         key={localStorage.getItem("token")}
         mode="modal"

@@ -234,7 +234,13 @@ export default function Settings() {
       setProfilePopup(true);
     } catch (error) {
       console.error("Error updating profile:", error.response?.data || error);
-      toast.error("Failed to update profile.");
+      toast.error(error.response?.data?.message ||"Failed to update profile.");
+      setFormData({
+      firstName: user.firstName || "",
+      lastName: user.lastName || "",
+      email: user.email || "",
+      bio: user.bio || "",
+  });
     } finally { setLoading(false); }
   };
 
@@ -809,7 +815,16 @@ export default function Settings() {
         {/* ── Desktop main content ── */}
         <main className="hidden lg:block flex-1 p-3 sm:p-4 md:p-6 lg:p-8 lg:mt-5 min-w-0">
           {renderPanel(activeSetting)}
-          <FloatingAssistant />
+          <FloatingAssistant
+            page="settings"
+            onNavigateSetting={(settingKey) => {
+              if (settingKey === "delete_account") {
+                setshowDeletePopup(true);
+              } else {
+                setActiveSetting(settingKey);
+              }
+            }}
+          />
         </main>
 
         {/* ── Mobile placeholder card ── */}

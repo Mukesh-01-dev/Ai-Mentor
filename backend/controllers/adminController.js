@@ -46,15 +46,25 @@ const registerAdmin = async (req, res) => {
 const loginAdmin = async (req, res) => {
   const { email, password } = req.body;
 
+  if (!email || !password) {
+    return res
+      .status(400)
+      .json({ message: "Email and password are required" });
+  }
+
   try {
     const admin = await Admin.findOne({ where: { email } });
 
     if (admin && (await admin.matchPassword(password))) {
+      if (admin.status === "on-hold") {
+        return res.status(403).json({ message: "Your account has been suspended. Please contact a superadmin." });
+      }
       res.json({
         id: admin.id,
         name: admin.name,
         email: admin.email,
         role: admin.role,
+        status: admin.status,
         token: generateToken(admin.id),
       });
     } else {
@@ -76,6 +86,7 @@ const getAdminProfile = async (req, res) => {
       name: req.admin.name,
       email: req.admin.email,
       role: req.admin.role,
+      status: req.admin.status,
     });
   } else {
     res.status(404).json({ message: "Admin not found" });

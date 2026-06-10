@@ -2,6 +2,8 @@ import { User, Course, CommunityPost, Report } from "../models/index.js";
 import { sequelize } from "../config/db.js";
 
 const ensureReportSeed = async () => {
+  // Never seed sample/test data outside of development.
+  if (process.env.NODE_ENV === "production") return;
   try {
     await CommunityPost.sync();
     await Report.sync();

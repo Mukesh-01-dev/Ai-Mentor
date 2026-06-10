@@ -1,3 +1,4 @@
+import { Op } from "sequelize";
 import CommunityPost from "../models/CommunityPost.js";
 import User from "../models/User.js";
 import Report from "../models/Report.js";
@@ -48,7 +49,7 @@ const getCourseCommunityStats = async (req, res) => {
 const getCourseDiscussions = async (req, res) => {
   try {
     const { courseId } = req.params;
-    const { sort } = req.query;
+    const { sort, page, limit } = req.query;
 
     // Check if user is enrolled in the course
     const user = await User.findByPk(req.user.id);
@@ -62,12 +63,21 @@ const getCourseDiscussions = async (req, res) => {
       });
     }
 
-    const posts = await CommunityPost.findAll({
+    // Pagination parameters
+    const pageNum = parseInt(page, 10) || 1;
+    const limitNum = parseInt(limit, 10) || 10;
+    const sanitizedPage = pageNum > 0 ? pageNum : 1;
+    const sanitizedLimit = limitNum > 0 ? limitNum : 10;
+    const offset = (sanitizedPage - 1) * sanitizedLimit;
+
+    const { count, rows: posts } = await CommunityPost.findAndCountAll({
       where: { type: "course", courseId: parseInt(courseId), hiddenAt: null },
       include: [
         { model: User, as: "author", attributes: ["id", "name", "email", "avatar_url", "googleId"] },
       ],
       order: [["createdAt", "DESC"]],
+      limit: sanitizedLimit,
+      offset: offset,
     });
 
     // Sort in JS to avoid sequelize literal issues
@@ -77,6 +87,11 @@ const getCourseDiscussions = async (req, res) => {
       );
     }
 
+    // Return posts array with pagination metadata in headers for backward compatibility
+    res.set("X-Total-Count", count);
+    res.set("X-Page", sanitizedPage);
+    res.set("X-Limit", sanitizedLimit);
+    res.set("X-Pages", Math.ceil(count / sanitizedLimit));
     res.json(posts);
   } catch (error) {
     console.error("GET COURSE DISCUSSIONS ERROR:", error);
@@ -89,19 +104,28 @@ const getCourseDiscussions = async (req, res) => {
 // @access  Private
 const getGlobalDiscussions = async (req, res) => {
   try {
-    const { category, sort } = req.query;
+    const { category, sort, page, limit } = req.query;
 
     const where = { type: "global", hiddenAt: null };
     if (category && category !== "All Categories") {
       where.category = category;
     }
 
-    const posts = await CommunityPost.findAll({
+    // Pagination parameters
+    const pageNum = parseInt(page, 10) || 1;
+    const limitNum = parseInt(limit, 10) || 10;
+    const sanitizedPage = pageNum > 0 ? pageNum : 1;
+    const sanitizedLimit = limitNum > 0 ? limitNum : 10;
+    const offset = (sanitizedPage - 1) * sanitizedLimit;
+
+    const { count, rows: posts } = await CommunityPost.findAndCountAll({
       where,
       include: [
         { model: User, as: "author", attributes: ["id", "name", "email", "avatar_url", "googleId"] },
       ],
       order: [["createdAt", "DESC"]],
+      limit: sanitizedLimit,
+      offset: offset,
     });
 
     if (sort === "popular") {
@@ -110,6 +134,11 @@ const getGlobalDiscussions = async (req, res) => {
       );
     }
 
+    // Return posts array with pagination metadata in headers for backward compatibility
+    res.set("X-Total-Count", count);
+    res.set("X-Page", sanitizedPage);
+    res.set("X-Limit", sanitizedLimit);
+    res.set("X-Pages", Math.ceil(count / sanitizedLimit));
     res.json(posts);
   } catch (error) {
     console.error("GET GLOBAL DISCUSSIONS ERROR:", error);
@@ -413,14 +442,23 @@ const replyCommunityPost = async (req, res) => {
 // @access  Private
 const getAllCoursePosts = async (req, res) => {
   try {
-    const { sort } = req.query;
+    const { sort, page, limit } = req.query;
 
-    const posts = await CommunityPost.findAll({
+    // Pagination parameters
+    const pageNum = parseInt(page, 10) || 1;
+    const limitNum = parseInt(limit, 10) || 10;
+    const sanitizedPage = pageNum > 0 ? pageNum : 1;
+    const sanitizedLimit = limitNum > 0 ? limitNum : 10;
+    const offset = (sanitizedPage - 1) * sanitizedLimit;
+
+    const { count, rows: posts } = await CommunityPost.findAndCountAll({
       where: { type: "course", hiddenAt: null },
       include: [
         { model: User, as: "author", attributes: ["id", "name", "email", "avatar_url", "googleId"] },
       ],
       order: [["createdAt", "DESC"]],
+      limit: sanitizedLimit,
+      offset: offset,
     });
 
     if (sort === "popular") {
@@ -429,6 +467,11 @@ const getAllCoursePosts = async (req, res) => {
       );
     }
 
+    // Return posts array with pagination metadata in headers for backward compatibility
+    res.set("X-Total-Count", count);
+    res.set("X-Page", sanitizedPage);
+    res.set("X-Limit", sanitizedLimit);
+    res.set("X-Pages", Math.ceil(count / sanitizedLimit));
     res.json(posts);
   } catch (error) {
     console.error("GET ALL COURSE POSTS ERROR:", error);
@@ -488,8 +531,10 @@ const reportContent = async (req, res) => {
       description: description || null,
     });
 
-    // Notify all admin users with a clear moderation message
-    const admins = await User.findAll({ where: { role: "admin" } });
+    // Notify all admin and superAdmin users with a clear moderation message
+    const admins = await User.findAll({
+      where: { role: { [Op.in]: ["admin", "superadmin"] } },
+    });
     const reporterName = req.user?.name || "A user";
     const isCommentReport = Boolean(replyId);
     const contentLabel = isCommentReport ? "comment" : "discussion post";

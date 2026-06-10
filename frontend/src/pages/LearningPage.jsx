@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 
 import { useNavigate, useParams } from "react-router-dom";
@@ -7,7 +6,6 @@ import { useAuth } from "../context/AuthContext";
 import { getAIVideo } from "../service/aiService";
 import VideoPlayer from "../components/video/VideoPlayer";
 import AITranscript from "../components/video/AITranscript";
-import CourseFeedback from "../components/common/CourseFeedback";
 import toast from "react-hot-toast";
 
 import {
@@ -27,7 +25,6 @@ import {
   User,
   X,
   Sparkles,
-  Star,
 } from "lucide-react";
 
 export default function Learning() {
@@ -39,7 +36,6 @@ export default function Learning() {
   const [expandedModule, setExpandedModule] = useState(null);
   const [celebritySearch, setCelebritySearch] = useState("");
   const [isCelebrityModalOpen, setIsCelebrityModalOpen] = useState(false);
-  const [showFeedbackPanel, setShowFeedbackPanel] = useState(false);
 
   // Captions state
   const [captions, setCaptions] = useState([]);
@@ -302,11 +298,11 @@ export default function Learning() {
         setAiVideoUrl(null);
 
         try {
-          const payload = {
-            courseId: parseInt(courseId),
-            lessonId: learningData.currentLesson.id,
-            celebrity: selectedCelebrity.split(" ")[0].toLowerCase(), // ✅ sends "salman"
-          };
+  const payload = {
+    courseId: parseInt(courseId),
+    lessonId: learningData.currentLesson.id,
+    celebrity: selectedCelebrity.split(" ")[0].toLowerCase(),
+  };
 
           const data = await getAIVideo(payload);
           console.log("AI RESPONSE =", data);
@@ -343,44 +339,102 @@ export default function Learning() {
   }
 }
 
-            if (!isReady) throw new Error("Video generation timed out.");
+  // CASE 1: cached video — videoUrl is already available
+  if (data?.cached && data?.videoUrl) {
+    setAiVideoUrl(data.videoUrl);
 
-            if (
-              lastLessonIdRef.current !== learningData.currentLesson.id ||
-              lastCelebrityRef.current !== selectedCelebrity
-            ) return;
+    if (data.transcriptName) {
+      try {
+        const trRes = await fetch(`/api/ai/transcript/${data.transcriptName}`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        });
+        if (trRes.ok) {
+          const trData = await trRes.json();
+          setGeneratedTextContent(trData.content);
+        }
+      } catch (trErr) {
+        console.error("Transcript error:", trErr);
+      }
+    }
 
             setAiVideoUrl(data.videoUrl || data.cloudinary_url);
+    setIsPlaying(true);
+    saveLessonData(learningData.currentLesson.id, {
+      generatedTextContent: "",
+      aiVideoUrl: data.videoUrl,
+      celebrity: selectedCelebrity,
+    });
+    return;
+  }
 
-            if (data.transcriptName) {
-              try {
-                const trRes = await fetch(`/api/ai/transcript/${data.transcriptName}`, {
-                  headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-                });
-                if (trRes.ok) {
-                  const trData = await trRes.json();
-                  setGeneratedTextContent(trData.content);
-                }
-              } catch (trErr) {
-                console.error("Transcript error:", trErr);
-              }
-            }
+  // CASE 2: new job — poll status until ready
+  const jobId = data?.jobId;
+  if (!jobId) throw new Error("No jobId returned from server.");
 
-            setIsPlaying(true);
-            saveLessonData(learningData.currentLesson.id, {
-              generatedTextContent: data.textContent || "",
-              aiVideoUrl: data.videoUrl,
-              celebrity: selectedCelebrity,
-            });
-          }
-        } catch (error) {
-          console.error("AI video error:", error);
-          setGeneratedTextContent("");
-          setAiVideoUrl(null);
-          setIsPlaying(false);
-        } finally {
-          setIsAIVideoLoading(false);
-        }
+  let finalVideoUrl = null;
+  let finalTranscriptName = data?.transcriptName || null;
+  let attempts = 0;
+
+  while (attempts < 120) {
+    await new Promise((r) => setTimeout(r, 1000));
+
+    const statusRes = await fetch(`/api/ai/status/${jobId}`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+    });
+    const statusData = await statusRes.json();
+
+    if (statusData.status === "ready") {
+      finalVideoUrl = statusData.cloudinary_url || null;
+      if (statusData.transcript_name) finalTranscriptName = statusData.transcript_name;
+      break;
+    }
+
+    if (statusData.status === "failed") {
+      throw new Error("Video generation failed.");
+    }
+
+    attempts++;
+  }
+
+  if (!finalVideoUrl) throw new Error("Video generation timed out or no URL returned.");
+
+  // Guard: user may have navigated away
+  if (
+    lastLessonIdRef.current !== learningData.currentLesson.id ||
+    lastCelebrityRef.current !== selectedCelebrity
+  ) return;
+
+  setAiVideoUrl(finalVideoUrl);
+
+  if (finalTranscriptName) {
+    try {
+      const trRes = await fetch(`/api/ai/transcript/${finalTranscriptName}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
+      if (trRes.ok) {
+        const trData = await trRes.json();
+        setGeneratedTextContent(trData.content);
+      }
+    } catch (trErr) {
+      console.error("Transcript error:", trErr);
+    }
+  }
+
+  setIsPlaying(true);
+  saveLessonData(learningData.currentLesson.id, {
+    generatedTextContent: "",
+    aiVideoUrl: finalVideoUrl,
+    celebrity: selectedCelebrity,
+  });
+
+} catch (error) {
+  console.error("AI video error:", error);
+  setGeneratedTextContent("");
+  setAiVideoUrl(null);
+  setIsPlaying(false);
+} finally {
+  setIsAIVideoLoading(false);
+}
       } else {
         setIsAIVideoLoading(false);
         setGeneratedTextContent("");
@@ -840,7 +894,7 @@ export default function Learning() {
             })()}
           </div>
 
-          <div className="flex items-center justify-end sm:justify-start w-full gap-2">
+          <div className="flex items-center justify-end sm:justify-start w-full">
             <button
               onClick={() => setIsCelebrityModalOpen(true)}
               className="flex items-center gap-2 px-3 py-2 sm:px-4 bg-linear-to-r from-purple-600 to-blue-600 text-white rounded-lg text-xs sm:text-sm"
@@ -852,20 +906,6 @@ export default function Learning() {
                   {selectedCelebrity.split(" ")[0]}
                 </span>
               )}
-            </button>
-
-            {/* Rate this Course — compact chip */}
-            <button
-              onClick={() => setShowFeedbackPanel(prev => !prev)}
-              title={showFeedbackPanel ? "Hide reviews" : "Rate this course"}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold border transition-all active:scale-95 ${
-                showFeedbackPanel
-                  ? "bg-amber-400 border-amber-400 text-slate-900"
-                  : "bg-transparent border-amber-400/60 text-amber-500 dark:text-amber-400 hover:bg-amber-400/10"
-              }`}
-            >
-              <Star className="w-3.5 h-3.5 fill-current" />
-              Rate
             </button>
           </div>
         </div>
@@ -1020,35 +1060,6 @@ export default function Learning() {
                 <ChevronRight className="w-5 h-5" />
               </button>
             </div>
-
-            {/* Rate Course Modal Popup */}
-            {showFeedbackPanel && createPortal(
-              <div
-                className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200"
-                onClick={(e) => {
-                  if (e.target === e.currentTarget) setShowFeedbackPanel(false);
-                }}
-              >
-                <div className="relative w-full max-w-xl rounded-2xl shadow-2xl bg-white dark:bg-slate-900 overflow-hidden border border-slate-200 dark:border-slate-700">
-                  {/* Close button */}
-                  <button
-                    onClick={() => setShowFeedbackPanel(false)}
-                    className="absolute top-3.5 right-3.5 z-10 p-1.5 rounded-lg bg-white/80 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors shadow"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                  <div className="p-1">
-                    <CourseFeedback
-                      courseId={courseId}
-                      formOnly={true}
-                      onSubmitSuccess={() => setShowFeedbackPanel(false)}
-                      onDeleteSuccess={() => setShowFeedbackPanel(false)}
-                    />
-                  </div>
-                </div>
-              </div>,
-              document.body
-            )}
           </div>
         </div>
 
