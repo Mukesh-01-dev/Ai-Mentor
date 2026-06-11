@@ -824,21 +824,35 @@ const getAllReports = async (req, res) => {
   }
 };
 
-// @desc    Create a new Course
-// @route   POST /api/admin/courses
-// @access  Private
 const createCourse = async (req, res) => {
   try {
     const { title, category, priceValue, currency } = req.body;
 
-    if (!title) {
-      return res.status(400).json({ success: false, message: "Title is required" });
+    if (!title?.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Title is required",
+      });
+    }
+
+    if (!category?.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Category is required",
+      });
+    }
+
+    if (priceValue === undefined || priceValue === null) {
+      return res.status(400).json({
+        success: false,
+        message: "Price value is required",
+      });
     }
 
     const course = await Course.create({
       title,
       category,
-      priceValue: parseFloat(priceValue) || 0,
+      priceValue: parseFloat(priceValue),
       currency: currency || "INR",
     });
 
@@ -848,7 +862,10 @@ const createCourse = async (req, res) => {
     });
   } catch (error) {
     console.error("CREATE COURSE ERROR:", error.message);
-    res.status(500).json({ success: false, message: "Server Error" });
+    res.status(500).json({
+      success: false,
+      message: "Server Error",
+    });
   }
 };
 
