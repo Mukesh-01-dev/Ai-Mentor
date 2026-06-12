@@ -1,5 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { ShieldAlert, Eye, EyeOff } from "lucide-react";
+import toast from "react-hot-toast";
+import axios from "axios";
 
 const SettingsPage = () => {
   const [currentPassword, setCurrentPassword] = useState("");
@@ -19,12 +21,55 @@ const SettingsPage = () => {
     }
   }, []);
 
+// ── Password validation helper ──────────────────────────────────────────
+  const pw =newPassword;
+  const pwChecks = {
+    minLength: pw.length >= 8,
+    uppercase: /[A-Z]/.test(pw),
+    lowercase: /[a-z]/.test(pw),
+    number: /[0-9]/.test(pw),
+    symbol: /[!@#$%^&*(),.?":{}|<>]/.test(pw),
+  };
+  const allPwValid = Object.values(pwChecks).every(Boolean);
+
+  // Single step-by-step hint — first failing rule in priority order
+  const pwHint =
+    pw.length === 0 ? null :
+      !pwChecks.minLength ? "Password must be at least 8 characters" :
+        !pwChecks.uppercase ? "Password must contain an uppercase letter" :
+          !pwChecks.lowercase ? "Password must contain a lowercase letter" :
+            !pwChecks.number ? "Password must contain a number" :
+              !pwChecks.symbol ? "Password must contain a special character" :
+                null;
+
   //  Check if they are the Super Admin
   const isSuperAdmin = user?.role === "superadmin";
   // const isSuperAdmin = user?.role === "false";
 
-  const handlePasswordChange = (e) => {
+  const handlePasswordChange = async(e) => {
     e.preventDefault();
+
+     if(newPassword!==confirmPassword){
+        toast.error("New passwords do not match!");
+        return;
+    }
+    if (!allPwValid) {
+        toast.error(pwHint);
+        return;
+    }
+    try {
+      const token = localStorage.getItem("token");
+      await axios.put("/api/admin/change-password",
+      { currentPassword:currentPassword, newPassword:newPassword },
+      { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success("Password updated successfully.");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword(""); 
+      } catch (error) {
+        toast.error(error.response?.data?.message || "Failed to update password");
+      }
   };
 
   return (

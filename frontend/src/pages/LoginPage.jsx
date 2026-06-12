@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { Helmet } from "react-helmet-async";
 import AuthLayout from "../components/auth/AuthLayout.jsx";
 import SocialLogin from "../components/auth/SocialLogin";
 import axios from "axios"; // ✅ Yeh line add karna compulsory hai
@@ -79,6 +80,15 @@ const LoginPage = () => {
       title="Welcome Back!"
       subtitle="Access your AI Learning Journey."
     >
+      <Helmet>
+        <title>Login | UptoSkills</title>
+        <meta 
+          name="description" 
+          content="Login to UptoSkills and continue your AI learning journey." 
+        />
+        <meta property="og:title" content="Login | UptoSkills" />
+        <meta property="og:type" content="website" />
+      </Helmet>
       {showLogoutAlert && (
         <div className="fixed top-8 left-1/2 -translate-x-1/2 z-[100] animate-in slide-in-from-top duration-500">
           <div className="bg-teal-500 text-white px-8 py-3 rounded-2xl shadow-2xl font-bold border-2 border-white/20">
@@ -106,7 +116,7 @@ const LoginPage = () => {
               type={showPassword ? "text" : "password"}
               className="w-full px-3 py-2 rounded-lg bg-gray-50 border border-gray-200 text-sm focus:ring-2 focus:ring-teal-500 outline-none dark:bg-slate-900 dark:border-gray-700 dark:text-white"
               placeholder="••••••••"
-              value={password}
+              value={password} 
               onChange={(e) => setPassword(e.target.value)}
             />
             <button

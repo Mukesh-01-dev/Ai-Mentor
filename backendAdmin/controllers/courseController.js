@@ -1,4 +1,5 @@
-import { Course, AdminNotification } from "../models/index.js";
+import { Course, AdminNotification, Module, Lesson, User } from "../models/index.js";
+import { Op, Sequelize } from "sequelize";
 
 // Valid status values
 const VALID_STATUSES = ["published", "disabled", "deleted"];
@@ -10,7 +11,18 @@ const VALID_STATUSES = ["published", "disabled", "deleted"];
  */
 export const getAllCourses = async (req, res) => {
   try {
+    const { search } = req.query;
+
+    const where = {};
+    if (search) {
+      where[Op.or] = [
+        { title: { [Op.iLike]: `%${search}%` } },
+        { category: { [Op.iLike]: `%${search}%` } }
+      ];
+    }
+
     const courses = await Course.findAll({
+      where,
       attributes: ["id", "title", "category", "priceValue", "currency", "status", "createdAt", "updatedAt"],
       order: [["createdAt", "DESC"]],
     });
@@ -126,13 +138,9 @@ export const deleteCourseHard = async (req, res) => {
     const { User } = await import("../models/index.js");
 
     // Check for enrolled users
-    const allUsers = await User.findAll({
+    const enrolledUsers = await User.findAll({
+      where: Sequelize.literal(`"purchasedCourses"::jsonb @> '[{"courseId": ${Number(id)}}]'`),
       attributes: ["id", "name", "purchasedCourses"],
-    });
-
-    const enrolledUsers = allUsers.filter((user) => {
-      const purchased = user.purchasedCourses || [];
-      return purchased.some((c) => Number(c.courseId) === Number(id));
     });
 
     // If force flag is not set and there are enrolled users, warn admin
@@ -185,36 +193,178 @@ export const deleteCourseHard = async (req, res) => {
 };
 
 /**
- * @desc    Get enrolled user count for a specific course (used by delete confirmation modal)
- * @route   GET /api/admin/courses/:id/enrollments
+ * @desc    Get enrolled users for a specific course with pagination
+ * @route   GET /api/admin/courses/:id/enrollments?page=1&limit=10
  * @access  Private
+ *
+ * NOTE: Enrollment data is stored as JSONB in User.purchasedCourses rather than
+ * in a relational join table, so we cannot apply SQL LIMIT/OFFSET before the
+ * filter step. We fetch all users, filter the enrolled subset, then slice
+ * in-memory — consistent with how every other handler that touches this field
+ * works (e.g. deleteCourseHard).
  */
 export const getCourseEnrollments = async (req, res) => {
   try {
     const { id } = req.params;
-    const { User } = await import("../models/index.js");
 
-    const allUsers = await User.findAll({
+    // Pagination params (mirrors getAllUsers in userController.js)
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
+
+    // Validate the course exists before reporting enrollments, so a bad/unknown
+    // id returns 404 instead of a misleading empty enrollment list.
+    const course = await Course.findByPk(id);
+    if (!course) {
+      return res.status(404).json({ success: false, message: "Course not found" });
+    }
+
+    const enrolledUsers = await User.findAll({
+      where: Sequelize.literal(`"purchasedCourses"::jsonb @> '[{"courseId": ${Number(id)}}]'`),
       attributes: ["id", "name", "email", "purchasedCourses"],
     });
 
-    const enrolledUsers = allUsers.filter((user) => {
-      const purchased = user.purchasedCourses || [];
-      return purchased.some((c) => Number(c.courseId) === Number(id));
-    });
+    const totalEnrolled = enrolledUsers.length;
+    const totalPages = Math.ceil(totalEnrolled / limit) || 1;
 
+    // Apply in-memory pagination on the filtered list
+    const paginatedUsers = enrolledUsers.slice(offset, offset + limit);
     res.status(200).json({
       success: true,
       courseId: id,
-      enrolledCount: enrolledUsers.length,
-      enrolledUsers: enrolledUsers.map((u) => ({
-        id: u.id,
-        name: u.name,
-        email: u.email,
-      })),
+      enrolledCount: totalEnrolled,
+      currentPage: page,
+      totalPages,
+      limit,
+      enrolledUsers: paginatedUsers.map((u) => {
+        // Surface when the user enrolled, using the purchaseDate stored on the
+        // matching purchasedCourses entry (set at purchase time).
+        const enrollment = (u.purchasedCourses || []).find(
+          (c) => Number(c.courseId) === Number(id)
+        );
+        return {
+          id: u.id,
+          name: u.name,
+          email: u.email,
+          enrolledAt: enrollment?.purchaseDate ?? null,
+        };
+      }),
     });
   } catch (error) {
     console.error("GET COURSE ENROLLMENTS ERROR:", error.message);
+    res.status(500).json({ success: false, message: "Server Error" });
+  }
+};
+
+/**
+ * @desc    Get Course Syllabus (Modules and Lessons)
+ * @route   GET /api/admin/courses/:id/learning
+ * @access  Private
+ */
+export const getCourseSyllabus = async (req, res) => {
+  try {
+    const courseId = req.params.id;
+    const course = await Course.findByPk(courseId);
+
+    if (!course) {
+      return res.status(404).json({ message: "Course not found" });
+    }
+
+    const modules = await Module.findAll({
+      where: { courseId },
+      order: [["order", "ASC"], ["createdAt", "ASC"]],
+      include: [
+        {
+          model: Lesson,
+          as: "lessons",
+        },
+      ],
+    });
+
+    // Ensure lessons are sorted inside modules
+    const formattedModules = modules.map((mod) => {
+      const plainMod = mod.get({ plain: true });
+      if (plainMod.lessons) {
+        plainMod.lessons.sort((a, b) => a.order - b.order || new Date(a.createdAt) - new Date(b.createdAt));
+      }
+      return plainMod;
+    });
+
+    res.json({
+      modules: formattedModules,
+      course: {
+        id: course.id,
+        title: course.title,
+        subtitle: course.category,
+      },
+    });
+  } catch (error) {
+    console.error("GET COURSE SYLLABUS ERROR:", error.message);
+    res.status(500).json({ success: false, message: "Server Error" });
+  }
+};
+
+/**
+ * @desc    Generate Course Syllabus with AI
+ * @route   POST /api/admin/courses/:id/generate-syllabus
+ * @access  Private
+ */
+export const generateCourseSyllabusWithAI = async (req, res) => {
+  try {
+    const courseId = req.params.id;
+    const course = await Course.findByPk(courseId);
+
+    if (!course) {
+      return res.status(404).json({ message: "Course not found" });
+    }
+
+    // Call Python AI Service
+    const aiUrl = `${process.env.AI_SERVICE_URL}/generate-syllabus`;
+    const aiResponse = await fetch(aiUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        course_title: course.title,
+        category: course.category
+      }),
+    });
+
+    if (!aiResponse.ok) {
+      return res.status(500).json({ message: "AI Service failed to generate syllabus. Please make sure the python server is running." });
+    }
+
+    const data = await aiResponse.json();
+    if (data.error) {
+      return res.status(500).json({ message: data.error });
+    }
+
+    // Insert into DB
+    let moduleOrder = 1;
+    for (const mod of data.modules) {
+      const newModule = await Module.create({
+        courseId: course.id,
+        title: mod.title,
+        order: moduleOrder++
+      });
+
+      let lessonOrder = 1;
+      for (const les of mod.lessons) {
+        await Lesson.create({
+          moduleId: newModule.id,
+          title: les.title,
+          duration: les.duration || "5 mins",
+          type: les.type || "video",
+          order: lessonOrder++
+        });
+      }
+    }
+
+    res.json({ message: "Syllabus generated successfully", data: data });
+  } catch (error) {
+    console.error("GENERATE SYLLABUS ERROR:", error.message);
+    if (error.cause && error.cause.code === 'ECONNREFUSED') {
+      return res.status(500).json({ message: "Python AI Server is not running. Please start it with start_ai.bat" });
+    }
     res.status(500).json({ success: false, message: "Server Error" });
   }
 };

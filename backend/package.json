@@ -12,9 +12,12 @@
     "lint": "eslint ."
   },
   "dependencies": {
-    "bcrypt": "^6.0.0",
+    "@google/genai": "^2.7.0",
+    "@google/generative-ai": "^0.24.1",
     "assert": "^2.1.0",
+    "bcrypt": "^6.0.0",
     "bcryptjs": "^2.4.3",
+    "bullmq": "^5.77.6",
     "cloudinary": "^2.9.0",
     "cors": "^2.8.6",
     "dotenv": "^16.6.1",

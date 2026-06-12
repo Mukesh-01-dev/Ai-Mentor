@@ -2,216 +2,17 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import { sequelize } from "../config/db.js";
 import { DataTypes } from "sequelize";
-
-// Define Admin model
-const Admin = sequelize.define(
-  "Admin",
-  {
-    id: {
-      type: DataTypes.UUID,
-      defaultValue: DataTypes.UUIDV4,
-      primaryKey: true,
-    },
-    name: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-    email: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      unique: true,
-    },
-    password: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-    role: {
-      type: DataTypes.ENUM("superadmin", "admin"),
-      defaultValue: "admin",
-    },
-  },
-  {
-    timestamps: true,
-    tableName: "Admins",
-  }
-);
-
-// Add password hashing and comparison methods
-Admin.beforeCreate(async (admin) => {
-  const salt = await bcrypt.genSalt(10);
-  admin.password = await bcrypt.hash(admin.password, salt);
-});
-
-Admin.prototype.matchPassword = async function (password) {
-  return await bcrypt.compare(password, this.password);
-};
-
-// Import models from main backend
-import { fileURLToPath } from "url";
-import path from "path";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Define User model to read from backend database
-const User = sequelize.define(
-  "User",
-  {
-    id: {
-      type: DataTypes.UUID,
-      defaultValue: DataTypes.UUIDV4,
-      primaryKey: true,
-    },
-    firstName: DataTypes.STRING,
-    lastName: DataTypes.STRING,
-    name: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-    email: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      unique: true,
-    },
-    password: DataTypes.STRING,
-    googleId: DataTypes.STRING,
-    role: {
-      type: DataTypes.STRING,
-      defaultValue: "user",
-    },
-    purchasedCourses: {
-      type: DataTypes.JSON,
-      defaultValue: [],
-    },
-    bookmarkedCourses: {
-      type: DataTypes.JSON,
-      defaultValue: [],
-    },
-  },
-  {
-    timestamps: true,
-    tableName: "Users",
-  }
-);
-
-// Define Course model — ONLY columns that actually exist in the DB
-// Actual columns: id, title, category, priceValue, currency, createdAt, updatedAt
-const Course = sequelize.define(
-  "Course",
-  {
-    id: {
-      type: DataTypes.INTEGER,
-      autoIncrement: true,
-      primaryKey: true,
-    },
-    title: DataTypes.STRING,
-    category: DataTypes.STRING,
-    priceValue: DataTypes.FLOAT,
-    currency: DataTypes.STRING,
-    status: {
-      type: DataTypes.STRING,
-      defaultValue: "published",
-    },
-    deletedAt: {
-      type: DataTypes.DATE,
-      allowNull: true,
-      defaultValue: null,
-    },
-  },
-  {
-    timestamps: true,
-    tableName: "Courses",
-  }
-);
-
-const CommunityPost = sequelize.define(
-  "CommunityPost",
-  {
-    id: {
-      type: DataTypes.UUID,
-      defaultValue: DataTypes.UUIDV4,
-      primaryKey: true,
-    },
-    content: DataTypes.TEXT,
-    userId: DataTypes.UUID,
-  },
-  {
-    timestamps: true,
-    tableName: "CommunityPosts",
-  }
-);
-
-const Report = sequelize.define(
-  "Report",
-  {
-    id: {
-      type: DataTypes.UUID,
-      defaultValue: DataTypes.UUIDV4,
-      primaryKey: true,
-    },
-    reporterId: {
-      type: DataTypes.UUID,
-      allowNull: false,
-    },
-    postId: {
-      type: DataTypes.UUID,
-      allowNull: false,
-    },
-    reason: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-    description: {
-      type: DataTypes.TEXT,
-      allowNull: true,
-    },
-    status: {
-      type: DataTypes.STRING,
-      defaultValue: "pending",
-    },
-  },
-  {
-    timestamps: true,
-    tableName: "Reports",
-  }
-);
-
-// Setup Associations
-Report.belongsTo(User, { foreignKey: "reporterId", as: "reporter" });
-Report.belongsTo(CommunityPost, { foreignKey: "postId", as: "post" });
-CommunityPost.belongsTo(User, { foreignKey: "userId", as: "author" });
-
-const AdminNotification = sequelize.define(
-  "AdminNotification",
-  {
-    id: {
-      type: DataTypes.UUID,
-      defaultValue: DataTypes.UUIDV4,
-      primaryKey: true,
-    },
-    title: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-    message: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-    type: {
-      type: DataTypes.STRING,
-      defaultValue: "general",
-    },
-    unread: {
-      type: DataTypes.BOOLEAN,
-      defaultValue: true,
-    },
-  },
-  {
-    timestamps: true,
-    tableName: "AdminNotifications",
-  }
-);
-
+import {
+  Admin,
+  User,
+  Course,
+  Module,
+  Lesson,
+  CommunityPost,
+  Report,
+  AdminNotification,
+} from "../models/index.js";
+ 
 let notificationSeedPromise = null;
 
 const ensureNotificationSeed = async () => {
@@ -869,6 +670,118 @@ const createCourse = async (req, res) => {
   }
 };
 
+// @desc    Get Course Syllabus (Modules and Lessons)
+// @route   GET /api/admin/courses/:id/learning
+// @access  Private
+const getCourseSyllabus = async (req, res) => {
+  try {
+    const courseId = req.params.id;
+    const course = await Course.findByPk(courseId);
+
+    if (!course) {
+      return res.status(404).json({ message: "Course not found" });
+    }
+
+    const modules = await Module.findAll({
+      where: { courseId },
+      order: [["order", "ASC"], ["createdAt", "ASC"]],
+      include: [
+        {
+          model: Lesson,
+          as: "lessons",
+        },
+      ],
+    });
+
+    // Ensure lessons are sorted inside modules
+    const formattedModules = modules.map((mod) => {
+      const plainMod = mod.get({ plain: true });
+      if (plainMod.lessons) {
+        plainMod.lessons.sort((a, b) => a.order - b.order || new Date(a.createdAt) - new Date(b.createdAt));
+      }
+      return plainMod;
+    });
+
+    res.json({
+      modules: formattedModules,
+      course: {
+        id: course.id,
+        title: course.title,
+        subtitle: course.category,
+      },
+    });
+  } catch (error) {
+    console.error("GET COURSE SYLLABUS ERROR:", error.message);
+    res.status(500).json({ success: false, message: "Server Error" });
+  }
+};
+
+// @desc    Generate Course Syllabus with AI
+// @route   POST /api/admin/courses/:id/generate-syllabus
+// @access  Private
+const generateCourseSyllabusWithAI = async (req, res) => {
+  try {
+    const courseId = req.params.id;
+    const course = await Course.findByPk(courseId);
+
+    if (!course) {
+      return res.status(404).json({ message: "Course not found" });
+    }
+
+    // Call Python AI Service
+    // We assume backendAdmin can access AI service via process.env.BACKEND_URL or hardcode
+    // Let's use the Python AI server URL (it runs on 8000)
+    const aiUrl = `${process.env.AI_SERVICE_URL}/generate-syllabus`;
+    const aiResponse = await fetch(aiUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        course_title: course.title,
+        category: course.category
+      }),
+    });
+
+    if (!aiResponse.ok) {
+      return res.status(500).json({ message: "AI Service failed to generate syllabus. Please make sure the python server is running." });
+    }
+
+    const data = await aiResponse.json();
+    if (data.error) {
+      return res.status(500).json({ message: data.error });
+    }
+
+    // Insert into DB
+    let moduleOrder = 1;
+    for (const mod of data.modules) {
+      const newModule = await Module.create({
+        courseId: course.id,
+        title: mod.title,
+        order: moduleOrder++
+      });
+
+      let lessonOrder = 1;
+      for (const les of mod.lessons) {
+        await Lesson.create({
+          moduleId: newModule.id,
+          title: les.title,
+          duration: les.duration || "5 mins",
+          type: les.type || "video",
+          order: lessonOrder++
+        });
+      }
+    }
+
+    res.json({ message: "Syllabus generated successfully", data: data });
+  } catch (error) {
+    console.error("GENERATE SYLLABUS ERROR:", error.message);
+    // Return a better error if fetch failed due to AI server not running
+    if (error.cause && error.cause.code === 'ECONNREFUSED') {
+      return res.status(500).json({ message: "Python AI Server is not running. Please start it with start_ai.bat" });
+    }
+    res.status(500).json({ success: false, message: "Server Error" });
+  }
+};
+
 export {
   Admin,
   registerAdmin,
@@ -887,4 +800,6 @@ export {
   markNotificationRead,
   clearAllNotifications,
   getAllReports,
+  getCourseSyllabus,
+  generateCourseSyllabusWithAI,
 };

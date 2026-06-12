@@ -5,6 +5,7 @@ import validate from "../middleware/validate.js";
 import { generateVideoSchema } from "../schemas/aiSchema.js";
 import { getCourseAndLessonTitles } from "../controllers/courseController.js";
 import Preferences from "../models/Preference.js";
+//import { videoQueue } from "../queues/videoQueue.js";
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -60,6 +61,7 @@ router.post("/generate-video", protect, validate(generateVideoSchema), async (re
       );
 
       if (!videoCheck.ok) {
+        console.log("⚠️ Cached video missing. Removing from DB...");
 
         await cachedVideo.destroy();  // delete bad cache
 
@@ -93,9 +95,49 @@ router.post("/generate-video", protect, validate(generateVideoSchema), async (re
       ? userPreferencesRecord.toJSON()
       : null;
 
+  
+    // Added to queue instead of blocking the request
+//     const job = await videoQueue.add("generate-video", {
+//       courseId,
+//       lessonId,
+//       celebrity,
+//       courseTitle,
+//       lessonTitle,
+//       userPreferences,
+//     });
+//
+//     console.log(`📥 Job added to queue: ${job.id}`);
+//
+//     res.json({
+//       jobId: job.id,
+//       status: "processing",
+//       message: "Video generation started",
+//     });
        
     // Temporary fallback response since videoQueue is disabled
-    return res.status(501).json({ message: "Video generation is temporarily disabled." });
+   const response = await fetch(
+  `${process.env.AI_SERVICE_URL}/generate`,
+  {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      course: courseTitle,
+      topic: lessonTitle,
+      celebrity,
+      preferences: userPreferences,
+    }),
+  }
+);
+
+if (!response.ok) {
+  throw new Error("AI service request failed");
+}
+
+const data = await response.json();
+
+return res.json(data);
 
   } catch (error) {
     console.error("AI GENERATE ERROR:", error);

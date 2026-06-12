@@ -6,6 +6,8 @@ import {
   deleteAdmin,
   logoutAdmin,
   getAllAdmins,
+  changePassword,
+  updateAdminStatus,
 } from "../controllers/authController.js";
 import {
   getAllCourses,
@@ -13,6 +15,8 @@ import {
   updateCourseStatus,
   deleteCourseHard,
   getCourseEnrollments,
+  getCourseSyllabus,
+  generateCourseSyllabusWithAI,
 } from "../controllers/courseController.js";
 import {
   getAllUsers,
@@ -47,6 +51,7 @@ router.post("/register", protectAdmin, superAdminOnly, registerAdmin);
 router.get("/profile", protectAdmin, getAdminProfile);
 router.post("/logout", protectAdmin, logoutAdmin);
 router.delete("/:id", protectAdmin, superAdminOnly, deleteAdmin);
+router.put("/change-password", protectAdmin,changePassword);
 
 // Admin data routes
 router.get("/enrollments", protectAdmin, getAllEnrollments);
@@ -56,12 +61,15 @@ router.post("/courses", protectAdmin, createCourse);
 router.patch("/courses/:id/status", protectAdmin, updateCourseStatus);
 router.delete("/courses/:id", protectAdmin, superAdminOnly, deleteCourseHard);
 router.get("/courses/:id/enrollments", protectAdmin, getCourseEnrollments);
+router.get("/courses/:id/learning", protectAdmin, getCourseSyllabus);
+router.post("/courses/:id/generate-syllabus", protectAdmin, generateCourseSyllabusWithAI);
 router.get("/users", protectAdmin, getAllUsers);
 router.patch("/users/:id/status", protectAdmin, superAdminOnly, updateUserStatus);
 router.delete("/users/:id", protectAdmin, superAdminOnly, deleteUser);
 router.get("/reports", protectAdmin, getAllReports);
 router.get("/discussions", protectAdmin, getAllDiscussions);
 router.get("/admins", protectAdmin, getAllAdmins);
+router.patch("/admins/:id/status", protectAdmin, superAdminOnly, updateAdminStatus);
 
 // Notifications
 router.get("/notifications", protectAdmin, getAdminNotifications);

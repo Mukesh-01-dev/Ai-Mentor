@@ -11,14 +11,17 @@
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.18",
+    "axios": "^1.16.1",
     "exceljs": "^4.4.0",
     "file-saver": "^2.0.5",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.7",
+    "jwt-decode": "^4.0.0",
     "lucide-react": "^1.0.1",
     "papaparse": "^5.5.3",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
+    "react-hot-toast": "^2.6.0",
     "react-router-dom": "^7.13.2",
     "tailwindcss": "^4.1.18"
   },
