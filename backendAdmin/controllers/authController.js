@@ -170,7 +170,7 @@ export const updateAdminStatus = async (req, res) => {
       return res.status(400).json({ success: false, message: "You cannot change your own status" });
     }
 
-    if (admin.role === "superadmin") {
+    if (admin.role === "superAdmin") {
       return res.status(400).json({ success: false, message: "Super admin status cannot be changed" });
     }
 

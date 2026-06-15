@@ -75,7 +75,7 @@ export const updateCourseStatus = async (req, res) => {
     }
 
     // Soft-deleting requires superadmin
-    if (status === "deleted" && req.admin.role !== "superadmin") {
+    if (status === "deleted" && req.admin.role !== "superAdmin") {
       return res.status(403).json({
         success: false,
         message: "Only superadmin can soft-delete courses",
