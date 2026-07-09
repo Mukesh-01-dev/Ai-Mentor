@@ -155,9 +155,9 @@ const Header = () => {
           {/* Mobile Menu & Logo */}
           <div className="flex items-center space-x-2 sm:space-x-4">
             <button
-              className="lg:hidden p-2 rounded-xl bg-card border border-border hover:bg-canvas-alt transition-all"
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-            >
+  aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
+  className="lg:hidden..."
+  onClick={() => setSidebarOpen(!sidebarOpen)}>
               {sidebarOpen ? <X className="w-5 h-5 text-muted" /> : <Menu className="w-5 h-5 text-muted" />}
             </button>
 
@@ -178,6 +178,7 @@ const Header = () => {
               <>
                 <div className="relative" ref={notificationRef}>
                   <div
+                  aria-label="Notifications"
                     onClick={() => setNotifOpen(!notifOpen)}
                     className="relative cursor-pointer p-1.5 sm:p-2.5 hover:bg-canvas-alt rounded-xl transition-all group"
                   >
@@ -255,7 +256,8 @@ const Header = () => {
                 {/* PROFILE DROPDOWN SECTION */}
                 <div className="relative" ref={dropdownRef}>
                   <button
-                    onClick={toggleDropdown}
+  aria-label="Open profile menu"
+  onClick={toggleDropdown}
                     className="flex items-center space-x-2 sm:space-x-3 p-1 sm:pr-3 rounded-2xl hover:bg-canvas-alt transition-all border border-transparent hover:border-border group"
                   >
                     <div className="relative">
@@ -298,16 +300,16 @@ const Header = () => {
                       </div>
 
                       <div className="p-3 text-left">
-                        <button onClick={() => { navigate("/settings"); setDropdownOpen(false); }} className="flex items-center w-full px-4 py-3.5 text-xs font-bold text-main hover:bg-teal-500 hover:text-white rounded-[1.2rem] transition-all group">
+                        <button aria-label="Open settings" onClick={() => { navigate("/settings"); setDropdownOpen(false); }} className="flex items-center w-full px-4 py-3.5 text-xs font-bold text-main hover:bg-teal-500 hover:text-white rounded-[1.2rem] transition-all group">
                           <User className="mr-3 w-4 h-4 group-hover:scale-110 transition-transform" /> {t("nav.profile")}
                         </button>
-                        <button onClick={() => { navigate("/settings"); setDropdownOpen(false); }} className="flex items-center w-full px-4 py-3.5 text-xs font-bold text-main hover:bg-teal-500 hover:text-white rounded-[1.2rem] transition-all group mt-1">
+                        <button aria-label="Open settings" onClick={() => { navigate("/settings"); setDropdownOpen(false); }} className="flex items-center w-full px-4 py-3.5 text-xs font-bold text-main hover:bg-teal-500 hover:text-white rounded-[1.2rem] transition-all group mt-1">
                           <Settings className="mr-3 w-4 h-4 group-hover:rotate-45 transition-transform" /> {t("nav.settings")}
                         </button>
 
                         <div className="my-2 border-t border-border/50 mx-2" />
 
-                        <button onClick={handleLogout} className="flex items-center w-full px-4 py-3.5 text-xs font-black text-red-500 hover:bg-red-500 hover:text-white rounded-[1.2rem] transition-all group">
+                        <button aria-label="Logout" onClick={handleLogout} className="flex items-center w-full px-4 py-3.5 text-xs font-black text-red-500 hover:bg-red-500 hover:text-white rounded-[1.2rem] transition-all group">
                           <LogOut className="mr-3 w-4 h-4 group-hover:translate-x-1 transition-transform" /> {t("auth.logout")}
                         </button>
                       </div>

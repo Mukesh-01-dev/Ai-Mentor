@@ -120,10 +120,11 @@ const LoginPage = () => {
               onChange={(e) => setPassword(e.target.value)}
             />
             <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-            >
+  type="button"
+  onClick={() => setShowPassword(!showPassword)}
+  aria-label={showPassword ? "Hide password" : "Show password"}
+  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+>
               {showPassword ? (
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
