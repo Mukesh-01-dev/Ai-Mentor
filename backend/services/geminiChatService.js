@@ -39,8 +39,8 @@ export const askGemini = async (
       courses → /courses
       community → /community
       watch history → /watch-history
-      Return:
-      ROUTE:/page-name at the end of your answer.
+      Return the route on its own final line, without punctuation or text after it:
+      ROUTE:/page-name
     `;
 
   const response =

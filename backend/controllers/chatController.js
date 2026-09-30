@@ -214,11 +214,11 @@ export const chatWithAssistant = async (req, res) => {
     let route = null;
 
     const routeMatch = geminiReply.match(
-      /ROUTE:(.+)/i
+      /ROUTE:\s*(\/[a-zA-Z0-9._~/%?&=+-]+)/i
     );
 
     if (routeMatch) {
-      route = routeMatch[1].trim();
+      route = routeMatch[1].replace(/[.,;!?]+$/, "");
     }
 
     // Remove ROUTE from visible message
