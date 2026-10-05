@@ -1,33 +1,24 @@
 import React, { useState, useEffect } from "react";
-import { Link, Navigate, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useTranslation } from "react-i18next";
+
 import {
-  Search,
-  Bell,
-  BarChart3,
-  BookOpen,
-  MessageCircle,
-  Settings,
   Play,
-  Calendar,
-  Menu,
-  X,
   ChevronLeft,
   ChevronRight,
-  ChevronLeft as ChevronLeftIcon,
   CheckCircle,
   Clock,
-  Star,
   Award,
 } from "lucide-react";
+
 import Preferences from "../components/Preferences";
-import API_BASE_URL, { apiFetch } from "../lib/api";
+import API_BASE_URL from "../lib/api";
 import FloatingAssistant from "../components/common/FloatingAssistant";
 import CourseCardMeta from "../components/common/CourseCardMeta";
+import AIMentorCard from "../components/common/AIMentorCard";
 import { Helmet } from "react-helmet-async";
 
-// Add this here
 const getImageUrl = (image) => {
   if (!image) {
     return "https://via.placeholder.com/400x250?text=Course";
@@ -42,67 +33,90 @@ const getImageUrl = (image) => {
 
 const Dashboard = () => {
   const { t } = useTranslation();
+
   const [coursesData, setCoursesData] = useState({
     statsCards: [],
     allCourses: [],
   });
+
   const searchQuery = "";
+
   const [loading, setLoading] = useState(true);
+
   const { user, fetchUserProfile } = useAuth();
+
   const navigate = useNavigate();
+
   const [data, setData] = useState(null);
 
   useEffect(() => {
     const fetchAllData = async () => {
       setLoading(true);
+
       try {
         const token = localStorage.getItem("token");
+
         const headers = {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         };
 
-        const [coursesResult, statsResult, certResult] = await Promise.allSettled([
-          fetch("/api/courses", { headers }),
-          fetch("/api/courses/stats/cards", { headers }),
-          fetch("/api/certificate/list", { headers }),
-        ]);
+        const [coursesResult, statsResult, certResult] =
+          await Promise.allSettled([
+            fetch("/api/courses", { headers }),
+            fetch("/api/courses/stats/cards", { headers }),
+            fetch("/api/certificate/list", { headers }),
+          ]);
 
-        const coursesRes = coursesResult.status === "fulfilled" ? coursesResult.value : null;
-        const statsRes = statsResult.status === "fulfilled" ? statsResult.value : null;
-        const res = certResult.status === "fulfilled" ? certResult.value : null;
+        const coursesRes =
+          coursesResult.status === "fulfilled"
+            ? coursesResult.value
+            : null;
+
+        const statsRes =
+          statsResult.status === "fulfilled"
+            ? statsResult.value
+            : null;
+
+        const res =
+          certResult.status === "fulfilled"
+            ? certResult.value
+            : null;
 
         if (res && res.ok) {
           const json = await res.json();
           setData(json);
         } else if (res && !res.ok) {
-          console.error(`Failed to fetch certificates: ${res.status}`);
+          console.error(
+            `Failed to fetch certificates: ${res.status}`
+          );
         }
+
         if (!coursesRes || !coursesRes.ok) {
-          throw new Error(`Courses API failed: ${coursesRes?.status}`);
+          throw new Error(
+            `Courses API failed: ${coursesRes?.status}`
+          );
         }
+
         if (!statsRes || !statsRes.ok) {
-          throw new Error(`Stats API failed: ${statsRes?.status}`);
+          throw new Error(
+            `Stats API failed: ${statsRes?.status}`
+          );
         }
 
         const allCourses = await coursesRes.json();
 
-console.log("ALL COURSES DATA:");
-console.log(allCourses);
-
-allCourses.forEach((course) => {
-  console.log({
-    id: course.id,
-    title: course.title,
-    image: course.image,
-  });
-});
-console.log(allCourses);
         const { statsCards } = await statsRes.json();
 
-        setCoursesData({ allCourses, statsCards });
+        setCoursesData({
+          allCourses,
+          statsCards,
+        });
       } catch (error) {
-        console.error("Error fetching dashboard data:", error);
+        console.error(
+          "Error fetching dashboard data:",
+          error
+        );
       } finally {
         setLoading(false);
       }
@@ -122,7 +136,9 @@ console.log(allCourses);
         iconBg: "bg-blue-100",
       },
       {
-        icon: <CheckCircle className="w-5 h-5 text-green-600" />,
+        icon: (
+          <CheckCircle className="w-5 h-5 text-green-600" />
+        ),
         value: data?.stats?.completed ?? 0,
         label: "Completed",
         change: "+0",
@@ -130,7 +146,9 @@ console.log(allCourses);
         iconBg: "bg-green-100",
       },
       {
-        icon: <Award className="w-5 h-5 text-purple-600" />,
+        icon: (
+          <Award className="w-5 h-5 text-purple-600" />
+        ),
         value: data?.stats?.certificatesEarned ?? 0,
         label: "Certificates",
         change: "+0",
@@ -138,7 +156,9 @@ console.log(allCourses);
         iconBg: "bg-purple-100",
       },
       {
-        icon: <Clock className="w-5 h-5 text-orange-600" />,
+        icon: (
+          <Clock className="w-5 h-5 text-orange-600" />
+        ),
         value: "0h",
         label: "Hours Spent",
         change: "+0h",
@@ -157,25 +177,39 @@ console.log(allCourses);
 
     let coursesInProgress = 0;
     let completedCourses = 0;
-    const certificates = user.analytics?.certificates || 0;
-    const totalHours = user.analytics?.totalHours || 0;
+
+    const certificates =
+      user.analytics?.certificates || 0;
+
+    const totalHours =
+      user.analytics?.totalHours || 0;
 
     user.purchasedCourses.forEach((purchasedCourse) => {
       const courseInfo = coursesData.allCourses.find(
-        (c) => c.id == purchasedCourse.courseId,
+        (c) => c.id == purchasedCourse.courseId
       );
+
       if (courseInfo) {
         const totalLessons =
           courseInfo.lessonsCount ||
           (courseInfo.lessons
             ? courseInfo.lessons.includes(" of ")
-              ? parseInt(courseInfo.lessons.split(" of ")[1])
-              : parseInt(courseInfo.lessons.split(" ")[0])
+              ? parseInt(
+                  courseInfo.lessons.split(" of ")[1]
+                )
+              : parseInt(
+                  courseInfo.lessons.split(" ")[0]
+                )
             : 0);
-        const completedLessons =
-          purchasedCourse.progress?.completedLessons?.length || 0;
 
-        if (completedLessons === totalLessons && totalLessons > 0) {
+        const completedLessons =
+          purchasedCourse.progress?.completedLessons
+            ?.length || 0;
+
+        if (
+          completedLessons === totalLessons &&
+          totalLessons > 0
+        ) {
           completedCourses++;
         } else {
           coursesInProgress++;
@@ -183,7 +217,7 @@ console.log(allCourses);
       }
     });
 
-    const result = [
+    return [
       {
         ...baseCards[0],
         value: coursesInProgress.toString(),
@@ -201,8 +235,6 @@ console.log(allCourses);
         value: `${totalHours}h`,
       },
     ];
-
-    return result;
   };
 
   const dynamicStatsCards = calculateStats();
@@ -210,163 +242,254 @@ console.log(allCourses);
   const myCourses = coursesData.allCourses
     .filter((course) =>
       user?.purchasedCourses?.some(
-        (purchased) => purchased.courseId == course.id,
-      ),
+        (purchased) =>
+          purchased.courseId == course.id
+      )
     )
     .map((course) => {
-      const purchasedCourse = user?.purchasedCourses?.find(
-        (p) => p.courseId == course.id,
-      );
+      const purchasedCourse =
+        user?.purchasedCourses?.find(
+          (p) => p.courseId == course.id
+        );
+
       const totalLessons =
         course.lessonsCount ||
         (course.lessons
           ? course.lessons.includes(" of ")
-            ? parseInt(course.lessons.split(" of ")[1])
-            : parseInt(course.lessons.split(" ")[0])
+            ? parseInt(
+                course.lessons.split(" of ")[1]
+              )
+            : parseInt(
+                course.lessons.split(" ")[0]
+              )
           : 0);
-      const completedLessons =
-        purchasedCourse?.progress?.completedLessons?.length || 0;
 
-      const courseData = {
+      const completedLessons =
+        purchasedCourse?.progress?.completedLessons
+          ?.length || 0;
+
+      return {
         id: course.id,
         title: course.title,
         subtitle: course.category,
+
         progress:
           totalLessons > 0
-            ? Math.round((completedLessons / totalLessons) * 100)
+            ? Math.round(
+                (completedLessons / totalLessons) * 100
+              )
             : 0,
+
         lessons: `${completedLessons}/${totalLessons}`,
+
         level: course.level,
+
         levelColor:
           course.level === "Beginner"
             ? "bg-blue-100 text-blue-800"
             : course.level === "Intermediate"
-              ? "bg-green-100 text-green-800"
-              : "bg-yellow-100 text-yellow-800",
+            ? "bg-green-100 text-green-800"
+            : "bg-yellow-100 text-yellow-800",
+
         image: course.image,
+
         progressColor: "bg-indigo-600",
       };
-
-      return courseData;
     });
 
   const continueLearning = coursesData.allCourses
     .filter((course) =>
       user?.purchasedCourses?.some(
-        (purchased) => purchased.courseId == course.id,
-      ),
+        (purchased) =>
+          purchased.courseId == course.id
+      )
     )
     .filter((course) => {
-      const purchasedCourse = user?.purchasedCourses?.find(
-        (p) => p.courseId == course.id,
-      );
+      const purchasedCourse =
+        user?.purchasedCourses?.find(
+          (p) => p.courseId == course.id
+        );
+
       const totalLessons =
         course.lessonsCount ||
         (course.lessons
           ? course.lessons.includes(" of ")
-            ? parseInt(course.lessons.split(" of ")[1])
-            : parseInt(course.lessons.split(" ")[0])
+            ? parseInt(
+                course.lessons.split(" of ")[1]
+              )
+            : parseInt(
+                course.lessons.split(" ")[0]
+              )
           : 0);
+
       const completedLessons =
-        purchasedCourse?.progress?.completedLessons?.length || 0;
-      return completedLessons > 0 && completedLessons < totalLessons;
+        purchasedCourse?.progress?.completedLessons
+          ?.length || 0;
+
+      return (
+        completedLessons > 0 &&
+        completedLessons < totalLessons
+      );
     })
     .slice(0, 3)
     .map((course) => {
-      const purchasedCourse = user?.purchasedCourses?.find(
-        (p) => p.courseId === course.id,
-      );
+      const purchasedCourse =
+        user?.purchasedCourses?.find(
+          (p) => p.courseId === course.id
+        );
+
       const totalLessons =
         course.lessonsCount ||
         (course.lessons
           ? course.lessons.includes(" of ")
-            ? parseInt(course.lessons.split(" of ")[1])
-            : parseInt(course.lessons.split(" ")[0])
+            ? parseInt(
+                course.lessons.split(" of ")[1]
+              )
+            : parseInt(
+                course.lessons.split(" ")[0]
+              )
           : 0);
+
       const completedLessons =
-        purchasedCourse?.progress?.completedLessons?.length || 0;
+        purchasedCourse?.progress?.completedLessons
+          ?.length || 0;
+
       const progress =
         totalLessons > 0
-          ? Math.round((completedLessons / totalLessons) * 100)
+          ? Math.round(
+              (completedLessons / totalLessons) * 100
+            )
           : 0;
 
-      const currentLesson = purchasedCourse?.progress?.currentLesson;
+      const currentLesson =
+        purchasedCourse?.progress?.currentLesson;
+
       const lessonTitle = currentLesson
         ? `Lesson ${currentLesson.lessonId}: ${currentLesson.moduleTitle}`
-        : `Continue from Lesson ${completedLessons + 1}`;
+        : `Continue from Lesson ${
+            completedLessons + 1
+          }`;
 
-      const continueData = {
+      return {
         id: course.id,
         title: course.title,
         lesson: lessonTitle,
-        progress: progress,
+        progress,
         image: course.image,
-        progressColor: progress > 75 ? "bg-cyan-600" : "bg-orange-400",
+        progressColor:
+          progress > 75
+            ? "bg-cyan-600"
+            : "bg-orange-400",
       };
-      return continueData;
     });
 
-  const normalizedSearchQuery = searchQuery.trim().toLowerCase();
-  const filteredMyCourses = myCourses.filter((course) => {
-    if (!normalizedSearchQuery) return true;
-    return (
-      course.title?.toLowerCase().includes(normalizedSearchQuery) ||
-      course.subtitle?.toLowerCase().includes(normalizedSearchQuery) ||
-      course.level?.toLowerCase().includes(normalizedSearchQuery)
-    );
-  });
+  const normalizedSearchQuery =
+    searchQuery.trim().toLowerCase();
 
-  const filteredContinueLearning = continueLearning.filter((course) => {
-    if (!normalizedSearchQuery) return true;
-    return (
-      course.title?.toLowerCase().includes(normalizedSearchQuery) ||
-      course.lesson?.toLowerCase().includes(normalizedSearchQuery)
-    );
-  });
+  const filteredMyCourses = myCourses.filter(
+    (course) => {
+      if (!normalizedSearchQuery) return true;
 
-  const filteredAllCourses = coursesData.allCourses.filter((course) => {
-    if (!normalizedSearchQuery) return false;
-    return (
-      course.title?.toLowerCase().includes(normalizedSearchQuery) ||
-      course.category?.toLowerCase().includes(normalizedSearchQuery) ||
-      course.level?.toLowerCase().includes(normalizedSearchQuery)
-    );
-  });
+      return (
+        course.title
+          ?.toLowerCase()
+          .includes(normalizedSearchQuery) ||
+        course.subtitle
+          ?.toLowerCase()
+          .includes(normalizedSearchQuery) ||
+        course.level
+          ?.toLowerCase()
+          .includes(normalizedSearchQuery)
+      );
+    }
+  );
+
+  const filteredContinueLearning =
+    continueLearning.filter((course) => {
+      if (!normalizedSearchQuery) return true;
+
+      return (
+        course.title
+          ?.toLowerCase()
+          .includes(normalizedSearchQuery) ||
+        course.lesson
+          ?.toLowerCase()
+          .includes(normalizedSearchQuery)
+      );
+    });
+
+  const filteredAllCourses =
+    coursesData.allCourses.filter((course) => {
+      if (!normalizedSearchQuery) return false;
+
+      return (
+        course.title
+          ?.toLowerCase()
+          .includes(normalizedSearchQuery) ||
+        course.category
+          ?.toLowerCase()
+          .includes(normalizedSearchQuery) ||
+        course.level
+          ?.toLowerCase()
+          .includes(normalizedSearchQuery)
+      );
+    });
 
   const handleBrowseCourses = () => {
-    navigate("/courses", { state: { activeTab: "explore" } });
+    navigate("/courses", {
+      state: {
+        activeTab: "explore",
+      },
+    });
   };
 
   const enrollAndPreview = async (course) => {
     if (!user) {
-      navigate('/login');
+      navigate("/login");
       return;
     }
 
     try {
-      // If the course is free, attempt enrollment first
-      const priceValue = Number(course.priceValue || 0);
+      const priceValue = Number(
+        course.priceValue || 0
+      );
+
       if (priceValue === 0) {
-        const res = await fetch(`${API_BASE_URL}/api/users/purchase-course`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
-          },
-          body: JSON.stringify({ courseId: course.id, courseTitle: course.title }),
-        });
-        const data = await res.json().catch(() => ({}));
-        // Refresh user profile so purchasedCourses is updated across the app
-        if (typeof fetchUserProfile === 'function') await fetchUserProfile();
-        // notify pages to refresh their course lists
-        window.dispatchEvent(new Event('refreshCourses'));
+        await fetch(
+          `${API_BASE_URL}/api/users/purchase-course`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem(
+                "token"
+              )}`,
+            },
+            body: JSON.stringify({
+              courseId: course.id,
+              courseTitle: course.title,
+            }),
+          }
+        );
+
+        if (
+          typeof fetchUserProfile === "function"
+        ) {
+          await fetchUserProfile();
+        }
+
+        window.dispatchEvent(
+          new Event("refreshCourses")
+        );
       }
 
-      // After ensuring enrollment (or for paid courses), navigate to preview
       navigate(`/course-preview/${course.id}`);
     } catch (err) {
-      console.error('Enroll+Preview error:', err);
-      // still navigate to preview so user can complete payment/see enroll UI
+      console.error(
+        "Enroll+Preview error:",
+        err
+      );
+
       navigate(`/course-preview/${course.id}`);
     }
   };
@@ -376,7 +499,10 @@ console.log(allCourses);
       <main className="flex-1 p-4 md:p-6 lg:p-8 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
-          <p className="text-muted">{t("dashboard.loading")}</p>
+
+          <p className="text-muted">
+            {t("dashboard.loading")}
+          </p>
         </div>
       </main>
     );
@@ -385,14 +511,24 @@ console.log(allCourses);
   return (
     <main className="flex-1 overflow-x-hidden overflow-y-auto bg-canvas-alt p-6">
       <Helmet>
-            <title>Dashboard | UptoSkills</title>
-            <meta 
-                name="description" 
-                content="Track your learning progress, enrolled courses and certificates on UptoSkills." 
-            />
-            <meta property="og:title" content="Dashboard | UptoSkills" />
-            <meta property="og:type" content="website" />
-        </Helmet>
+        <title>Dashboard | UptoSkills</title>
+
+        <meta
+          name="description"
+          content="Track your learning progress, enrolled courses and certificates on UptoSkills."
+        />
+
+        <meta
+          property="og:title"
+          content="Dashboard | UptoSkills"
+        />
+
+        <meta
+          property="og:type"
+          content="website"
+        />
+      </Helmet>
+
       <Preferences
         key={localStorage.getItem("token")}
         mode="modal"
@@ -400,57 +536,71 @@ console.log(allCourses);
           console.log("Preferences saved");
         }}
       />
+
       <div className="max-w-7xl pt-16 mx-auto space-y-8">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1  sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {dynamicStatsCards.map((card, index) => {
-            const statLabelKeys = [
-              "ongoing_courses",
-              "completed",
-              "certificates",
-              "hours_spent",
-            ];
-            return (
-              <div
-                key={index}
-                className="bg-card rounded-2xl p-6 shadow-sm border border-border hover:shadow-lg hover:-translate-y-1 hover:border-teal-500/40 transition-all duration-300 cursor-pointer"
-              >
-                <div className="flex items-center justify-between mb-4">
-                  <div className={`p-3 rounded-xl ${card.iconBg}`}>
-                    {card.icon}
+
+        {/* ================= STATS ================= */}
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {dynamicStatsCards.map(
+            (card, index) => {
+              const statLabelKeys = [
+                "ongoing_courses",
+                "completed",
+                "certificates",
+                "hours_spent",
+              ];
+
+              return (
+                <div
+                  key={index}
+                  className="bg-card rounded-2xl p-6 shadow-sm border border-border hover:shadow-lg hover:-translate-y-1 hover:border-teal-500/40 transition-all duration-300 cursor-pointer"
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <div
+                      className={`p-3 rounded-xl ${card.iconBg}`}
+                    >
+                      {card.icon}
+                    </div>
+
+                    <span className="text-sm font-medium text-green-600">
+                      {card.change}
+                    </span>
                   </div>
-                  <span className="text-sm font-medium text-green-600">
-                    {card.change}
-                  </span>
+
+                  <div className="text-2xl font-bold text-main mb-1">
+                    {card.value}
+                  </div>
+
+                  <div className="text-sm text-muted">
+                    {t(
+                      `dashboard.${statLabelKeys[index]}`
+                    )}
+                  </div>
                 </div>
-                <div className="text-2xl font-bold text-main mb-1">
-                  {card.value}
-                </div>
-                <div className="text-sm text-muted">
-                  {t(`dashboard.${statLabelKeys[index]}`)}
-                </div>
-              </div>
-            );
-          })}
+              );
+            }
+          )}
         </div>
 
-        <div className="grid grid-cols-1 gap-8">
-          {/* Popular Courses */}
+        {/* ================= POPULAR COURSES ================= */}
 
+        <div className="grid grid-cols-1 gap-8">
           <div>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-main">
                 {t("dashboard.popular_courses")}
               </h2>
 
-              {/* Buttons */}
               <div className="flex gap-2">
                 <button
                   onClick={() => {
-                    document.getElementById("courseSlider").scrollBy({
-                      left: -300,
-                      behavior: "smooth",
-                    });
+                    document
+                      .getElementById("courseSlider")
+                      ?.scrollBy({
+                        left: -300,
+                        behavior: "smooth",
+                      });
                   }}
                   className="p-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700"
                 >
@@ -459,10 +609,12 @@ console.log(allCourses);
 
                 <button
                   onClick={() => {
-                    document.getElementById("courseSlider").scrollBy({
-                      left: 300,
-                      behavior: "smooth",
-                    });
+                    document
+                      .getElementById("courseSlider")
+                      ?.scrollBy({
+                        left: 300,
+                        behavior: "smooth",
+                      });
                   }}
                   className="p-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700"
                 >
@@ -471,84 +623,102 @@ console.log(allCourses);
               </div>
             </div>
 
-            {/* Slider */}
             <div
               id="courseSlider"
               className="flex gap-6 overflow-x-auto px-3 py-3 pb-6"
             >
-              {coursesData.allCourses.slice(0, 10).map((course, index) => (
-                <div
-                  key={index}
-                  className="bg-card rounded-xl border border-border w-64 flex-shrink-0 shadow-sm transition-all duration-300 ease-out hover:shadow-xl hover:-translate-y-2 hover:scale-[1.03] hover:border-teal-400/50"
-                >
-                  {/* Image */}
+              {coursesData.allCourses
+                .slice(0, 10)
+                .map((course, index) => (
+                  <div
+                    key={index}
+                    className="bg-card rounded-xl border border-border w-64 flex-shrink-0 shadow-sm transition-all duration-300 ease-out hover:shadow-xl hover:-translate-y-2 hover:scale-[1.03] hover:border-teal-400/50"
+                  >
+                    <div className="relative h-40">
+                      <img
+                        src={getImageUrl(
+                          course.image
+                        )}
+                        alt={course.title}
+                        className="w-full h-full object-cover rounded-t-xl"
+                      />
 
-                  <div className="relative h-40">
- <img
-  src={
-  course.title === "React Fundamentals"
-    ? "/AI_Tutor_New_UI/Dashboard/react_fundamentals_logo.png"
-    : course.title === "Python For AI"
-    ? "/AI_Tutor_New_UI/Dashboard/python_for_ai_logo.png"
-    : course.title === "AI Ethics & Bias"
-    ? "/AI_Tutor_New_UI/Dashboard/data_analytics.png"
-    : course.title === "MongoDB Fundamentals"
-    ? "/AI_Tutor_New_UI/Dashboard/MongoDB.png"
-    : course.title === "PostgreSQL"
-? "/AI_Tutor_New_UI/Dashboard/logo.png"
-    : "/AI_Tutor_New_UI/Dashboard/logo.png"
-}
-  alt={course.title}
-  className="w-full h-full object-cover rounded-t-xl"
-/>
+                      <div className="absolute bottom-2 right-2">
+                        <CourseCardMeta
+                          courseId={course.id}
+                        />
+                      </div>
+                    </div>
 
-                    {/* Rating & Reviews */}
-                    <div className="absolute bottom-2 right-2">
-                      <CourseCardMeta courseId={course.id} />
+                    <div className="p-4 space-y-2">
+                      <h3 className="text-sm font-semibold text-main line-clamp-2">
+                        {course.title}
+                      </h3>
+
+                      <p className="text-xs text-muted">
+                        {course.lessons} •{" "}
+                        {course.level}
+                      </p>
+
+                      {(() => {
+                        const isEnrolled =
+                          Array.isArray(
+                            user?.purchasedCourses
+                          ) &&
+                          user.purchasedCourses.some(
+                            (c) =>
+                              String(
+                                c?.id ??
+                                  c?.courseId ??
+                                  c?.course?.id
+                              ) ===
+                              String(course.id)
+                          );
+
+                        return (
+                          <div className="flex justify-between items-center mt-2">
+                            <span className="font-bold text-green-500">
+                              {course.priceValue ===
+                              0
+                                ? "Free"
+                                : `₹${course.priceValue}`}
+                            </span>
+
+                            <button
+                              onClick={() =>
+                                enrollAndPreview(
+                                  course
+                                )
+                              }
+                              disabled={isEnrolled}
+                              className={`px-3 py-1.5 text-xs rounded-lg ${
+                                isEnrolled
+                                  ? "bg-emerald-100 text-emerald-700 cursor-default"
+                                  : "bg-teal-500 text-white hover:bg-teal-600"
+                              }`}
+                            >
+                              {isEnrolled
+                                ? "Enrolled"
+                                : t(
+                                    "dashboard.enroll"
+                                  )}
+                            </button>
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
-
-                  {/* Content */}
-                  <div className="p-4 space-y-2">
-                    <h3 className="text-sm font-semibold text-main line-clamp-2">
-                      {course.title}
-                    </h3>
-
-                    <p className="text-xs text-muted">
-                      {course.lessons} • {course.level}
-                    </p>
-
-                    {(() => {
-                      const isEnrolled = Array.isArray(user?.purchasedCourses) && user.purchasedCourses.some(c => String(c?.id ?? c?.courseId ?? c?.course?.id) === String(course.id));
-                      return (
-                        <div className="flex justify-between items-center mt-2">
-                          <span className="font-bold text-green-500">
-                            {course.priceValue === 0
-                              ? "Free"
-                              : `₹${course.priceValue}`}
-                          </span>
-
-                          <button
-                            onClick={() => enrollAndPreview(course)}
-                            disabled={isEnrolled}
-                            className={`px-3 py-1.5 text-xs rounded-lg ${isEnrolled ? 'bg-emerald-100 text-emerald-700 cursor-default' : 'bg-teal-500 text-white hover:bg-teal-600'}`}
-                          >
-                            {isEnrolled ? 'Enrolled' : t("dashboard.enroll")}
-                          </button>
-                        </div>
-                      )
-                    })()}
-                  </div>
-                </div>
-              ))}
+                ))}
             </div>
           </div>
 
-          {/* My Courses Table */}
+          {/* ================= MY COURSES ================= */}
+
           <div className="xl:col-span-2 flex flex-col">
             <h2 className="text-xl font-bold text-main mb-6">
               {t("dashboard.my_courses")}
             </h2>
+
             <div className="bg-card rounded-xl border border-border overflow-hidden">
               <div className="overflow-x-auto">
                 {filteredMyCourses.length !== 0 ? (
@@ -556,210 +726,307 @@ console.log(allCourses);
                     <thead className="bg-canvas-alt">
                       <tr>
                         <th className="px-4 py-4 text-left text-sm font-medium text-muted">
-                          {t("dashboard.course")}
+                          {t(
+                            "dashboard.course"
+                          )}
                         </th>
+
                         <th className="px-4 py-4 text-left text-sm font-medium text-muted">
-                          {t("dashboard.progress")}
+                          {t(
+                            "dashboard.progress"
+                          )}
                         </th>
+
                         <th className="px-4 py-4 text-left text-sm font-medium text-muted">
-                          {t("dashboard.lessons")}
+                          {t(
+                            "dashboard.lessons"
+                          )}
                         </th>
+
                         <th className="px-4 py-4 text-left text-sm font-medium text-muted">
-                          {t("dashboard.level")}
+                          {t(
+                            "dashboard.level"
+                          )}
                         </th>
                       </tr>
                     </thead>
+
                     <tbody className="divide-y divide-gray-200">
-                      {filteredMyCourses.map((course, index) => (
-                        <tr key={index} className="hover:bg-canvas-alt">
-                          <td className="px-4 py-4">
-                            <Link
-                              to={`/learning/${course.id}`}
-                              className="flex items-center"
-                            >
-                            <img
-  src={
-    course.title === "React Fundamentals"
-      ? "/AI_Tutor_New_UI/Dashboard/react_fundamentals_logo.png"
-      : course.title === "Python For AI"
-      ? "/AI_Tutor_New_UI/Dashboard/python_for_ai_logo.png"
-      : course.title === "AI Ethics & Bias"
-      ? "/AI_Tutor_New_UI/Dashboard/data_analytics.png"
-      : course.title === "PostgreSQL"
-      ? "/AI_Tutor_New_UI/Dashboard/postgresql.png"
-      : course.title === "MongoDB Fundamentals"
-      ? "/AI_Tutor_New_UI/Dashboard/MongoDB.png"
-      : "/AI_Tutor_New_UI/Dashboard/react_fundamentals_logo.png"
-  }
-  alt={course.title}
-  className="w-12 h-12 rounded-lg mr-4"
-  loading="lazy"
-/>
-                              <div>
-                                <div className="font-medium text-main hover:text-indigo-600">
-                                  {course.title}
+                      {filteredMyCourses.map(
+                        (course, index) => (
+                          <tr
+                            key={index}
+                            className="hover:bg-canvas-alt"
+                          >
+                            <td className="px-4 py-4">
+                              <Link
+                                to={`/learning/${course.id}`}
+                                className="flex items-center"
+                              >
+                                <img
+                                  src={getImageUrl(
+                                    course.image
+                                  )}
+                                  alt={
+                                    course.title
+                                  }
+                                  className="w-12 h-12 rounded-lg mr-4 object-cover"
+                                  loading="lazy"
+                                />
+
+                                <div>
+                                  <div className="font-medium text-main hover:text-indigo-600">
+                                    {
+                                      course.title
+                                    }
+                                  </div>
+
+                                  <div className="text-sm text-muted">
+                                    {
+                                      course.subtitle
+                                    }
+                                  </div>
                                 </div>
-                                <div className="text-sm text-muted">
-                                  {course.subtitle}
-                                </div>
+                              </Link>
+                            </td>
+
+                            <td className="px-4 py-4">
+                              <div className="w-20 bg-border rounded-full h-2 mb-1">
+                                <div
+                                  className={`h-2 rounded-full ${course.progressColor}`}
+                                  style={{
+                                    width: `${course.progress}%`,
+                                  }}
+                                />
                               </div>
-                            </Link>
-                          </td>
-                          <td className="px-4 py-4">
-                            <div className="w-20 bg-border rounded-full h-2 mb-1">
-                              <div
-                                className={`h-2 rounded-full ${course.progressColor}`}
-                                style={{ width: `${course.progress}%` }}
-                              ></div>
-                            </div>
-                            <div className="text-sm text-muted">
-                              {course.progress}%
-                            </div>
-                          </td>
-                          <td className="px-4 py-4 text-muted">
-                            {course.lessons}
-                          </td>
-                          <td className="px-4 py-4">
-                            <span
-                              className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${course.levelColor}`}
-                            >
-                              {course.level}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
+
+                              <div className="text-sm text-muted">
+                                {course.progress}%
+                              </div>
+                            </td>
+
+                            <td className="px-4 py-4 text-muted">
+                              {course.lessons}
+                            </td>
+
+                            <td className="px-4 py-4">
+                              <span
+                                className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${course.levelColor}`}
+                              >
+                                {course.level}
+                              </span>
+                            </td>
+                          </tr>
+                        )
+                      )}
                     </tbody>
                   </table>
-                ) : normalizedSearchQuery && filteredAllCourses.length > 0 ? (
+                ) : normalizedSearchQuery &&
+                  filteredAllCourses.length > 0 ? (
                   <div className="p-6">
                     <p className="text-center text-muted mb-4">
-                      {t("dashboard.fallbackMatchingCourses")}
+                      {t(
+                        "dashboard.fallbackMatchingCourses"
+                      )}
                     </p>
+
                     <div className="space-y-3">
-                      {filteredAllCourses.slice(0, 6).map((course) => (
-                        <div
-                          key={course.id}
-                          className="flex items-center justify-between p-3 rounded-lg border border-border bg-canvas-alt"
-                        >
-                          <div className="flex items-center min-w-0">
-                          <img
-  src={
-    course.title === "React Fundamentals"
-      ? "/AI_Tutor_New_UI/Dashboard/react_fundamentals_logo.png"
-      : course.title === "Python For AI"
-      ? "/AI_Tutor_New_UI/Dashboard/python_for_ai_logo.png"
-      : course.title === "AI Ethics & Bias"
-      ? "/AI_Tutor_New_UI/Dashboard/data_analytics.png"
-      : course.title === "MongoDB Fundamentals"
-      ? "/AI_Tutor_New_UI/Dashboard/MongoDB.png"
-      : "/AI_Tutor_New_UI/Dashboard/logo.png"
-  }
-  alt={course.title}
-  className="w-full h-full object-cover rounded-t-xl"
-/>
-                            <div className="min-w-0">
-                              <div className="font-medium text-main truncate">
-                                {course.title}
-                              </div>
-                              <div className="text-sm text-muted truncate">
-                                {course.category} • {course.level}
+                      {filteredAllCourses
+                        .slice(0, 6)
+                        .map((course) => (
+                          <div
+                            key={course.id}
+                            className="flex items-center justify-between p-3 rounded-lg border border-border bg-canvas-alt"
+                          >
+                            <div className="flex items-center min-w-0">
+                              <img
+                                src={getImageUrl(
+                                  course.image
+                                )}
+                                alt={
+                                  course.title
+                                }
+                                className="w-12 h-12 object-cover rounded-lg mr-3"
+                              />
+
+                              <div className="min-w-0">
+                                <div className="font-medium text-main truncate">
+                                  {
+                                    course.title
+                                  }
+                                </div>
+
+                                <div className="text-sm text-muted truncate">
+                                  {
+                                    course.category
+                                  }{" "}
+                                  •{" "}
+                                  {
+                                    course.level
+                                  }
+                                </div>
                               </div>
                             </div>
+
+                            <button
+                              onClick={() =>
+                                enrollAndPreview(
+                                  course
+                                )
+                              }
+                              className="ml-3 px-3 py-2 bg-teal-500 text-white text-xs font-medium rounded-lg hover:bg-teal-600"
+                            >
+                              {t(
+                                "dashboard.view"
+                              )}
+                            </button>
                           </div>
-                          <button
-                            onClick={() => enrollAndPreview(course)}
-                            className="ml-3 px-3 py-2 bg-teal-500 text-white text-xs font-medium rounded-lg hover:bg-teal-600"
-                          >
-                            {t("dashboard.view")}
-                          </button>
-                        </div>
-                      ))}
+                        ))}
                     </div>
                   </div>
                 ) : (
                   <div className="p-6 text-center text-muted">
                     <p>
                       {normalizedSearchQuery
-                        ? t("dashboard.no_courses_search")
-                        : t("dashboard.no_courses_enrolled")}
+                        ? t(
+                            "dashboard.no_courses_search"
+                          )
+                        : t(
+                            "dashboard.no_courses_enrolled"
+                          )}
                     </p>
+
                     <button
                       className="mt-4 px-4 py-2 bg-teal-500 text-white text-sm font-medium rounded-lg hover:bg-teal-600"
-                      onClick={handleBrowseCourses}
+                      onClick={
+                        handleBrowseCourses
+                      }
                     >
-                      {t("dashboard.browse_courses")}
+                      {t(
+                        "dashboard.browse_courses"
+                      )}
                     </button>
                   </div>
                 )}
               </div>
             </div>
+          </div>
 
-            {/* Continue Learning */}
-            {filteredContinueLearning.length !== 0 ? (
-              <div>
-                <h2 className="text-xl font-bold text-main mt-6 mb-6">
-                  {t("dashboard.continue_learning")}
-                </h2>
-                <div className="space-y-4">
-                  {filteredContinueLearning.map((item, index) => (
-                    <div
-                      key={index}
-                      className="bg-card rounded-xl p-4 border border-border shadow-sm hover:shadow-md transition-shadow"
-                    >
-                      <div className="flex items-center">
-                        <Link
-                          to={`/course-preview/${item.id}`}
-                          className="flex items-center flex-1"
+          {/* ==================================================
+              CONTINUE LEARNING + AI MENTOR
+              ================================================== */}
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+            {/* ================= CONTINUE LEARNING ================= */}
+
+            <div>
+              {filteredContinueLearning.length !==
+              0 ? (
+                <>
+                  <h2 className="text-xl font-bold text-main mt-6 mb-6">
+                    {t(
+                      "dashboard.continue_learning"
+                    )}
+                  </h2>
+
+                  <div className="space-y-4">
+                    {filteredContinueLearning.map(
+                      (item, index) => (
+                        <div
+                          key={index}
+                          className="bg-card rounded-xl p-4 border border-border shadow-sm hover:shadow-md transition-shadow"
                         >
- <img
-  src={
-    item.title === "React Fundamentals"
-      ? "/AI_Tutor_New_UI/Dashboard/react_fundamentals_logo.png"
-      : item.title === "Python For AI"
-      ? "/AI_Tutor_New_UI/Dashboard/python_for_ai_logo.png"
-      : item.title === "AI Ethics & Bias"
-      ? "/AI_Tutor_New_UI/Dashboard/data_analytics.png"
-      : item.title === "PostgreSQL"
-      ? "/AI_Tutor_New_UI/Dashboard/postgresql.png"
-      : item.title === "MongoDB Fundamentals"
-      ? "/AI_Tutor_New_UI/Dashboard/MongoDB.png"
-      : "/AI_Tutor_New_UI/Dashboard/react_fundamentals_logo.png"
-  }
-  alt={item.title}
-  className="w-12 h-12 rounded-lg mr-4"
-  loading="lazy"
-/>
-                          <div className="flex-1">
-                            <h3 className="font-medium text-main mb-1 hover:text-teal-600">
-                              {item.title}
-                            </h3>
-                            <p className="text-sm text-muted mb-2">
-                              {item.lesson}
-                            </p>
-                            <div className="w-full bg-border rounded-full h-2 mb-2">
-                              <div
-                                className={`h-2 rounded-full ${item.progressColor}`}
-                                style={{ width: `${item.progress}%` }}
-                              ></div>
-                            </div>
+                          <div className="flex items-center">
+                            <Link
+                              to={`/course-preview/${item.id}`}
+                              className="flex items-center flex-1 min-w-0"
+                            >
+                              <img
+                                src={getImageUrl(
+                                  item.image
+                                )}
+                                alt={
+                                  item.title
+                                }
+                                className="w-12 h-12 rounded-lg mr-4 object-cover flex-shrink-0"
+                                loading="lazy"
+                              />
+
+                              <div className="flex-1 min-w-0">
+                                <h3 className="font-medium text-main mb-1 hover:text-teal-600 truncate">
+                                  {
+                                    item.title
+                                  }
+                                </h3>
+
+                                <p className="text-sm text-muted mb-2 truncate">
+                                  {
+                                    item.lesson
+                                  }
+                                </p>
+
+                                <div className="w-full bg-border rounded-full h-2 mb-2">
+                                  <div
+                                    className={`h-2 rounded-full ${item.progressColor}`}
+                                    style={{
+                                      width: `${item.progress}%`,
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                            </Link>
+
+                            <Link
+                              to={`/learning/${item.id}`}
+                              className="ml-4 px-4 py-2 bg-teal-500 text-white text-sm font-medium rounded-lg hover:bg-teal-600 flex-shrink-0"
+                            >
+                              {t(
+                                "dashboard.continue"
+                              )}
+                            </Link>
                           </div>
-                        </Link>
-                        <Link
-                          to={`/learning/${item.id}`}
-                          className="ml-4 px-4 py-2 bg-teal-500 text-white text-sm font-medium rounded-lg hover:bg-teal-600"
-                        >
-                          {t("dashboard.continue")}
-                        </Link>
-                      </div>
-                    </div>
-                  ))}
+                        </div>
+                      )
+                    )}
+                  </div>
+                </>
+              ) : (
+                <div className="mt-6">
+                  <h2 className="text-xl font-bold text-main mb-6">
+                    {t(
+                      "dashboard.continue_learning"
+                    )}
+                  </h2>
+
+                  <div className="bg-card rounded-xl border border-border p-6 text-center text-muted">
+                    No courses currently in progress.
+                  </div>
                 </div>
-              </div>
-            ) : null
-            }
+              )}
+            </div>
+
+            {/* ================= AI MENTOR CARD ================= */}
+
+            <div className="mt-6 lg:mt-0">
+              <AIMentorCard
+                onAskAI={() => {
+                  navigate("/ai-mentor");
+                }}
+                onGenerateLesson={() => {
+                  navigate("/ai-mentor", {
+                    state: {
+                      action: "generate-lesson",
+                    },
+                  });
+                }}
+              />
+            </div>
+
           </div>
         </div>
       </div>
+
       <FloatingAssistant />
     </main>
   );
