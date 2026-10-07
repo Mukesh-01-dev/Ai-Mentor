@@ -1,8 +1,8 @@
 import os
-import datetime
 import re
 import traceback
 import asyncio
+import uuid
 import edge_tts
 import cloudinary
 import cloudinary.uploader
@@ -208,8 +208,7 @@ job_status = {}
 def generate_lesson(data: LessonRequest, background_tasks: BackgroundTasks):
 
     topic_clean = re.sub(r'[^\w\s-]', '', data.topic).strip().replace(" ", "_")
-    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    base_filename = f"{topic_clean}_{timestamp}"
+    base_filename = f"{topic_clean}_{uuid.uuid4().hex}"
 
     job_status[base_filename] = {"status": "processing"}
 
@@ -402,7 +401,7 @@ def process_lesson(data: LessonRequest, base_filename: str):
                 resource_type="video",
                 folder="ai_mentor/videos",
                 public_id=base_filename,
-                overwrite=True,
+                overwrite=False,
                 chunk_size=6000000,
             )
 
