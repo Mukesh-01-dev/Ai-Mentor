@@ -22,9 +22,10 @@ import {
   Award,
 } from "lucide-react";
 import Preferences from "../components/Preferences";
-import API_BASE_URL, { apiFetch } from "../lib/api";
+import API_BASE_URL from "../lib/api";
 import FloatingAssistant from "../components/common/FloatingAssistant";
 import CourseCardMeta from "../components/common/CourseCardMeta";
+import ContinueLearningCard from "../components/common/ContinueLearningCard";
 import { Helmet } from "react-helmet-async";
 
 // Add this here
@@ -298,13 +299,39 @@ console.log(allCourses);
       const continueData = {
         id: course.id,
         title: course.title,
+        category: course.category || "Web Development",
         lesson: lessonTitle,
         progress: progress,
+        duration: course.duration || "15 min",
+        level: course.level || "Beginner",
         image: course.image,
         progressColor: progress > 75 ? "bg-cyan-600" : "bg-orange-400",
       };
       return continueData;
     });
+
+  const defaultContinueCourse = {
+    id: 1,
+    title: "React.js Masterclass",
+    category: "Web Development",
+    lesson: "Lesson 18 — React Hooks",
+    progress: 72,
+    duration: "15 min",
+    level: "Beginner",
+  };
+
+  const currentContinueCourse =
+    continueLearning.length > 0
+      ? {
+          id: continueLearning[0].id,
+          title: continueLearning[0].title || defaultContinueCourse.title,
+          category: continueLearning[0].category || defaultContinueCourse.category,
+          lesson: continueLearning[0].lesson || defaultContinueCourse.lesson,
+          progress: continueLearning[0].progress ?? defaultContinueCourse.progress,
+          duration: continueLearning[0].duration || defaultContinueCourse.duration,
+          level: continueLearning[0].level || defaultContinueCourse.level,
+        }
+      : defaultContinueCourse;
 
   const normalizedSearchQuery = searchQuery.trim().toLowerCase();
   const filteredMyCourses = myCourses.filter((course) => {
@@ -432,6 +459,11 @@ console.log(allCourses);
               </div>
             );
           })}
+        </div>
+
+        {/* Middle Section: Continue Learning Card */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+          <ContinueLearningCard course={currentContinueCourse} />
         </div>
 
         <div className="grid grid-cols-1 gap-8">
